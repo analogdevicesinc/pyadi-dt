@@ -1,0 +1,21 @@
+site_name: pyadi-dt
+site_description: Tools for managing device trees
+site_author: Analog Devices, Inc.
+
+theme:
+  name: material
+
+nav:
+    - Home: index.md
+    - CLI: cli.md
+    - Reference: ref.md
+
+repo_url: https://github.com/analogdevicesinc/pyadi-dt
+
+markdown_extensions:
+    # - attr_list
+    - mkdocs-click
+
+plugins:
+  - search
+  - mkdocstrings
