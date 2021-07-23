@@ -8,6 +8,7 @@ import os.path
 
 class dt:
     """Device tree interface and management."""
+
     def __init__(
         self,
         arch="arm",
@@ -45,10 +46,7 @@ class dt:
             self._import()
 
     def _runr(self, cmd, warn=False):
-        if self._hide:
-            hide = "out"
-        else:
-            hide = None
+        hide = "out" if self._hide else None
         o = self._con.run(cmd, hide=hide, warn=warn)
         return o.return_code
 
@@ -148,16 +146,7 @@ class dt:
         if self.dt_source == "remote_sd":
             self._update_sd(reboot=reboot)
 
-    def write_out_dts(self,filename):
+    def write_out_dts(self, filename: str):
+        """Write out current DT structure to file"""
         with open(filename, "w") as f:
             f.write(self._dt.to_dts())
-
-
-# node = dt1.search('hmc7044@0')[0]
-# for prop in node.props:
-#     print(prop)
-# print('---------------')
-# for chan in node.nodes:
-#      print('----:',chan.name)
-#      for prop in chan.props:
-#          print(prop)
