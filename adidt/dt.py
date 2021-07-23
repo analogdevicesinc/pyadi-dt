@@ -199,6 +199,8 @@ class dt:
     def update_current_dt(self, reboot=False):
         if self.dt_source == "remote_sd":
             self._update_sd(reboot=reboot)
+        else:
+            raise Exception("Updating only works on remote_sd right now")
 
     def write_out_dts(self, filename: str):
         """Write out current DT structure to file"""
