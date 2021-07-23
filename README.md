@@ -8,6 +8,9 @@ Device tree management tools for ADI hardwre
 pip install git+https://github.com/tfcollins/pyadi-dt.git
 ```
 
+## CLI basics
+
+Get basic info of CLI
 ```bash
 > adidtc
 Usage: adidtc [OPTIONS] COMMAND [ARGS]...
@@ -28,4 +31,10 @@ Options:
 
 Commands:
   prop  Get and set device tree properties COMPATIBLE_ID - Value of..
+```
+
+Use the **prop** sub command to read device tree attributes
+```bash
+> adidtc -c remote_fs -i 192.168.2.1 prop adi,ad9361 clock-output-names
+clock-output-names rx_sampl_clk,tx_sampl_clk
 ```
