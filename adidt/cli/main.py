@@ -13,9 +13,11 @@ from .helpers import list_node_props, list_node_prop
 @click.option(
     "--context",
     "-c",
-    default="local",
+    default="local_sysfs",
     help="Set context",
-    type=click.Choice(["local", "remote_fs", "remote_sd"]),
+    type=click.Choice(
+        ["local_file", "local_sd", "local_sysfs", "remote_sysfs", "remote_sd"]
+    ),
     show_default=True,
 )
 @click.option(
