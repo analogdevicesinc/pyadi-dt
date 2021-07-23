@@ -35,6 +35,6 @@ Commands:
 
 Use the **prop** sub command to read device tree attributes
 ```bash
-> adidtc -c remote_fs -i 192.168.2.1 prop adi,ad9361 clock-output-names
+> adidtc -c remote_sysfs -i 192.168.2.1 prop adi,ad9361 clock-output-names
 clock-output-names rx_sampl_clk,tx_sampl_clk
 ```
