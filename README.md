@@ -19,8 +19,8 @@ Usage: adidtc [OPTIONS] COMMAND [ARGS]...
 
 Options:
   -nc, --no-color                 Disable formatting
-  -c, --context [local|remote_fs|remote_sd]
-                                  Set context  [default: local]
+  -c, --context [local_file|local_sd|local_sysfs|remote_sysfs|remote_sd]
+                                  Set context  [default: local_sysfs]
   -i, --ip TEXT                   Set ip used by remote contexts  [default:
                                   192.168.2.1]
   -u, --username TEXT             Set username used by remote SSH sessions
