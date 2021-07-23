@@ -1,6 +1,6 @@
 # pyadi-dt
 
-Device tree management tools for ADI hardwre
+Device tree management tools for ADI hardware
 
 ## Quick install
 
