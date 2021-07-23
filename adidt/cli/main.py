@@ -59,7 +59,7 @@ def cli(ctx, no_color, context, ip, username, password):
     "--reboot",
     "-r",
     is_flag=True,
-    help="Reboot boot after successful write",
+    help="Reboot boards after successful write",
 )
 @click.pass_context
 def prop(ctx, compatible_id, prop, value, reboot):
