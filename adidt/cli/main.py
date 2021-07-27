@@ -41,8 +41,15 @@ from .helpers import list_node_props, list_node_prop
     help="Set password used by remote SSH sessions (default is analog)",
     show_default=True,
 )
+@click.option(
+    "--arch",
+    "-a",
+    default="arm",
+    help="Set target architecture which will set the target DT",
+    show_default=True,
+)
 @click.pass_context
-def cli(ctx, no_color, context, ip, username, password):
+def cli(ctx, no_color, context, ip, username, password, arch):
     """ADI device tree utility"""
     ctx.ensure_object(dict)
 
@@ -51,6 +58,7 @@ def cli(ctx, no_color, context, ip, username, password):
     ctx.obj["ip"] = ip
     ctx.obj["username"] = username
     ctx.obj["password"] = password
+    ctx.obj["arch"] = arch
 
 
 @cli.command()
@@ -77,6 +85,7 @@ def prop(ctx, compatible_id, prop, value, reboot):
         ip=ctx.obj["ip"],
         username=ctx.obj["username"],
         password=ctx.obj["password"],
+        arch=ctx.obj["arch"],
     )
     # List all compatible ids
     if not compatible_id:
