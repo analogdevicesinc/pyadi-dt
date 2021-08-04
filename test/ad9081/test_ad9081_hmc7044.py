@@ -36,7 +36,12 @@ def test_ad9081_tx():
     node = d.get_node_by_compatible("adi,ad9081")
     assert len(node) == 1
 
+    cnode = d.get_node_by_compatible("adi,hmc7044")
+    assert len(cnode) == 1
+
+
     node = node[0]
-    d.update_dt_node_from_config(node, config, d._dt)
+    cnode = cnode[0]
+    d.update_dt_node_from_config(node, cnode, config)
 
     d.write_out_dts("test_1.dts")
