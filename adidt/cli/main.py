@@ -44,9 +44,10 @@ from .helpers import list_node_props, list_node_prop
 @click.option(
     "--arch",
     "-a",
-    default="arm",
-    help="Set target architecture which will set the target DT",
+    default="auto",
+    help="Set target architecture which will set the target DT. auto with determine from running system",
     show_default=True,
+    type=click.Choice(["arm", "arm64", "auto"]),
 )
 @click.pass_context
 def cli(ctx, no_color, context, ip, username, password, arch):
@@ -116,3 +117,53 @@ def prop(ctx, compatible_id, prop, value, reboot):
                 d.update_current_dt(reboot=reboot)
                 return
     click.echo(f"ERROR: No property found {prop}")
+
+
+@cli.command()
+@click.argument("rd", required=False)
+@click.option(
+    "--reboot",
+    "-r",
+    is_flag=True,
+    help="Reboot boards after successful write",
+)
+@click.option(
+    "--show",
+    "-s",
+    is_flag=True,
+    help="Print commands as run",
+)
+@click.option(
+    "--dry-run",
+    "-d",
+    is_flag=True,
+    help="Dryrun, do not run commands",
+)
+@click.pass_context
+def sd_move(ctx, rd, reboot, show, dry_run):
+    """Move files on existing SD card
+
+    \b
+    REFERENCE_DESIGN  - Name of reference design folder on SD card
+    """
+    if ctx.obj["context"] in ["remote_sysfs", "local_file", "local_sysfs"]:
+        s = f"ERROR: {ctx.obj['context']} context does not apply for sd-move"
+        if ctx.obj["no_color"]:
+            print(s)
+        else:
+            click.echo(click.style(s, fg="red"))
+        return
+    d = adidt.dt(
+        dt_source=ctx.obj["context"],
+        ip=ctx.obj["ip"],
+        username=ctx.obj["username"],
+        password=ctx.obj["password"],
+        arch=ctx.obj["arch"],
+    )
+    d.update_existing_boot_files(rd, show=show, dryrun=dry_run)
+    if reboot and not dry_run:
+        d._runr(f"reboot", warn=True)
+        if ctx.obj["no_color"]:
+            print("Board rebooting")
+        else:
+            click.echo(click.style("Board rebooting", bg="red", fg="black", bold=True))

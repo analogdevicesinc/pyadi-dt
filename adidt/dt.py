@@ -5,9 +5,10 @@ import random
 import string
 import os.path
 import os
+from adidt.sd import sd
 
 
-class dt:
+class dt(sd):
     """Device tree interface and management.
 
     Args:
@@ -34,8 +35,8 @@ class dt:
         local_dt_filepath="",
     ):
         self.local_dt_filepath = local_dt_filepath
-        if arch not in ["arm", "arm64"]:
-            raise Exception("arch can only by arm or arm64")
+        if arch not in ["arm", "arm64", "auto"]:
+            raise Exception("arch can only by arm or arm64 or auto")
         if dt_source not in [
             "local_sysfs",
             "local_file",
@@ -45,10 +46,8 @@ class dt:
         ]:
             raise Exception(f"Invalid dt_source {dt_source}")
         self.dt_source = dt_source
-        self.arch = arch
         self._hide = False
         self.warn = False
-        self._dt_filename = "system.dtb" if arch == "arm64" else "devicetree.dtb"
         if "remote" in self.dt_source:
             self._con = Connection(
                 "{username}@{ip}:{port}".format(
@@ -59,17 +58,47 @@ class dt:
                 ),
                 connect_kwargs={"password": password},
             )
+            self._set_arch(arch)
             if self.dt_source == "remote_sysfs":
                 self._import_remote_sysfs()
             else:
                 self._import_remote_sd()
         else:
+            self._set_arch(arch)
             if "sysfs" in dt_source:
                 self._import_sysfs()
             elif dt_source == "local_file":
                 self._import_file()
             else:
                 self._import_local_sd()
+
+    def _set_arch(self, arch):
+        self.arch = arch
+        if arch == "auto":
+            self._check_arch()
+        else:
+            self._arch = arch
+        self._dt_filename = "system.dtb" if self._arch == "arm64" else "devicetree.dtb"
+
+    def _runr_o(self, cmd, warn=False):
+        hide = "out" if self._hide else None
+        if "remote" in self.dt_source:
+            o = self._con.run(cmd, hide=hide, warn=warn)
+        else:
+            o = self._con.local(cmd, hide=hide, warn=warn)
+        return o
+
+    def _check_arch(self):
+        r = self._hide
+        self._hide = True
+        out = self._runr_o("uname -a", warn=True)
+        self._hide = r
+        if "aarch64" in out.stdout:
+            self._arch = "arm64"
+        elif "arm" in out.stdout:
+            self._arch = "arm"
+        else:
+            raise Exception("Unable to determine architecture")
 
     def _runr(self, cmd, warn=False):
         hide = "out" if self._hide else None
