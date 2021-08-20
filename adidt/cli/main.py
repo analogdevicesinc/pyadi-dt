@@ -63,7 +63,7 @@ def cli(ctx, no_color, context, ip, username, password, arch):
 
 
 @cli.command()
-@click.argument("compatible_id", required=False)
+@click.argument("node_name", required=False)
 @click.argument("prop", required=False)
 @click.argument("value", required=False)
 @click.option(
@@ -72,12 +72,24 @@ def cli(ctx, no_color, context, ip, username, password, arch):
     is_flag=True,
     help="Reboot boards after successful write",
 )
+@click.option(
+    "--compat",
+    "-cp",
+    is_flag=True,
+    help="Use node name to check against compatible id of node during search",
+)
+@click.option(
+    "--children",
+    "-ch",
+    is_flag=True,
+    help="Show properties of child nodes 1 level down",
+)
 @click.pass_context
-def prop(ctx, compatible_id, prop, value, reboot):
+def prop(ctx, node_name, prop, value, reboot, compat, children):
     """Get and set device tree properties
 
     \b
-    COMPATIBLE_ID  - Value of compatible field of desired node
+    NODE_NAME      - Name of node to address
     PROP           - Name property to get/set
     VALUE          - Value to write to property of node
     """
@@ -88,17 +100,29 @@ def prop(ctx, compatible_id, prop, value, reboot):
         password=ctx.obj["password"],
         arch=ctx.obj["arch"],
     )
-    # List all compatible ids
-    if not compatible_id:
-        nodes = d._dt.search("compatible")
-        for node in nodes:
-            print(node.value)
+    # List all node names/compatible ids
+    if not node_name:
+        print("No node name provided. Options are:")
+        if compat:
+            nodes = d._dt.search("compatible")
+            for node in nodes:
+                print(node.value)
+        else:
+            nodes = d._dt.search("*")
+            for node in nodes:
+                print(node.value)
         return
 
-    nodes = d.get_node_by_compatible(compatible_id)
-    if len(nodes) == 0:
-        click.echo(f"No nodes found with compatible_id {compatible_id}")
-        return
+    if compat:
+        nodes = d.get_node_by_compatible(node_name)
+        if len(nodes) == 0:
+            click.echo(f"No nodes found with compatible_id {node_name}")
+            return
+    else:
+        nodes = d._dt.search(node_name)
+        if len(nodes) == 0:
+            click.echo(f"No nodes found with name {node_name}")
+            return
 
     # List all properties of node with compatible id
     if not value:
@@ -107,6 +131,11 @@ def prop(ctx, compatible_id, prop, value, reboot):
                 list_node_props(node, ctx.obj["no_color"])
             else:
                 list_node_prop(node, prop, ctx.obj["no_color"])
+            if children:
+                print("Children:")
+                if node.nodes:
+                    for n in node.nodes:
+                        list_node_props(n, ctx.obj["no_color"])
         return
 
     # Set property to value of node with compatible id

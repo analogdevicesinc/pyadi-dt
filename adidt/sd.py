@@ -65,6 +65,8 @@ class sd:
                                 show_choices=True,
                             )
                             dtbs = board_full + "/" + dtbs
+                    if isinstance(dtbs, list):
+                        dtbs = dtbs[0]
                     if not dtbs:
                         raise Exception(f"No device tree found for {board}")
 
