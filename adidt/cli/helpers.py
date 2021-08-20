@@ -39,6 +39,20 @@ def list_node_props(node, no_color):
     console.print(table)
 
 
+def list_node_subnodes(nodes, no_color):
+    if no_color:
+        print("\n--Child nodes")
+        for node in nodes:
+            print(node.name)
+        return
+
+    table = Table(title="Child Nodes")
+    table.add_column("Name", justify="left", style="cyan", no_wrap=True)
+    for snode in nodes:
+        table.add_row(snode.name)
+    console.print(table)
+
+
 def list_node_prop(node, prop, no_color):
     p = node.get_property(prop)
     if no_color:

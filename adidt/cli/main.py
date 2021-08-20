@@ -1,6 +1,6 @@
 import adidt
 import click
-from .helpers import list_node_props, list_node_prop
+from .helpers import list_node_props, list_node_prop, list_node_subnodes
 
 
 @click.group()
@@ -196,3 +196,96 @@ def sd_move(ctx, rd, reboot, show, dry_run):
             print("Board rebooting")
         else:
             click.echo(click.style("Board rebooting", bg="red", fg="black", bold=True))
+
+
+@cli.command()
+@click.argument("node_name", nargs=-1)
+@click.option(
+    "--compat",
+    "-cp",
+    is_flag=True,
+    help="Use node name to check against compatible id of node during search. This is only used for the first node",
+)
+@click.pass_context
+def prop2(ctx, node_name, reboot, compat):
+    """Get and set device tree properties
+
+    \b
+    NODE_NAME      - Name of node(s) to address
+    """
+    d = adidt.dt(
+        dt_source=ctx.obj["context"],
+        ip=ctx.obj["ip"],
+        username=ctx.obj["username"],
+        password=ctx.obj["password"],
+        arch=ctx.obj["arch"],
+    )
+    # List all node names/compatible ids
+    if not node_name:
+        print("No node name provided. Options are:")
+        if compat:
+            nodes = d._dt.search("compatible")
+            for node in nodes:
+                print(node.value)
+        else:
+            # List all node names
+            def print_node(node):
+                print(node.name)
+                if len(node.nodes) > 0:
+                    for n in node.nodes:
+                        print_node(n)
+
+            print_node(d._dt.root)
+        return
+
+    if compat:
+        parent = d.get_node_by_compatible(node_name[0])
+        if not parent:
+            raise Exception("No nodes found")
+
+        if len(parent) > 1:
+            print("Multiple nodes found, please pick 1\n")
+            for node in parent:
+                for prop in node.props:
+                    if prop.name == "compatible":
+                        print(prop.value, f"(Node name {node.name})")
+            return
+        parent = parent[0]
+
+    else:
+        parent = d._dt.search(node_name[0])
+        if not parent:
+            print(f"No nodes found with name {node_name[0]}")
+            return
+        parent = parent[0]
+
+    # Drill down through secondary node name inputs
+    node_name = node_name[1:]
+    num_nodes = len(node_name)
+    nodes = []
+    if num_nodes > 0:
+        done = False
+        for indx, name in enumerate(node_name):
+            found = False
+            for node in parent.nodes:
+                if name in node.name:
+                    found = True
+                    if indx == num_nodes - 1:
+                        parent = node
+                        nodes = parent.nodes
+                        done = True
+                        break
+                    else:
+                        parent = node
+                        break
+            if not found:
+                print(f"No node found with associated name {name}")
+                return
+            if done:
+                break
+    else:
+        nodes = parent.nodes
+
+    list_node_props(parent, ctx.obj["no_color"])
+    if nodes:
+        list_node_subnodes(nodes, ctx.obj["no_color"])
