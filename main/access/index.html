@@ -287,6 +287,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -303,8 +310,38 @@
   
   
     <li class="md-nav__item">
+      <a href="../parts/" class="md-nav__link">
+        Parts Layers
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../utils/" class="md-nav__link">
+        Utilities
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../cli/" class="md-nav__link">
-        CLI
+        CLI Reference
       </a>
     </li>
   
@@ -319,7 +356,7 @@
   
     <li class="md-nav__item">
       <a href="../ref/" class="md-nav__link">
-        Reference
+        Module Reference
       </a>
     </li>
   
@@ -357,6 +394,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#examples" class="md-nav__link">
+    Examples
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -375,13 +419,26 @@
                 
                 
                 <h1 id="access-models">Access Models</h1>
+<p><strong>adidt</strong> supports a number of different access models depending on where your device tree is located and how you want to apply changes. For example, the device tree can be directly read from the sysfs with <em>local_sysfs</em> and <em>remote_sysfs</em>. Remote calls will always utilize an SSH connect to access and run commands on remote systems. <strong>adidt</strong> does not support overlay loading at runtime (yet), so writes should be performed with <em>local_sd</em> or <em>remote_sd</em>. Note that the SD card management features are only supported on ADI platforms where the DT has a known location.</p>
 <h2 id="supported-modes">Supported modes</h2>
 <ul>
-<li><code>local_fs</code> - DT extracted from sysfs.</li>
+<li><code>local_sysfs</code> - DT extracted from sysfs.</li>
 <li><code>local_sd</code> - DT extracted from locally attach ADI SD card.</li>
-<li><code>remote_fs</code> - DT extracted from remote board sysfs.</li>
+<li><code>remote_sysfs</code> - DT extracted from remote board sysfs.</li>
 <li><code>remote_sd</code> - DT extracted from remote board with attached ADI SD card.</li>
 </ul>
+<h2 id="examples">Examples</h2>
+<p>Set the default TX LO of a AD9361 based system to 1 GHz remotely:</p>
+<pre><code class="language-bash">adidtc -i ad9361.local -c remote_sd props -cp adi,ad9361 adi,tx-synthesizer-frequency-hz 1000000000
+</code></pre>
+<p>Set the default TX LO of a AD9361 based system to 1 GHz from the board itself:</p>
+<pre><code class="language-bash">adidtc -c local_sd props -cp adi,ad9361 adi,tx-synthesizer-frequency-hz 1000000000
+</code></pre>
+<p>Get the default RX LO of a AD9361 based system:</p>
+<pre><code class="language-bash">adidtc -c local_sysfs props -cp adi,ad9361 adi,rx-synthesizer-frequency-hz
+
+2400000000
+</code></pre>
                 
               
               
@@ -417,13 +474,13 @@
       
       
         
-        <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: CLI" rel="next">
+        <a href="../parts/" class="md-footer__link md-footer__link--next" aria-label="Next: Parts Layers" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              CLI
+              Parts Layers
             </div>
           </div>
           <div class="md-footer__button md-icon">
