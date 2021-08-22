@@ -19,8 +19,10 @@ theme:
 nav:
     - Home: index.md
     - Access Models: access.md
-    - CLI: cli.md
-    - Reference: ref.md
+    - Parts Layers: parts.md
+    - Utilities: utils.md
+    - CLI Reference: cli.md
+    - Module Reference: ref.md
 
 repo_url: https://github.com/analogdevicesinc/pyadi-dt
 

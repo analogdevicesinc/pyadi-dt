@@ -4,3 +4,9 @@ Library and CLI for managing device trees with **Analog Devices** components. Th
 
 ![props command](media/props.gif)
 
+## Useful links
+
+- [Source](https://github.com/analogdeviceinc/pyadi-dt): GitHub repo
+- [Reporting bugs](https://github.com/analogdeviceinc/pyadi-dt/issues): GitHub issue tracker
+- [Support](https://ez.analog.com/sw-interface-tools/f/q-a): EngineerZone Software Interface Tools forum
+

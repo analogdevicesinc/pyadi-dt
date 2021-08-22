@@ -1,4 +1,4 @@
-# Reference
+# Module Reference
 
 ::: adidt
     rendering:
