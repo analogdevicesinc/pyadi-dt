@@ -207,7 +207,7 @@ def sd_move(ctx, rd, reboot, show, dry_run):
     help="Use node name to check against compatible id of node during search. This is only used for the first node",
 )
 @click.pass_context
-def prop2(ctx, node_name, reboot, compat):
+def props(ctx, node_name, compat):
     """Get and set device tree properties
 
     \b
