@@ -4,6 +4,17 @@ site_author: Analog Devices, Inc.
 
 theme:
   name: material
+  palette:
+    - scheme: default
+      primary: deep orange
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - scheme: slate
+      primary: deep orange
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
 
 nav:
     - Home: index.md

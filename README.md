@@ -2,6 +2,8 @@
 
 Device tree management tools for ADI hardware
 
+![props command](docs/media/props.gif)
+
 ## Quick install
 
 ```bash
