@@ -31,3 +31,10 @@ PLL
 [nN]ox
 [mM]ultiblock
 codecov
+sysfs
+remote_sysfs
+remote_sd
+SD
+local_sd
+local_sysfs
+stdin
