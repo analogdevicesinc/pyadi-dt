@@ -120,7 +120,7 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
             click.echo(f"No nodes found with compatible_id {node_name}")
             return
     else:
-        nodes = d._dt.search(node_name)
+        nodes = d._dt.search(node_name,itype=fdt.ItemType.NODE)
         if len(nodes) == 0:
             click.echo(f"No nodes found with name {node_name}")
             return
@@ -143,7 +143,19 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
     for node in nodes:
         for p in node.props:
             if p.name == prop:
-                node.set_property(prop, value)
+                isstring = isinstance(p,fdt.items.PropStrings)
+                if "," in value:
+                    vals = value.split(",")
+                    if ~isstring:
+                        vals = [int(v) for v in vals]
+                        node.set_property(prop,vals)
+                    else:
+                        node.set_property(prop,vals)
+                else:
+                    if ~isstring:
+                        node.set_property(prop, int(value))
+                    else:
+                        node.set_property(prop, value)
                 d.update_current_dt(reboot=reboot)
                 return
     click.echo(f"ERROR: No property found {prop}")
