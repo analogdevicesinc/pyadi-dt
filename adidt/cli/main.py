@@ -1,4 +1,5 @@
 import adidt
+import fdt
 import click
 from .helpers import list_node_props, list_node_prop, list_node_subnodes
 
@@ -253,7 +254,7 @@ def props(ctx, node_name, compat):
         parent = parent[0]
 
     else:
-        parent = d._dt.search(node_name[0])
+        parent = d._dt.search(node_name[0],itype=fdt.ItemType.NODE)
         if not parent:
             print(f"No nodes found with name {node_name[0]}")
             return
