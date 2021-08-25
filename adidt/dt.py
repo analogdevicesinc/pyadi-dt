@@ -1,6 +1,6 @@
 """Device tree interface class."""
 import fdt
-from fabric import Connection
+from fabric import Connection, Config
 import random
 import string
 import os.path
