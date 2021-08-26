@@ -1,5 +1,9 @@
 # pyadi-dt
 
+<a href="http://tfcollins.github.io/pyadi-jif/">
+<img alt="GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg">
+</a>
+
 Device tree management tools for ADI hardware
 
 ![props command](docs/media/props.gif)
