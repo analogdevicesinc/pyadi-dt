@@ -1,6 +1,6 @@
 # pyadi-dt
 
-<a href="http://tfcollins.github.io/pyadi-jif/">
+<a href="http://tfcollins.github.io/pyadi-dt/">
 <img alt="GitHub Pages" src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg">
 </a>
 
