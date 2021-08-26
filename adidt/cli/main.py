@@ -346,3 +346,47 @@ def props(ctx, node_name, compat, reboot, prop, value):
             d.update_current_dt(reboot=reboot)
             return
     click.echo(f"ERROR: No property found {prop}")
+
+
+@cli.command()
+@click.argument(
+    "node_type",
+    required=True,
+    type=click.Choice(["clock", "converter", "system", "fpga"]),
+)
+@click.option(
+    "--reboot",
+    "-r",
+    is_flag=True,
+    help="Reboot boards after successful write",
+)
+@click.option(
+    "--filename",
+    "-f",
+    default=None,
+    help="Name of json file to import with JIF config",
+    type=click.Path(exists=True),
+)
+@click.pass_context
+def jif(ctx, node_type, reboot, filename):
+    """JIF supported updates of DT
+
+    \b
+    NODE_TYPE      - Type of device the configuration is to address
+    """
+    if node_type == "clock":
+        d = adidt.clock(
+            dt_source=ctx.obj["context"],
+            ip=ctx.obj["ip"],
+            username=ctx.obj["username"],
+            password=ctx.obj["password"],
+            arch=ctx.obj["arch"],
+        )
+        import json
+
+        with open(filename, "r") as file:
+            cfg = json.load(file)
+        d.set(cfg["clock"]["part"], cfg["clock"], append=True)
+        d.update_current_dt(reboot=reboot)
+    else:
+        raise Exception("Other node types not implemented")
