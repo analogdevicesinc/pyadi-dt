@@ -18,15 +18,40 @@ This example updates the device tree of a DAQ2 board to set the sample rate of t
 
 ```bash
 $ cat ad9523_1_jif.json
-{'compatible': 'adi,ad9523-1',
- 'm1': 3.0,
- 'n2': 24,
- 'out_dividers': [1.0, 2.0, 128.0],
- 'output_clocks': {'ADC': {'divider': 1.0, 'rate': 1000000000.0},
-                   'FPGA': {'divider': 2.0, 'rate': 500000000.0},
-                   'SYSREF': {'divider': 128.0, 'rate': 7812500.0}},
- 'r2': 1.0,
- 'vcxo': 125000000.0}
+{
+    "clock": {
+        "m1": 3,
+        "n2": 24,
+        "r2": 1,
+        "out_dividers": [
+            2,
+            128,
+            8
+        ],
+        "output_clocks": {
+            "ADC_CLK_FMC": {
+                "rate": 125000000.0,
+                "divider": 8
+            },
+            "ADC_CLK": {
+                "rate": 500000000.0,
+                "divider": 2
+            },
+            "CLKD_ADC_SYSREF": {
+                "rate": 7812500.0,
+                "divider": 128
+            },
+            "ADC_SYSREF": {
+                "rate": 7812500.0,
+                "divider": 128
+            }
+        },
+        "vcxo": 125000000.0,
+        "vco": 1000000000.0,
+        "part": "AD9523-1"
+    },
+}
 
-$ adidtc -i daq2.local -c remote_sd prop -j ad9523_1_jif.json -r
+
+$ adidtc -i daq2.local -c remote_sd jif clock -f ad9523_1_jif.json
 ```
