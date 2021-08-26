@@ -14,7 +14,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.4">
+      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
     
     
       
@@ -22,7 +22,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.f7f47774.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.be71726b.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -421,6 +421,43 @@
 </tr>
 </tbody>
 </table>
+<h2 id="jif">jif</h2>
+<p>JIF supported updates of DT</p>
+<p>NODE_TYPE      - Type of device the configuration is to address</p>
+<p><strong>Usage:</strong></p>
+<pre><code>adidtc jif [OPTIONS] {clock|converter|system|fpga}
+</code></pre>
+<p><strong>Options:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+<th>Description</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--reboot</code>, <code>-r</code></td>
+<td>boolean</td>
+<td>Reboot boards after successful write</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--filename</code>, <code>-f</code></td>
+<td>path</td>
+<td>Name of json file to import with JIF config</td>
+<td><em>required</em></td>
+</tr>
+<tr>
+<td><code>--help</code></td>
+<td>boolean</td>
+<td>Show this message and exit.</td>
+<td><code>False</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="prop">prop</h2>
 <p>Get and set device tree properties</p>
 <p>NODE_NAME      - Name of node to address
@@ -488,6 +525,24 @@ VALUE          - Value to write to property of node</p>
 <td>boolean</td>
 <td>Use node name to check against compatible id of node during search. This is only used for the first node</td>
 <td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--reboot</code>, <code>-r</code></td>
+<td>boolean</td>
+<td>Reboot boards after successful write</td>
+<td><code>False</code></td>
+</tr>
+<tr>
+<td><code>--prop</code>, <code>-p</code></td>
+<td>text</td>
+<td>Property of node to read to set</td>
+<td><em>required</em></td>
+</tr>
+<tr>
+<td><code>--value</code>, <code>-v</code></td>
+<td>text</td>
+<td>Value to set property to</td>
+<td><em>required</em></td>
 </tr>
 <tr>
 <td><code>--help</code></td>
@@ -610,10 +665,10 @@ VALUE          - Value to write to property of node</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.709b4209.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.409db549.min.js", "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.febc23d1.min.js"></script>
+      <script src="../assets/javascripts/bundle.56a63758.min.js"></script>
       
     
   </body>
