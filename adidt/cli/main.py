@@ -120,7 +120,7 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
             click.echo(f"No nodes found with compatible_id {node_name}")
             return
     else:
-        nodes = d._dt.search(node_name,itype=fdt.ItemType.NODE)
+        nodes = d._dt.search(node_name, itype=fdt.ItemType.NODE)
         if len(nodes) == 0:
             click.echo(f"No nodes found with name {node_name}")
             return
@@ -143,14 +143,14 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
     for node in nodes:
         for p in node.props:
             if p.name == prop:
-                isstring = isinstance(p,fdt.items.PropStrings)
+                isstring = isinstance(p, fdt.items.PropStrings)
                 if "," in value:
                     vals = value.split(",")
                     if ~isstring:
                         vals = [int(v) for v in vals]
-                        node.set_property(prop,vals)
+                        node.set_property(prop, vals)
                     else:
-                        node.set_property(prop,vals)
+                        node.set_property(prop, vals)
                 else:
                     if ~isstring:
                         node.set_property(prop, int(value))
@@ -219,8 +219,26 @@ def sd_move(ctx, rd, reboot, show, dry_run):
     is_flag=True,
     help="Use node name to check against compatible id of node during search. This is only used for the first node",
 )
+@click.option(
+    "--reboot",
+    "-r",
+    is_flag=True,
+    help="Reboot boards after successful write",
+)
+@click.option(
+    "--prop",
+    "-p",
+    default=None,
+    help="Property of node to read to set",
+)
+@click.option(
+    "--value",
+    "-v",
+    default=None,
+    help="Value to set property to",
+)
 @click.pass_context
-def props(ctx, node_name, compat):
+def props(ctx, node_name, compat, reboot, prop, value):
     """Get and set device tree properties
 
     \b
@@ -266,7 +284,7 @@ def props(ctx, node_name, compat):
         parent = parent[0]
 
     else:
-        parent = d._dt.search(node_name[0],itype=fdt.ItemType.NODE)
+        parent = d._dt.search(node_name[0], itype=fdt.ItemType.NODE)
         if not parent:
             print(f"No nodes found with name {node_name[0]}")
             return
@@ -299,6 +317,32 @@ def props(ctx, node_name, compat):
     else:
         nodes = parent.nodes
 
-    list_node_props(parent, ctx.obj["no_color"])
-    if nodes:
-        list_node_subnodes(nodes, ctx.obj["no_color"])
+    if not prop:
+        list_node_props(parent, ctx.obj["no_color"])
+        if nodes:
+            list_node_subnodes(nodes, ctx.obj["no_color"])
+        return
+
+    if not value:
+        list_node_prop(parent, prop, ctx.obj["no_color"])
+        return
+
+    # Set property to value of node
+    for p in parent.props:
+        if p.name == prop:
+            isstring = isinstance(p, fdt.items.PropStrings)
+            if "," in value:
+                vals = value.split(",")
+                if ~isstring:
+                    vals = [int(v) for v in vals]
+                    parent.set_property(prop, vals)
+                else:
+                    parent.set_property(prop, vals)
+            else:
+                if ~isstring:
+                    parent.set_property(prop, int(value))
+                else:
+                    parent.set_property(prop, value)
+            d.update_current_dt(reboot=reboot)
+            return
+    click.echo(f"ERROR: No property found {prop}")
