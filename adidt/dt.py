@@ -27,7 +27,7 @@ class dt(sd):
 
     def __init__(
         self,
-        arch="arm",
+        arch="auto",
         dt_source="local_sysfs",
         ip="192.168.2.1",
         username="root",
@@ -227,7 +227,10 @@ class dt(sd):
 
     def update_current_dt(self, reboot=False):
         if self.dt_source == "remote_sd":
-            self._update_sd(reboot=reboot)
+            try:
+                self._update_sd(reboot=reboot)
+            except Exception as ex:
+                print(ex)
         else:
             raise Exception("Updating only works on remote_sd right now")
 

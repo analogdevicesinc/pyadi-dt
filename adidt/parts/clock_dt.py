@@ -41,7 +41,9 @@ class clock_dt:
             self.setter(node, pts, val)
 
     def set_vcxo(self, node, vcxo):
-        node.set_property("adi,vcxo-frequency", vcxo)
+        if math.trunc(vcxo) != vcxo:
+            raise Exception("Floats not supported")
+        node.set_property("adi,vcxo-frequency", int(vcxo))
 
     def get_prop_across_nodes(self, node, prop):
         return [sn.get_property(prop).value for sn in node.nodes]

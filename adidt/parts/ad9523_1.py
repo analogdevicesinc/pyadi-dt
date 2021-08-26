@@ -26,7 +26,7 @@ class ad9523_1_dt(clock_dt):
         p2f = c["divider"] * c["rate"]
         if math.trunc(p2f) != p2f:
             raise Exception("Floats not supported")
-        self.handle_64bit("adi,pll2-output-frequency", node, int(p2f))
+        self.handle_64bit("adi,pll2-m1-freq", node, int(p2f))
 
         # Output divider sets
         existing_names = self.get_prop_across_nodes(node, "adi,extended-name")

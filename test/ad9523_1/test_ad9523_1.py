@@ -22,8 +22,35 @@ def test_ad9523_1_add_nodes():
         "vcxo": 125000000,
     }
 
-    d.set("AD9523-1",config)
+    config2 = {
+        "clock": {
+            "m1": 4,
+            "n2": 24,
+            "out_dividers": [1, 900, 4],
+            "output_clocks": {
+                "AD9680_fpga_ref_clk": {"divider": 4, "rate": 187500000.0},
+                "AD9680_ref_clk": {"divider": 1, "rate": 750000000.0},
+                "AD9680_sysref": {"divider": 900, "rate": 833333.3333333334},
+            },
+            "part": "AD9523-1",
+            "r2": 1,
+            "vco": 750000000.0,
+            "vcxo": 125000000.0,
+        },
+        "converter": {"clocking_option": "direct"},
+        "fpga_AD9680": {
+            "d": 1,
+            "m": 1,
+            "n1": 5,
+            "n2": 4,
+            "type": "cpll",
+            "vco": 3750000000.0,
+        },
+    }
 
+    d.set(config2['clock']['part'], config2['clock'])
+
+    config = config2['clock']
 
     # Checks
     node = d.get_node_by_compatible("adi,ad9523-1")
@@ -36,7 +63,7 @@ def test_ad9523_1_add_nodes():
 
     d.write_out_dts("test_out.dts")
 
-    divs = [config['output_clocks'][oc]['divider']  for oc in config['output_clocks']]
+    divs = [config["output_clocks"][oc]["divider"] for oc in config["output_clocks"]]
     k = 0
     for n in node.nodes:
         if n.get_property("adi,extended-name").value in list(
