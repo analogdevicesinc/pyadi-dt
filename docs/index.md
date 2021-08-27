@@ -12,7 +12,7 @@ pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
 
 ## Useful links
 
-- [Source](https://github.com/analogdeviceinc/pyadi-dt): GitHub repo
-- [Reporting bugs](https://github.com/analogdeviceinc/pyadi-dt/issues): GitHub issue tracker
+- [Source](https://github.com/analogdevicesinc/pyadi-dt): GitHub repo
+- [Reporting bugs](https://github.com/analogdevicesinc/pyadi-dt/issues): GitHub issue tracker
 - [Support](https://ez.analog.com/sw-interface-tools/f/q-a): EngineerZone Software Interface Tools forum
 
