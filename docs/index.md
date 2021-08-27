@@ -1,6 +1,12 @@
 # ADI Device Tree Utilities
 
-Library and CLI for managing device trees with **Analog Devices** components. This include data converters, clock chips, amplifiers, and many others.
+Library and CLI for managing device trees with **Analog Devices** components. This includes data converters, clock chips, amplifiers, and many others.
+
+Installation from the latest source can be done through pip on Windows/Linux/macOS:
+```bash
+pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
+```
+
 
 ![props command](media/props.gif)
 
