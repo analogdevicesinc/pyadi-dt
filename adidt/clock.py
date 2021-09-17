@@ -3,7 +3,7 @@ import adidt.parts as parts
 
 
 class clock(dt):
-    supported_parts = ["HMC7044", "AD9523-1"]
+    supported_parts = ["HMC7044", "AD9523-1", "AD9545"]
 
     def _to_class_naming(self, name):
         return name.lower().replace("-", "_")
