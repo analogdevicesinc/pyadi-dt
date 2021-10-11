@@ -13,7 +13,11 @@ def test_ad9545_add_nodes():
             'PLL0': {
                     'n0_profile_0': 1228800000.0,
                     'n0_profile_2': 6144.0,
-                    'rate_hz': 1228800000.0
+                    'rate_hz': 1228800000.0,
+					'priority_source_0': 5,
+					'priority_source_2': 15,
+					'priority_source_4': 25,
+
                 },
                 'q0': 40.0,
                 'r0': 1.0,
@@ -71,6 +75,28 @@ def test_ad9545_add_nodes():
                 break
 
         assert PLL_clock_found
+
+    # check PLL reference priorities
+    for i in range(0, 2):
+        pll_name = "PLL" + str(i)
+        if pll_name not in config:
+            continue
+
+        pll_node = node.get_subnode("pll-clk@" + str(i))
+        if pll_node is None:
+            continue
+
+        for j in range(0, 6):
+            pll_profile_node = pll_node.get_subnode("profile@" + str(j))
+            if pll_profile_node is None:
+                continue;
+
+            adi_pll_source_nr = list(pll_profile_node.get_property("adi,pll-source"))[0]
+
+            if ("priority_source_" + str(adi_pll_source_nr)) in config[pll_name]:
+                priority = config[pll_name]["priority_source_" + str(adi_pll_source_nr)]
+                read_priority = list(pll_profile_node.get_property("adi,profile-priority"))[0]
+                assert priority == read_priority
 
     # Check output rates
     for i in range(0, 10):
