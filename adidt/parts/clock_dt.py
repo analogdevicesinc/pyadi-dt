@@ -54,3 +54,40 @@ class clock_dt:
                 if prop.value == value:
                     return sn
         return False
+
+    """ Get nodes that are pointed at by the phandles in "clocks" CCF property
+
+    Args:
+        node (fdt.Node): Device tree node of a clock
+
+    Returns:
+        A list containing all nodes refered to in the "clocks" phandle array
+    """
+    def get_used_clocks(self, node):
+        used_clocks = []
+        clocks_prop = node.get_property("clocks")
+        if clocks_prop is not None:
+            clocks_val = list(clocks_prop)
+
+            # first value in "clocks" property is a phandle
+            # next phandle is located after "#clock-cells"+1 positions
+            for i in range(0, len(clocks_val)):
+                clock_phandle = clocks_val[i]
+                phandle_props = self._dt.search("phandle")
+
+                clock = None
+                for phandle_prop in phandle_props:
+                    if phandle_prop[0] == clock_phandle:
+                        clock = phandle_prop.parent
+
+                if clock is None:
+                    continue
+
+                clock_cells = clock.get_property("#clock-cells")
+                if clock_cells is None:
+                    continue
+
+                used_clocks.append(clock)
+                i += clock_cells[0] + 1
+
+        return used_clocks

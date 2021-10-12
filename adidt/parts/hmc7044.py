@@ -3,8 +3,9 @@ from adidt.dt import dt
 import fdt
 import math
 
+from adidt.parts.clock_dt import clock_dt
 
-class hmc7044_dt(dt):
+class hmc7044_dt(dt, clock_dt):
     """HMC7044 Device tree map class."""
 
     def set_clock_node(self, parent, clk, name, reg):
@@ -29,6 +30,27 @@ class hmc7044_dt(dt):
         # Set VCXO
         vcxo = config["vcxo"]
         node.set_property("adi,vcxo-frequency", vcxo)
+
+        # Set input reference frequencies
+        if "reference_frequencies" in clock:
+            ref_freqs_prop_name = "adi,pll1-clkin-frequencies"
+            ref_freqs_prop = node.get_property(ref_freqs_prop_name)
+            if ref_freqs_prop is None:
+                raise Exception(ref_freqs_prop_name + " property not in DT.")
+
+            node.set_property(ref_freqs_prop_name, clock["reference_frequencies"])
+
+            # Set same frequencies to dummy input clocks too
+            used_clocks = self.get_used_clocks(node)
+            i = 0
+            for used_clock in used_clocks:
+                compat_prop = used_clock.get_property("compatible")
+                if compat_prop.value != "fixed-clock":
+                    i += 1
+                    continue
+
+                used_clock.set_property("clock-frequency", clock["reference_frequencies"][i])
+                i += 1
 
         # Set reference selection priorities
         if ("reference_selection_order" in clock):
