@@ -66,6 +66,27 @@ class ad9545_dt(dt):
         for assigned_rate in assigned_clock_rates:
             assigned_clock_rates_prop.append(int(assigned_rate))
 
+    def set_source_priorities_from_config(self, node: fdt.Node, config: Dict):
+        for i in range(0, 2):
+            pll_name = "PLL" + str(i)
+            if pll_name not in config:
+                continue
+
+            pll_node = node.get_subnode("pll-clk@" + str(i))
+            if pll_node is None:
+                continue
+
+            for j in range(0, 6):
+                pll_profile_node = pll_node.get_subnode("profile@" + str(j))
+                if pll_profile_node is None:
+                    continue;
+
+                adi_pll_source_nr = list(pll_profile_node.get_property("adi,pll-source"))[0]
+
+                if ("priority_source_" + str(adi_pll_source_nr)) in config[pll_name]:
+                    new_priority = config[pll_name]["priority_source_" + str(adi_pll_source_nr)]
+                    pll_profile_node.set_property("adi,profile-priority", new_priority)
+
     def set_dt_node_from_config(self, node: fdt.Node, config: Dict, append=False):
         """Set AD9545 node from JIF configuration
 
@@ -99,6 +120,9 @@ class ad9545_dt(dt):
             if "rate_hz" in pll_dict:
                 self.pll_set_rate(i, pll_dict["rate_hz"], node)
                 PLL_rates[i] = pll_dict["rate_hz"]
+
+        #set PLL sources priorities
+        self.set_source_priorities_from_config(node, config)
 
         #set output rates
         for i in range(0, 10):
