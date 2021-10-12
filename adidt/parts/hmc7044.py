@@ -29,6 +29,20 @@ class hmc7044_dt(dt):
         # Set VCXO
         vcxo = config["vcxo"]
         node.set_property("adi,vcxo-frequency", vcxo)
+
+        # Set reference selection priorities
+        if ("reference_selection_order" in clock):
+            ref_order_val = 0
+            priority = 0
+            # MSB (Fourth priority input [1:0]) .... (First priority input [1:0]) LSB
+            for ref_nr in clock["reference_selection_order"]:
+                if (ref_nr > 4):
+                    raise Exception("Refernce number:" + str(ref_nr) + " invalid.")
+                ref_order_val |= (ref_nr << (priority * 2))
+                priority += 1
+
+            node.set_property("adi,pll1-ref-prio-ctrl", ref_order_val)
+
         # Set PLL frequency using one of the output clocks
         k1 = list(clock["output_clocks"].keys())
         c = clock["output_clocks"][k1[0]]
