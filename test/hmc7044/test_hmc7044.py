@@ -11,6 +11,7 @@ def test_hmc7044_add_nodes():
     d = dt.hmc7044_dt(dt_source="local_file", local_dt_filepath=dtb)
 
     clock = {
+        "reference_frequencies" : [38400000, 38400000, 38400000, 38400000],
         "reference_selection_order" : [0, 3, 2, 1],
         "n2": 24,
         "out_dividers": [3, 6, 384],
@@ -46,6 +47,28 @@ def test_hmc7044_add_nodes():
             priority += 1
 
         assert ref_order == clock["reference_selection_order"]
+
+    # Check input referece frequencies
+    if "reference_frequencies" in clock:
+        ref_freqs_prop_name = "adi,pll1-clkin-frequencies"
+        ref_freqs_prop = node.get_property(ref_freqs_prop_name)
+        if ref_freqs_prop is None:
+            raise Exception(ref_freqs_prop_name + " property not in DT.")
+
+        assert list(ref_freqs_prop) == clock["reference_frequencies"]
+
+        # Check if same frequencies are set to dummy input clocks
+        used_clocks = d.get_used_clocks(node)
+        i = 0
+        for used_clock in used_clocks:
+            compat_prop = used_clock.get_property("compatible")
+            if compat_prop.value != "fixed-clock":
+                i += 1
+                continue
+
+            clock_freq = used_clock.get_property("clock-frequency")
+            assert clock["reference_frequencies"][i] == clock_freq.value
+            i += 1
 
     divs = [clock['output_clocks'][oc]['divider']  for oc in clock['output_clocks']]
     for n in node.nodes:
