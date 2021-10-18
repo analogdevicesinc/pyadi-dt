@@ -44,12 +44,25 @@ class sd:
                 if reference_design == board:
 
                     # Move BOOT.BIN
-                    if self._runr(f"test -f {board_full}/BOOT.BIN") != 0:
-                        raise Exception(f"BOOT.BIN not found on SD card for {board}")
+                    if self._runr(f"test -f {board_full}/BOOT.BIN", warn=True) != 0:
+                        subfolders = self.find(board_full, ".BIN")
+                        if not subfolders:
+                            raise Exception(
+                                f"BOOT.BIN not found on SD card for {board}"
+                            )
+                        subfolders = ["/".join(f.split("/")[4:]) for f in subfolders]
+                        bootbin = click.prompt(
+                            "Subfolder found. Select BOOT.BIN:",
+                            type=click.Choice(subfolders, case_sensitive=False),
+                            show_choices=True,
+                        )
+                        bootbin = board_full + "/" + bootbin
+                    else:
+                        bootbin = f"{board_full}/BOOT.BIN"
                     if show:
-                        print(f"cp {board_full}/BOOT.BIN {folder}/")
+                        print(f"cp {bootbin} {folder}/")
                     if not dryrun:
-                        self._runr(f"cp {board_full}/BOOT.BIN {folder}")
+                        self._runr(f"cp {bootbin} {folder}")
 
                     # Device tree
                     dtbs = self.list(board_full, "dtb")
