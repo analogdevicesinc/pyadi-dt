@@ -4,3 +4,4 @@ fabric
 rich
 numpy
 pytest
+xmltodict

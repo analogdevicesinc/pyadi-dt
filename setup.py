@@ -6,7 +6,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     py_modules=["adidt"],
-    install_requires=["Click", "fdt", "fabric", "rich", "numpy"],
+    install_requires=["Click", "fdt", "fabric", "rich", "numpy", "xmltodict"],
     entry_points={
         "console_scripts": [
             "adidtc = adidt.cli.main:cli",
