@@ -10,7 +10,7 @@ def test_adrv9009_profile_writez():
     loc = os.path.dirname(__file__)
     dtb = os.path.join(loc, "adrv9009_ad9528.dtb")
 
-    d = dt.adrv9009_dt(dt_source="local_file", local_dt_filepath=dtb)
+    d = dt.adrv9009_dt(dt_source="local_file", local_dt_filepath=dtb, arch="arm64")
 
     loc = os.path.dirname(__file__)
     profile = os.path.join(
@@ -18,10 +18,10 @@ def test_adrv9009_profile_writez():
     )
     dprofile = d.parse_profile(profile)
 
-    # import pprint
-    # dprofile = dict(dprofile)
-    # pprint.pprint(dprofile)
-    # pprint.pprint(dprofile['profile']['rx']['filter']['@gain_dB'])
+    import pprint
+    dprofile = dict(dprofile)
+    pprint.pprint(dprofile)
+    pprint.pprint(dprofile['profile']['rx']['filter']['@gain_dB'])
 
     node = d.get_node_by_compatible("adrv9009")
     # for n in node:
