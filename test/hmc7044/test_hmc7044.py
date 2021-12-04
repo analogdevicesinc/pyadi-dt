@@ -8,7 +8,7 @@ def test_hmc7044_add_nodes():
     loc = os.path.dirname(__file__)
     dtb = os.path.join(loc, "ad9081_hmc7044.dtb")
 
-    d = dt.hmc7044_dt(dt_source="local_file", local_dt_filepath=dtb)
+    d = dt.hmc7044_dt(dt_source="local_file", local_dt_filepath=dtb, arch="arm64")
 
     clock = {
         "reference_frequencies" : [38400000, 38400000, 38400000, 38400000],

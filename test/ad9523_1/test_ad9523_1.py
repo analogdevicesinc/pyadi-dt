@@ -8,7 +8,7 @@ def test_ad9523_1_add_nodes():
     loc = os.path.dirname(__file__)
     dtb = os.path.join(loc, "daq2_ad9523_1_zcu102.dtb")
 
-    d = dt.clock(dt_source="local_file", local_dt_filepath=dtb)
+    d = dt.clock(dt_source="local_file", local_dt_filepath=dtb, arch="arm64")
 
     config = {
         "n2": 24,
