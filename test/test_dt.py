@@ -8,7 +8,7 @@ loc = os.path.dirname(__file__)
 
 def test_dt_local_file_import():
     dtb = os.path.join(loc, "devicetree.dtb")
-    d = adidt.dt(dt_source="local_file", local_dt_filepath=dtb)
+    d = adidt.dt(dt_source="local_file", local_dt_filepath=dtb, arch="arm")
 
 
 def test_dt_remote_sysfs(ip):

@@ -1,0 +1,6 @@
+Click
+fdt
+fabric
+rich
+numpy
+pytest

@@ -212,6 +212,57 @@ def sd_move(ctx, rd, reboot, show, dry_run):
 
 
 @cli.command()
+@click.argument("files", required=False)
+@click.option(
+    "--reboot",
+    "-r",
+    is_flag=True,
+    help="Reboot boards after successful write",
+)
+@click.option(
+    "--show",
+    "-s",
+    is_flag=True,
+    help="Print commands as run",
+)
+@click.option(
+    "--dry-run",
+    "-d",
+    is_flag=True,
+    help="Dryrun, do not run commands",
+)
+@click.pass_context
+def sd_remote_copy(ctx, files, reboot, show, dry_run):
+    """Copy local boot files to remote existing SD card
+
+    \b
+    FILES  - List of files to copy (comma separated)
+    """
+    if ctx.obj["context"] in ["remote_sysfs", "local_file", "local_sysfs"]:
+        s = f"ERROR: {ctx.obj['context']} context does not apply for sd-move"
+        if ctx.obj["no_color"]:
+            print(s)
+        else:
+            click.echo(click.style(s, fg="red"))
+        return
+    d = adidt.dt(
+        dt_source=ctx.obj["context"],
+        ip=ctx.obj["ip"],
+        username=ctx.obj["username"],
+        password=ctx.obj["password"],
+        arch=ctx.obj["arch"],
+    )
+    file_list = files.split(",")
+    d.copy_local_files_to_remote_sd_card(file_list, show=show, dryrun=dry_run)
+    if reboot and not dry_run:
+        d._runr(f"reboot", warn=True)
+        if ctx.obj["no_color"]:
+            print("Board rebooting")
+        else:
+            click.echo(click.style("Board rebooting", bg="red", fg="black", bold=True))
+
+
+@cli.command()
 @click.argument("node_name", nargs=-1)
 @click.option(
     "--compat",

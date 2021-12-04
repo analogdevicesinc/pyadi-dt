@@ -1,6 +1,8 @@
 """ADI SD Card Manipulation Utilies"""
 import click
+import os
 
+from typing import List
 
 class sd:
     def find(self, loc, ext=None):
@@ -18,6 +20,24 @@ class sd:
             out = self._runr_o(f"for i in {loc}/*; do echo $i; done", warn=True)
         out = out.stdout.split("\n")
         return list(filter(lambda c: "*" not in c and c != "", out))
+
+    def copy_local_files_to_remote_sd_card(self, files: List[str], show=False, dryrun=False):
+        # Check if local files exist
+        for f in files:
+            if not os.path.exists(f):
+                raise Exception(f"File {f} does not exist")
+        # Mount remote SD
+        folder = self._handle_sd_mount()
+        try:
+            self._hide = True
+            for file in files:
+                if show:
+                    print(f"scp {file} {folder}/")
+                if not dryrun:
+                    self._con.put(file, remote=folder+"/")
+        finally:
+            self._runr(f"umount /dev/mmcblk0p1")
+            self._runr(f"rm -rf {folder}")
 
     def update_existing_boot_files(self, reference_design, show=False, dryrun=False):
         # Mount remote SD
@@ -44,12 +64,25 @@ class sd:
                 if reference_design == board:
 
                     # Move BOOT.BIN
-                    if self._runr(f"test -f {board_full}/BOOT.BIN") != 0:
-                        raise Exception(f"BOOT.BIN not found on SD card for {board}")
+                    if self._runr(f"test -f {board_full}/BOOT.BIN", warn=True) != 0:
+                        subfolders = self.find(board_full, ".BIN")
+                        if not subfolders:
+                            raise Exception(
+                                f"BOOT.BIN not found on SD card for {board}"
+                            )
+                        subfolders = ["/".join(f.split("/")[4:]) for f in subfolders]
+                        bootbin = click.prompt(
+                            "Subfolder found. Select BOOT.BIN:",
+                            type=click.Choice(subfolders, case_sensitive=False),
+                            show_choices=True,
+                        )
+                        bootbin = board_full + "/" + bootbin
+                    else:
+                        bootbin = f"{board_full}/BOOT.BIN"
                     if show:
-                        print(f"cp {board_full}/BOOT.BIN {folder}/")
+                        print(f"cp {bootbin} {folder}/")
                     if not dryrun:
-                        self._runr(f"cp {board_full}/BOOT.BIN {folder}")
+                        self._runr(f"cp {bootbin} {folder}")
 
                     # Device tree
                     dtbs = self.list(board_full, "dtb")
