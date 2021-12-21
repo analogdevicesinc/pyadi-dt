@@ -71,7 +71,8 @@ class clock_dt:
 
             # first value in "clocks" property is a phandle
             # next phandle is located after "#clock-cells"+1 positions
-            for i in range(0, len(clocks_val)):
+            i = 0
+            while (i < len(clocks_val)):
                 clock_phandle = clocks_val[i]
                 phandle_props = self._dt.search("phandle")
 
