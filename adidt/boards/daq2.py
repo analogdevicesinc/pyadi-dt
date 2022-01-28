@@ -1,41 +1,5 @@
-from jinja2 import Environment, FileSystemLoader
-import os
 
-
-class layout:
-    includes = [""]
-
-    template_filename = None
-    output_filename = None
-
-    def gen_dt(self, **kwargs):
-
-        if not self.template_filename:
-            raise Exception("No template file specified")
-
-        if not self.output_filename:
-            raise Exception("No output file specified")
-
-        # Import template
-        loc = os.path.dirname(__file__)
-        loc = os.path.join(loc, "..", "templates")
-        file_loader = FileSystemLoader(loc)
-        env = Environment(loader=file_loader)
-
-        loc = os.path.join(self.template_filename)
-        template = env.get_template(loc)
-        # output = template.render(clock=clock, adc=adc, dac=dac)
-        output = template.render(**kwargs)
-
-        with open(self.output_filename, "w") as f:
-            f.write(output)
-
-
-    def map_jesd_subclass(self, name):
-        modes = ["jesd204a", "jesd204b", "jesd204c"]
-        if name not in modes:
-            raise Exception("JESD Subclass {} not supported".format(name))
-        return modes.index(name)
+from .layout import layout
 
 
 class daq2(layout):
@@ -66,17 +30,17 @@ class daq2(layout):
             dac["jesd"]["jesd_class"]
         )
 
-        adc["jesd"] = self.make_ints(adc["jesd"],['converter_clock','sample_clock'])
-        dac["jesd"] = self.make_ints(dac["jesd"],['converter_clock','sample_clock'])
+        adc["jesd"] = self.make_ints(adc["jesd"], ["converter_clock", "sample_clock"])
+        dac["jesd"] = self.make_ints(dac["jesd"], ["converter_clock", "sample_clock"])
 
         return adc, dac
 
     def map_clocks_to_board_layout(self, cfg):
 
         # Fix ups
-        for key in ['vco','vcxo']:
-            if cfg['clock'][key].is_integer():
-                cfg['clock'][key] = int(cfg['clock'][key])
+        for key in ["vco", "vcxo"]:
+            if cfg["clock"][key].is_integer():
+                cfg["clock"][key] = int(cfg["clock"][key])
 
         map = {}
         clk = cfg["clock"]["output_clocks"]
@@ -113,8 +77,8 @@ class daq2(layout):
             "source_port": 7,
             "divider": clk["AD9144_sysref"]["divider"],
         }
-        
-        ccfg = {'map': map, 'clock': cfg["clock"]}
+
+        ccfg = {"map": map, "clock": cfg["clock"]}
 
         # Check all clocks are mapped
         # FIXME
@@ -125,4 +89,3 @@ class daq2(layout):
         adc, dac = self.map_jesd_structs(cfg)
 
         return ccfg, adc, dac
-
