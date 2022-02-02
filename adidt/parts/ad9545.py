@@ -124,6 +124,53 @@ class ad9545_dt(dt):
         #set PLL sources priorities
         self.set_source_priorities_from_config(node, config)
 
+        # Add/remove hitless mode from DT per PLL
+        for i in range(0, 2):
+            if "PLL" + str(i) not in config:
+                continue
+
+            pll_dict = config["PLL" + str(i)]
+            hitless_enable = ("hitless" in pll_dict)
+            pll_node = node.get_subnode("pll-clk@" + str(i))
+
+            if hitless_enable:
+                hitless_dict = pll_dict["hitless"]
+                fb_source_nr = hitless_dict["fb_source"]
+                fb_source_rate = hitless_dict["fb_source_rate"]
+
+                pll_node.set_property(
+                    "adi,pll-internal-zero-delay-feedback",
+                    fb_source_nr,
+                )
+
+                pll_node.set_property(
+                    "adi,pll-internal-zero-delay-feedback-hz",
+                    fb_source_rate,
+                )
+
+                # set slew rate limit to 4 ms / s during hitless phase acq
+                pll_node.set_property(
+                    "adi,pll-slew-rate-limit-ps",
+                    4000000000,
+                )
+            else:
+                try:
+                    pll_node.remove_property(
+                        "adi,pll-internal-zero-delay-feedback"
+                    )
+
+                    pll_node.remove_property(
+                        "adi,pll-internal-zero-delay-feedback-hz"
+                    )
+
+                    # set slew rate limit to default value during PBO mode
+                    pll_node.set_property(
+                        "adi,pll-slew-rate-limit-ps",
+                        100000000,
+                    )
+                except ValueError:
+                    pass
+
         #set output rates
         for i in range(0, 10):
             if "q" + str(i) not in config:
