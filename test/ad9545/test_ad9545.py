@@ -10,7 +10,7 @@ def test_ad9545_add_nodes():
     d = dt.ad9545_dt(dt_source="local_file", local_dt_filepath=dtb, arch="arm")
 
     config = {
-            'PLL0': {
+            'PLL0': {'hitless': {'fb_source': 0, 'fb_source_rate': 10000000},
                     'n0_profile_0': 1228800000.0,
                     'n0_profile_2': 6144.0,
                     'rate_hz': 1228800000.0,
@@ -97,6 +97,52 @@ def test_ad9545_add_nodes():
                 priority = config[pll_name]["priority_source_" + str(adi_pll_source_nr)]
                 read_priority = list(pll_profile_node.get_property("adi,profile-priority"))[0]
                 assert priority == read_priority
+
+    # check PLL hitless modes
+    for i in range(0, 2):
+        pll_name = "PLL" + str(i)
+        if pll_name not in config:
+            continue
+
+        pll_node = node.get_subnode("pll-clk@" + str(i))
+        if pll_node is None:
+            continue
+
+        if "hitless" in config[pll_name]:
+            hitless_dict = config[pll_name]["hitless"]
+            fb_source_nr = hitless_dict["fb_source"]
+            fb_source_rate = hitless_dict["fb_source_rate"]
+
+            dt_fb_source_nr = list(
+                pll_node.get_property("adi,pll-internal-zero-delay-feedback")
+            )[0]
+
+            dt_fb_source_rate = list(
+                pll_node.get_property("adi,pll-internal-zero-delay-feedback-hz")
+            )[0]
+
+            dt_slew_rate = list(
+                pll_node.get_property("adi,pll-slew-rate-limit-ps")
+            )[0]
+
+            assert int(fb_source_nr) == int(dt_fb_source_nr)
+            assert int(fb_source_rate) == int(dt_fb_source_rate)
+            assert 4000000000 == int(dt_slew_rate)
+
+        else:
+            # check if hitless mode properties are removed:
+            if pll_node.exist_property("adi,pll-internal-zero-delay-feedback"):
+                raise Exception("AD9545: invalid mode: pll-clk@" + str(i))
+
+            if pll_node.exist_property("adi,pll-internal-zero-delay-feedback-hz"):
+                raise Exception("AD9545: invalid mode: pll-clk@" + str(i))
+
+            # slew rate should be returned to default value
+            dt_slew_rate = list(
+                pll_node.get_property("adi,pll-slew-rate-limit-ps")
+            )[0]
+
+            assert 100000000 == int(dt_slew_rate)
 
     # Check output rates
     for i in range(0, 10):
