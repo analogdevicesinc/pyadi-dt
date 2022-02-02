@@ -1,7 +1,6 @@
-import pytest
 import os
-
 import adidt as dt
+
 
 def test_ad9545_add_nodes():
     loc = os.path.dirname(__file__)
@@ -10,18 +9,21 @@ def test_ad9545_add_nodes():
     d = dt.ad9545_dt(dt_source="local_file", local_dt_filepath=dtb, arch="arm")
 
     config = {
-            'PLL0': {'hitless': {'fb_source': 0, 'fb_source_rate': 10000000},
-                    'n0_profile_0': 1228800000.0,
-                    'n0_profile_2': 6144.0,
-                    'rate_hz': 1228800000.0,
-					'priority_source_0': 5,
-					'priority_source_2': 15,
-					'priority_source_4': 25,
-
-                },
-                'q0': 40.0,
-                'r0': 1.0,
-                'r2': 50.0,
+            'PLL0': {
+                        'hitless': {
+                            'fb_source': 0,
+                            'fb_source_rate': 10000000
+                        },
+                        'n0_profile_0': 1228800000.0,
+                        'n0_profile_2': 6144.0,
+                        'rate_hz': 1228800000.0,
+                        'priority_source_0': 5,
+                        'priority_source_2': 15,
+                        'priority_source_4': 25,
+                    },
+            'q0': 40.0,
+            'r0': 1.0,
+            'r2': 50.0,
     }
 
     node = d.get_node_by_compatible("adi,ad9545")
@@ -42,9 +44,11 @@ def test_ad9545_add_nodes():
         if r_div != 0:
             ref_node = node.get_subnode("ref-input-clk@" + str(i))
             if ref_node is None:
-                raise Exception("AD9545: missing node: ref-input-clk@" + str(i))
-
-            assert ref_node.get_property("adi,r-divider-ratio").value == int(r_div)
+                raise Exception(
+                    "AD9545: missing node: ref-input-clk@" + str(i)
+                )
+            dt_r_div = ref_node.get_property("adi,r-divider-ratio").value
+            assert int(dt_r_div) == int(r_div)
 
     assigned_clock_rates_prop = node.get_property("assigned-clock-rates")
     assigned_clock_rates = list(assigned_clock_rates_prop)
@@ -64,7 +68,7 @@ def test_ad9545_add_nodes():
 
         pll_dict = config["PLL" + str(i)]
 
-        if "rate_hz" not in  pll_dict:
+        if "rate_hz" not in pll_dict:
             continue
 
         PLL_clock_found = False
@@ -89,14 +93,20 @@ def test_ad9545_add_nodes():
         for j in range(0, 6):
             pll_profile_node = pll_node.get_subnode("profile@" + str(j))
             if pll_profile_node is None:
-                continue;
+                continue
 
-            adi_pll_source_nr = list(pll_profile_node.get_property("adi,pll-source"))[0]
+            adi_pll_source_nr = list(
+                pll_profile_node.get_property("adi,pll-source")
+            )[0]
 
-            if ("priority_source_" + str(adi_pll_source_nr)) in config[pll_name]:
-                priority = config[pll_name]["priority_source_" + str(adi_pll_source_nr)]
-                read_priority = list(pll_profile_node.get_property("adi,profile-priority"))[0]
-                assert priority == read_priority
+            priority_attr = "priority_source_" + str(adi_pll_source_nr)
+            if (priority_attr) in config[pll_name]:
+                priority = config[pll_name][priority_attr]
+                read_priority = list(
+                    pll_profile_node.get_property("adi,profile-priority")
+                )[0]
+
+                assert priority == int(read_priority)
 
     # check PLL hitless modes
     for i in range(0, 2):
@@ -108,21 +118,25 @@ def test_ad9545_add_nodes():
         if pll_node is None:
             continue
 
+        dt_fb_source_nr_str = "adi,pll-internal-zero-delay-feedback"
+        dt_fb_source_rate_str = "adi,pll-internal-zero-delay-feedback-hz"
+        dt_slew_rate_str = "adi,pll-slew-rate-limit-ps"
+
         if "hitless" in config[pll_name]:
             hitless_dict = config[pll_name]["hitless"]
             fb_source_nr = hitless_dict["fb_source"]
             fb_source_rate = hitless_dict["fb_source_rate"]
 
             dt_fb_source_nr = list(
-                pll_node.get_property("adi,pll-internal-zero-delay-feedback")
+                pll_node.get_property(dt_fb_source_nr_str)
             )[0]
 
             dt_fb_source_rate = list(
-                pll_node.get_property("adi,pll-internal-zero-delay-feedback-hz")
+                pll_node.get_property(dt_fb_source_rate_str)
             )[0]
 
             dt_slew_rate = list(
-                pll_node.get_property("adi,pll-slew-rate-limit-ps")
+                pll_node.get_property(dt_slew_rate_str)
             )[0]
 
             assert int(fb_source_nr) == int(dt_fb_source_nr)
@@ -131,15 +145,15 @@ def test_ad9545_add_nodes():
 
         else:
             # check if hitless mode properties are removed:
-            if pll_node.exist_property("adi,pll-internal-zero-delay-feedback"):
+            if pll_node.exist_property(dt_fb_source_nr_str):
                 raise Exception("AD9545: invalid mode: pll-clk@" + str(i))
 
-            if pll_node.exist_property("adi,pll-internal-zero-delay-feedback-hz"):
+            if pll_node.exist_property(dt_fb_source_rate_str):
                 raise Exception("AD9545: invalid mode: pll-clk@" + str(i))
 
             # slew rate should be returned to default value
             dt_slew_rate = list(
-                pll_node.get_property("adi,pll-slew-rate-limit-ps")
+                pll_node.get_property(dt_slew_rate_str)
             )[0]
 
             assert 100000000 == int(dt_slew_rate)
@@ -160,10 +174,11 @@ def test_ad9545_add_nodes():
         output_clock_found = False
         for (clock_pos, clock_type, clock_address) in assigned_clocks:
             if clock_type == d.out_clock_id and clock_address == i:
-                assert assigned_clock_rates[clock_pos] == int(PLL_rate / config["q" + str(i)])
+                out_rate = int(PLL_rate / config["q" + str(i)])
+                assert assigned_clock_rates[clock_pos] == out_rate
                 output_clock_found = True
                 break
 
         assert output_clock_found
 
-    #d.write_out_dts("test.dts")
+    # d.write_out_dts("test.dts")
