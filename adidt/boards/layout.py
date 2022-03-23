@@ -39,6 +39,8 @@ class layout:
         with open(self.output_filename, "w") as f:
             f.write(output)
 
+        return self.output_filename
+
     def map_jesd_subclass(self, name):
         """Map JESD204 subclass to integer.
 
