@@ -118,6 +118,7 @@
 		#jesd204-cells = <2>;
 		jesd204-top-device = <0>; /* This is the TOP device */
 		jesd204-link-ids = <FRAMER_LINK0_RX DEFRAMER_LINK0_TX>;
+		jesd204-ignore-errors;//DEBUG ONLY REMOVE LATER!!
 
 		jesd204-inputs =
 			<&axi_ad9081_core_rx 0 FRAMER_LINK0_RX>,
