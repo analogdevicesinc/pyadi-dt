@@ -24,14 +24,18 @@
 };
 
 &axi_ad9081_adxcvr_rx {
-	adi,sys-clk-select = <XCVR_CPLL>;
-	adi,out-clk-select = <XCVR_REFCLK_DIV2>;
+	adi,sys-clk-select = <{{fpga['fpga_adc']['sys_clk_select']}}>;
+	adi,out-clk-select = <{{fpga['fpga_adc']['out_clk_select']}}>;
 };
 
-&axi_ad9081_adxcvr_tx {
-	adi,sys-clk-select = <XCVR_QPLL>;
-	adi,out-clk-select = <XCVR_REFCLK>;
-};
+//		&axi_ad9081_adxcvr_tx: axi-adxcvr-tx {
+//			adi,sys-clk-select = <XCVR_QPLL>;
+//			adi,out-clk-select = <XCVR_REFCLK_DIV2>;
+//		};
+//		&axi_ad9081_adxcvr_tx: axi-adxcvr-tx@84b60000 {
+//			adi,sys-clk-select = <{{fpga['fpga_dac']['sys_clk_select']}}>;
+//			adi,out-clk-select = <{{fpga['fpga_dac']['out_clk_select']}}>;
+//		};
 
 &spi1 {
 	status = "okay";

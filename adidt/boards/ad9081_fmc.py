@@ -101,8 +101,8 @@ class ad9081_fmc(layout):
             "source_port": 10,
             "divider": clk["adc_fpga_ref_clk"]["divider"] * 2,
         }
-        map["FPGA_REFCLK2"] = {
-            "source_port": 12,
+        map["FPGA_REFCLK1"] = {
+            "source_port": 8,
             "divider": clk["adc_fpga_ref_clk"]["divider"],
         }
 
@@ -111,19 +111,22 @@ class ad9081_fmc(layout):
             "source_port": 6,
             "divider": clk["dac_fpga_ref_clk"]["divider"],
         }
-        map["FPGA_REFCLK1"] = {
-            "source_port": 8,
+        map["FPGA_REFCLK2"] = {
+            "source_port": 12,
             "divider": clk["dac_fpga_ref_clk"]["divider"],
         }
 
         ccfg = {"map": map, "clock": cfg["clock"]}
+
+        fpga = {}
+        fpga['fpga_adc'] = cfg["fpga_adc"]
+        fpga['fpga_dac'] = cfg["fpga_dac"]
 
         # Check all clocks are mapped
         # FIXME
 
         # Check no source_port is mapped to more than one clock
         # FIXME
-
         adc, dac = self.map_jesd_structs(cfg)
 
-        return ccfg, adc, dac
+        return ccfg, adc, dac, fpga
