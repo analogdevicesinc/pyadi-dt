@@ -26,7 +26,7 @@ def test_hmc7044_add_nodes():
             "FPGA": {"divider": 6, "rate": 500000000.0, "driver-mode": "CML",
                 "fine-delay": 16, "coarse-delay": 5},
             "SYSREF": {"divider": 384, "rate": 7812500.0, "driver-mode": "CMOS",
-                "CMOS": {"P" : 0, "N" : 1}},
+                "CMOS": {"P" : 1, "N" : 0}},
         },
         "r2": 2,
     }
@@ -136,7 +136,9 @@ def test_hmc7044_add_nodes():
 
         if "CMOS" in output_dict:
             impedance_prop_val = output_node.get_property("adi,driver-impedance-mode").value
-            impedance_prop_dict = output_dict["CMOS"]["P"] + (output_dict["CMOS"]["N"] << 1)
+            val_p = (output_dict["CMOS"]["P"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["P"])
+            val_n = (output_dict["CMOS"]["N"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["N"])
+            impedance_prop_dict = val_p | val_n
             assert impedance_prop_val == impedance_prop_dict
 
     # d.write_out_dts("test.dts")
