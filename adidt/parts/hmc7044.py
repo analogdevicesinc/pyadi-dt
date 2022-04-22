@@ -38,6 +38,23 @@ class hmc7044_dt(dt, clock_dt):
         "VCO_CLOCK" : 4,
     }
 
+    cmos_outputs_reg_field_map = {
+        0 : {"P" : 1, "N" : 0},
+        1 : {"P" : 0, "N" : 1},
+        2 : {"P" : 0, "N" : 1},
+        3 : {"P" : 1, "N" : 0},
+        4 : {"P" : 0, "N" : 1},
+        5 : {"P" : 1, "N" : 0},
+        6 : {"P" : 1, "N" : 0},
+        7 : {"P" : 0, "N" : 1},
+        8 : {"P" : 0, "N" : 1},
+        9 : {"P" : 1, "N" : 0},
+        10 : {"P" : 1, "N" : 0},
+        11 : {"P" : 0, "N" : 1},
+        12 : {"P" : 0, "N" : 1},
+        13 : {"P" : 1, "N" : 0},
+    }
+
     def set_clock_node(self, parent, clk, name, reg):
         node = fdt.Node(f"channel@{reg}")
 
@@ -76,7 +93,8 @@ class hmc7044_dt(dt, clock_dt):
 
         # in CMOS mode, the impedance property describes the output status
         if ("CMOS" in clk):
-            prop_val = clk["CMOS"]["P"] + (clk["CMOS"]["N"] << 1)
+            prop_val = (clk["CMOS"]["P"] << self.cmos_outputs_reg_field_map[reg]["P"])
+            propval = prop_val | (clk["CMOS"]["N"] << self.cmos_outputs_reg_field_map[reg]["N"])
             node.append(fdt.PropWords("adi,driver-impedance-mode", prop_val))
 
         parent.append(node)
