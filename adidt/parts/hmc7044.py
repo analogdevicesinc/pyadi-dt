@@ -139,8 +139,8 @@ class hmc7044_dt(dt, clock_dt):
             priority = 0
             # MSB (Fourth priority input [1:0]) .... (First priority input [1:0]) LSB
             for ref_nr in clock["reference_selection_order"]:
-                if (ref_nr > 4):
-                    raise Exception("Refernce number:" + str(ref_nr) + " invalid.")
+                if (ref_nr >= 4):
+                    raise Exception("Reference number:" + str(ref_nr) + " invalid.")
                 ref_order_val |= (ref_nr << (priority * 2))
                 priority += 1
 
