@@ -146,13 +146,8 @@ class hmc7044_dt(dt, clock_dt):
 
             node.set_property("adi,pll1-ref-prio-ctrl", ref_order_val)
 
-        # Set PLL frequency using one of the output clocks
-        k1 = list(clock["output_clocks"].keys())
-        c = clock["output_clocks"][k1[0]]
-        p2f = c["divider"] * c["rate"]
-        if math.trunc(p2f) != p2f:
-            raise Exception("Floats not supported")
-        node.set_property("adi,pll2-output-frequency", int(p2f))
+        # Set PLL frequency
+        node.set_property("adi,pll2-output-frequency", int(clock["vco"]))
         if not append:
             # Clear existing nodes
             nn = [sn.name for sn in node.nodes]
