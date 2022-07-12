@@ -10,6 +10,9 @@ class layout:
     template_filename = None
     output_filename = None
 
+    # def gen_dt_preprocess(self, **kwargs):
+    #     return kwargs
+
     def gen_dt(self, **kwargs):
         """Generate the DT file from configuration structs.
 
@@ -34,6 +37,8 @@ class layout:
 
         loc = os.path.join(self.template_filename)
         template = env.get_template(loc)
+
+        kwargs = self.gen_dt_preprocess(**kwargs)
         output = template.render(**kwargs)
 
         with open(self.output_filename, "w") as f:
