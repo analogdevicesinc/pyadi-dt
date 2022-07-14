@@ -5,8 +5,9 @@ import random
 import string
 
 import fdt
-from adidt.sd import sd
 from fabric import Config, Connection
+
+from .sd import sd
 
 
 class dt(sd):

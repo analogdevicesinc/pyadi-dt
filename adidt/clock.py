@@ -1,5 +1,4 @@
-import adidt.dt as dt
-import adidt.parts as parts
+from .dt import dt
 
 
 class clock(dt):
