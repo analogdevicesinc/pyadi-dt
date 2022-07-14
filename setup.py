@@ -7,7 +7,7 @@ setup(
     include_package_data=True,
     package_data={"adidt": ["templates/*.tmpl"]},
     py_modules=["adidt"],
-    install_requires=["Click", "fdt", "fabric", "rich", "numpy"],
+    install_requires=["Click", "fdt", "fabric", "rich", "numpy", "xmltodict"],
     entry_points={
         "console_scripts": [
             "adidtc = adidt.cli.main:cli",
