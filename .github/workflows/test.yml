@@ -13,5 +13,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
+    - run: sudo apt install -y gcc-aarch64-linux-gnu make bc u-boot-tools flex bison libssl-dev tar kmod
     - run: pip install -r requirements/requirements_dev.txt
     - run: pytest -vs
