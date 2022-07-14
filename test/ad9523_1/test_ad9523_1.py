@@ -1,7 +1,7 @@
-import pytest
 import os
 
 import adidt as dt
+import pytest
 
 
 def test_ad9523_1_add_nodes():
@@ -48,9 +48,9 @@ def test_ad9523_1_add_nodes():
         },
     }
 
-    d.set(config2['clock']['part'], config2['clock'])
+    d.set(config2["clock"]["part"], config2["clock"])
 
-    config = config2['clock']
+    config = config2["clock"]
 
     # Checks
     node = d.get_node_by_compatible("adi,ad9523-1")

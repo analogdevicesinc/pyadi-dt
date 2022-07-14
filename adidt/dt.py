@@ -1,11 +1,12 @@
 """Device tree interface class."""
-import fdt
-from fabric import Connection, Config
+import os
+import os.path
 import random
 import string
-import os.path
-import os
+
+import fdt
 from adidt.sd import sd
+from fabric import Config, Connection
 
 
 class dt(sd):
@@ -51,10 +52,7 @@ class dt(sd):
         if "remote" in self.dt_source:
             self._con = Connection(
                 "{username}@{ip}:{port}".format(
-                    username=username,
-                    ip=ip,
-                    port=22,
-                    connect_timeout=5,
+                    username=username, ip=ip, port=22, connect_timeout=5,
                 ),
                 connect_kwargs={"password": password},
             )
@@ -68,7 +66,7 @@ class dt(sd):
                 self._set_arch(arch)
                 self._import_sysfs()
             elif dt_source == "local_file":
-                if arch=="auto":
+                if arch == "auto":
                     raise Exception("arch must be set when using local_file mode")
                 self._import_file()
             else:

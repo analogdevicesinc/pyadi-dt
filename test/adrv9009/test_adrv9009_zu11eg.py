@@ -1,8 +1,8 @@
-import pytest
 import os
 from pprint import pprint
 
 import adidt as dt
+import pytest
 
 
 def test_import_profile(kernel_build_config):

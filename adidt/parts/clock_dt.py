@@ -1,7 +1,8 @@
-from adidt import parts
-from typing import Dict
-import fdt
 import math
+from typing import Dict
+
+import fdt
+from adidt import parts
 
 
 class clock_dt:
@@ -63,6 +64,7 @@ class clock_dt:
     Returns:
         A list containing all nodes refered to in the "clocks" phandle array
     """
+
     def get_used_clocks(self, node):
         used_clocks = []
         clocks_prop = node.get_property("clocks")
@@ -72,7 +74,7 @@ class clock_dt:
             # first value in "clocks" property is a phandle
             # next phandle is located after "#clock-cells"+1 positions
             i = 0
-            while (i < len(clocks_val)):
+            while i < len(clocks_val):
                 clock_phandle = clocks_val[i]
                 phandle_props = self._dt.search("phandle")
 

@@ -1,6 +1,7 @@
-from typing import Dict
-import fdt
 import math
+from typing import Dict
+
+import fdt
 import numpy as np
 from adidt.parts.clock_dt import clock_dt
 

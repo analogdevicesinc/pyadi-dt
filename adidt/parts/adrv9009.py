@@ -1,8 +1,9 @@
-import xmltodict
-from typing import Dict
-from adidt.dt import dt
-import fdt
 import math
+from typing import Dict
+
+import fdt
+import xmltodict
+from adidt.dt import dt
 
 
 def handle_ints(val):
@@ -101,7 +102,9 @@ def parse_profile(filename):
     if int(profile["rx"]["filter"]["@gain_dB"]) < 0:
         profile["rx"]["filter"]["@gain_dB"] = f"({profile['rx']['filter']['@gain_dB']})"
     if int(profile["obsRx"]["filter"]["@gain_dB"]) < 0:
-        profile["obsRx"]["filter"]["@gain_dB"] = f"({profile['obsRx']['filter']['@gain_dB']})"
+        profile["obsRx"]["filter"][
+            "@gain_dB"
+        ] = f"({profile['obsRx']['filter']['@gain_dB']})"
     if int(profile["tx"]["filter"]["@gain_dB"]) < 0:
         profile["tx"]["filter"]["@gain_dB"] = f"({profile['tx']['filter']['@gain_dB']})"
 

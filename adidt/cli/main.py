@@ -1,15 +1,13 @@
 import adidt
-import fdt
 import click
-from .helpers import list_node_props, list_node_prop, list_node_subnodes
+import fdt
+
+from .helpers import list_node_prop, list_node_props, list_node_subnodes
 
 
 @click.group()
 @click.option(
-    "--no-color",
-    "-nc",
-    is_flag=True,
-    help="Disable formatting",
+    "--no-color", "-nc", is_flag=True, help="Disable formatting",
 )
 @click.option(
     "--context",
@@ -68,10 +66,7 @@ def cli(ctx, no_color, context, ip, username, password, arch):
 @click.argument("prop", required=False)
 @click.argument("value", required=False)
 @click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
+    "--reboot", "-r", is_flag=True, help="Reboot boards after successful write",
 )
 @click.option(
     "--compat",
@@ -164,22 +159,13 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
 @cli.command()
 @click.argument("rd", required=False)
 @click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
+    "--reboot", "-r", is_flag=True, help="Reboot boards after successful write",
 )
 @click.option(
-    "--show",
-    "-s",
-    is_flag=True,
-    help="Print commands as run",
+    "--show", "-s", is_flag=True, help="Print commands as run",
 )
 @click.option(
-    "--dry-run",
-    "-d",
-    is_flag=True,
-    help="Dryrun, do not run commands",
+    "--dry-run", "-d", is_flag=True, help="Dryrun, do not run commands",
 )
 @click.pass_context
 def sd_move(ctx, rd, reboot, show, dry_run):
@@ -214,22 +200,13 @@ def sd_move(ctx, rd, reboot, show, dry_run):
 @cli.command()
 @click.argument("files", required=False)
 @click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
+    "--reboot", "-r", is_flag=True, help="Reboot boards after successful write",
 )
 @click.option(
-    "--show",
-    "-s",
-    is_flag=True,
-    help="Print commands as run",
+    "--show", "-s", is_flag=True, help="Print commands as run",
 )
 @click.option(
-    "--dry-run",
-    "-d",
-    is_flag=True,
-    help="Dryrun, do not run commands",
+    "--dry-run", "-d", is_flag=True, help="Dryrun, do not run commands",
 )
 @click.pass_context
 def sd_remote_copy(ctx, files, reboot, show, dry_run):
@@ -271,22 +248,13 @@ def sd_remote_copy(ctx, files, reboot, show, dry_run):
     help="Use node name to check against compatible id of node during search. This is only used for the first node",
 )
 @click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
+    "--reboot", "-r", is_flag=True, help="Reboot boards after successful write",
 )
 @click.option(
-    "--prop",
-    "-p",
-    default=None,
-    help="Property of node to read to set",
+    "--prop", "-p", default=None, help="Property of node to read to set",
 )
 @click.option(
-    "--value",
-    "-v",
-    default=None,
-    help="Value to set property to",
+    "--value", "-v", default=None, help="Value to set property to",
 )
 @click.pass_context
 def props(ctx, node_name, compat, reboot, prop, value):
@@ -406,10 +374,7 @@ def props(ctx, node_name, compat, reboot, prop, value):
     type=click.Choice(["clock", "converter", "system", "fpga"]),
 )
 @click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
+    "--reboot", "-r", is_flag=True, help="Reboot boards after successful write",
 )
 @click.option(
     "--filename",

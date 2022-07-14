@@ -1,7 +1,7 @@
-import pytest
 import os
 
 import adidt
+import pytest
 
 loc = os.path.dirname(__file__)
 

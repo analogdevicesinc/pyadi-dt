@@ -1,8 +1,9 @@
 """ADI SD Card Manipulation Utilies"""
-import click
 import os
-
 from typing import List
+
+import click
+
 
 class sd:
     def find(self, loc, ext=None):
@@ -21,7 +22,9 @@ class sd:
         out = out.stdout.split("\n")
         return list(filter(lambda c: "*" not in c and c != "", out))
 
-    def copy_local_files_to_remote_sd_card(self, files: List[str], show=False, dryrun=False):
+    def copy_local_files_to_remote_sd_card(
+        self, files: List[str], show=False, dryrun=False
+    ):
         # Check if local files exist
         for f in files:
             if not os.path.exists(f):
@@ -34,7 +37,7 @@ class sd:
                 if show:
                     print(f"scp {file} {folder}/")
                 if not dryrun:
-                    self._con.put(file, remote=folder+"/")
+                    self._con.put(file, remote=folder + "/")
         finally:
             self._runr(f"umount /dev/mmcblk0p1")
             self._runr(f"rm -rf {folder}")

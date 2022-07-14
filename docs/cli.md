@@ -8,4 +8,3 @@ This page provides documentation for our command line tools.
     :command: cli
     :prog_name: adidtc
     :style: table
-

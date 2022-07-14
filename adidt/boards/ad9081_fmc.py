@@ -1,5 +1,6 @@
-from .layout import layout
 import numpy as np
+
+from .layout import layout
 
 
 class ad9081_fmc(layout):
@@ -119,8 +120,8 @@ class ad9081_fmc(layout):
         ccfg = {"map": map, "clock": cfg["clock"]}
 
         fpga = {}
-        fpga['fpga_adc'] = cfg["fpga_adc"]
-        fpga['fpga_dac'] = cfg["fpga_dac"]
+        fpga["fpga_adc"] = cfg["fpga_adc"]
+        fpga["fpga_dac"] = cfg["fpga_dac"]
 
         # Check all clocks are mapped
         # FIXME

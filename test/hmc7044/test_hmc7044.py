@@ -1,7 +1,7 @@
-import pytest
 import os
 
 import adidt as dt
+import pytest
 
 
 def test_hmc7044_add_nodes():
@@ -12,22 +12,35 @@ def test_hmc7044_add_nodes():
 
     clock = {
         "vco": 125000000 * 2,
-        "reference_frequencies" : [38400000, 38400000, 38400000, 38400000],
-        "reference_selection_order" : [0, 3, 2, 1],
+        "reference_frequencies": [38400000, 38400000, 38400000, 38400000],
+        "reference_selection_order": [0, 3, 2, 1],
         "n2": 24,
         "out_dividers": [3, 6, 384],
         "output_clocks": {
-            "ADC": {"divider": 3, "rate": 1000000000.0, "driver-mode": "CML",
+            "ADC": {
+                "divider": 3,
+                "rate": 1000000000.0,
+                "driver-mode": "CML",
                 "high-performance-mode-disable": True,
                 "startup-mode-dynamic-enable": True,
                 "dynamic-driver-enable": True,
                 "force-mute-enable": True,
                 "output-mux-mode": "CH_DIV",
-                "driver_impedances": "100_OHM"},
-            "FPGA": {"divider": 6, "rate": 500000000.0, "driver-mode": "CML",
-                "fine-delay": 16, "coarse-delay": 5},
-            "SYSREF": {"divider": 384, "rate": 7812500.0, "driver-mode": "CMOS",
-                "CMOS": {"P" : 1, "N" : 0}},
+                "driver_impedances": "100_OHM",
+            },
+            "FPGA": {
+                "divider": 6,
+                "rate": 500000000.0,
+                "driver-mode": "CML",
+                "fine-delay": 16,
+                "coarse-delay": 5,
+            },
+            "SYSREF": {
+                "divider": 384,
+                "rate": 7812500.0,
+                "driver-mode": "CMOS",
+                "CMOS": {"P": 1, "N": 0},
+            },
         },
         "r2": 2,
     }
@@ -43,14 +56,14 @@ def test_hmc7044_add_nodes():
     assert node.get_property("adi,vcxo-frequency").value == config["vcxo"]
 
     # Check input reference priorities
-    if ("reference_selection_order" in clock):
+    if "reference_selection_order" in clock:
         ref_order = []
         priority = 0
         ref_order_prop_val = node.get_property("adi,pll1-ref-prio-ctrl").value
 
         # MSB (Fourth priority input [1:0]) .... (First priority input [1:0]) LSB
         for ref_nr in clock["reference_selection_order"]:
-            if (ref_nr > 4):
+            if ref_nr > 4:
                 raise Exception("Refernce number:" + str(ref_nr) + " invalid.")
             ref_order.append((ref_order_prop_val >> (priority * 2)) & 0x3)
             priority += 1
@@ -79,7 +92,7 @@ def test_hmc7044_add_nodes():
             assert clock["reference_frequencies"][i] == clock_freq.value
             i += 1
 
-    divs = [clock['output_clocks'][oc]['divider']  for oc in clock['output_clocks']]
+    divs = [clock["output_clocks"][oc]["divider"] for oc in clock["output_clocks"]]
     for n in node.nodes:
         assert n.get_property("adi,extended-name").value in list(
             clock["output_clocks"].keys()
@@ -117,13 +130,15 @@ def test_hmc7044_add_nodes():
                 prop = output_node.get_property("adi,force-mute-enable")
                 assert prop != None
 
-        if ("output-mux-mode" in output_dict):
+        if "output-mux-mode" in output_dict:
             mux_mode = d.output_mux_modes[output_dict["output-mux-mode"]]
             prop = output_node.get_property("adi,output-mux-mode")
             assert prop.value == mux_mode
 
-        if ("driver-impedance-mode" in output_dict):
-            impedance_mode = self.driver_impedances[output_dict["driver-impedance-mode"]]
+        if "driver-impedance-mode" in output_dict:
+            impedance_mode = self.driver_impedances[
+                output_dict["driver-impedance-mode"]
+            ]
             prop = output_node.get_property("adi,driver-impedance-mode")
             assert prop.value == impedance_mode
 
@@ -136,9 +151,17 @@ def test_hmc7044_add_nodes():
             assert fine_delay == output_dict["coarse-delay"]
 
         if "CMOS" in output_dict:
-            impedance_prop_val = output_node.get_property("adi,driver-impedance-mode").value
-            val_p = (output_dict["CMOS"]["P"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["P"])
-            val_n = (output_dict["CMOS"]["N"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["N"])
+            impedance_prop_val = output_node.get_property(
+                "adi,driver-impedance-mode"
+            ).value
+            val_p = (
+                output_dict["CMOS"]["P"]
+                << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["P"]
+            )
+            val_n = (
+                output_dict["CMOS"]["N"]
+                << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["N"]
+            )
             impedance_prop_dict = val_p | val_n
             assert impedance_prop_val == impedance_prop_dict
 

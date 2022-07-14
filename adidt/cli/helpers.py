@@ -1,6 +1,6 @@
+from rich import box
 from rich.console import Console
 from rich.table import Column, Table
-from rich import box
 from rich.text import Text
 
 console = Console()

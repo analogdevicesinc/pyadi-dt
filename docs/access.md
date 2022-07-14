@@ -30,7 +30,3 @@ adidtc -c local_sysfs props -cp adi,ad9361 adi,rx-synthesizer-frequency-hz
 
 2400000000
 ```
- 
-
- 
- 

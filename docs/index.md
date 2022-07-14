@@ -16,4 +16,3 @@ pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
 - [Reporting bugs](https://github.com/analogdevicesinc/pyadi-dt/issues): GitHub issue tracker
 - [Support](https://ez.analog.com/sw-interface-tools/f/q-a): EngineerZone Software Interface Tools forum
 - [DeviceTree Specification](http://devicetree-org.github.io/devicetree-specification): DeviceTree specification and organization reference
-

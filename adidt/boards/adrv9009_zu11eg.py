@@ -1,7 +1,10 @@
-from .layout import layout
-from ..parts.adrv9009 import parse_profile
-import numpy as np
 import os
+
+import numpy as np
+
+from ..parts.adrv9009 import parse_profile
+from .layout import layout
+
 
 def coefs_to_long_string(coefs):
     """Convert coefficient array to string.
@@ -43,11 +46,11 @@ class adrv9009_zu11eg(layout):
         """
         if self.profile is None:
             raise Exception("Profile not loaded")
-        rx = self.profile['rx']
-        tx = self.profile['tx']
-        orx = self.profile['obsRx']
-        lpbk = self.profile['lpbk']
-        clocks = self.profile['clocks']
+        rx = self.profile["rx"]
+        tx = self.profile["tx"]
+        orx = self.profile["obsRx"]
+        lpbk = self.profile["lpbk"]
+        clocks = self.profile["clocks"]
 
         rx["rxAdcProfile"]["coefs"] = coefs_to_long_string(rx["rxAdcProfile"]["#text"])
         rx["filter"]["coefs"] = coefs_to_long_string(rx["filter"]["#text"])
