@@ -16,7 +16,6 @@ def ip(request):
 
 @pytest.fixture()
 def kernel_build_config(request):
-    print("PRE")
     config = {
         "branch": "master",
         "arch": "arm64",
@@ -46,13 +45,10 @@ def kernel_build_config(request):
     # Build the kernel
     os.chdir(config["repo_dir"])
 
-    os.system(
-        f"sudo apt install -y gcc-aarch64-linux-gnu make bc u-boot-tools flex bison libssl-dev tar kmod"
-    )
     cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]} {defconfig}'
     print(f"Running: {cmd}")
     os.system(cmd)
-    cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]} -j12'
+    cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]} -j'
     print(f"Running: {cmd}")
     os.system(cmd)
 
