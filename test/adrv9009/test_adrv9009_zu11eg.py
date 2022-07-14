@@ -1,5 +1,6 @@
 import pytest
 import os
+from pprint import pprint
 
 import adidt as dt
 
@@ -18,14 +19,15 @@ def test_import_profile():
     )
     dprofile = d.parse_profile(profile)
 
-    import pprint
-    dprofile = dict(dprofile)
-    pprint.pprint(dprofile)
-    pprint.pprint(dprofile['profile']['rx']['filter']['@gain_dB'])
-
 
     # Generate DT fragment
     som = dt.adrv9009_zu11eg(dt_source="local_file", local_dt_filepath=dtb, arch="arm64")
     # clock, adc, dac, fpga = som.map_clocks_to_board_layout(cfg)
     dts_filename = som.gen_dt(profile=dprofile)
     print(f"Generated DTS file: {dts_filename}")
+
+def test_kernel_build(kernel_build_config):
+    kernel_build_config['branch'] = 'master'
+    loc = os.path.dirname(__file__)
+    dts = os.path.join(loc, 'adrv9009_zu11eg_out.dts')
+    kernel_build_config['devicetree_to_test'] = dts
