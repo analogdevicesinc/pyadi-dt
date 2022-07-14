@@ -11,6 +11,103 @@ def handle_ints(val):
     return int(hex((val + (1 << 32)) % (1 << 32)), 16)
 
 
+def parse_profile(filename):
+    # Update profile to non-shitty xml
+    with open(filename) as sxmlfile:
+        sxmldata = sxmlfile.read()
+    # Correct each header
+    outfile = []
+    for line in sxmldata.split("\n"):
+        if "<" in line and "</" not in line:
+            within = line[line.find("<") + 1 : line.find(">")]
+            # Fix all prop=val
+            if "," in within:
+                oline = []
+                # print(line)
+                for index, sline in enumerate(line.split(" ")):
+                    if index == 3:
+                        sline = f"Bandwidth={sline}"
+                    if index in [4, 6]:
+                        sline = sline + "="
+                    oline += [sline]
+                line = " ".join(oline)
+                line = line.replace(",", "")
+                line = line.replace("= ", "=")
+            if " " in within:
+                # print(line)
+                oline = []
+                spaces = 0
+                for sline in line.split(" "):
+                    if len(sline) > 0:
+                        starter = sline + " "
+                        break
+                    spaces += 1
+                for sline in line.split(" "):
+                    if (
+                        len(oline) == 0
+                        and len(sline)
+                        and "<" not in sline
+                        and ">" not in sline
+                        and "=" not in sline
+                    ):
+                        oline += [f'type="{sline}"']
+                    if "=" in sline:
+                        sline = sline.replace(">", "")
+                        sline = sline.replace("<", "")
+                        p = sline.split("=")[0]
+                        v = sline.split("=")[1]
+                        # print(f"{p}={v}")
+                        oline += [f'{p}="{v}"']
+
+                # print(" "*spaces+starter+" ".join(oline)+">")
+                outfile += [" " * spaces + starter + " ".join(oline) + ">"]
+            else:
+                # print(line)
+                if "=" in line:
+                    s1 = line.find("<")
+                    s2 = line.find(">")
+                    within = line[s1 + 1 : s2]
+                    o = within.split("=")
+                    ss = f"{o[0]}>{o[1]}</{o[0]}"
+                    line = line.replace(within, ss)
+                # print(line)
+
+                outfile += [line]
+        else:
+            outfile += [line]
+
+    nsxml = "\n".join(outfile)
+    profile = xmltodict.parse(nsxml)["profile"]
+
+    # Custom translations
+    # Clock Divide Ratio; 0=2.0, 1=2.5, 2=3.0, 3=4.0, 4=5.0
+    pval = float(profile["clocks"]["clkPllHsDiv"])
+    if pval == 2.0:
+        val = "0"
+    elif pval == 2.5:
+        val = "1"
+    elif pval == 3.0:
+        val = "2"
+    elif pval == 4.0:
+        val = "3"
+    elif pval == 5.0:
+        val = "4"
+    else:
+        raise ValueError(f"Unknown clock divider value {pval}")
+
+    profile["clocks"]["clkPllHsDiv"] = val
+
+    # Gains can be negative so must be wrapped
+    if int(profile["rx"]["filter"]["@gain_dB"]) < 0:
+        profile["rx"]["filter"]["@gain_dB"] = f"({profile['rx']['filter']['@gain_dB']})"
+    if int(profile["obsRx"]["filter"]["@gain_dB"]) < 0:
+        profile["obsRx"]["filter"]["@gain_dB"] = f"({profile['obsRx']['filter']['@gain_dB']})"
+    if int(profile["tx"]["filter"]["@gain_dB"]) < 0:
+        profile["tx"]["filter"]["@gain_dB"] = f"({profile['tx']['filter']['@gain_dB']})"
+
+    return profile
+
+
 class adrv9009_dt(dt):
     def _add_tx_profile_fields(self, node, dprofile: Dict):
         """Add TX profile fields to device tree"""
@@ -104,91 +201,3 @@ class adrv9009_dt(dt):
 
         # Add profile fields
         self._add_rx_profile_fields(node, profile)
-
-    def parse_profile(self, filename):
-        # Update profile to non-shitty xml
-        with open(filename) as sxmlfile:
-            sxmldata = sxmlfile.read()
-        # Correct each header
-        outfile = []
-        for line in sxmldata.split("\n"):
-            if "<" in line and "</" not in line:
-                within = line[line.find("<") + 1 : line.find(">")]
-                # Fix all prop=val
-                if "," in within:
-                    oline = []
-                    # print(line)
-                    for index, sline in enumerate(line.split(" ")):
-                        if index == 3:
-                            sline = f"Bandwidth={sline}"
-                        if index in [4, 6]:
-                            sline = sline + "="
-                        oline += [sline]
-                    line = " ".join(oline)
-                    line = line.replace(",", "")
-                    line = line.replace("= ", "=")
-                if " " in within:
-                    # print(line)
-                    oline = []
-                    spaces = 0
-                    for sline in line.split(" "):
-                        if len(sline) > 0:
-                            starter = sline + " "
-                            break
-                        spaces += 1
-                    for sline in line.split(" "):
-                        if (
-                            len(oline) == 0
-                            and len(sline)
-                            and "<" not in sline
-                            and ">" not in sline
-                            and "=" not in sline
-                        ):
-                            oline += [f'type="{sline}"']
-                        if "=" in sline:
-                            sline = sline.replace(">", "")
-                            sline = sline.replace("<", "")
-                            p = sline.split("=")[0]
-                            v = sline.split("=")[1]
-                            # print(f"{p}={v}")
-                            oline += [f'{p}="{v}"']
-
-                    # print(" "*spaces+starter+" ".join(oline)+">")
-                    outfile += [" " * spaces + starter + " ".join(oline) + ">"]
-                else:
-                    # print(line)
-                    if "=" in line:
-                        s1 = line.find("<")
-                        s2 = line.find(">")
-                        within = line[s1 + 1 : s2]
-                        o = within.split("=")
-                        ss = f"{o[0]}>{o[1]}</{o[0]}"
-                        line = line.replace(within, ss)
-                    # print(line)
-
-                    outfile += [line]
-            else:
-                outfile += [line]
-
-        nsxml = "\n".join(outfile)
-        profile = xmltodict.parse(nsxml)["profile"]
-
-        # Custom translations
-        # Clock Divide Ratio; 0=2.0, 1=2.5, 2=3.0, 3=4.0, 4=5.0
-        pval = float(profile["clocks"]["clkPllHsDiv"])
-        if pval == 2.0:
-            val = "0"
-        elif pval == 2.5:
-            val = "1"
-        elif pval == 3.0:
-            val = "2"
-        elif pval == 4.0:
-            val = "3"
-        elif pval == 5.0:
-            val = "4"
-        else:
-            raise ValueError(f"Unknown clock divider value {pval}")
-
-        profile["clocks"]["clkPllHsDiv"] = val
-
-        return profile

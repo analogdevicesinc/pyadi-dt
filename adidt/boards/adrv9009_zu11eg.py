@@ -1,7 +1,7 @@
 from .layout import layout
-from ..parts.adrv9009 import adrv9009_dt
+from ..parts.adrv9009 import parse_profile
 import numpy as np
-
+import os
 
 def coefs_to_long_string(coefs):
     """Convert coefficient array to string.
@@ -19,7 +19,7 @@ def coefs_to_long_string(coefs):
     return result[:-1]
 
 
-class adrv9009_zu11eg(adrv9009_dt, layout):
+class adrv9009_zu11eg(layout):
     """ADRV9009-ZU11EG SOM board layout map for clocks and DSP"""
 
     clock = "HMC7044"
@@ -30,7 +30,9 @@ class adrv9009_zu11eg(adrv9009_dt, layout):
     template_filename = "adrv9009_zu11eg.dts"
     output_filename = "adrv9009_zu11eg_out.dts"
 
-    def gen_dt_preprocess(self, rx, tx, orx, lpbk, clocks):
+    profile = None
+
+    def gen_dt_preprocess(self):
         """Preprocess profile for transceiver.
 
         Args:
@@ -39,6 +41,14 @@ class adrv9009_zu11eg(adrv9009_dt, layout):
         Returns:
             dict: Preprocessed profile.
         """
+        if self.profile is None:
+            raise Exception("Profile not loaded")
+        rx = self.profile['rx']
+        tx = self.profile['tx']
+        orx = self.profile['obsRx']
+        lpbk = self.profile['lpbk']
+        clocks = self.profile['clocks']
+
         rx["rxAdcProfile"]["coefs"] = coefs_to_long_string(rx["rxAdcProfile"]["#text"])
         rx["filter"]["coefs"] = coefs_to_long_string(rx["filter"]["#text"])
 
@@ -174,3 +184,16 @@ class adrv9009_zu11eg(adrv9009_dt, layout):
         adc, dac = self.map_jesd_structs(cfg)
 
         return ccfg, adc, dac, fpga
+
+    def parse_profile(self, filename):
+        """Parse a profile file.
+
+        Args:
+            filename (str): Profile file name.
+
+        Returns:
+            dict: Profile configuration.
+        """
+        if not os.path.exists(filename):
+            raise Exception(f"Profile file not found: {filename}")
+        self.profile = parse_profile(filename)
