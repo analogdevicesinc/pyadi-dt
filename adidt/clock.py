@@ -1,5 +1,5 @@
 from .dt import dt
-
+import .parts as parts
 
 class clock(dt):
     supported_parts = ["HMC7044", "AD9523-1", "AD9545"]
