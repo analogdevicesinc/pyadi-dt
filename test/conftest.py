@@ -49,7 +49,7 @@ def kernel_build_config(request):
     cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]} {defconfig}'
     print(f"Running: {cmd}")
     os.system(cmd)
-    cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]} -j'
+    cmd = f'make CROSS_COMPILE={compiler} ARCH={config["arch"]}'
     print(f"Running: {cmd}")
     os.system(cmd)
 
