@@ -9,12 +9,12 @@ class daq2(layout):
     adc = "ad9680"
     dac = "ad9144"
 
-    template_filename = "daq2.tmpl"
+    template_filename = "daq2_frag.dts"
     output_filename = "daq2.dts"
 
     def make_ints(self, cfg, keys):
         for key in keys:
-            if cfg[key].is_integer():
+            if float(cfg[key]).is_integer():
                 cfg[key] = int(cfg[key])
         return cfg
 
@@ -44,6 +44,15 @@ class daq2(layout):
 
         map = {}
         clk = cfg["clock"]["output_clocks"]
+
+        # Check if we can use PLL2 API or need to do it manually
+        v = float(cfg["clock"]['vco'])
+        cfg["clock"]['use_PLL2_API']  =  v.is_integer()
+        cfg["clock"]['a'] = cfg["clock"]['n2'] % 4
+        cfg["clock"]['b'] = cfg["clock"]['n2'] / 4
+        assert cfg["clock"]['b'].is_integer()
+        cfg["clock"]['b'] = int(cfg["clock"]['b'])
+
 
         # AD9680 side
         map["ADC_CLK"] = {
@@ -80,6 +89,10 @@ class daq2(layout):
 
         ccfg = {"map": map, "clock": cfg["clock"]}
 
+        fpga = {}
+        fpga['fpga_AD9680'] = cfg["fpga_AD9680"]
+        fpga['fpga_AD9144'] = cfg["fpga_AD9144"]
+
         # Check all clocks are mapped
         # FIXME
 
@@ -88,4 +101,4 @@ class daq2(layout):
 
         adc, dac = self.map_jesd_structs(cfg)
 
-        return ccfg, adc, dac
+        return ccfg, adc, dac, fpga

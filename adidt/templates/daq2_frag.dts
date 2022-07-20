@@ -1,0 +1,126 @@
+// SPDX-License-Identifier: GPL-2.0
+/*
+ * Analog Devices AD-FMCDAQ2-EBZ using M4, L4
+ * Link: https://wiki.analog.com/resources/eval/user-guides/ad-fmcdaq2-ebz
+ *
+ * hdl_project: <daq2/zcu102>
+ * board_revision: <Rev.C>
+ *
+ * Copyright 2022 Analog Devices Inc.
+ */
+
+#include "zynqmp-zcu102-rev10-fmcdaq2.dts"
+
+// Synthesis parameter:
+// RX_JESD_M = {{ adc['jesd']['M'] }}
+// RX_JESD_L = {{ adc['jesd']['L'] }}
+// RX_JESD_S = {{ adc['jesd']['M'] }}
+// TX_JESD_M = {{ dac['jesd']['M'] }}
+// TX_JESD_L = {{ dac['jesd']['L'] }}
+// TX_JESD_S = {{ dac['jesd']['S'] }}
+
+
+&dac0_ad9144 {
+	// adi,jesd-link-mode = <2>;
+	// adi,interpolation = <2>;
+    adi,converters-per-device = <{{ dac['jesd']['M'] }}>;	/* JESD204 (M) */
+    adi,lanes-per-device = <{{ dac['jesd']['L'] }}>;		/* JESD204 (L) */
+    adi,octets-per-frame = <{{ dac['jesd']['F'] }}>;		/* JESD204 (F) */
+    adi,frames-per-multiframe = <{{ dac['jesd']['K'] }}>;	/* JESD204 (K) */
+    adi,converter-resolution = <{{ dac['jesd']['Np'] }}>;	/* JESD204 (N) */
+    adi,bits-per-sample = <{{ dac['jesd']['Np'] }}>;		/* JESD204 (N') */
+    adi,control-bits-per-sample = <{{ dac['jesd']['CS'] }}>;	/* JESD204 (CS) */
+    adi,subclass = <{{ dac['jesd']['jesd_class_int'] }}>;	/* JESD204 (SUBCLASSV) */
+    adi,samples-per-converter-per-frame = <{{ dac['jesd']['S'] }}>; /* JESD S */
+    adi,high-density = <{{ dac['jesd']['HD'] }}>;			/* JESD HD */
+
+};
+
+&adc0_ad9680 {
+
+	adi,sampling-frequency = <0 {{ adc['jesd']['converter_clock'] }}>;
+
+    adi,converters-per-device = <{{ adc['jesd']['M'] }}>;	/* JESD204 (M) */
+    adi,lanes-per-device = <{{ adc['jesd']['L'] }}>;		/* JESD204 (L) */
+    adi,octets-per-frame = <{{ adc['jesd']['F'] }}>;		/* JESD204 (F) */
+    adi,frames-per-multiframe = <{{ adc['jesd']['K'] }}>;	/* JESD204 (K) */
+    adi,converter-resolution = <14>;	/* JESD204 (N) */
+    adi,bits-per-sample = <{{ adc['jesd']['Np'] }}>;		/* JESD204 (N') */
+    adi,control-bits-per-sample = <{{ adc['jesd']['CS'] }}>;	/* JESD204 (CS) */
+    adi,subclass = <{{ adc['jesd']['jesd_class_int'] }}>;	/* JESD204 (SUBCLASSV) */
+    adi,samples-per-converter-per-frame = <{{ adc['jesd']['S'] }}>; /* JESD S */
+    adi,high-density = <{{ adc['jesd']['HD'] }}>;			/* JESD HD */
+
+
+	/* DDC setup */
+	// adi,ddc-channel-number = <AD9208_2_DDC_MODE>;
+	// ad9208_ddc0: channel@0 {
+	// 	reg = <0>;
+	// 	adi,decimation = <4>;
+	// 	adi,nco-mode-select = <AD9208_NCO_MODE_VIF>;
+	// 	adi,nco-channel-carrier-frequency-hz = /bits/ 64 <100000000>;
+	// 	adi,nco-channel-phase-offset = /bits/ 64 <0>;
+	// };
+
+	// ad9208_ddc1: channel@1 {
+	// 	reg = <1>;
+	// 	adi,decimation = <4>;
+	// 	adi,nco-mode-select = <AD9208_NCO_MODE_VIF>;
+	// 	adi,nco-channel-carrier-frequency-hz = /bits/ 64 <100000000>;
+	// 	adi,nco-channel-phase-offset = /bits/ 64 <0>;
+	// };
+};
+
+
+&axi_ad9680_adxcvr {
+        adi,sys-clk-select = <{{fpga['fpga_AD9680']['sys_clk_select']}}>;
+        adi,out-clk-select = <{{fpga['fpga_AD9680']['out_clk_select']}}>;
+};
+
+
+&axi_ad9144_adxcvr {
+        adi,sys-clk-select = <{{fpga['fpga_AD9144']['sys_clk_select']}}>;
+        adi,out-clk-select = <{{fpga['fpga_AD9144']['out_clk_select']}}>;
+};
+
+&clk0_ad9523 {
+
+		adi,vcxo-freq = <{{ clock['clock']['vcxo'] }}>;
+		// adi,spi-3wire-enable;
+		// adi,pll1-bypass-enable;
+		// adi,osc-in-diff-enable;
+
+		// adi,pll2-charge-pump-current-nA = <413000>;
+
+		/* Used VCO: {{ clock['clock']['vco'] }}
+		 * Valid ranges based on VCO locking range:
+		 *    980.00 MHz - 1033.33 MHz
+		 *    735.00 MHz -  775.00 MHz
+		 *    588.00 MHz -  620.00 MHz
+		 */
+		{% if clock['clock']['use_PLL2_API'] %}
+		adi,pll2-m1-freq = <{{ clock['clock']['vco'] }}>;
+		{% else %}
+		/* Manual PLL2 divider configuration */
+		// PLL2 = {{ clock['clock']['vco']/clock['clock']['m1'] }}
+		adi,pll2-r2-div = <{{ clock['clock']['r2'] }}>;
+		adi,pll2-vco-div-m1 = <{{ clock['clock']['m1'] }}>;
+		adi,pll2-ndiv-a-cnt = <{{ clock['clock']['a'] }}>; /* a = N % 4 */
+		adi,pll2-ndiv-b-cnt = <{{ clock['clock']['b'] }}>; /* b = N / 4 */
+		{% endif %}
+
+
+		// adi,rpole2 = <0>;
+		// adi,rzero = <7>;
+		// adi,cpole1 = <2>;
+
+        {% for chan in clock['map'] %}
+		ad9523_0_c{{ clock['map'][chan]['source_port'] }}:channel@{{ clock['map'][chan]['source_port'] }} {
+			reg = <{{ clock['map'][chan]['source_port'] }}>;
+			adi,extended-name = "{{ chan }}";
+			adi,driver-mode = <3>;
+			adi,divider-phase = <1>;
+			adi,channel-divider = <{{ clock['map'][chan]['divider'] }}>; // {{ clock['clock']['vco']/clock['map'][chan]['divider'] }}
+		};
+        {% endfor %}
+};  
