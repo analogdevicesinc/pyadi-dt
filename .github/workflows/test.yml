@@ -15,3 +15,14 @@ jobs:
         architecture: x64
     - run: pip install -r requirements/requirements_dev.txt
     - run: pytest -vs
+
+  kuiper-test:
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bullseye
+    steps:
+    - uses: actions/checkout@v2
+    - run: apt update
+    - run: apt install -y python3-pip python3-dev
+    - run: pip install -r requirements/requirements_dev.txt
+    - run: pytest -vs
