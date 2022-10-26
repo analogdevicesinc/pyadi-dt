@@ -122,6 +122,12 @@ class ad9081_fmc(layout):
         fpga['fpga_adc'] = cfg["fpga_adc"]
         fpga['fpga_dac'] = cfg["fpga_dac"]
 
+        # DT does not distinguish between QPLL and QPLL0
+        if fpga['fpga_adc']['sys_clk_select'] == "XCVR_QPLL0":
+            fpga['fpga_adc']['sys_clk_select'] = "XCVR_QPLL"
+        if fpga['fpga_dac']['sys_clk_select'] == "XCVR_QPLL0":
+            fpga['fpga_dac']['sys_clk_select'] = "XCVR_QPLL"
+
         # Check all clocks are mapped
         # FIXME
 
