@@ -202,7 +202,7 @@
 	adi,tx-profile-tx-input-rate_khz = <{{ tx['txInputRate_kHz'] }}>;
 	adi,tx-profile-tx-int5-interpolation = <{{ tx['txInt5Interpolation'] }}>;
 	adi,tx-profile-tx-fir-coefs = /bits/ 16  <{{ tx['filter']['coefs'] }}>;
-	adi,tx-profile-loop-back-adc-profile = /bits/ 16 <{{ tx['filter']['coefs'] }}>;
+	adi,tx-profile-loop-back-adc-profile = /bits/ 16 <{{ lpbk['lpbkAdcProfile']['coefs'] }}>;
 
 	adi,dig-clocks-clk-pll-hs-div = <{{ clocks['clkPllHsDiv'] }}>;
 	adi,dig-clocks-clk-pll-vco-freq_khz = <{{ clocks['clkPllVcoFreq_kHz'] }}>;
