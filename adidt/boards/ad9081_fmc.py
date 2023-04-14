@@ -99,7 +99,7 @@ class ad9081_fmc(layout):
         }
         map["CORE_CLK_RX_ALT"] = {
             "source_port": 10,
-            "divider": clk["adc_fpga_link_out_clk"]["divider"] * 2,
+            "divider": clk["adc_fpga_link_out_clk"]["divider"] * 1,
         }
         map["FPGA_REFCLK1"] = {
             "source_port": 8,
@@ -128,5 +128,9 @@ class ad9081_fmc(layout):
         # Check no source_port is mapped to more than one clock
         # FIXME
         adc, dac = self.map_jesd_structs(cfg)
+
+        # Section disables
+        adc["fddc_enabled"] = any(cfg["datapath_adc"]["fddc"]["enabled"])         
+        dac["fduc_enabled"] = any(cfg["datapath_dac"]["fduc"]["enabled"])         
 
         return ccfg, adc, dac, fpga

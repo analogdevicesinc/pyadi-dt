@@ -13,6 +13,9 @@
 
 #include "zynqmp-zcu102-rev10-ad9081.dts"
 
+#define CDDC_I 0
+#define CDDC_Q 1
+
 &axi_ad9081_rx_jesd {
 	clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_ad9081_adxcvr_rx 1>, <&axi_ad9081_adxcvr_rx 0>;
 	clock-names = "s_axi_aclk", "device_clk", "link_clk", "lane_clk";
@@ -149,7 +152,9 @@
 				{% if ce %}
 				ad9081_dac{{ loop.index0 }}: dac@{{ loop.index0 }} {
 					reg = <{{ loop.index0 }}>;
+					{%- if dac['fduc_enabled'] %}
 					adi,crossbar-select = <{% for i in dac['datapath']['cduc']['sources'][loop.index0] %}&ad9081_tx_fddc_chan{{ i }}{{ ", " if not loop.last else "" }}{% endfor %}>;
+					{%- endif %}
 					adi,nco-frequency-shift-hz = /bits/ 64 <{{ dac['datapath']['fduc']['nco_frequencies'][loop.index0] }}>;
 				};
 				{%- endif %}
@@ -162,6 +167,7 @@
 				#size-cells = <0>;
 				adi,interpolation = <{{ dac['datapath']['fduc']['interpolation'] }}>;
 
+				{%- if dac['fduc_enabled'] %}
 				{%- for ce in dac['datapath']['fduc']['enabled'] %}
 				{% if ce %}
 				ad9081_tx_fddc_chan{{ loop.index0 }}: channel@{{ loop.index0 }} {
@@ -171,6 +177,7 @@
 				};
 				{%- endif %}
 				{%- endfor %}
+				{%- endif %}
 
 			};
 
@@ -235,6 +242,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 
+				{%- if adc['fddc_enabled'] %}
 				{%- for ce in adc['datapath']['fddc']['enabled'] %}
 				{% if ce %}
 				ad9081_rx_fddc_chan{{ loop.index0 }}:channel@{{ loop.index0 }} {
@@ -245,6 +253,7 @@
 				};
 				{%- endif %}
 				{%- endfor %}
+				{%- endif %}
 			};
 
 			adi,jesd-links {
@@ -253,11 +262,19 @@
 
 				ad9081_rx_jesd_l0: link@0 {
 					reg = <0>;
+					{%- if adc['fddc_enabled'] %}
 					adi,converter-select =
 						<&ad9081_rx_fddc_chan0 FDDC_I>, <&ad9081_rx_fddc_chan0 FDDC_Q>,
 						<&ad9081_rx_fddc_chan1 FDDC_I>, <&ad9081_rx_fddc_chan1 FDDC_Q>,
 						<&ad9081_rx_fddc_chan4 FDDC_I>, <&ad9081_rx_fddc_chan4 FDDC_Q>,
 						<&ad9081_rx_fddc_chan5 FDDC_I>, <&ad9081_rx_fddc_chan5 FDDC_Q>;
+					{%- else %}
+					adi,converter-select =
+						<&ad9081_adc0 CDDC_I>, <&ad9081_adc0 CDDC_Q>,
+						<&ad9081_adc1 CDDC_I>, <&ad9081_adc1 CDDC_Q>,
+						<&ad9081_adc2 CDDC_I>, <&ad9081_adc2 CDDC_Q>,
+						<&ad9081_adc3 CDDC_I>, <&ad9081_adc3 CDDC_Q>;
+					{% endif %}
 
 					adi,logical-lane-mapping = /bits/ 8 <2 0 7 7 7 7 3 1>;
 
