@@ -88,18 +88,18 @@ class ad9081_fmc(layout):
         map["FPGA_SYSREF"] = {
             "source_port": 13,
             "divider": np.max(
-                [clk["adc_fpga_ref_clk"]["divider"], clk["dac_fpga_ref_clk"]["divider"]]
+                [clk["adc_fpga_ref_clk"]["divider"], clk["dac_sysref"]["divider"]]
             ),
         }
 
         # RX side
         map["CORE_CLK_RX"] = {
             "source_port": 0,
-            "divider": clk["adc_fpga_ref_clk"]["divider"],
+            "divider": clk["adc_fpga_link_out_clk"]["divider"],
         }
         map["CORE_CLK_RX_ALT"] = {
             "source_port": 10,
-            "divider": clk["adc_fpga_ref_clk"]["divider"] * 2,
+            "divider": clk["adc_fpga_link_out_clk"]["divider"] * 2,
         }
         map["FPGA_REFCLK1"] = {
             "source_port": 8,
@@ -109,7 +109,7 @@ class ad9081_fmc(layout):
         # Tx side
         map["CORE_CLK_TX"] = {
             "source_port": 6,
-            "divider": clk["dac_fpga_ref_clk"]["divider"],
+            "divider": clk["dac_fpga_link_out_clk"]["divider"],
         }
         map["FPGA_REFCLK2"] = {
             "source_port": 12,

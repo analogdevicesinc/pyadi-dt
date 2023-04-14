@@ -28,6 +28,11 @@
 	adi,out-clk-select = <{{fpga['fpga_adc']['out_clk_select']}}>;
 };
 
+&axi_ad9081_adxcvr_tx {
+	adi,sys-clk-select = <{{fpga['fpga_dac']['sys_clk_select']}}>;
+	adi,out-clk-select = <{{fpga['fpga_dac']['out_clk_select']}}>;
+};
+
 //		&axi_ad9081_adxcvr_tx: axi-adxcvr-tx {
 //			adi,sys-clk-select = <XCVR_QPLL>;
 //			adi,out-clk-select = <XCVR_REFCLK_DIV2>;
