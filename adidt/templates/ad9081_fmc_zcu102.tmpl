@@ -264,16 +264,21 @@
 					reg = <0>;
 					{%- if adc['fddc_enabled'] %}
 					adi,converter-select =
-						<&ad9081_rx_fddc_chan0 FDDC_I>, <&ad9081_rx_fddc_chan0 FDDC_Q>,
-						<&ad9081_rx_fddc_chan1 FDDC_I>, <&ad9081_rx_fddc_chan1 FDDC_Q>,
-						<&ad9081_rx_fddc_chan4 FDDC_I>, <&ad9081_rx_fddc_chan4 FDDC_Q>,
-						<&ad9081_rx_fddc_chan5 FDDC_I>, <&ad9081_rx_fddc_chan5 FDDC_Q>;
+					{%- for ce in adc['datapath']['fddc']['enabled'] %}
+					{%- if ce %}
+						<&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_I>, <&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_Q>{% if not loop.last %},{% endif %}
+					{%- endif -%}
+					{% if loop.last %};{% endif %}
+					{%- endfor %}
+
 					{%- else %}
 					adi,converter-select =
-						<&ad9081_adc0 CDDC_I>, <&ad9081_adc0 CDDC_Q>,
-						<&ad9081_adc1 CDDC_I>, <&ad9081_adc1 CDDC_Q>,
-						<&ad9081_adc2 CDDC_I>, <&ad9081_adc2 CDDC_Q>,
-						<&ad9081_adc3 CDDC_I>, <&ad9081_adc3 CDDC_Q>;
+					{%- for ce in adc['datapath']['cddc']['enabled'] %}
+					{%- if ce %}
+						<&ad9081_adc{{ loop.index0 }} CDDC_I>, <&ad9081_adc{{ loop.index0 }} CDDC_Q>{% if not loop.last %},{% endif %}
+					{%- endif -%}
+					{% if loop.last %};{% endif %}
+					{%- endfor %}
 					{% endif %}
 
 					adi,logical-lane-mapping = /bits/ 8 <2 0 7 7 7 7 3 1>;
