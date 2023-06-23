@@ -131,6 +131,12 @@ class ad9081_fmc(layout):
 
         # Section disables
         adc["fddc_enabled"] = any(cfg["datapath_adc"]["fddc"]["enabled"])         
-        dac["fduc_enabled"] = any(cfg["datapath_dac"]["fduc"]["enabled"])         
+        dac["fduc_enabled"] = any(cfg["datapath_dac"]["fduc"]["enabled"])
+
+        # Change QPLL0 to naming in kernel
+        if fpga['fpga_dac']['sys_clk_select'] == 'XCVR_QPLL0':
+            fpga['fpga_dac']['sys_clk_select'] = 'XCVR_QPLL'
+        if fpga['fpga_adc']['sys_clk_select'] == 'XCVR_QPLL0':
+            fpga['fpga_adc']['sys_clk_select'] = 'XCVR_QPLL'
 
         return ccfg, adc, dac, fpga
