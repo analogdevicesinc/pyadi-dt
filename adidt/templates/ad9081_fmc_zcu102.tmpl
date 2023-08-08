@@ -263,19 +263,23 @@
 				ad9081_rx_jesd_l0: link@0 {
 					reg = <0>;
 					{%- if adc['fddc_enabled'] %}
+					{% set ns = namespace(c = 0) %}
 					adi,converter-select =
 					{%- for ce in adc['datapath']['fddc']['enabled'] %}
-					{%- if ce %}
-						<&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_I>, <&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_Q>{% if not loop.last %},{% endif %}
+					{%- if ce %}{% set ns.c = ns.c + 1 %}
+						{%- if ns.c > 1 %},{% endif %}
+						<&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_I>, <&ad9081_rx_fddc_chan{{ loop.index0 }} FDDC_Q>
 					{%- endif -%}
 					{% if loop.last %};{% endif %}
 					{%- endfor %}
 
 					{%- else %}
+					{% set ns = namespace(c = 0) %}
 					adi,converter-select =
 					{%- for ce in adc['datapath']['cddc']['enabled'] %}
-					{%- if ce %}
-						<&ad9081_adc{{ loop.index0 }} CDDC_I>, <&ad9081_adc{{ loop.index0 }} CDDC_Q>{% if not loop.last %},{% endif %}
+					{%- if ce %}{% set ns.c = ns.c + 1 %}
+						{%- if ns.c > 1 %},{% endif %}
+						<&ad9081_adc{{ loop.index0 }} CDDC_I>, <&ad9081_adc{{ loop.index0 }} CDDC_Q>
 					{%- endif -%}
 					{% if loop.last %};{% endif %}
 					{%- endfor %}
