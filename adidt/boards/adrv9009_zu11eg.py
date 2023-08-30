@@ -3,21 +3,6 @@ from ..parts.adrv9009 import parse_profile
 import numpy as np
 import os
 
-def coefs_to_long_string(coefs):
-    """Convert coefficient array to string.
-
-    Args:
-        coefs (list): Coefficients.
-
-    Returns:
-        str: Coefficients as a string.
-    """
-    result = ""
-    for coef in coefs.split("\n"):
-        coef = coef.replace(" ", "")
-        result += f"({coef}) "
-    return result[:-1]
-
 
 class adrv9009_zu11eg(layout):
     """ADRV9009-ZU11EG SOM board layout map for clocks and DSP"""
@@ -31,41 +16,6 @@ class adrv9009_zu11eg(layout):
     output_filename = "adrv9009_zu11eg_out.dts"
 
     profile = None
-
-    def gen_dt_preprocess(self):
-        """Preprocess profile for transceiver.
-
-        Args:
-            profile (dict): Profile.
-
-        Returns:
-            dict: Preprocessed profile.
-        """
-        if self.profile is None:
-            raise Exception("Profile not loaded")
-        rx = self.profile['rx']
-        tx = self.profile['tx']
-        orx = self.profile['obsRx']
-        lpbk = self.profile['lpbk']
-        clocks = self.profile['clocks']
-
-        rx["rxAdcProfile"]["coefs"] = coefs_to_long_string(rx["rxAdcProfile"]["#text"])
-        rx["filter"]["coefs"] = coefs_to_long_string(rx["filter"]["#text"])
-
-        orx["filter"]["coefs"] = coefs_to_long_string(orx["filter"]["#text"])
-        orx["orxBandPassAdcProfile"]["coefs"] = coefs_to_long_string(
-            orx["orxBandPassAdcProfile"]["#text"]
-        )
-        orx["orxLowPassAdcProfile"]["coefs"] = coefs_to_long_string(
-            orx["orxLowPassAdcProfile"]["#text"]
-        )
-
-        tx["filter"]["coefs"] = coefs_to_long_string(tx["filter"]["#text"])
-        lpbk["lpbkAdcProfile"]["coefs"] = coefs_to_long_string(
-            lpbk["lpbkAdcProfile"]["#text"]
-        )
-
-        return {"rx": rx, "tx": tx, "orx": orx, "lpbk": lpbk, "clocks": clocks}
 
     def make_ints(self, cfg, keys):
         """Convert keys in a dict to integers.

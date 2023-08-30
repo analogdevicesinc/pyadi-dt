@@ -11,6 +11,22 @@ def handle_ints(val):
     return int(hex((val + (1 << 32)) % (1 << 32)), 16)
 
 
+def coefs_to_long_string(coefs):
+    """Convert coefficient array to string.
+
+    Args:
+        coefs (list): Coefficients.
+
+    Returns:
+        str: Coefficients as a string.
+    """
+    result = ""
+    for coef in coefs.split("\n"):
+        coef = coef.replace(" ", "")
+        result += f"({coef}) "
+    return result[:-1]
+
+
 def profile_to_xml(filename):
     # Update profile to non-shitty xml
     with open(filename) as sxmlfile:
@@ -83,33 +99,86 @@ def parse_profile(filename):
     nsxml = profile_to_xml(filename)
     profile = xmltodict.parse(nsxml)["profile"]
 
+    rx = profile['rx']
+    tx = profile['tx']
+    orx = profile['obsRx']
+    lpbk = profile['lpbk']
+    clocks = profile['clocks']
+
     # Custom translations
     # Clock Divide Ratio; 0=2.0, 1=2.5, 2=3.0, 3=4.0, 4=5.0
-    pval = float(profile["clocks"]["clkPllHsDiv"])
-    if pval == 2.0:
-        val = "0"
-    elif pval == 2.5:
-        val = "1"
-    elif pval == 3.0:
-        val = "2"
-    elif pval == 4.0:
-        val = "3"
-    elif pval == 5.0:
-        val = "4"
-    else:
-        raise ValueError(f"Unknown clock divider value {pval}")
+    HsDiv = {
+        "2.0": 0,
+        "2.5": 1,
+        "3.0": 2,
+        "4.0": 3,
+        "5.0": 4,
+    }
+    try:
+        clocks["clkPllHsDiv"] = HsDiv[clocks["clkPllHsDiv"]]
+    except KeyError:
+        raise ValueError(f"Unknown clock divider value {clocks['clkPllHsDiv']}")
 
-    profile["clocks"]["clkPllHsDiv"] = val
+
+    channel_enable = {
+        'TAL_RXOFF': 0,
+        'TAL_RX1': 1,
+        'TAL_RX2': 2,
+        'TAL_RX1RX2': 3,
+        'TAL_ORXOFF': 0,
+        'TAL_ORX1': 1,
+        'TAL_ORX2': 2,
+        'TAL_ORX1ORX2': 3,
+        'TAL_TXOFF': 0,
+        'TAL_TX1': 1,
+        'TAL_TX2': 2,
+        'TAL_TX1TX2': 3,
+    }
+    try:
+        rx["rxChannels"] = channel_enable[rx["rxChannels"]]
+    except KeyError:
+        raise ValueError(f"Unknown rxChannels value {rx['rxChannels']}")
+
+    try:
+        orx["obsRxChannelsEnable"] = channel_enable[orx["obsRxChannelsEnable"]]
+    except KeyError:
+        val = orx["obsRxChannelsEnable"]
+        raise ValueError(f"Unknown obsRxChannelsEnable value {val}")
+
+    try:
+        tx["txChannels"] = channel_enable[tx["txChannels"]]
+    except KeyError:
+        val = tx["txChannels"]
+        raise ValueError(f"Unknown txChannels value {val}")
 
     # Gains can be negative so must be wrapped
-    if int(profile["rx"]["filter"]["@gain_dB"]) < 0:
-        profile["rx"]["filter"]["@gain_dB"] = f"({profile['rx']['filter']['@gain_dB']})"
-    if int(profile["obsRx"]["filter"]["@gain_dB"]) < 0:
-        profile["obsRx"]["filter"]["@gain_dB"] = f"({profile['obsRx']['filter']['@gain_dB']})"
-    if int(profile["tx"]["filter"]["@gain_dB"]) < 0:
-        profile["tx"]["filter"]["@gain_dB"] = f"({profile['tx']['filter']['@gain_dB']})"
+    if int(rx["filter"]["@gain_dB"]) < 0:
+        rx["filter"]["@gain_dB"] = f"({rx['filter']['@gain_dB']})"
+    if int(orx["filter"]["@gain_dB"]) < 0:
+        orx["filter"]["@gain_dB"] = f"({orx['filter']['@gain_dB']})"
+    if int(tx["filter"]["@gain_dB"]) < 0:
 
-    return profile
+        tx["filter"]["@gain_dB"] = f"({tx['filter']['@gain_dB']})"
+
+    rx["rxAdcProfile"]["coefs"] = coefs_to_long_string(rx["rxAdcProfile"]["#text"])
+    del(rx["rxAdcProfile"]["#text"])
+    rx["filter"]["coefs"] = coefs_to_long_string(rx["filter"]["#text"])
+    del(rx["filter"]["#text"])
+
+    orx["filter"]["coefs"] = coefs_to_long_string(orx["filter"]["#text"])
+    del(orx["filter"]["#text"])
+    orx["orxBandPassAdcProfile"]["coefs"] = coefs_to_long_string(orx["orxBandPassAdcProfile"]["#text"])
+    del(orx["orxBandPassAdcProfile"]["#text"])
+    orx["orxLowPassAdcProfile"]["coefs"] = coefs_to_long_string(orx["orxLowPassAdcProfile"]["#text"])
+    del(orx["orxLowPassAdcProfile"]["#text"])
+
+    tx["filter"]["coefs"] = coefs_to_long_string(tx["filter"]["#text"])
+    del(tx["filter"]["#text"])
+
+    lpbk["lpbkAdcProfile"]["coefs"] = coefs_to_long_string(lpbk["lpbkAdcProfile"]["#text"])
+    del(lpbk["lpbkAdcProfile"]["#text"])
+
+    return {"rx": rx, "tx": tx, "orx": orx, "lpbk": lpbk, "clocks": clocks}
 
 
 class adrv9009_dt(dt):
