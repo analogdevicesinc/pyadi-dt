@@ -11,7 +11,7 @@ def handle_ints(val):
     return int(hex((val + (1 << 32)) % (1 << 32)), 16)
 
 
-def parse_profile(filename):
+def profile_to_xml(filename):
     # Update profile to non-shitty xml
     with open(filename) as sxmlfile:
         sxmldata = sxmlfile.read()
@@ -76,7 +76,11 @@ def parse_profile(filename):
         else:
             outfile += [line]
 
-    nsxml = "\n".join(outfile)
+    return "\n".join(outfile)
+
+
+def parse_profile(filename):
+    nsxml = profile_to_xml(filename)
     profile = xmltodict.parse(nsxml)["profile"]
 
     # Custom translations
