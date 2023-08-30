@@ -12,6 +12,16 @@ from .helpers import list_node_props, list_node_prop, list_node_subnodes
     help="Disable formatting",
 )
 @click.option(
+    "--board",
+    "-b",
+    default="adrv9009_pcbz",
+    help="Set board configuration",
+    type=click.Choice(
+        ["ad9081_fmc", "adrv9009_pcbz", "adrv9009_zu11eg", "daq2"]
+    ),
+    show_default=True,
+)
+@click.option(
     "--context",
     "-c",
     default="local_sysfs",
@@ -58,11 +68,12 @@ from .helpers import list_node_props, list_node_prop, list_node_subnodes
     show_default=True,
 )
 @click.pass_context
-def cli(ctx, no_color, context, ip, username, password, arch, filepath):
+def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
     """ADI device tree utility"""
     ctx.ensure_object(dict)
 
     ctx.obj["no_color"] = no_color
+    ctx.obj["board"] = board
     ctx.obj["context"] = context
     ctx.obj["ip"] = ip
     ctx.obj["username"] = username
@@ -450,3 +461,26 @@ def jif(ctx, node_type, reboot, filename):
         d.update_current_dt(reboot=reboot)
     else:
         raise Exception("Other node types not implemented")
+
+
+@cli.command()
+@click.option(
+    "--profile",
+    "-p",
+    default=None,
+    help="",
+    type=click.Path(exists=True),
+)
+@click.pass_context
+def profile2dt(ctx, profile):
+    """Generate devicetree from Profile Configuration Wizard files
+    """
+    b = ctx.obj["board"]
+    if b not in ["adrv9009_pcbz"]:
+        print(f"board type {b} not supported")
+        return
+
+    board = eval(f"adidt.{b}()")
+    board.parse_profile(profile)
+    board.gen_dt()
+    print(f'Wrote {board.output_filename}')
