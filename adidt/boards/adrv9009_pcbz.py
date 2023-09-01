@@ -1,7 +1,7 @@
 from .layout import layout
 from ..parts.adrv9009 import parse_profile
 import numpy as np
-import os
+from pathlib import Path
 
 
 class adrv9009_pcbz(layout):
@@ -12,16 +12,16 @@ class adrv9009_pcbz(layout):
 
     profile = None
 
-    def parse_profile(self, filename):
+    def parse_profile(self, filename: Path):
         """Parse a profile file.
 
         Args:
-            filename (str): Profile file name.
+            filename: Profile file name.
 
         Returns:
             dict: Profile configuration.
         """
-        if not os.path.exists(filename):
+        if not filename.exists():
             raise Exception(f"Profile file not found: {filename}")
         self.profile = parse_profile(filename)
 

@@ -2,6 +2,7 @@ import adidt
 import fdt
 import click
 from .helpers import list_node_props, list_node_prop, list_node_subnodes
+from pathlib import Path
 
 
 @click.group()
@@ -469,7 +470,7 @@ def jif(ctx, node_type, reboot, filename):
     "-p",
     default=None,
     help="",
-    type=click.Path(exists=True),
+    type=Path,
 )
 @click.pass_context
 def profile2dt(ctx, profile):
