@@ -4,12 +4,40 @@ from adidt.dt import dt
 from adidt.utils import profilewiz
 import fdt
 import math
+import logging
 
 
 def handle_ints(val):
     val = int(val)
     # Handles negative numbers
     return int(hex((val + (1 << 32)) % (1 << 32)), 16)
+
+
+def handle_channel_enable(data: dict, key: str, default: int = 0):
+    channel_enable_map = {
+        'TAL_RXOFF': 0,
+        'TAL_RX1': 1,
+        'TAL_RX2': 2,
+        'TAL_RX1RX2': 3,
+        'TAL_ORXOFF': 0,
+        'TAL_ORX1': 1,
+        'TAL_ORX2': 2,
+        'TAL_ORX1ORX2': 3,
+        'TAL_TXOFF': 0,
+        'TAL_TX1': 1,
+        'TAL_TX2': 2,
+        'TAL_TX1TX2': 3,
+    }
+
+    if key not in data.keys():
+        logging.warning(f"{key} not defined, defaulting to {default}")
+        data[key] = default
+        return
+
+    try:
+        data[key] = channel_enable_map[data[key]]
+    except KeyError:
+        raise ValueError(f"Unknown {key} value {data[key]}")
 
 
 def parse_profile(filename):
@@ -36,37 +64,9 @@ def parse_profile(filename):
     except KeyError:
         raise ValueError(f"Unknown clock divider value {clocks['clkPllHsDiv']}")
 
-
-    channel_enable = {
-        'TAL_RXOFF': 0,
-        'TAL_RX1': 1,
-        'TAL_RX2': 2,
-        'TAL_RX1RX2': 3,
-        'TAL_ORXOFF': 0,
-        'TAL_ORX1': 1,
-        'TAL_ORX2': 2,
-        'TAL_ORX1ORX2': 3,
-        'TAL_TXOFF': 0,
-        'TAL_TX1': 1,
-        'TAL_TX2': 2,
-        'TAL_TX1TX2': 3,
-    }
-    try:
-        rx["rxChannels"] = channel_enable[rx["rxChannels"]]
-    except KeyError:
-        raise ValueError(f"Unknown rxChannels value {rx['rxChannels']}")
-
-    try:
-        orx["obsRxChannelsEnable"] = channel_enable[orx["obsRxChannelsEnable"]]
-    except KeyError:
-        val = orx["obsRxChannelsEnable"]
-        raise ValueError(f"Unknown obsRxChannelsEnable value {val}")
-
-    try:
-        tx["txChannels"] = channel_enable[tx["txChannels"]]
-    except KeyError:
-        val = tx["txChannels"]
-        raise ValueError(f"Unknown txChannels value {val}")
+    handle_channel_enable(rx, "rxChannels", 0)
+    handle_channel_enable(orx, "obsRxChannels", 0)
+    handle_channel_enable(tx, "txChannels", 0)
 
     # Gains can be negative so must be wrapped
     if int(rx["filter"]["@gain_dB"]) < 0:
