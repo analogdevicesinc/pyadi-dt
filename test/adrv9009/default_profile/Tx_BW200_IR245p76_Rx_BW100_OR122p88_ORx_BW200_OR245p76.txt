@@ -1,17 +1,18 @@
-<profile Talise version=1 name=Tx_BW200_IR245p76_Rx_BW200_OR245p76_ORx_BW200_OR245p76_DC245p76>
+<profile Talise version=1 name=Tx_BW200_IR245p76_Rx_BW100_OR122p88_ORx_BW200_OR245p76>
  <clocks>
-  <deviceClock_kHz=245760>
+  <deviceClock_kHz=65536>
   <clkPllVcoFreq_kHz=9830400>
   <clkPllHsDiv=2.5>
  </clocks>
 
- <rx name=Rx 200.00MHz, OutputRate 245.76MHz, TotalDecimation 8>
+ <rx name=Rx 100.00MHz, OutputRate 122.88MHz, TotalDecimation 16>
+  <rxChannels=TAL_RX1RX2>
   <rxFirDecimation=2>
   <rxDec5Decimation=4>
-  <rhb1Decimation=1>
-  <rxOutputRate_kHz=245760>
-  <rfBandwidth_Hz=200000000>
-  <rxBbf3dBCorner_kHz=200000>
+  <rhb1Decimation=2>
+  <rxOutputRate_kHz=122880>
+  <rfBandwidth_Hz=100000000>
+  <rxBbf3dBCorner_kHz=100000>
   <rxDdcMode=0>
 
   <rxNcoShifterCfg>
@@ -25,79 +26,103 @@
    <bandBNco2Freq_kHz=0>
   </rxNcoShifterCfg>
 
-  <filter FIR gain_dB=-6 numFirCoefs=48>
+  <filter FIR gain_dB=-6 numFirCoefs=72>
+  0
+  -1
+  2
+  3
+  -4
   -7
-  -23
-  33
-  50
-  -70
-  -110
-  144
-  205
-  -259
-  -356
-  437
-  581
-  -698
-  -916
-  1082
-  1415
-  -1655
-  -2209
-  2567
-  3615
-  -4351
-  -7169
-  9329
-  31129
-  31129
-  9329
-  -7169
-  -4351
-  3615
-  2567
-  -2209
-  -1655
-  1415
-  1082
-  -916
-  -698
-  581
-  437
-  -356
-  -259
-  205
-  144
-  -110
-  -70
-  50
-  33
-  -23
+  10
+  16
+  -21
+  -31
+  40
+  56
+  -71
+  -96
+  119
+  157
+  -187
+  -241
+  288
+  363
+  -431
+  -538
+  622
+  772
+  -891
+  -1105
+  1264
+  1582
+  -1819
+  -2335
+  2710
+  3697
+  -4461
+  -7201
+  9397
+  31111
+  31111
+  9397
+  -7201
+  -4461
+  3697
+  2710
+  -2335
+  -1819
+  1582
+  1264
+  -1105
+  -891
+  772
+  622
+  -538
+  -431
+  363
+  288
+  -241
+  -187
+  157
+  119
+  -96
+  -71
+  56
+  40
+  -31
+  -21
+  16
+  10
   -7
+  -4
+  3
+  2
+  -1
+  0
   </filter>
 
   <rxAdcProfile num=42>
-  185
-  141
-  172
+  265
+  146
+  181
   90
   1280
-  942
-  1332
-  90
-  1368
+  366
+  1257
+  27
+  1258
+  17
+  718
+  39
+  48
   46
-  1016
-  19
-  48
-  48
-  37
-  208
+  27
+  161
   0
   0
   0
   0
-  52
+  40
   0
   7
   6
@@ -123,6 +148,7 @@
  </rx>
 
  <obsRx name=Rx 200.00MHz, OutputRate 245.76MHz, TotalDecimation 8>
+  <obsRxChannelsEnable=TAL_ORX1ORX2>
   <enAdcStitching=0>
   <rxFirDecimation=2>
   <rxDec5Decimation=4>
@@ -380,6 +406,7 @@
  </lpbk>
 
  <tx name=Tx 200.00MHz, InputRate 245.76MHz, TotalInterpolation 8>
+  <txChannels=TAL_TX1TX2>
   <dacDiv=1>
   <txFirInterpolation=1>
   <thb1Interpolation=2>
@@ -392,7 +419,7 @@
   <txDac3dBCorner_kHz=200000>
   <txBbf3dBCorner_kHz=100000>
 
-  <filter FIR gain_dB=0 numFirCoefs=20>
+  <filter FIR gain_dB=6 numFirCoefs=20>
   33
   -77
   123
