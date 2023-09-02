@@ -50,6 +50,7 @@ def parse_profile(filename):
         "3": "SYSREF_PATTERN_STOP",
     }
     sysref_nshot_mode = {
+        "0": "SYSREF_NSHOT_1_PULSE", # FIXME: zero is undefined in AD9528 datasheet
         "1": "SYSREF_NSHOT_1_PULSE",
         "2": "SYSREF_NSHOT_2_PULSES",
         "3": "SYSREF_NSHOT_4_PULSES",
