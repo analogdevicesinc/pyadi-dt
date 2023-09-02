@@ -33,30 +33,30 @@
 			"ad9528-1_out11", "ad9528-1_out12", "ad9528-1_out13";
 		#clock-cells = <1>;
 
-		adi,vcxo-freq = <122880000>;
+		adi,vcxo-freq = <{{ pll1['vcxo_Frequency_Hz'] }}>;
 
 		adi,refa-enable;
 		adi,refa-diff-rcv-enable;
-		adi,refa-r-div = <1>;
+		adi,refa-r-div = <{{ pll1['refA_Divider'] }}>;
 		adi,osc-in-cmos-neg-inp-enable;
 
 		/* PLL1 config */
-		adi,pll1-feedback-div = <4>;
+		adi,pll1-feedback-div = <{{pll1['nDivider'] }}>;
 		adi,pll1-charge-pump-current-nA = <5000>;
 
 		/* PLL2 config */
-		adi,pll2-vco-div-m1 = <3>; /* use 5 for 184320000 output device clock */
-		adi,pll2-n2-div = <10>; /* N / M1 */
-		adi,pll2-r1-div = <1>;
+		adi,pll2-vco-div-m1 = <{{ pll2['rfDivider'] }}>; /* use 5 for 184320000 output device clock */
+		adi,pll2-n2-div = <{{ pll2['n2Divider'] }}>; /* N / M1 */
+		adi,pll2-r1-div = <{{ pll2['r1Divider'] }}>;
 		adi,pll2-charge-pump-current-nA = <805000>;
 
 		/* SYSREF config */
-		adi,sysref-src = <SYSREF_SRC_INTERNAL>;
-		adi,sysref-pattern-mode = <SYSREF_PATTERN_CONTINUOUS>;
-		adi,sysref-k-div = <512>;
+		adi,sysref-src = <{{ sysref['sysrefSource'] }}>;
+		adi,sysref-pattern-mode = <{{ sysref['sysrefPatternMode'] }}>;
+		adi,sysref-k-div = <{{ sysref['sysrefDivide'] }}>;
 		adi,sysref-request-enable;
-		adi,sysref-nshot-mode = <SYSREF_NSHOT_4_PULSES>;
-		adi,sysref-request-trigger-mode = <SYSREF_LEVEL_HIGH>;
+		adi,sysref-nshot-mode = <{{ sysref['sysrefNshotMode'] }}>;
+		adi,sysref-request-trigger-mode = <{{ sysref['sysrefPinEdgeMode'] }}>;
 
 		adi,rpole2 = <RPOLE2_900_OHM>;
 		adi,rzero = <RZERO_1850_OHM>;
@@ -68,37 +68,37 @@
 		ad9528_0_c13: channel@13 {
 			reg = <13>;
 			adi,extended-name = "DEV_CLK";
-			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,driver-mode = <{{ out['outBufferCtrl'][13] }}>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
-			adi,signal-source = <SOURCE_VCO>;
+			adi,channel-divider = <{{ out['outChannelDiv'][13] }}>;
+			adi,signal-source = <{{ out['outSource'][13] }}>;
 		};
 
 		ad9528_0_c1: channel@1 {
 			reg = <1>;
 			adi,extended-name = "FMC_CLK";
-			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,driver-mode = <{{ out['outBufferCtrl'][1] }}>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
-			adi,signal-source = <SOURCE_VCO>;
+			adi,channel-divider = <{{ out['outChannelDiv'][1] }}>;
+			adi,signal-source = <{{ out['outSource'][1] }}>;
 		};
 
 		ad9528_0_c12: channel@12 {
 			reg = <12>;
 			adi,extended-name = "DEV_SYSREF";
-			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,driver-mode = <{{ out['outBufferCtrl'][12] }}>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
-			adi,signal-source = <SOURCE_SYSREF_VCO>;
+			adi,channel-divider = <{{ out['outChannelDiv'][12] }}>;
+			adi,signal-source = <{{ out['outSource'][12] }}>;
 		};
 
 		ad9528_0_c3: channel@3 {
 			reg = <3>;
 			adi,extended-name = "FMC_SYSREF";
-			adi,driver-mode = <DRIVER_MODE_LVDS>;
+			adi,driver-mode = <{{ out['outBufferCtrl'][3] }}>;
 			adi,divider-phase = <0>;
-			adi,channel-divider = <5>;
-			adi,signal-source = <SOURCE_SYSREF_VCO>;
+			adi,channel-divider = <{{ out['outChannelDiv'][3] }}>;
+			adi,signal-source = <{{ out['outSource'][3] }}>;
 		};
 	};
 
