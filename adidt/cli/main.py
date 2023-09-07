@@ -54,7 +54,7 @@ from .helpers import list_node_props, list_node_prop, list_node_subnodes
     "--filepath",
     "-f",
     default="devicetree.dtb",
-    help="Set target architecture which will set the target DT. auto with determine from running system",
+    help="Path of the target devicetree blob to be used in local_file mode (default is devicetree.dtb)",
     show_default=True,
 )
 @click.pass_context
