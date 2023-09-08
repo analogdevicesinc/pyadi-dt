@@ -50,8 +50,15 @@ from .helpers import list_node_props, list_node_prop, list_node_subnodes
     show_default=True,
     type=click.Choice(["arm", "arm64", "auto"]),
 )
+@click.option(
+    "--filepath",
+    "-f",
+    default="devicetree.dtb",
+    help="Path of the target devicetree blob to be used in local_file mode (default is devicetree.dtb)",
+    show_default=True,
+)
 @click.pass_context
-def cli(ctx, no_color, context, ip, username, password, arch):
+def cli(ctx, no_color, context, ip, username, password, arch, filepath):
     """ADI device tree utility"""
     ctx.ensure_object(dict)
 
@@ -61,6 +68,7 @@ def cli(ctx, no_color, context, ip, username, password, arch):
     ctx.obj["username"] = username
     ctx.obj["password"] = password
     ctx.obj["arch"] = arch
+    ctx.obj["filepath"] = filepath
 
 
 @cli.command()
@@ -301,6 +309,7 @@ def props(ctx, node_name, compat, reboot, prop, value):
         username=ctx.obj["username"],
         password=ctx.obj["password"],
         arch=ctx.obj["arch"],
+        local_dt_filepath=ctx.obj["filepath"]
     )
     # List all node names/compatible ids
     if not node_name:

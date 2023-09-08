@@ -228,14 +228,23 @@ class dt(sd):
     def _update_fs(self):
         ...
 
+    def _update_file(self):
+        with open(self.local_dt_filepath,"wb") as file:
+            file.write(self._dt.to_dtb())
+
     def update_current_dt(self, reboot=False):
         if self.dt_source == "remote_sd":
             try:
                 self._update_sd(reboot=reboot)
             except Exception as ex:
                 print(ex)
+        elif self.dt_source == "local_file":
+            try:
+                self._update_file()
+            except Exception as ex:
+                print(ex)
         else:
-            raise Exception("Updating only works on remote_sd right now")
+            raise Exception(f"Updating is not supported for {self.dt_source}")
 
     def write_out_dts(self, filename: str):
         """Write out current DT structure to file"""
