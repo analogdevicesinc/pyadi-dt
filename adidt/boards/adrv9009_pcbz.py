@@ -12,6 +12,77 @@ class adrv9009_pcbz(layout):
 
     profile = None
 
+    def __init__(self):
+        self.jesd204 = {
+            "framerA": {
+                "bankId": 1,
+                "deviceId": 0,
+                "lane0Id": 0,
+                "M": 4,
+                "K": 32,
+                "F": 4,
+                "Np": 16,
+                "scramble": 1,
+                "externalSysref": 1,
+                "serializerLanesEnabled": 0x03,
+                "serializerLaneCrossbar": 0xE4,
+                "lmfcOffset": 31,
+                "newSysrefOnRelink": 0,
+                "syncbInSelect": 0,
+                "overSample": 0,
+                "syncbInLvdsMode": 1,
+                "syncbInLvdsPnInvert": 0,
+                "enableManualLaneXbar": 0,
+            },
+            "framerB": {
+                "bankId": 0,
+                "deviceId": 0,
+                "lane0Id": 0,
+                "M": 4,
+                "K": 32,
+                "F": 4,
+                "Np": 16,
+                "scramble": 1,
+                "externalSysref": 1,
+                "serializerLanesEnabled": 0x0C,
+                "serializerLaneCrossbar": 0xE4,
+                "lmfcOffset": 31,
+                "newSysrefOnRelink": 0,
+                "syncbInSelect": 1,
+                "overSample": 0,
+                "syncbInLvdsMode": 1,
+                "syncbInLvdsPnInvert": 0,
+                "enableManualLaneXbar": 0,
+            },
+            "deframerA": {
+                "bankId": 0,
+                "deviceId": 0,
+                "lane0Id": 0,
+                "M": 4,
+                "K": 32,
+                "scramble": 1,
+                "externalSysref": 1,
+                "deserializerLanesEnabled": 0x0F,
+                "deserializerLaneCrossbar": 0xE4,
+                "lmfcOffset": 17,
+                "newSysrefOnRelink": 0,
+                "syncbOutSelect": 0,
+                "Np": 16,
+                "syncbOutLvdsMode": 1,
+                "syncbOutLvdsPnInvert": 0,
+                "syncbOutCmosSlewRate": 0,
+                "syncbOutCmosDriveLevel": 0,
+                "enableManualLaneXbar": 0,
+            },
+            "serAmplitude": 15,
+            "serPreEmphasis": 1,
+            "serInvertLanePolarity": 0,
+            "desInvertLanePolarity": 0,
+            "desEqSetting": 1,
+            "sysrefLvdsMode": 1,
+            "sysrefLvdsPnInvert": 0,
+        }
+
     def parse_profile(self, filename: Path):
         """Parse a profile file.
 
@@ -44,4 +115,5 @@ class adrv9009_pcbz(layout):
             "orx": self.xcvr_profile["orx"],
             "lpbk": self.xcvr_profile["lpbk"],
             "clocks": self.xcvr_profile["clocks"],
+            "jesd204": self.jesd204,
         }
