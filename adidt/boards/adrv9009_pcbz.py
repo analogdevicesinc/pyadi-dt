@@ -2,6 +2,7 @@ from .layout import layout
 from ..parts import ad9528, adrv9009
 import numpy as np
 from pathlib import Path
+import logging
 
 
 class adrv9009_pcbz(layout):
@@ -102,6 +103,15 @@ class adrv9009_pcbz(layout):
             raise Exception(f"AD9528 Profile file not found: {ad9528_file}")
 
         self.clock_profile = ad9528.parse_profile(ad9528_file)
+
+    def parse_talInit(self, filename: Path):
+        if filename is None:
+            logging.warning("No talise_config.c passed, using defaults")
+            return
+
+        logging.info(f"loading JESD204 parameters from {filename}")
+        talInit = adrv9009.parse_talInit(filename)
+        self.jesd204 = talInit['jesd204Settings']
 
     def gen_dt_preprocess(self):
         return {

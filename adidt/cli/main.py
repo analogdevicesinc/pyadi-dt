@@ -472,8 +472,16 @@ def jif(ctx, node_type, reboot, filename):
     help="",
     type=Path,
 )
+@click.option(
+    "--config",
+    "-c",
+    required=False,
+    default=None,
+    help="path to talise_config.c",
+    type=Path,
+)
 @click.pass_context
-def profile2dt(ctx, profile):
+def profile2dt(ctx, profile, config):
     """Generate devicetree from Profile Configuration Wizard files
     """
     b = ctx.obj["board"]
@@ -483,5 +491,6 @@ def profile2dt(ctx, profile):
 
     board = eval(f"adidt.{b}()")
     board.parse_profile(profile)
+    board.parse_talInit(config)
     board.gen_dt()
     print(f'Wrote {board.output_filename}')

@@ -1,10 +1,15 @@
 import xmltodict
 from typing import Dict
 from adidt.dt import dt
-from adidt.utils import profilewiz
+from adidt.utils import profilewiz, tes
 import fdt
 import math
 import logging
+
+
+def parse_talInit(file):
+    d = tes.parse_talise_config_c(file)
+    return d.data['talInit']
 
 
 def handle_ints(val):
