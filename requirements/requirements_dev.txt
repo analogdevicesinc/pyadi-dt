@@ -6,3 +6,4 @@ rich
 numpy
 pytest
 jinja2
+xmltodict
