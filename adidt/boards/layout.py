@@ -10,8 +10,8 @@ class layout:
     template_filename = None
     output_filename = None
 
-    # def gen_dt_preprocess(self, **kwargs):
-    #     return kwargs
+    def gen_dt_preprocess(self, **kwargs):
+        return kwargs
 
     def gen_dt(self, **kwargs):
         """Generate the DT file from configuration structs.
