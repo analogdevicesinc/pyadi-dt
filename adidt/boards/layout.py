@@ -1,4 +1,4 @@
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, StrictUndefined
 import os
 
 
@@ -33,7 +33,7 @@ class layout:
         loc = os.path.dirname(__file__)
         loc = os.path.join(loc, "..", "templates")
         file_loader = FileSystemLoader(loc)
-        env = Environment(loader=file_loader)
+        env = Environment(loader=file_loader, undefined=StrictUndefined)
 
         loc = os.path.join(self.template_filename)
         template = env.get_template(loc)
