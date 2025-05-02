@@ -156,7 +156,7 @@
 			channel@3 {
 				reg = <3>;
 				adi,extended-name = "Apollo SYSREF";
-				adi,divider = <{{ clock['map']['sysref_divider'] }}>;
+				adi,divider = <{{ clock['map']['sysref_divider']['divider'] }}>;
 				adi,digital-delay = <0>;
 				adi,analog-delay = <0>;
 				adi,sysref-mode = <0>;
@@ -165,7 +165,7 @@
 			channel@4 {
 				reg = <4>;
 				adi,extended-name = "VUP JESD SYSREF";
-				adi,divider = <{{ clock['map']['sysref_divider'] }}>;
+				adi,divider = <{{ clock['map']['sysref_divider']['divider']  }}>;
 				adi,digital-delay = <0>;
 				adi,analog-delay = <0>;
 				adi,sysref-mode = <0>;
@@ -174,21 +174,21 @@
 			channel@5 {
 				reg = <5>;
 				adi,extended-name = "VUP Core CLK";
-				adi,divider = <{{ clock['map']['core_clk_divider'] }}>;
+				adi,divider = <{{ clock['map']['core_clk_divider']['divider']  }}>;
 				adi,digital-delay = <0>;
 				adi,analog-delay = <0>;
 			};
 			channel@6 {
 				reg = <6>;
 				adi,extended-name = "JESD REF CLK 1";
-				adi,divider = <{{ clock['map']['ref_clk_divider'] }}>;
+				adi,divider = <{{ clock['map']['ref_clk_divider']['divider']  }}>;
 				adi,digital-delay = <0>;
 				adi,analog-delay = <0>;
 			};
 			channel@7 {
 				reg = <7>;
 				adi,extended-name = "JESD REF CLK 2";
-				adi,divider = <{{ clock['map']['ref_clk_divider'] }}>;
+				adi,divider = <{{ clock['map']['ref_clk_divider']['divider']  }}>;
 				adi,digital-delay = <0>;
 				adi,analog-delay = <0>;
 			};
