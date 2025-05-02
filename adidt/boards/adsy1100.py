@@ -70,6 +70,8 @@ class adsy1100_vu11p(layout):
 
         fpga = {}
         fpga['fpga'] = cfg["fpga_AD9084_RX"]
+        if fpga['fpga']['sys_clk_select'] == 'XCVR_QPLL0':
+            fpga['fpga']['sys_clk_select'] = 'XCVR_QPLL'
         # fpga['fpga_dac'] = cfg["fpga_dac"]
 
 
