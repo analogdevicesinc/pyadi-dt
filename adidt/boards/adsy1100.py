@@ -51,7 +51,7 @@ class adsy1100_vu11p(layout):
         }
 
         # AD9084 ext PLL
-        map["converter_clock_rate"] = np.ceil(cfg["clock_ext_pll_adf4382"]["rf_out_frequency"]))
+        map["converter_clock_rate"] = np.ceil(cfg["clock_ext_pll_adf4382"]["rf_out_frequency"])
         map["converter_clock_rate"] = int(map["converter_clock_rate"])
 
         # FPGA side
