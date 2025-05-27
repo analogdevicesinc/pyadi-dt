@@ -39,8 +39,7 @@ class adsy1100_vu11p(layout):
         """
         # Fix ups
         for key in ["VCO", "vcxo"]:
-            if isinstance(cfg["clock"][key], float) and cfg["clock"][key].is_integer():
-                cfg["clock"][key] = int(cfg["clock"][key])
+            cfg["clock"][key] = int(np.ceil(cfg["clock"][key]))
 
         map = {}
         clk = cfg["clock"]["output_clocks"]
@@ -52,7 +51,7 @@ class adsy1100_vu11p(layout):
         }
 
         # AD9084 ext PLL
-        map["converter_clock_rate"] = cfg["clock_ext_pll_adf4382"]["rf_out_frequency"]
+        map["converter_clock_rate"] = np.ceil(cfg["clock_ext_pll_adf4382"]["rf_out_frequency"]))
         map["converter_clock_rate"] = int(map["converter_clock_rate"])
 
         # FPGA side
