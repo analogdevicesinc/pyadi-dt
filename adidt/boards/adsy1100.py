@@ -57,7 +57,7 @@ class adsy1100_vu11p(layout):
         # FPGA side
         map["ref_clk_divider"] = {
             "source_port": 3,
-            "divider": clk["AD9084_RX_ref_clk"]["divider"],
+            "divider": clk["adsy1100_AD9084_RX_ref_clk"]["divider"],
         }
 
         map["core_clk_divider"] = {
