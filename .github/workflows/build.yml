@@ -1,0 +1,153 @@
+name: Build and Deploy adidt
+permissions:
+  contents: read
+
+env:
+  APP_NAME: pyadi-dt
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - '20[1-9][0-9]_R[1-9]'
+      - staging/*
+  pull_request:
+    branches:
+      - main
+      - '20[1-9][0-9]_R[1-9]'
+
+jobs:
+  python-test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    name: Test Python ${{ matrix.python-version }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/requirements_dev.txt
+        pip install .
+
+    - name: Run tests with pytest
+      run: |
+        pytest -vs
+
+  kuiper-test:
+    runs-on: ubuntu-latest
+    env:
+      CONTAINER_BASE_NAME: kuiper-container-basic
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - docker_image: aandrisa/kuiper_basic_64:latest
+            image_arch: linux/arm64
+            architecture: arm64
+          - docker_image: aandrisa/kuiper_basic_32:latest
+            image_arch: linux/arm/v7
+            architecture: armhf
+
+    name: Test on Kuiper
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: 
+        path: ${{env.APP_NAME}}
+    
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Start persistent container
+      run: |
+        docker run -d \
+            --platform ${{matrix.image_arch}} \
+            --name ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} \
+            -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
+            -w /workspace/${{env.APP_NAME}} \
+            ${{matrix.docker_image}} tail -f /dev/null
+    
+    - name: Install system dependencies
+      run: |
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "apt update && apt install -y python3-pip python3-dev libffi-dev python3-numpy build-essential"
+    
+    - name: Install Python dependencies
+      run: |
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "python3 -m pip install --upgrade pip && pip install Click fdt fabric bcrypt==3.2.2 rich pytest jinja2 xmltodict && pip install ."
+
+    - name: Run tests
+      run: |
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "pytest -vs "
+
+  build-package:
+    needs: [python-test, kuiper-test]
+    runs-on: ubuntu-latest
+    name: Build Package for PyPI
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Install build dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine wheel setuptools
+
+    - name: Build source distribution
+      run: |
+        python -m build --sdist
+
+    - name: Build wheel distribution
+      run: |
+        python -m build --wheel
+
+    - name: Check built distributions
+      run: |
+        python -m twine check dist/*
+        ls -la dist/
+
+    - name: Test installation from wheel
+      run: |
+        pip install dist/*.whl
+        python -c "import adidt; print('Package installed successfully')"
+        # Test CLI if available
+        adidtc --help
+
+    - name: Upload PyPI artifacts
+      uses: actions/upload-artifact@v5
+      with:
+        name: pypi-distributions
+        path: dist/
+        retention-days: 90
+
+    - name: Upload individual source distribution
+      uses: actions/upload-artifact@v5
+      with:
+        name: source-distribution
+        path: dist/*.tar.gz
+        retention-days: 90
+
+    - name: Upload individual wheel distribution
+      uses: actions/upload-artifact@v5
+      with:
+        name: wheel-distribution
+        path: dist/*.whl
+        retention-days: 90
