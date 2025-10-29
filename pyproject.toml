@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adidt"
+version = "0.0.1"
+description = "Device tree management tools for ADI hardware"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Analog Devices Inc."}
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "Click",
+    "fdt",
+    "fabric",
+    "bcrypt==3.2.2",
+    "rich",
+    "numpy",
+    "jinja2",
+    "xmltodict",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+]
+
+[project.scripts]
+adidtc = "adidt.cli.main:cli"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["adidt*"]
+
+[tool.setuptools.package-data]
+adidt = ["templates/*.tmpl"]
