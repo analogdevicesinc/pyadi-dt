@@ -45,22 +45,45 @@ jobs:
       run: |
         pytest -vs
 
-  kuiper-test:
-    runs-on: ubuntu-latest
+  kuiper64-test:
+    runs-on: ubuntu-24.04-arm
     env:
       CONTAINER_BASE_NAME: kuiper-container-basic
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - docker_image: aandrisa/kuiper_basic_64:latest
-            image_arch: linux/arm64
-            architecture: arm64
-          - docker_image: aandrisa/kuiper_basic_32:latest
-            image_arch: linux/arm/v7
-            architecture: armhf
+      DOCKER_IMAGE: aandrisa/kuiper_basic_64:latest
+      IMAGE_ARCH: linux/arm64
+      ARCHITECTURE: arm64
+    name: Test on Kuiper64
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: 
+        path: ${{env.APP_NAME}}
 
-    name: Test on Kuiper
+    - name: Start persistent container
+      run: |
+        docker run -d \
+            --platform ${{env.IMAGE_ARCH}} \
+            --name ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} \
+            -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
+            -w /workspace/${{env.APP_NAME}} \
+            ${{env.DOCKER_IMAGE}} tail -f /dev/null
+        
+    - name: Install Python dependencies
+      run: |
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip && pip install -r requirements/requirements_dev.txt && pip install ."
+
+    - name: Run tests
+      run: |
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs "
+
+  kuiper32-test:
+    runs-on: ubuntu-24.04-arm
+    env:
+      CONTAINER_BASE_NAME: kuiper-container-basic
+      DOCKER_IMAGE: aandrisa/kuiper_basic_32:latest
+      IMAGE_ARCH: linux/arm/v7
+      ARCHITECTURE: armhf
+    name: Test on Kuiper32
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -73,26 +96,26 @@ jobs:
     - name: Start persistent container
       run: |
         docker run -d \
-            --platform ${{matrix.image_arch}} \
-            --name ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} \
+            --platform ${{env.IMAGE_ARCH}} \
+            --name ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} \
             -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
             -w /workspace/${{env.APP_NAME}} \
-            ${{matrix.docker_image}} tail -f /dev/null
-    
+            ${{env.DOCKER_IMAGE}} tail -f /dev/null
+
     - name: Install system dependencies
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "apt update && apt install -y python3-pip python3-dev libffi-dev python3-numpy build-essential"
-    
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "sudo apt update && sudo apt install -y libffi-dev python3-dev build-essential"
+
     - name: Install Python dependencies
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "python3 -m pip install --upgrade pip && pip install Click fdt fabric bcrypt==3.2.2 rich pytest jinja2 xmltodict && pip install ."
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip && pip install -r requirements/requirements_dev.txt && pip install ."
 
     - name: Run tests
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}} sh -c "pytest -vs "
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs "
 
   build-package:
-    needs: [python-test, kuiper-test]
+    needs: [python-test, kuiper64-test, kuiper32-test]
     runs-on: ubuntu-latest
     name: Build Package for PyPI
     steps:
@@ -104,25 +127,20 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v6
       with:
-        python-version: '3.11'
+        python-version: '3.12'
 
     - name: Install build dependencies
       run: |
         python -m pip install --upgrade pip
         pip install build twine wheel setuptools
 
-    - name: Build source distribution
+    - name: Build source and wheel distribution
       run: |
-        python -m build --sdist
-
-    - name: Build wheel distribution
-      run: |
-        python -m build --wheel
-
+        python -m build --sdist --wheel
+    
     - name: Check built distributions
       run: |
         python -m twine check dist/*
-        ls -la dist/
 
     - name: Test installation from wheel
       run: |
