@@ -1,4 +1,4 @@
-name: Build and Deploy adidt
+name: Build and Deploy adidt (pip)
 permissions:
   contents: read
 
@@ -74,7 +74,7 @@ jobs:
 
     - name: Run tests
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs "
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
   kuiper32-test:
     runs-on: ubuntu-24.04-arm
@@ -112,7 +112,7 @@ jobs:
 
     - name: Run tests
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs "
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
   build-package:
     needs: [python-test, kuiper64-test, kuiper32-test]
