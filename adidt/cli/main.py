@@ -1,8 +1,10 @@
 import adidt
 import fdt
 import click
+import json
 from .helpers import list_node_props, list_node_prop, list_node_subnodes
 from pathlib import Path
+from adidt.utils.parsers import DTDependencyParser
 
 
 @click.group()
@@ -17,9 +19,7 @@ from pathlib import Path
     "-b",
     default="adrv9009_pcbz",
     help="Set board configuration",
-    type=click.Choice(
-        ["ad9081_fmc", "adrv9009_pcbz", "adrv9009_zu11eg", "daq2"]
-    ),
+    type=click.Choice(["ad9081_fmc", "adrv9009_pcbz", "adrv9009_zu11eg", "daq2"]),
     show_default=True,
 )
 @click.option(
@@ -321,7 +321,7 @@ def props(ctx, node_name, compat, reboot, prop, value):
         username=ctx.obj["username"],
         password=ctx.obj["password"],
         arch=ctx.obj["arch"],
-        local_dt_filepath=ctx.obj["filepath"]
+        local_dt_filepath=ctx.obj["filepath"],
     )
     # List all node names/compatible ids
     if not node_name:
@@ -482,8 +482,7 @@ def jif(ctx, node_type, reboot, filename):
 )
 @click.pass_context
 def profile2dt(ctx, profile, config):
-    """Generate devicetree from Profile Configuration Wizard files
-    """
+    """Generate devicetree from Profile Configuration Wizard files"""
     b = ctx.obj["board"]
     if b not in ["adrv9009_pcbz"]:
         print(f"board type {b} not supported")
@@ -493,4 +492,248 @@ def profile2dt(ctx, profile, config):
     board.parse_profile(profile)
     board.parse_talInit(config)
     board.gen_dt()
-    print(f'Wrote {board.output_filename}')
+    print(f"Wrote {board.output_filename}")
+
+
+@cli.command()
+@click.argument("dt_file", type=click.Path(exists=True))
+@click.option(
+    "--format",
+    "-f",
+    default="tree",
+    type=click.Choice(["tree", "json", "dot"]),
+    help="Output format (tree, json, or dot)",
+)
+@click.option(
+    "--max-depth",
+    "-d",
+    default=None,
+    type=int,
+    help="Maximum depth to display in tree format",
+)
+@click.option(
+    "--show-missing/--hide-missing",
+    default=True,
+    help="Show or hide missing dependencies",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    type=click.Path(),
+    help="Output file (for json/dot formats)",
+)
+@click.pass_context
+def deps(ctx, dt_file, format, max_depth, show_missing, output):
+    """Analyze device tree dependencies
+
+    \b
+    DT_FILE  - Path to device tree source file (.dts, .dtsi)
+
+    Examples:
+        View dependency tree:
+            adidtc deps system.dts
+
+        Export to GraphViz and generate image:
+            adidtc deps system.dts --format dot -o deps.dot
+            dot -Tpng deps.dot -o deps.png
+
+        Export to JSON with missing dependencies:
+            adidtc deps system.dts --format json --show-missing -o deps.json
+
+        Limit depth of tree display:
+            adidtc deps system.dts --max-depth 3
+    """
+    parser = DTDependencyParser()
+
+    try:
+        parser.parse(dt_file)
+    except FileNotFoundError as e:
+        click.echo(click.style(f"Error: {e}", fg="red"))
+        return
+    except Exception as e:
+        click.echo(click.style(f"Error parsing file: {e}", fg="red"))
+        return
+
+    # Check for circular dependencies
+    cycles = parser.detect_circular_dependencies()
+    if cycles:
+        click.echo(
+            click.style(
+                "Warning: Circular dependencies detected!", fg="yellow", bold=True
+            )
+        )
+        for cycle in cycles:
+            click.echo(click.style(f"  Cycle: {' -> '.join(cycle)}", fg="yellow"))
+        click.echo()
+
+    # Generate output based on format
+    if format == "tree":
+        tree_output = parser.render_tree(max_depth=max_depth, show_missing=show_missing)
+        if output:
+            with open(output, "w") as f:
+                f.write(tree_output)
+            click.echo(f"Tree output written to {output}")
+        else:
+            click.echo(tree_output)
+
+    elif format == "dot":
+        dot_content = parser.export_dot(show_missing=show_missing)
+        if output:
+            with open(output, "w") as f:
+                f.write(dot_content)
+            click.echo(f"DOT output written to {output}")
+            click.echo(
+                f"Generate image with: dot -Tpng {output} -o {output.replace('.dot', '.png')}"
+            )
+        else:
+            click.echo(dot_content)
+
+    else:  # json
+        json_data = parser.export_json()
+        if output:
+            with open(output, "w") as f:
+                json.dump(json_data, f, indent=2)
+            click.echo(f"JSON output written to {output}")
+        else:
+            click.echo(json.dumps(json_data, indent=2))
+
+
+@cli.command()
+@click.option(
+    "--platform",
+    "-p",
+    required=True,
+    type=click.Choice(["zcu102", "vpk180", "zc706"]),
+    help="Target FPGA platform",
+)
+@click.option(
+    "--config",
+    "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to JSON configuration file",
+)
+@click.option(
+    "--kernel-path",
+    "-k",
+    default=None,
+    type=click.Path(exists=True),
+    help="Path to Linux kernel source tree (overrides LINUX_KERNEL_PATH env var)",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    type=click.Path(),
+    help="Output DTS file path (default: generated_dts/ad9081_fmc_<platform>.dts)",
+)
+@click.option("--compile", is_flag=True, help="Compile DTS to DTB using dtc")
+@click.pass_context
+def gen_dts(ctx, platform, config, kernel_path, output, compile):
+    """Generate device tree source file for AD9081
+
+    \b
+    Generate device tree source (DTS) files for AD9081 FMC evaluation boards
+    across multiple FPGA platforms.
+
+    \b
+    Supported Platforms:
+      - zcu102  : Zynq UltraScale+ (ARM64, GTH transceivers)
+      - vpk180  : Versal (ARM64, GTY transceivers)
+      - zc706   : Zynq-7000 (ARM, GTX transceivers)
+
+    \b
+    Examples:
+      Generate DTS for ZCU102:
+        adidtc gen-dts -p zcu102 -c my_config.json
+
+      Generate DTS with custom kernel path:
+        adidtc gen-dts -p vpk180 -c cfg.json -k /path/to/linux
+
+      Generate and compile to DTB:
+        adidtc gen-dts -p zc706 -c cfg.json --compile
+
+      Custom output path:
+        adidtc gen-dts -p zcu102 -c cfg.json -o custom.dts
+    """
+    try:
+        # Load configuration
+        with open(config, "r") as f:
+            cfg = json.load(f)
+
+        # Initialize board with platform and kernel path
+        from adidt.boards.ad9081_fmc import ad9081_fmc
+
+        board = ad9081_fmc(platform=platform, kernel_path=kernel_path)
+
+        # Validate and apply FPGA config defaults
+        cfg = board.validate_and_default_fpga_config(cfg)
+
+        # Override output filename if specified
+        if output:
+            board.output_filename = output
+
+        # Map configuration to board layout
+        clock, adc, dac, fpga = board.map_clocks_to_board_layout(cfg)
+
+        # Generate DTS
+        output_file = board.gen_dt(
+            clock=clock, adc=adc, dac=dac, fpga=fpga, config_source=config
+        )
+
+        click.echo(click.style(f"Generated DTS: {output_file}", fg="green", bold=True))
+
+        # Compile if requested
+        if compile:
+            import subprocess
+
+            dtb_file = output_file.replace(".dts", ".dtb")
+            include_paths = board.get_dtc_include_paths()
+
+            # Build dtc command with include paths
+            dtc_cmd = ["dtc", "-I", "dts", "-O", "dtb"]
+            for inc_path in include_paths:
+                dtc_cmd.extend(["-i", inc_path])
+            dtc_cmd.extend(["-o", dtb_file, output_file])
+
+            click.echo(f"Compiling DTS to DTB...")
+            click.echo(f"Command: {' '.join(dtc_cmd)}")
+
+            try:
+                result = subprocess.run(
+                    dtc_cmd, check=True, capture_output=True, text=True
+                )
+                click.echo(
+                    click.style(f"Compiled DTB: {dtb_file}", fg="green", bold=True)
+                )
+
+                if result.stderr:
+                    click.echo(click.style("Compiler warnings:", fg="yellow"))
+                    click.echo(result.stderr)
+
+            except subprocess.CalledProcessError as e:
+                click.echo(click.style(f"Compilation failed: {e}", fg="red"))
+                if e.stderr:
+                    click.echo(click.style("Error output:", fg="red"))
+                    click.echo(e.stderr)
+                return
+            except FileNotFoundError:
+                click.echo(
+                    click.style("Error: 'dtc' compiler not found in PATH", fg="red")
+                )
+                click.echo("Please install device tree compiler (dtc)")
+                return
+
+    except FileNotFoundError as e:
+        click.echo(click.style(f"Error: {e}", fg="red"))
+        return
+    except ValueError as e:
+        click.echo(click.style(f"Error: {e}", fg="red"))
+        return
+    except Exception as e:
+        click.echo(click.style(f"Unexpected error: {e}", fg="red"))
+        import traceback
+
+        traceback.print_exc()
+        return

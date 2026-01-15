@@ -1,70 +1,76 @@
+"""AD9084 FMC board device tree generation support.
+
+This module provides device tree generation for the AD9084-FMCA-EBZ evaluation
+board on Versal platforms (VPK180, VCK190).
+
+The AD9084 is a high-performance multi-channel RF transceiver that uses:
+- HMC7044 as the primary clock generator
+- ADF4382 as the device clock PLL
+- ADF4030 (AION) for JESD204C sysref distribution
+
+Reference: linux/arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9084.dts
+"""
+
 from .layout import layout
-import numpy as np
 import os
 from datetime import datetime
 
 
-class ad9081_fmc(layout):
-    """AD9081 FMC board layout map for clocks and DSP"""
+class ad9084_fmc(layout):
+    """AD9084 FMC board layout map for clocks and DSP"""
 
+    # Clock chips
     clock = "HMC7044"
+    ext_clock = "ADF4382"
+    sysref_provider = "ADF4030"
 
-    adc = "ad9081_rx"
-    dac = "ad9081_tx"
+    # Converters
+    adc = "ad9084_rx"
+    dac = "ad9084_tx"
 
     # Default kernel source path
     DEFAULT_KERNEL_PATH = "./linux"
 
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
-        "zcu102": {
-            "template_filename": "ad9081_fmc_zcu102.tmpl",
-            "base_dts_file": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev1.0.dts",
-            "base_dts_include": "zynqmp-zcu102-rev1.0.dts",
-            "arch": "arm64",
-            "jesd_phy": "GTH",
-            "default_fpga_adc_pll": "XCVR_QPLL",
-            "default_fpga_dac_pll": "XCVR_QPLL",
-            "spi_bus": "spi1",
-            "output_dir": "generated_dts",
-        },
         "vpk180": {
-            "template_filename": "ad9081_fmc_vpk180.tmpl",
+            "template_filename": "ad9084_fmc_vpk180.tmpl",
             "base_dts_file": "arch/arm64/boot/dts/xilinx/versal-vpk180-revA.dts",
             "base_dts_include": "versal-vpk180-revA.dts",
             "arch": "arm64",
             "jesd_phy": "GTY",
             "default_fpga_adc_pll": "XCVR_QPLL0",
             "default_fpga_dac_pll": "XCVR_QPLL0",
-            "spi_bus": "spi1",
+            "spi_bus": "spi0",
             "output_dir": "generated_dts",
         },
-        "zc706": {
-            "template_filename": "ad9081_fmc_zc706.tmpl",
-            "base_dts_file": "arch/arm/boot/dts/xilinx/zynq-zc706.dts",
-            "base_dts_include": "zynq-zc706.dts",
-            "arch": "arm",
-            "jesd_phy": "GTX",
-            "default_fpga_adc_pll": "XCVR_QPLL",
-            "default_fpga_dac_pll": "XCVR_QPLL",
+        "vck190": {
+            "template_filename": "ad9084_fmc_vck190.tmpl",
+            "base_dts_file": "arch/arm64/boot/dts/xilinx/versal-vck190-revA.dts",
+            "base_dts_include": "versal-vck190-revA.dts",
+            "arch": "arm64",
+            "jesd_phy": "GTY",
+            "default_fpga_adc_pll": "XCVR_QPLL0",
+            "default_fpga_dac_pll": "XCVR_QPLL0",
             "spi_bus": "spi0",
             "output_dir": "generated_dts",
         },
     }
 
-    template_filename = "ad9081_fmc_zcu102.tmpl"
-    output_filename = "ad9081_fmc_zcu102.dts"
+    template_filename = "ad9084_fmc_vpk180.tmpl"
+    output_filename = "ad9084_fmc_vpk180.dts"
 
-    def __init__(self, platform="zcu102", kernel_path=None):
-        """Initialize AD9081 FMC board.
+    def __init__(self, platform="vpk180", kernel_path=None):
+        """Initialize AD9084 FMC board.
 
         Args:
-            platform (str): Target platform ('zcu102', 'vpk180', or 'zc706')
+            platform (str): Target platform ('vpk180' or 'vck190')
             kernel_path (str, optional): Path to Linux kernel source tree.
-                If None, validation is skipped for backward compatibility.
+                If None, uses LINUX_KERNEL_PATH env var or default path.
 
         Raises:
             ValueError: If platform is not supported
+            FileNotFoundError: If kernel path is invalid (when explicitly provided)
         """
         if platform not in self.PLATFORM_CONFIGS:
             supported = ", ".join(self.PLATFORM_CONFIGS.keys())
@@ -77,7 +83,7 @@ class ad9081_fmc(layout):
 
         # Set template and output based on platform
         self.template_filename = self.platform_config["template_filename"]
-        base_name = f"ad9081_fmc_{platform}.dts"
+        base_name = f"ad9084_fmc_{platform}.dts"
         self.output_filename = os.path.join(
             self.platform_config["output_dir"], base_name
         )
@@ -93,19 +99,14 @@ class ad9081_fmc(layout):
 
         # Validate kernel path based on how it was provided
         if self._kernel_path_explicit:
-            # Explicit kernel_path argument - always validate, raise on error
             self._validate_kernel_path()
         elif self._kernel_path_from_env:
-            # Environment variable set - always validate, raise on error
             self._validate_kernel_path()
         elif os.path.exists(self.kernel_path):
-            # Default path exists - try to validate but allow failure for backward compatibility
             try:
                 self._validate_kernel_path()
             except FileNotFoundError:
-                # For backward compatibility with existing code that doesn't need kernel path
                 pass
-        # else: kernel path doesn't exist and wasn't explicitly requested - skip validation
 
     def _resolve_kernel_path(self, kernel_path=None):
         """Resolve kernel source path using 3-tier priority system.
@@ -140,7 +141,7 @@ class ad9081_fmc(layout):
             raise FileNotFoundError(
                 f"Kernel source path not found: {self.kernel_path}\n"
                 f"Set kernel path via:\n"
-                f"  1. Pass kernel_path parameter to ad9081_fmc()\n"
+                f"  1. Pass kernel_path parameter to ad9084_fmc()\n"
                 f"  2. Set LINUX_KERNEL_PATH environment variable\n"
                 f"  3. Clone kernel source to {self.DEFAULT_KERNEL_PATH}"
             )
@@ -177,7 +178,6 @@ class ad9081_fmc(layout):
         Returns:
             dict: Configuration with FPGA defaults applied
         """
-        # Apply defaults if not specified
         if "fpga_adc" not in cfg:
             cfg["fpga_adc"] = {}
         if "fpga_dac" not in cfg:
@@ -201,50 +201,6 @@ class ad9081_fmc(layout):
 
         return cfg
 
-    def make_ints(self, cfg, keys):
-        """Convert keys in a dict to integers.
-
-        Args:
-            cfg (dict): Configuration.
-            keys (list): Keys to convert.
-
-        Returns:
-            dict: Configuration with keys converted to integers.
-        """
-        for key in keys:
-            if isinstance(cfg[key], float) and cfg[key].is_integer():
-                cfg[key] = int(cfg[key])
-        return cfg
-
-    def map_jesd_structs(self, cfg):
-        """Map JIF configuration to integer structs.
-
-        Args:
-            cfg (dict): JIF configuration.
-
-        Returns:
-            dict: ADC JESD structs.
-            dict: DAC JESD structs.
-        """
-        adc = cfg["converter"]
-        adc["jesd"] = cfg["jesd_adc"]
-        adc["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
-            adc["jesd"]["jesd_class"]
-        )
-        dac = cfg["converter"].copy()
-        dac["jesd"] = cfg["jesd_dac"]
-        dac["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
-            dac["jesd"]["jesd_class"]
-        )
-
-        adc["jesd"] = self.make_ints(adc["jesd"], ["converter_clock", "sample_clock"])
-        dac["jesd"] = self.make_ints(dac["jesd"], ["converter_clock", "sample_clock"])
-
-        adc["datapath"] = cfg["datapath_adc"]
-        dac["datapath"] = cfg["datapath_dac"]
-
-        return adc, dac
-
     def gen_dt_preprocess(self, **kwargs):
         """Add metadata to template rendering context.
 
@@ -261,85 +217,68 @@ class ad9081_fmc(layout):
         return kwargs
 
     def map_clocks_to_board_layout(self, cfg):
-        """Map JIF configuration to board clock connection layout.
+        """Map configuration to board clock connection layout.
+
+        The AD9084 uses HMC7044 as the primary clock generator with the
+        following channel assignments:
+        - Channel 1: ADF4030_REFIN (125 MHz)
+        - Channel 3: ADF4030_BSYNC0 (9.765 MHz)
+        - Channel 8: CORE_CLK_TX (312.5 MHz)
+        - Channel 9: CORE_CLK_RX (312.5 MHz)
+        - Channel 10: FPGA_REFCLK (312.5 MHz)
+        - Channel 11: CORE_CLK_RX_B (312.5 MHz)
+        - Channel 12: CORE_CLK_TX_B (312.5 MHz)
 
         Args:
-            cfg (dict): JIF configuration.
+            cfg (dict): Configuration dictionary
 
         Returns:
-            dict: Board clock connection layout.
+            tuple: (clock_config, adc_config, dac_config, fpga_config)
         """
-        # Fix ups
-        for key in ["vco", "vcxo"]:
-            if isinstance(cfg["clock"][key], float) and cfg["clock"][key].is_integer():
-                cfg["clock"][key] = int(cfg["clock"][key])
+        # Fix up clock values
+        clock_cfg = cfg.get("clock", {})
+        for key in ["hmc7044_vcxo", "hmc7044_vco"]:
+            if key in clock_cfg:
+                if isinstance(clock_cfg[key], float) and clock_cfg[key].is_integer():
+                    clock_cfg[key] = int(clock_cfg[key])
 
+        # Build clock mapping from config
         map = {}
-        clk = cfg["clock"]["output_clocks"]
+        output_clocks = clock_cfg.get("output_clocks", {})
 
-        # Common
-        map["DEV_REFCLK"] = {
-            "source_port": 2,
-            "divider": clk["AD9081_ref_clk"]["divider"],
-        }
-        map["DEV_SYSREF"] = {
-            "source_port": 3,
-            "divider": np.max(
-                [clk["adc_sysref"]["divider"], clk["dac_sysref"]["divider"]]
-            ),
-        }
-        map["FPGA_SYSREF"] = {
-            "source_port": 13,
-            "divider": np.max(
-                [clk["adc_fpga_ref_clk"]["divider"], clk["dac_sysref"]["divider"]]
-            ),
+        for name, clk_cfg in output_clocks.items():
+            map[name] = {
+                "source_port": clk_cfg["source_port"],
+                "divider": clk_cfg["divider"],
+            }
+
+        ccfg = {
+            "map": map,
+            "clock": clock_cfg,
         }
 
-        # RX side
-        map["CORE_CLK_RX"] = {
-            "source_port": 0,
-            "divider": clk["adc_fpga_link_out_clk"]["divider"],
-        }
-        map["CORE_CLK_RX_ALT"] = {
-            "source_port": 10,
-            "divider": clk["adc_fpga_link_out_clk"]["divider"] * 1,
-        }
-        map["FPGA_REFCLK1"] = {
-            "source_port": 8,
-            "divider": clk["adc_fpga_ref_clk"]["divider"],
+        # ADC configuration
+        adc = {
+            "jesd": cfg.get("jesd_rx", {}),
         }
 
-        # Tx side
-        map["CORE_CLK_TX"] = {
-            "source_port": 6,
-            "divider": clk["dac_fpga_link_out_clk"]["divider"],
-        }
-        map["FPGA_REFCLK2"] = {
-            "source_port": 12,
-            "divider": clk["dac_fpga_ref_clk"]["divider"],
+        # DAC configuration
+        dac = {
+            "jesd": cfg.get("jesd_tx", {}),
         }
 
-        ccfg = {"map": map, "clock": cfg["clock"]}
+        # Device profile and lane mapping
+        adc["device_profile"] = cfg.get("device_profile", "")
+        dac["device_profile"] = cfg.get("device_profile", "")
 
-        fpga = {}
-        fpga["fpga_adc"] = cfg["fpga_adc"]
-        fpga["fpga_dac"] = cfg["fpga_dac"]
+        lane_mapping = cfg.get("lane_mapping", {})
+        adc["lane_mapping"] = lane_mapping
+        dac["lane_mapping"] = lane_mapping
 
-        # Check all clocks are mapped
-        # FIXME
-
-        # Check no source_port is mapped to more than one clock
-        # FIXME
-        adc, dac = self.map_jesd_structs(cfg)
-
-        # Section disables
-        adc["fddc_enabled"] = any(cfg["datapath_adc"]["fddc"]["enabled"])
-        dac["fduc_enabled"] = any(cfg["datapath_dac"]["fduc"]["enabled"])
-
-        # Change QPLL0 to naming in kernel
-        if fpga["fpga_dac"]["sys_clk_select"] == "XCVR_QPLL0":
-            fpga["fpga_dac"]["sys_clk_select"] = "XCVR_QPLL"
-        if fpga["fpga_adc"]["sys_clk_select"] == "XCVR_QPLL0":
-            fpga["fpga_adc"]["sys_clk_select"] = "XCVR_QPLL"
+        # FPGA configuration
+        fpga = {
+            "fpga_adc": cfg.get("fpga_adc", {}),
+            "fpga_dac": cfg.get("fpga_dac", {}),
+        }
 
         return ccfg, adc, dac, fpga
