@@ -107,6 +107,6 @@ cfg = {
 
 fmc = adidt.ad9081_fmc()
 
-clock, adc, dac = fmc.map_clocks_to_board_layout(cfg)
+clock, adc, dac, fpga = fmc.map_clocks_to_board_layout(cfg)
 
-fmc.gen_dt(clock=clock, adc=adc, dac=dac)
+fmc.gen_dt(clock=clock, adc=adc, dac=dac, fpga=fpga)
