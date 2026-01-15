@@ -1,5 +1,14 @@
-mkdocs
-mkdocs-material
-mkdocstrings[python]
-mkdocs-click
-mike
+# Core Sphinx
+sphinx>=5.0
+
+# Markdown support
+myst-parser
+
+# ADI theme and tools
+adi-doctools>=0.4.21
+
+# Extensions
+sphinx-click
+sphinxcontrib-mermaid
+sphinx-simplepdf
+pillow
