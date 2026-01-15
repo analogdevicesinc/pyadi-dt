@@ -1,0 +1,9 @@
+// First level nested include
+#include "nested_level2.dts"
+#include "includes/board-specific.dtsi"
+
+/ {
+    level1-node {
+        compatible = "test,level1";
+    };
+};

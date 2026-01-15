@@ -1,0 +1,18 @@
+// Device tree with missing includes for testing error handling
+/dts-v1/;
+
+// These files don't exist - for testing missing dependency tracking
+#include <dt-bindings/missing/nonexistent.h>
+#include "missing_file.dtsi"
+/include/ "also_missing.dtsi"
+
+// This one exists
+#include "includes/common.dtsi"
+
+/ {
+    compatible = "test,missing-deps";
+    model = "Missing Dependencies Test";
+
+    // Another missing include
+    #include "totally_not_here.dtsi"
+};

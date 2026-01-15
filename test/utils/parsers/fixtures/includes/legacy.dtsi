@@ -1,0 +1,7 @@
+// Legacy format include file
+/ {
+    legacy-node {
+        compatible = "test,legacy";
+        status = "okay";
+    };
+};

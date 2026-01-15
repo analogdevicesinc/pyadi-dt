@@ -1,0 +1,33 @@
+// Device tree with various include statement patterns
+/dts-v1/;
+
+// System include with angle brackets
+#include <dt-bindings/clock/xlnx-zynqmp-clk.h>
+#include <dt-bindings/gpio/gpio.h>
+
+// Local include with quotes
+#include "includes/common.dtsi"
+#include "includes/board-specific.dtsi"
+
+// Legacy include format
+/include/ "includes/legacy.dtsi"
+
+/ {
+    compatible = "test,include-board";
+    model = "Include Test Board";
+    #address-cells = <2>;
+    #size-cells = <2>;
+
+    // Another include in the middle
+    #include "includes/memory.dtsi"
+
+    soc {
+        compatible = "simple-bus";
+        #address-cells = <2>;
+        #size-cells = <2>;
+        ranges;
+
+        // Include at deeper level
+        #include "includes/peripherals.dtsi"
+    };
+};

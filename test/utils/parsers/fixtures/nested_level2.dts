@@ -1,0 +1,8 @@
+// Second level nested include
+#include "includes/memory.dtsi"
+
+/ {
+    level2-node {
+        compatible = "test,level2";
+    };
+};

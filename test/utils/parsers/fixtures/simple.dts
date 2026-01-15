@@ -1,0 +1,18 @@
+// Simple device tree source file with no includes
+/dts-v1/;
+
+/ {
+    compatible = "test,simple-board";
+    model = "Simple Test Board";
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    memory@0 {
+        device_type = "memory";
+        reg = <0x0 0x40000000>;
+    };
+
+    chosen {
+        stdout-path = "serial0:115200n8";
+    };
+};

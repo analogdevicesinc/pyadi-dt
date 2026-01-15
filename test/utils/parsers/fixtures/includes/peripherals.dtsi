@@ -1,0 +1,14 @@
+// Peripheral configuration
+/ {
+    uart0: serial@ff000000 {
+        compatible = "test,uart";
+        reg = <0x0 0xff000000 0x0 0x1000>;
+        status = "okay";
+    };
+
+    gem0: ethernet@ff0e0000 {
+        compatible = "test,ethernet";
+        reg = <0x0 0xff0e0000 0x0 0x1000>;
+        status = "okay";
+    };
+};

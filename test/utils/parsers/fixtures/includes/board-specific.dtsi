@@ -1,0 +1,8 @@
+// Board specific configuration
+/ {
+    board-config {
+        compatible = "test,board-config";
+        board-name = "Test Board";
+        board-revision = <1>;
+    };
+};

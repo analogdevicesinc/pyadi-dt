@@ -1,0 +1,79 @@
+{
+  "converter": {
+    "type": "ad9081"
+  },
+  "clock": {
+    "vcxo": 100000000,
+    "vco": 3000000000,
+    "output_clocks": {
+      "AD9081_ref_clk": {"divider": 6},
+      "adc_sysref": {"divider": 256},
+      "dac_sysref": {"divider": 256},
+      "adc_fpga_ref_clk": {"divider": 8},
+      "adc_fpga_link_out_clk": {"divider": 8},
+      "dac_fpga_ref_clk": {"divider": 8},
+      "dac_fpga_link_out_clk": {"divider": 8}
+    }
+  },
+  "fpga_adc": {
+    "sys_clk_select": "XCVR_QPLL0",
+    "out_clk_select": "XCVR_REFCLK_DIV2"
+  },
+  "fpga_dac": {
+    "sys_clk_select": "XCVR_QPLL0",
+    "out_clk_select": "XCVR_REFCLK_DIV2"
+  },
+  "jesd_adc": {
+    "M": 8,
+    "L": 4,
+    "S": 1,
+    "F": 2,
+    "K": 32,
+    "Np": 16,
+    "CS": 0,
+    "HD": 1,
+    "jesd_mode": 9,
+    "jesd_class": "jesd204b",
+    "converter_clock": 4000000000,
+    "sample_clock": 250000000
+  },
+  "jesd_dac": {
+    "M": 8,
+    "L": 4,
+    "S": 1,
+    "F": 4,
+    "K": 32,
+    "Np": 16,
+    "CS": 0,
+    "HD": 0,
+    "jesd_mode": 10,
+    "jesd_class": "jesd204b",
+    "converter_clock": 12000000000,
+    "sample_clock": 500000000
+  },
+  "datapath_adc": {
+    "cddc": {
+      "enabled": [true, true, true, true],
+      "decimations": [4, 4, 4, 4],
+      "nco_frequencies": [0, 0, 0, 0]
+    },
+    "fddc": {
+      "enabled": [true, true, true, true, true, true, true, true],
+      "decimations": [1, 1, 1, 1, 1, 1, 1, 1],
+      "nco_frequencies": [0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  },
+  "datapath_dac": {
+    "cduc": {
+      "enabled": [true, true, true, true],
+      "interpolation": 6,
+      "sources": [[0, 1], [2, 3], [4, 5], [6, 7]],
+      "nco_frequencies": [0, 0, 0, 0]
+    },
+    "fduc": {
+      "enabled": [true, true, true, true, true, true, true, true],
+      "interpolation": 4,
+      "nco_frequencies": [0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  }
+}
