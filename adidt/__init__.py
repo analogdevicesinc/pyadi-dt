@@ -1,3 +1,5 @@
+__version__ = "0.0.1"
+
 from adidt.dt import dt
 from adidt.clock import clock
 from adidt.parts.hmc7044 import hmc7044_dt
