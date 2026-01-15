@@ -5,7 +5,8 @@ sphinx>=5.0
 myst-parser
 
 # ADI theme and tools
-adi-doctools>=0.4.21
+#adi-doctools>=0.4.21
+https://github.com/analogdevicesinc/doctools/releases/download/latest/adi-doctools.tar.gz
 
 # Extensions
 sphinx-click
