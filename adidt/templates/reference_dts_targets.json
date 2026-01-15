@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Reference DTS files from Linux kernel used as templates for device tree generation",
+  "version": "1.0.0",
+  "boards": {
+    "ad9081": {
+      "description": "AD9081/MxFE FMC Evaluation Board",
+      "platforms": {
+        "zcu102": {
+          "architecture": "arm64",
+          "soc": "Zynq UltraScale+ MPSoC",
+          "transceivers": "GTH",
+          "reference_dts": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9081.dts",
+          "base_includes": [
+            "zynqmp-zcu102-rev10-ad9081-default.dtsi"
+          ],
+          "template": "ad9081_fmc_zcu102.tmpl",
+          "clock_reference": "zynqmp_clk",
+          "spi_bus": "spi1",
+          "default_pll": "XCVR_QPLL",
+          "additional_variants": [
+            "zynqmp-zcu102-rev10-ad9081-204b-txmode9-rxmode4.dts",
+            "zynqmp-zcu102-rev10-ad9081-204c-txmode0-rxmode1.dts",
+            "zynqmp-zcu102-rev10-ad9081-m8-l4-do.dts",
+            "zynqmp-zcu102-rev10-ad9081-m8-l4-ffh.dts",
+            "zynqmp-zcu102-rev10-ad9081-m8-l4-overlay.dts",
+            "zynqmp-zcu102-rev10-ad9081-m8-l4-qpllrx.dts"
+          ]
+        }
+      },
+      "clock_chips": [
+        "hmc7044"
+      ],
+      "shared_dtsi": []
+    },
+    "daq2": {
+      "description": "DAQ2 High-Speed ADC/DAC Evaluation Board (AD9680 + AD9144)",
+      "platforms": {
+        "zcu102": {
+          "architecture": "arm64",
+          "soc": "Zynq UltraScale+ MPSoC",
+          "transceivers": "GTH",
+          "reference_dts": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-fmcdaq2.dts",
+          "base_includes": [
+            "zynqmp-zcu102-rev1.0.dts",
+            "adi-daq2.dtsi"
+          ],
+          "template": "daq2.tmpl",
+          "clock_reference": "zynqmp_clk",
+          "spi_bus": "spi0",
+          "default_pll": "XCVR_QPLL",
+          "additional_variants": [
+            "zynqmp-zcu102-rev10-fmcdaq2_m4_l4.dts"
+          ]
+        }
+      },
+      "clock_chips": [
+        "ad9523_1"
+      ],
+      "shared_dtsi": [],
+      "components": {
+        "adc": "ad9680",
+        "dac": "ad9144"
+      }
+    }
+  },
+  "base_platform_files": {
+    "arm64": {
+      "zcu102": {
+        "path": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev1.0.dts",
+        "includes": [
+          "zynqmp-zcu102-revB.dts",
+          "zynqmp.dtsi"
+        ]
+      },
+      "vpk180": {
+        "path": "arch/arm64/boot/dts/xilinx/versal-vpk180-revA.dts",
+        "includes": [
+          "versal.dtsi",
+          "versal-clk.dtsi"
+        ]
+      },
+      "vck190": {
+        "path": "arch/arm64/boot/dts/xilinx/versal-vck190-revA.dts",
+        "includes": [
+          "versal.dtsi",
+          "versal-clk.dtsi"
+        ]
+      }
+    },
+    "arm": {
+      "zc706": {
+        "path": "arch/arm/boot/dts/xilinx/zynq-zc706.dts",
+        "includes": [
+          "zynq-zc706.dtsi",
+          "zynq-7000.dtsi"
+        ]
+      }
+    }
+  },
+  "transceiver_types": {
+    "GTH": {
+      "description": "Gigabit Transceiver High-performance",
+      "platforms": [
+        "zcu102"
+      ],
+      "max_rate_gbps": 16.3
+    },
+    "GTY": {
+      "description": "Gigabit Transceiver for Versal",
+      "platforms": [
+        "vpk180",
+        "vck190"
+      ],
+      "max_rate_gbps": 32.75
+    },
+    "GTX": {
+      "description": "Gigabit Transceiver",
+      "platforms": [
+        "zc706"
+      ],
+      "max_rate_gbps": 12.5
+    }
+  }
+}
