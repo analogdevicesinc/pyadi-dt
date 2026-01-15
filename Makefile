@@ -40,7 +40,16 @@ test: ## run tests
 	pytest -vs
 
 docs: ## build docs
-	mkdocs build --verbose --strict
+	cd doc && $(MAKE) html
+
+docs-clean: ## clean documentation build
+	cd doc && $(MAKE) clean
+
+docs-coverage: ## check documentation coverage
+	cd doc && $(MAKE) coverage
+
+docs-linkcheck: ## check documentation links
+	cd doc && $(MAKE) linkcheck
 
 dev: ## setup development environment
 	virtualenv venv

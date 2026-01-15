@@ -6,7 +6,7 @@
 
 Device tree management tools for ADI hardware
 
-![props command](docs/media/props.gif)
+![props command](doc/source/_static/media/props.gif)
 
 ## Quick install
 
@@ -50,3 +50,98 @@ Use the **prop** sub command to read device tree attributes
 > adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 clock-output-names rx_sampl_clk,tx_sampl_clk
 ```
+
+## Device Tree Generation
+
+Generate device tree source (DTS) files for AD9081 FMC evaluation boards across multiple FPGA platforms (ZCU102, VPK180, ZC706).
+
+### Quick Example
+
+```bash
+# Generate DTS for ZCU102
+adidtc gen-dts --platform zcu102 --config my_config.json
+
+# Generate and compile to DTB
+adidtc gen-dts --platform vpk180 --config my_config.json --compile
+```
+
+### Supported Platforms
+
+- **ZCU102**: Zynq UltraScale+ (ARM64, GTH transceivers)
+- **VPK180**: Versal (ARM64, GTY transceivers)
+- **ZC706**: Zynq-7000 (ARM, GTX transceivers)
+
+### Features
+
+- Platform-specific device tree generation from JSON configurations
+- Automatic FPGA transceiver configuration (QPLL/CPLL settings)
+- HMC7044 clock chip configuration
+- AD9081 JESD204B/C link configuration
+- ADC/DAC datapath configuration (CDDC, FDDC, CDUC, FDUC)
+- Optional DTB compilation with proper include paths
+
+### Setup
+
+The tool requires Linux kernel source for platform base DTS files:
+
+```bash
+# Option 1: Clone to default location
+git clone https://github.com/analogdevicesinc/linux.git
+
+# Option 2: Set environment variable
+export LINUX_KERNEL_PATH=/path/to/your/linux
+
+# Option 3: Pass via CLI
+adidtc gen-dts -p zcu102 -c config.json -k /path/to/linux
+```
+
+### Documentation
+
+See [doc/source/ad9081_device_tree_generation.md](doc/source/ad9081_device_tree_generation.md) for:
+- Complete configuration file format
+- FPGA configuration options
+- Python API usage
+- Troubleshooting guide
+- Adding new platforms
+
+## Building Documentation
+
+Documentation is built using Sphinx with the ADI cosmic theme.
+
+### Setup
+
+```bash
+# Install documentation dependencies
+pip install -r requirements/requirements_doc.txt
+
+# Install package in development mode
+pip install -e .
+```
+
+### Build
+
+```bash
+# Build HTML documentation
+cd doc
+make html
+
+# View the documentation (open in browser)
+open build/html/index.html  # macOS
+xdg-open build/html/index.html  # Linux
+start build/html/index.html  # Windows
+```
+
+### Additional Commands
+
+```bash
+# Check documentation coverage
+make coverage
+
+# Validate links
+make linkcheck
+
+# Clean build artifacts
+make clean
+```
+
+The documentation is automatically built and deployed to GitHub Pages on every push to the main branch.
