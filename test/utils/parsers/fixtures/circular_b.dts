@@ -1,0 +1,9 @@
+// Circular dependency test - file B includes A which includes B
+/dts-v1/;
+
+#include "circular_a.dts"
+
+/ {
+    compatible = "test,circular-b";
+    model = "Circular Test B";
+};

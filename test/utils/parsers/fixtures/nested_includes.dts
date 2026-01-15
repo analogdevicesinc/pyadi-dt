@@ -1,0 +1,10 @@
+// Complex nested includes test
+/dts-v1/;
+
+#include "includes/common.dtsi"
+#include "nested_level1.dts"
+
+/ {
+    compatible = "test,nested-includes";
+    model = "Nested Includes Test";
+};

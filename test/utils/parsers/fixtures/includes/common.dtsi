@@ -1,0 +1,21 @@
+// Common device tree include file
+// This file is included by multiple test files
+
+/ {
+    aliases {
+        serial0 = &uart0;
+        ethernet0 = &gem0;
+    };
+
+    clocks {
+        compatible = "simple-bus";
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        ps_clk: ps_clk {
+            compatible = "fixed-clock";
+            #clock-cells = <0>;
+            clock-frequency = <33333333>;
+        };
+    };
+};
