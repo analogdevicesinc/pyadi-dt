@@ -36,6 +36,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
+    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@tfcollins/selmap",
 ]
 
 [project.scripts]
