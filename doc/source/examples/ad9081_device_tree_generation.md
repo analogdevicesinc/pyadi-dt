@@ -100,9 +100,10 @@ adidtc gen-dts -p zc706 -c configs/zc706.json --compile
 adidtc gen-dts -p zcu102 -c cfg.json -o /tmp/custom.dts
 ```
 
+(configuration-file-format)=
 ## Configuration File Format
 
-Configuration files are JSON documents containing clock, JESD, and datapath settings.
+Configuration files are JSON documents containing clock, JESD, and datapath settings. These are typically generated from [pyadi-jif](https://github.com/analogdevicesinc/pyadi-jif).
 
 ### Complete Example
 
