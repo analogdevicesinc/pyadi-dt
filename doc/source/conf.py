@@ -95,8 +95,8 @@ html_favicon = "_static/media/pyadi-dt_72.png"
 html_static_path = ["_static"]
 
 html_theme_options = {
-    "light_logo": "_static/media/pyadi-dt.svg",
-    "dark_logo": "_static/media/pyadi-dt_w.svg",
+    "light_logo": os.path.join("media", "pyadi-dt.svg"),
+    "dark_logo": os.path.join("media", "pyadi-dt_w.svg"),
 }
 
 # -- Options for source files ------------------------------------------------

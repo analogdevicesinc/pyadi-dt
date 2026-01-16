@@ -30,7 +30,7 @@ Table of Contents
    access
    parts
    utils
-   ad9081_device_tree_generation
+   examples
 
 .. toctree::
    :maxdepth: 2
