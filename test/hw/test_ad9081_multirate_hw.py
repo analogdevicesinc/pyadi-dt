@@ -29,12 +29,15 @@ import tarfile
 from pathlib import Path
 from adidt.boards.ad9081_fmc import ad9081_fmc
 import iio
+import adijif
+import adi
 
 
 # Sample rates to test (in MSPS)
 # Range: 100-300 MSPS, staying under 10 Gbps lane rate limit
-#SAMPLE_RATES = [100, 125, 150, 175, 200, 225, 245, 260, 280, 300]
-SAMPLE_RATES = [100, 300]
+SAMPLE_RATES = [100, 125, 150, 175, 200, 225, 245, 260, 280, 300]
+#SAMPLE_RATES = [100, 300]
+
 
 # ARM GNU Toolchain configuration for cross-compiling ARM64 device trees
 TOOLCHAIN_URL = "https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz"
@@ -121,109 +124,91 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
 def generate_ad9081_config(sample_rate_msps: int) -> dict:
     """Generate AD9081 configuration for given sample rate.
 
-    Creates a complete configuration dict with JESD204 parameters L=4, M=8, Np=16
-    for both ADC and DAC paths. The clock configuration uses fixed HMC7044 dividers
-    based on the proven zcu102_config.json pattern.
+    Uses pyadi-jif to generate a complete configuration dict with JESD204 
+    parameters L=4, M=8, Np=16 for both ADC and DAC paths. 
 
     Args:
         sample_rate_msps: Sample rate in MSPS (100-300)
 
     Returns:
         Complete configuration dict for ad9081_fmc board
-
-    Lane Rate Calculation:
-        Lane Rate (Gbps) = sample_clock × M × Np / L / 1e9
-                         = sample_clock × 8 × 16 / 4 / 1e9
-                         = sample_clock × 32
-
-        At 100 MSPS: 3.20 Gbps
-        At 300 MSPS: 9.60 Gbps (under 10 Gbps limit)
     """
+    vcxo = 122_880_000 # 122.88 MHz reference
+    
+    # Create system with default solver (Z3 or CPLEX if available)
+    # Using 'zcu102' presets as starting point
+    sys = adijif.system("ad9081", "hmc7044", "xilinx", vcxo)
+    sys.fpga.setup_by_dev_kit_name("zcu102")
+    
+    # Clocking constraints
+    sys.fpga.ref_clock_constraint = "Unconstrained"
+    sys.fpga.sys_clk_select = "XCVR_QPLL" 
+    sys.fpga.out_clk_select = "XCVR_REFCLK_DIV2"
+    sys.converter.clocking_option = "integrated_pll"
+
+    # Sample Rates
     sample_clock = sample_rate_msps * 1_000_000
-    converter_clock = sample_clock * 16  # AD9081 architecture uses 16x clock
+    sys.converter.adc.sample_clock = sample_clock
+    sys.converter.dac.sample_clock = sample_clock
 
-    # Fixed clock configuration (from zcu102_config.json)
-    # These values remain constant across all sample rates
-    vcxo = 100_000_000  # 100 MHz reference
-    vco = 3_000_000_000  # 3 GHz VCO
+    # Datapath Configuration 
+    # Mode 10.0 requires minimal decimation and clock rates > 1.45 GHz
+    # 100 MSPS * 16 = 1.6 GHz > 1.45 GHz.
+    # Using 16x Decimation (4x4)
+    # Mode 10.0 M=8 supports 4 Complex Channels (4*2=8 converters)
+    # Enable only 4 FDDC channels
+    sys.converter.adc.datapath.fddc_enabled = [True] * 4 + [False] * 4
+    sys.converter.adc.datapath.fddc_decimations = [4] * 8
+    sys.converter.adc.datapath.cddc_decimations = [4] * 4
+    
+    # Mode 9 for DAC requires clock > 2.9 GHz
+    # 100 MSPS * 32 = 3.2 GHz > 2.9 GHz.
+    # Using 32x Interpolation (4x8)
+    sys.converter.dac.datapath.cduc_interpolation = 4
+    sys.converter.dac.datapath.fduc_interpolation = 8
+    sys.converter.dac.datapath.fduc_enabled = [True] * 4 + [False] * 4
+    # Original DAC sources were: [[0, 1], [2, 3], [4, 5], [6, 7]]
+    # pyadi-jif should handle default routing for M=8, but let's verify if needed.
 
-    return {
-        "converter": {"type": "ad9081"},
-        "clock": {
-            "vcxo": vcxo,
-            "vco": vco,
-            "output_clocks": {
-                "AD9081_ref_clk": {"divider": 6},        # 500 MHz to AD9081
-                "adc_sysref": {"divider": 256},          # ~11.7 MHz SYSREF
-                "dac_sysref": {"divider": 256},          # ~11.7 MHz SYSREF
-                "adc_fpga_ref_clk": {"divider": 8},      # 375 MHz to FPGA
-                "adc_fpga_link_out_clk": {"divider": 8}, # 375 MHz link clock
-                "dac_fpga_ref_clk": {"divider": 8},      # 375 MHz to FPGA
-                "dac_fpga_link_out_clk": {"divider": 8}, # 375 MHz link clock
-            }
-        },
-        "fpga_adc": {
-            "sys_clk_select": "XCVR_QPLL",
-            "out_clk_select": "XCVR_REFCLK_DIV2"
-        },
-        "fpga_dac": {
-            "sys_clk_select": "XCVR_QPLL",
-            "out_clk_select": "XCVR_REFCLK_DIV2"
-        },
-        "jesd_adc": {
-            "M": 8,   # Number of converters
-            "L": 4,   # Number of JESD lanes
-            "S": 1,   # Samples per frame
-            "F": 2,   # Octets per frame
-            "K": 32,  # Frames per multiframe
-            "Np": 16, # Bits per sample
-            "CS": 0,  # Control bits
-            "HD": 1,  # High-density mode
-            "jesd_mode": 9,
-            "jesd_class": "jesd204b",
-            "converter_clock": converter_clock,
-            "sample_clock": sample_clock
-        },
-        "jesd_dac": {
-            "M": 8,   # Number of converters
-            "L": 4,   # Number of JESD lanes
-            "S": 1,   # Samples per frame
-            "F": 4,   # Octets per frame
-            "K": 32,  # Frames per multiframe
-            "Np": 16, # Bits per sample
-            "CS": 0,  # Control bits
-            "HD": 0,  # High-density mode
-            "jesd_mode": 10,
-            "jesd_class": "jesd204b",
-            "converter_clock": converter_clock,
-            "sample_clock": sample_clock
-        },
-        "datapath_adc": {
-            "cddc": {
-                "enabled": [True, True, True, True],
-                "decimations": [1, 1, 1, 1],
-                "nco_frequencies": [0, 0, 0, 0]
-            },
-            "fddc": {
-                "enabled": [False] * 8,
-                "decimations": [1] * 8,
-                "nco_frequencies": [0] * 8
-            }
-        },
-        "datapath_dac": {
-            "cduc": {
-                "enabled": [True, True, True, True],
-                "interpolation": 1,
-                "sources": [[0, 1], [2, 3], [4, 5], [6, 7]],
-                "nco_frequencies": [0, 0, 0, 0]
-            },
-            "fduc": {
-                "enabled": [False] * 8,
-                "interpolation": 1,
-                "nco_frequencies": [0] * 8
-            }
-        }
+    # JESD Constraints for L=4, M=8, Np=16
+    # Confirmed from adijif resources:
+    # ADC Mode 10.0: L=4, M=8, F=4, Np=16
+    # DAC Mode 9: L=4, M=8, F=4, Np=16
+    sys.converter.adc.set_quick_configuration_mode("10.0", "jesd204b")
+    sys.converter.dac.set_quick_configuration_mode("9", "jesd204b")
+    
+    # Fix for any potential solver ambiguity
+    sys.converter.adc.K = 32
+    sys.converter.dac.K = 32
+
+    # Solve for configuration
+    cfg = sys.solve()
+    
+    # Map generated keys to expected keys for adidt
+    # adidt expects generic names (adc_fpga_ref_clk) but pyadi-jif generates
+    # board specific names (zcu102_adc_ref_clk)
+    clks = cfg["clock"]["output_clocks"]
+    
+    mapping = {
+        "zcu102_adc_ref_clk": "adc_fpga_ref_clk",
+        "zcu102_adc_device_clk": "adc_fpga_link_out_clk",
+        "zcu102_dac_ref_clk": "dac_fpga_ref_clk",
+        "zcu102_dac_device_clk": "dac_fpga_link_out_clk"
     }
+    
+    for old_key, new_key in mapping.items():
+        if old_key in clks:
+            clks[new_key] = clks.pop(old_key)
+            
+    # Helper to clean up modes (10.0 -> 10)
+    for part in ["jesd_adc", "jesd_dac"]:
+        if part in cfg and "jesd_mode" in cfg[part]:
+            try:
+                cfg[part]["jesd_mode"] = int(float(cfg[part]["jesd_mode"]))
+            except (ValueError, TypeError):
+                pass
+
+    return cfg
 
 
 def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_compile: str = None) -> None:
@@ -360,7 +345,7 @@ def post_power_off(strategy):
     This ensures clean board state for subsequent test runs.
     """
     yield strategy
-    # strategy.transition("soft_off")
+    strategy.transition("soft_off")
 
 
 # Test class
@@ -482,12 +467,29 @@ class TestAD9081MultiRateHardware:
 
         # Step 8: Extract kernel log for debugging
         print(f"[8/9] Extracting kernel log for debugging...")
-        dmesg_output = shell.run("dmesg")
+        dmesg_res = shell.run("dmesg")
+        # Handle shell.run return (stdout_lines, returncode)
+        if isinstance(dmesg_res, tuple):
+            dmesg_output = dmesg_res[0]
+        else:
+            dmesg_output = dmesg_res
+            
+        if isinstance(dmesg_output, list):
+           dmesg_output = "\n".join(dmesg_output)
+           
         dmesg_log_path = dtb_output_dir / f"dmesg_{sample_rate_msps}msps.log"
         with open(dmesg_log_path, 'w') as f:
             f.write(dmesg_output)
         print(f"      ✓ Kernel log saved: {dmesg_log_path}")
-        dmesg_error_output = shell.run("dmesg --level=err,warn")
+        dmesg_err_res = shell.run("dmesg --level=err,warn")
+        if isinstance(dmesg_err_res, tuple):
+             dmesg_error_output = dmesg_err_res[0]
+        else:
+             dmesg_error_output = dmesg_err_res
+             
+        if isinstance(dmesg_error_output, list):
+           dmesg_error_output = "\n".join(dmesg_error_output)
+           
         dmesg_error_log_path = dtb_output_dir / f"dmesg_errors_{sample_rate_msps}msps.log"
         with open(dmesg_error_log_path, 'w') as f:
             f.write(dmesg_error_output)
@@ -507,6 +509,14 @@ class TestAD9081MultiRateHardware:
             device = [d for d in ctx.devices if d.name == device_name][0]
             num_channels = len(device.channels)
             print(f"      ✓ Found IIO device: {device_name} ({num_channels} channels)")
+
+        dev = adi.ad9081(uri=f"ip:{ip_address}")
+        sample_rate = dev.rx_sample_rate
+        print(f"      ✓ Sample rate: {sample_rate}")
+        assert sample_rate == sample_rate_msps * 1_000_000, (
+            f"Expected sample rate {sample_rate_msps * 1_000_000} Hz, "
+            f"got {sample_rate} Hz"
+        )   
 
         print(f"\n{'='*70}")
         print(f"✓✓✓ Test PASSED for {sample_rate_msps} MSPS ✓✓✓")
