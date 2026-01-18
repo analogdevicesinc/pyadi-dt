@@ -39,7 +39,13 @@ class layout:
         template = env.get_template(loc)
 
         kwargs = self.gen_dt_preprocess(**kwargs)
-        output = template.render(**kwargs)
+        # Construct the context for rendering the template
+        render_context = {
+            "base_dts_include": self.platform_config["base_dts_include"],
+        }
+        render_context.update(kwargs) # Add all other kwargs
+
+        output = "/dts-v1/;\n/plugin/;\n" + template.render(**render_context)
 
         with open(self.output_filename, "w") as f:
             f.write(output)
