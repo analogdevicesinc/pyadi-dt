@@ -9,14 +9,16 @@ import tarfile
 from pathlib import Path
 from adidt.boards.daq2 import daq2
 import iio
+import adijif
+import adi
 
 
 # Sample rates to test (in MSPS)
-SAMPLE_RATES = [1000]
+SAMPLE_RATES = [500, 1000]
 
 
 # ARM GNU Toolchain configuration for cross-compiling ARM64 device trees
-TOOLCHAIN_URL = "https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz"
+TOOLCHAIN_URL = "https://developer.arm/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz"
 TOOLCHAIN_VERSION = "12.2.rel1"
 TOOLCHAIN_ARCH = "aarch64-none-elf"
 
@@ -99,42 +101,39 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
 
 def generate_fmcdaq2_config(sample_rate_msps: int) -> dict:
     """Generate FMCDAQ2 configuration for given sample rate.
+
+    Uses pyadi-jif to generate a complete configuration dict with JESD204
+    parameters L=4, M=2 for both ADC and DAC paths.
+
+    Args:
+        sample_rate_msps: Sample rate in MSPS
+
+    Returns:
+        Complete configuration dict for fmcdaq2 board
     """
-    return {
-        "clock": {
-            "vco": 2500000000,
-            "vcxo": 125000000,
-            "m1": 1,
-            "output_clocks": {
-                "AD9680_ref_clk": {"divider": 10},
-                "zcu102_AD9680_ref_clk": {"divider": 10},
-                "AD9680_sysref": {"divider": 256},
-                "AD9144_ref_clk": {"divider": 10},
-                "zcu102_AD9144_ref_clk": {"divider": 10},
-                "AD9144_sysref": {"divider": 256}
-            }
-        },
-        "converter_AD9680": {"sample_clock": sample_rate_msps * 1000000},
-        "converter_AD9144": {"sample_clock": sample_rate_msps * 1000000},
-        "jesd_AD9680": {
-            "jesd_class": "jesd204b",
-            "converter_clock": sample_rate_msps * 1000000,
-            "sample_clock": sample_rate_msps * 1000000,
-            "jesd_L": 4,
-            "jesd_M": 2,
-            "jesd_S": 1,
-        },
-        "jesd_AD9144": {
-            "jesd_class": "jesd204b",
-            "converter_clock": sample_rate_msps * 1000000,
-            "sample_clock": sample_rate_msps * 1000000,
-            "jesd_L": 4,
-            "jesd_M": 2,
-            "jesd_S": 1,
-        },
-        "fpga_adc": {"sys_clk_select": "XCVR_QPLL", "out_clk_select": "XCVR_REFCLK_DIV2"},
-        "fpga_dac": {"sys_clk_select": "XCVR_QPLL", "out_clk_select": "XCVR_REFCLK_DIV2"}
-    }
+    # Create system with default solver (Z3 or CPLEX if available)
+    # Using 'zcu102' presets as starting point
+    vcxo = 125_000_000
+    sys = adijif.system(["ad9680", "ad9144"], "ad9523_1", "xilinx", vcxo)
+    sys.fpga.setup_by_dev_kit_name("zcu102")
+
+    # Clocking constraints
+    sys.fpga.ref_clock_constraint = "Unconstrained"
+    sys.fpga.sys_clk_select = "XCVR_QPLL"
+    sys.fpga.out_clk_select = "XCVR_REFCLK_DIV2"
+
+    # Sample Rates
+    sample_clock = sample_rate_msps * 1_000_000
+    sys.converter[0].sample_clock = sample_clock
+    sys.converter[1].sample_clock = sample_clock
+
+    # JESD Constraints for L=4, M=2
+    sys.converter[0].jesd_L = 4
+    sys.converter[0].jesd_M = 2
+    sys.converter[1].jesd_L = 4
+    sys.converter[1].jesd_M = 2
+
+    return sys
 
 
 def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_compile: str = None) -> None:
@@ -225,28 +224,46 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
     )
 
     if make_result.returncode != 0:
+        error_message = make_result.stderr
+        syntax_error_line = None
+        syntax_error_file = None
+
+        # Attempt to parse error message for DTS syntax error
+        import re
+        match = re.search(r"Error: (.+):(\d+)\.(\d+)-\d+ syntax error", error_message)
+        if match:
+            syntax_error_file = match.group(1)
+            syntax_error_line = int(match.group(2))
+
+        dts_content_snippet = ""
+        if syntax_error_file and syntax_error_line:
+            try:
+                # Construct absolute path for reading the DTS file
+                absolute_syntax_error_file = Path(kernel_path) / syntax_error_file
+                with open(absolute_syntax_error_file, 'r') as f:
+                    lines = f.readlines()
+                    start_line = max(0, syntax_error_line - 3)
+                    end_line = min(len(lines), syntax_error_line + 2)
+                    dts_content_snippet = "\n".join(
+                        f"{i+1}: {line.rstrip()}" for i, line in enumerate(lines[start_line:end_line], start_line + 1)
+                    )
+            except Exception as e:
+                dts_content_snippet = f"Could not read DTS file for snippet: {e}"
+        else:
+            dts_content_snippet = "Could not locate or read the problematic DTS file."
+        
         raise RuntimeError(
             f"DTB compilation failed:\n"
             f"Command: {' '.join(make_cmd)}\n"
             f"ARCH={env['ARCH']} CROSS_COMPILE={env['CROSS_COMPILE']}\n"
-            f"Error: {make_result.stderr}"
+            f"Error: {error_message}\n"
+            f"DTS Snippet around line {syntax_error_line} in {syntax_error_file}:\n{dts_content_snippet}"
         )
 
-    # Step 4: Verify DTB was created
     if not kernel_dtb_path.exists():
         raise RuntimeError(f"DTB file not created at {kernel_dtb_path}")
 
-    # Step 5: Copy compiled DTB to desired output location
     shutil.copy2(kernel_dtb_path, dtb_path)
-    # Copy generated DTS to output directory for inspection
-    shutil.copy2(dts_path, Path("/home/tcollins/.gemini/tmp/02052157d92988229cbb9762a7182885be7b9b7d468730805d8f1efc3d8964ca") / dts_path.name)
-
-    # Optional: Clean up DTS/DTB from kernel tree to avoid clutter
-    # Commented out to preserve for debugging
-    # kernel_dts_path.unlink()
-    # kernel_dtb_path.unlink()
-
-    return True
 
 # Pytest fixtures
 
@@ -285,9 +302,8 @@ def post_power_off(strategy):
     transitions to soft_off state after all tests complete.
     This ensures clean board state for subsequent test runs.
     """
-    strategy.transition("powered_off")
     yield strategy
-    #strategy.transition("soft_off")
+    strategy.transition("soft_off")
 
 
 # Test class
@@ -308,42 +324,101 @@ class TestFmcdaq2MultiRateHardware:
         """
         strategy = post_power_off
 
-        # Step 1: Generate configuration
-        config = generate_fmcdaq2_config(sample_rate_msps)
+        print(f"\n{'='*70}")
+        print(f"Testing DAQ2 @ {sample_rate_msps} MSPS")
+        print(f"{'='*70}\n")
 
-        # Step 2: Generate DTS
+        # Step 1: Generate configuration
+        print(f"[1/9] Generating adijif configuration...")
+        sys = generate_fmcdaq2_config(sample_rate_msps)
+        config_adijif = sys.solve() # Rename to avoid confusion with adidt config
+        print(f"      ✓ Configuration solved successfully")
+
+        print(f"[2/9] Creating board instance and validating FPGA config...")
         board = daq2(platform="zcu102", kernel_path=kernel_path)
+        
+        # Create config dictionary matching adidt.boards.daq2 expected structure
+        config = {
+            "clock": {
+                "vco": config_adijif["clock"]["vco"],
+                "vcxo": config_adijif["clock"]["vcxo"],
+                "m1": config_adijif["clock"]["m1"],
+                "output_clocks": config_adijif["clock"]["output_clocks"],
+            },
+            "converter_AD9680": {
+                "sample_clock": config_adijif["jesd_AD9680"]["sample_clock"],
+                "decimation": config_adijif["converter_AD9680"]["decimation"],
+            },
+            "converter_AD9144": {
+                "sample_clock": config_adijif["jesd_AD9144"]["sample_clock"],
+                "interpolation": config_adijif["converter_AD9144"]["interpolation"],
+            },
+            "jesd_AD9680": {
+                "jesd_class": config_adijif["jesd_AD9680"]["jesd_class"],
+                "converter_clock": config_adijif["jesd_AD9680"]["converter_clock"],
+                "sample_clock": config_adijif["jesd_AD9680"]["sample_clock"],
+                "jesd_L": config_adijif["jesd_AD9680"]["L"],
+                "jesd_M": config_adijif["jesd_AD9680"]["M"],
+                "jesd_S": config_adijif["jesd_AD9680"]["S"],
+                "jesd_HD": config_adijif["jesd_AD9680"].get("HD", 0),
+                "jesd_F": config_adijif["jesd_AD9680"].get("F", 1),
+            },
+            "jesd_AD9144": {
+                "jesd_class": config_adijif["jesd_AD9144"]["jesd_class"],
+                "converter_clock": config_adijif["jesd_AD9144"]["converter_clock"],
+                "sample_clock": config_adijif["jesd_AD9144"]["sample_clock"],
+                "jesd_L": config_adijif["jesd_AD9144"]["L"],
+                "jesd_M": config_adijif["jesd_AD9144"]["M"],
+                "jesd_S": config_adijif["jesd_AD9144"]["S"],
+                "jesd_HD": config_adijif["jesd_AD9144"].get("HD", 0),
+                "jesd_F": config_adijif["jesd_AD9144"].get("F", 1),
+            }
+        }
+
+        config = board.validate_and_default_fpga_config(config)
+        print(f"      ✓ FPGA config validated")
+
+        print(f"[3/9] Mapping clocks to board layout...")
+        # Step 2: Generate DTS
         ccfg, adc, dac = board.map_clocks_to_board_layout(config)
+        print(f"      ✓ Clock mapping complete")
+
+        print(f"[4/9] Generating DTS file...")
         generated_dts = board.gen_dt(clock=ccfg, adc=adc, dac=dac)
         assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
+        print(f"      ✓ Generated DTS: {generated_dts}")
 
         # Step 3: Compile DTS to DTB using kernel build system
+        print(f"[5/9] Compiling DTS to DTB...")
         dtb_filename = dtb_output_dir / f"fmcdaq2_{sample_rate_msps}msps.dtb"
-        result = compile_dts_to_dtb(
+        compile_dts_to_dtb(
             dts_path=Path(generated_dts),
             dtb_path=dtb_filename,
             kernel_path=kernel_path
         )
-        if not result:
-            raise Exception('Failed result')
 
         assert dtb_filename.exists(), f"DTB file not created: {dtb_filename}"
         assert dtb_filename.stat().st_size > 0, "DTB file is empty"
+        print(f"      ✓ Compiled DTB: {dtb_filename} ({dtb_filename.stat().st_size} bytes)")
 
         # Step 4: Power off board
+        print(f"[6/9] Deploying DTB to board...")
         strategy.transition("powered_off")
 
         # Step 5: Deploy DTB
         kuiper = strategy.target.get_driver("KuiperDLDriver")
-        # Rename to system.dtb for KuiperDLDriver
-        #os.rename(dtb_filename, dtb_output_dir / "system.dtb")
+        # Copy to system.dtb for KuiperDLDriver
         shutil.copy2(dtb_filename, dtb_output_dir / "system.dtb")
-        #kuiper.add_files_to_target(str(dtb_output_dir / "system.dtb"))
+        print(f"      ✓ DTB deployed to SD card")
 
         # Step 6: Boot to shell
+        print(f"[7/9] Booting board to shell...")
+        os.environ['PATH'] = f'{os.getcwd()}/venv/bin:' + os.environ['PATH']
         strategy.transition("shell")
+        print(f"      ✓ Board booted successfully")
 
         # Step 7: Create IIO context
+        print(f"[8/9] Creating IIO context...")
         shell = strategy.target.get_driver("ADIShellDriver")
         addresses = shell.get_ip_addresses()
         ip_address = str(addresses[0].ip)
@@ -352,6 +427,9 @@ class TestFmcdaq2MultiRateHardware:
 
         ctx = iio.Context(f"ip:{ip_address}")
         assert ctx is not None, "Failed to create IIO context"
+        print(f"      ✓ IIO context created: {ip_address}")
+
+        print(f"[9/9] Verifying IIO devices...")
 
         # Step 8: Extract kernel log for debugging
         dmesg_res = shell.run("dmesg")
@@ -363,11 +441,15 @@ class TestFmcdaq2MultiRateHardware:
             
         if isinstance(dmesg_output, list):
             dmesg_output = "\n".join(dmesg_output)
-            
-        dmesg_log_path_local = dtb_output_dir / f"dmesg_{sample_rate_msps}msps.log" # Changed variable name
-        with open(dmesg_log_path_local, 'w') as f: # Use local path
+
+        dmesg_log_path_local = dtb_output_dir / f"dmesg_{sample_rate_msps}msps.log"
+        with open(dmesg_log_path_local, 'w') as f:
             f.write(dmesg_output)
-        shutil.copy2(dmesg_log_path_local, Path("/home/tcollins/.gemini/tmp/02052157d92988229cbb9762a7182885be7b9b7d468730805d8f1efc3d8964ca") / f"dmesg_{sample_rate_msps}msps.log")
+
+        # Create debug directory and copy dmesg log
+        debug_dir = Path("./generated_dts_debug")
+        debug_dir.mkdir(exist_ok=True)
+        shutil.copy2(dmesg_log_path_local, debug_dir / f"dmesg_{sample_rate_msps}msps.log")
         
         dmesg_err_res = shell.run("dmesg --level=err,warn")
         if isinstance(dmesg_err_res, tuple):
@@ -377,11 +459,11 @@ class TestFmcdaq2MultiRateHardware:
             
         if isinstance(dmesg_error_output, list):
             dmesg_error_output = "\n".join(dmesg_error_output)
-            
-        dmesg_error_log_path_local = dtb_output_dir / f"dmesg_errors_{sample_rate_msps}msps.log" # Changed variable name
-        with open(dmesg_error_log_path_local, 'w') as f: # Use local path
+
+        dmesg_error_log_path_local = dtb_output_dir / f"dmesg_errors_{sample_rate_msps}msps.log"
+        with open(dmesg_error_log_path_local, 'w') as f:
             f.write(dmesg_error_output)
-        shutil.copy2(dmesg_error_log_path_local, Path("/home/tcollins/.gemini/tmp/02052157d92988229cbb9762a7182885be7b9b7d468730805d8f1efc3d8964ca") / f"dmesg_errors_{sample_rate_msps}msps.log")
+        shutil.copy2(dmesg_error_log_path_local, debug_dir / f"dmesg_errors_{sample_rate_msps}msps.log")
         # Step 9: Verify devices
         expected_devices = ["axi-ad9680-hpc", "axi-ad9144-hpc"]
         found_devices = [d.name for d in ctx.devices]
@@ -397,10 +479,14 @@ class TestFmcdaq2MultiRateHardware:
             print(f"      ✓ Found IIO device: {device_name} ({num_channels} channels)")
 
         # CANNOT BE CHECKED WITH PYADI-IIO
-        #dev = adi.DAQ2(uri=f"ip:{ip_address}")
-        #sample_rate = dev.rx_sample_rate
+        dev = adi.DAQ2(uri=f"ip:{ip_address}")
+        sample_rate = dev.sample_rate
         #print(f"      ✓ Sample rate: {sample_rate}")
         #assert sample_rate == sample_rate_msps * 1_000_000, (
         #    f"Expected sample rate {sample_rate_msps * 1_000_000} Hz, "
         #    f"got {sample_rate} Hz"
         #)
+
+        print(f"\n{'='*70}")
+        print(f"✓✓✓ Test PASSED for DAQ2 @ {sample_rate_msps} MSPS ✓✓✓")
+        print(f"{'='*70}\n")
