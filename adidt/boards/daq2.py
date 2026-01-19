@@ -16,7 +16,7 @@ class daq2(layout):
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
         "zcu102": {
-            "template_filename": "daq2_new.tmpl",
+            "template_filename": "daq2.tmpl",
             "base_dts_file": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-fmcdaq2.dts",
             "base_dts_include": "zynqmp-zcu102-rev10-fmcdaq2.dts",
             "arch": "arm64",
@@ -257,7 +257,18 @@ class daq2(layout):
         dac['fpga_sys_clk_select'] = cfg['fpga_dac']['sys_clk_select']
         dac['fpga_out_clk_select'] = cfg['fpga_dac']['out_clk_select']
 
-        return ccfg, adc, dac
+        # Create fpga dict matching AD9081 pattern
+        fpga = {}
+        fpga["fpga_adc"] = cfg["fpga_adc"]
+        fpga["fpga_dac"] = cfg["fpga_dac"]
+
+        # Normalize QPLL0 naming for kernel compatibility (if needed)
+        if fpga["fpga_dac"]["sys_clk_select"] == "XCVR_QPLL0":
+            fpga["fpga_dac"]["sys_clk_select"] = "XCVR_QPLL"
+        if fpga["fpga_adc"]["sys_clk_select"] == "XCVR_QPLL0":
+            fpga["fpga_adc"]["sys_clk_select"] = "XCVR_QPLL"
+
+        return ccfg, adc, dac, fpga
 
     def gen_dt_preprocess(self, **kwargs):
         """Add metadata to template rendering context.
