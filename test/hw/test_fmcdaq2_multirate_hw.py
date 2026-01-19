@@ -119,8 +119,7 @@ def generate_fmcdaq2_config(sample_rate_msps: int) -> dict:
 
     # Clocking constraints
     sys.fpga.ref_clock_constraint = "Unconstrained"
-    sys.fpga.sys_clk_select = "XCVR_QPLL"
-    sys.fpga.out_clk_select = "XCVR_REFCLK_DIV2"
+    # Let solver determine optimal sys_clk_select and out_clk_select
 
     # Sample Rates
     sample_clock = sample_rate_msps * 1_000_000
@@ -372,7 +371,9 @@ class TestFmcdaq2MultiRateHardware:
                 "jesd_S": config_adijif["jesd_AD9144"]["S"],
                 "jesd_HD": config_adijif["jesd_AD9144"].get("HD", 0),
                 "jesd_F": config_adijif["jesd_AD9144"].get("F", 1),
-            }
+            },
+            "fpga_adc": config_adijif.get("fpga_adc", {}),
+            "fpga_dac": config_adijif.get("fpga_dac", {}),
         }
 
         config = board.validate_and_default_fpga_config(config)
@@ -380,11 +381,11 @@ class TestFmcdaq2MultiRateHardware:
 
         print(f"[3/9] Mapping clocks to board layout...")
         # Step 2: Generate DTS
-        ccfg, adc, dac = board.map_clocks_to_board_layout(config)
+        ccfg, adc, dac, fpga = board.map_clocks_to_board_layout(config)
         print(f"      ✓ Clock mapping complete")
 
         print(f"[4/9] Generating DTS file...")
-        generated_dts = board.gen_dt(clock=ccfg, adc=adc, dac=dac)
+        generated_dts = board.gen_dt(clock=ccfg, adc=adc, dac=dac, fpga=fpga)
         assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
         print(f"      ✓ Generated DTS: {generated_dts}")
 
