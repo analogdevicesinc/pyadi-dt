@@ -41,7 +41,7 @@ class ad9081_fmc(layout):
         },
         "zc706": {
             "template_filename": "ad9081_fmc_zc706.tmpl",
-            "base_dts_file": "arch/arm/boot/dts/xilinx/zynq-zc706.dts",
+            "base_dts_file": "arch/arm/boot/dts/zynq-zc706.dts",
             "base_dts_include": "zynq-zc706.dts",
             "arch": "arm",
             "jesd_phy": "GTX",
@@ -81,6 +81,10 @@ class ad9081_fmc(layout):
         self.output_filename = os.path.join(
             self.platform_config["output_dir"], base_name
         )
+
+        # ZC706 needs standalone DTS (not overlay) for bootable devicetree
+        if platform == "zc706":
+            self.use_plugin_mode = False
 
         # Store original kernel_path argument to determine validation strategy
         self._kernel_path_explicit = kernel_path is not None

@@ -40,26 +40,41 @@ SAMPLE_RATES = [100, 125, 150, 175, 200, 225, 245, 260, 280, 300]
 
 
 # ARM GNU Toolchain configuration for cross-compiling ARM64 device trees
-TOOLCHAIN_URL = "https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz"
+TOOLCHAIN_URL_ARM64 = "https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-aarch64-none-elf.tar.xz"
 TOOLCHAIN_VERSION = "12.2.rel1"
-TOOLCHAIN_ARCH = "aarch64-none-elf"
+TOOLCHAIN_ARCH_ARM64 = "aarch64-none-elf"
+
+# ARM32 Toolchain configuration for ZC706 (Zynq-7000)
+TOOLCHAIN_URL_ARM32 = "https://developer.arm.com/-/media/Files/downloads/gnu/12.2.rel1/binrel/arm-gnu-toolchain-12.2.rel1-x86_64-arm-none-eabi.tar.xz"
+TOOLCHAIN_ARCH_ARM32 = "arm-none-eabi"
 
 
-def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
+def download_and_cache_toolchain(arch: str = "arm64", cache_dir: Path = None) -> Path:
     """Download and cache ARM GNU toolchain for cross-compilation.
 
-    Downloads the ARM GNU toolchain for aarch64 from ARM's official site
+    Downloads the ARM GNU toolchain for arm or arm64 from ARM's official site
     and extracts it to a cache directory. If already cached, skips download.
 
     Args:
+        arch: Target architecture ('arm' or 'arm64')
         cache_dir: Directory to cache toolchain. Defaults to ~/.cache/pyadi-dt/
 
     Returns:
         Path to toolchain bin directory containing cross-compiler
 
     Raises:
-        RuntimeError: If download or extraction fails
+        RuntimeError: If download or extraction fails or arch is invalid
     """
+    # Select toolchain based on architecture
+    if arch == "arm64":
+        toolchain_url = TOOLCHAIN_URL_ARM64
+        toolchain_arch = TOOLCHAIN_ARCH_ARM64
+    elif arch == "arm":
+        toolchain_url = TOOLCHAIN_URL_ARM32
+        toolchain_arch = TOOLCHAIN_ARCH_ARM32
+    else:
+        raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
+
     # Determine cache directory
     if cache_dir is None:
         cache_dir = Path.home() / ".cache" / "pyadi-dt" / "toolchains"
@@ -67,7 +82,7 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
     cache_dir.mkdir(parents=True, exist_ok=True)
 
     # Expected toolchain directory after extraction
-    toolchain_name = f"arm-gnu-toolchain-{TOOLCHAIN_VERSION}-x86_64-{TOOLCHAIN_ARCH}"
+    toolchain_name = f"arm-gnu-toolchain-{TOOLCHAIN_VERSION}-x86_64-{toolchain_arch}"
     toolchain_dir = cache_dir / toolchain_name
     toolchain_bin = toolchain_dir / "bin"
 
@@ -77,11 +92,11 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
         return toolchain_bin
 
     # Download toolchain
-    print(f"      Downloading ARM GNU toolchain {TOOLCHAIN_VERSION}...")
+    print(f"      Downloading ARM GNU toolchain {TOOLCHAIN_VERSION} ({arch})...")
     tarball_path = cache_dir / f"{toolchain_name}.tar.xz"
 
     try:
-        with urllib.request.urlopen(TOOLCHAIN_URL) as response:
+        with urllib.request.urlopen(toolchain_url) as response:
             total_size = int(response.headers.get('content-length', 0))
             downloaded = 0
             chunk_size = 1024 * 1024  # 1MB chunks
@@ -121,24 +136,24 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
         raise RuntimeError(f"Failed to download/extract toolchain: {e}")
 
 
-def generate_ad9081_config(sample_rate_msps: int) -> dict:
+def generate_ad9081_config(sample_rate_msps: int, platform: str = "zcu102") -> dict:
     """Generate AD9081 configuration for given sample rate.
 
-    Uses pyadi-jif to generate a complete configuration dict with JESD204 
-    parameters L=4, M=8, Np=16 for both ADC and DAC paths. 
+    Uses pyadi-jif to generate a complete configuration dict with JESD204
+    parameters L=4, M=8, Np=16 for both ADC and DAC paths.
 
     Args:
         sample_rate_msps: Sample rate in MSPS (100-300)
+        platform: Platform name ('zcu102', 'zc706', etc.). Default: 'zcu102'
 
     Returns:
         Complete configuration dict for ad9081_fmc board
     """
     vcxo = 122_880_000 # 122.88 MHz reference
-    
-    # Create system with default solver (Z3 or CPLEX if available)
-    # Using 'zcu102' presets as starting point
-    sys = adijif.system("ad9081", "hmc7044", "xilinx", vcxo)
-    sys.fpga.setup_by_dev_kit_name("zcu102")
+
+    # Create system with gekko solver (fallback when CPLEX not available)
+    sys = adijif.system("ad9081", "hmc7044", "xilinx", vcxo, solver="gekko")
+    sys.fpga.setup_by_dev_kit_name(platform)  # Pass platform parameter
     
     # Clocking constraints
     sys.fpga.ref_clock_constraint = "Unconstrained"
@@ -176,26 +191,36 @@ def generate_ad9081_config(sample_rate_msps: int) -> dict:
     # DAC Mode 9: L=4, M=8, F=4, Np=16
     sys.converter.adc.set_quick_configuration_mode("10.0", "jesd204b")
     sys.converter.dac.set_quick_configuration_mode("9", "jesd204b")
-    
+
     # Fix for any potential solver ambiguity
     sys.converter.adc.K = 32
     sys.converter.dac.K = 32
+
+    # Platform-specific JESD configuration
+    if platform == "zc706":
+        # ZC706 uses GTX transceivers with max 10 Gbps lane rate
+        # Force S=1 for ZC706 per user requirements
+        sys.converter.adc.jesd_S = 1
+        sys.converter.dac.jesd_S = 1
+        # Max lane rate constraint for GTX
+        sys.fpga.max_serdes_rate = 10e9
 
     # Solve for configuration
     cfg = sys.solve()
     
     # Map generated keys to expected keys for adidt
     # adidt expects generic names (adc_fpga_ref_clk) but pyadi-jif generates
-    # board specific names (zcu102_adc_ref_clk)
+    # board specific names (zcu102_adc_ref_clk, zc706_adc_ref_clk, etc.)
     clks = cfg["clock"]["output_clocks"]
-    
+
+    platform_prefix = platform.lower()
     mapping = {
-        "zcu102_adc_ref_clk": "adc_fpga_ref_clk",
-        "zcu102_adc_device_clk": "adc_fpga_link_out_clk",
-        "zcu102_dac_ref_clk": "dac_fpga_ref_clk",
-        "zcu102_dac_device_clk": "dac_fpga_link_out_clk"
+        f"{platform_prefix}_adc_ref_clk": "adc_fpga_ref_clk",
+        f"{platform_prefix}_adc_device_clk": "adc_fpga_link_out_clk",
+        f"{platform_prefix}_dac_ref_clk": "dac_fpga_ref_clk",
+        f"{platform_prefix}_dac_device_clk": "dac_fpga_link_out_clk"
     }
-    
+
     for old_key, new_key in mapping.items():
         if old_key in clks:
             clks[new_key] = clks.pop(old_key)
@@ -211,44 +236,56 @@ def generate_ad9081_config(sample_rate_msps: int) -> dict:
     return cfg
 
 
-def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_compile: str = None) -> None:
+def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: str = "arm64", cross_compile: str = None) -> None:
     """Compile DTS to DTB using kernel build system with cross-compiler.
 
     Places the DTS file in the kernel tree and uses the kernel's make system
     to compile it properly. This ensures correct include resolution and creates
     a bootable DTB for hardware deployment.
 
-    This follows the ADI ZynqMP documentation:
-    https://analogdevicesinc.github.io/documentation/linux/kernel/zynqmp.html
+    This follows ADI documentation:
+    - ARM64 (ZynqMP): https://analogdevicesinc.github.io/documentation/linux/kernel/zynqmp.html
+    - ARM (Zynq): https://analogdevicesinc.github.io/documentation/linux/kernel/zynq.html
 
     Args:
         dts_path: Path to generated DTS source file
         dtb_path: Desired path for output DTB file
         kernel_path: Path to Linux kernel source tree
-        cross_compile: Cross-compiler prefix (e.g., 'aarch64-none-elf-').
-                      If None, automatically downloads ARM GNU toolchain.
+        arch: Target architecture ('arm' or 'arm64'). Default: 'arm64'
+        cross_compile: Cross-compiler prefix (e.g., 'aarch64-none-elf-' or 'arm-none-eabi-').
+                      If None, automatically downloads appropriate ARM GNU toolchain.
 
     Raises:
         RuntimeError: If compilation fails at any stage
+        ValueError: If arch is not 'arm' or 'arm64'
     """
+    # Validate architecture
+    if arch not in ["arm", "arm64"]:
+        raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
+
     # Download and cache cross-compiler if not provided
     if cross_compile is None:
-        print("      Setting up ARM64 cross-compiler...")
-        toolchain_bin = download_and_cache_toolchain()
-        cross_compile = f"{toolchain_bin}/{TOOLCHAIN_ARCH}-"
+        print(f"      Setting up {arch.upper()} cross-compiler...")
+        toolchain_bin = download_and_cache_toolchain(arch=arch)
+
+        if arch == "arm64":
+            cross_compile = f"{toolchain_bin}/{TOOLCHAIN_ARCH_ARM64}-"
+        else:  # arch == "arm"
+            cross_compile = f"{toolchain_bin}/{TOOLCHAIN_ARCH_ARM32}-"
+
         print(f"      ✓ Cross-compiler ready: {cross_compile}")
 
     # Set up environment for kernel compilation
-    # ARCH=arm64: Target architecture
-    # CROSS_COMPILE=<prefix>: Cross-compiler prefix for aarch64
     env = os.environ.copy()
-    env['ARCH'] = 'arm64'
+    env['ARCH'] = arch  # Use parameter instead of hardcoded 'arm64'
     env['CROSS_COMPILE'] = cross_compile
 
     # Determine platform-specific paths
-    # For ZCU102: arch/arm64/boot/dts/xilinx/
     dts_filename = dts_path.name
-    kernel_dts_dir = Path(kernel_path) / "arch" / "arm64" / "boot" / "dts" / "xilinx"
+    if arch == "arm64":
+        kernel_dts_dir = Path(kernel_path) / "arch" / arch / "boot" / "dts" / "xilinx"
+    else:
+        kernel_dts_dir = Path(kernel_path) / "arch" / arch / "boot" / "dts"
     kernel_dts_path = kernel_dts_dir / dts_filename
 
     # DTB will be compiled to same location with .dtb extension
@@ -262,7 +299,14 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
     config_file = Path(kernel_path) / ".config"
     if not config_file.exists():
         print("      Configuring kernel (first-time setup)...")
-        config_cmd = ["make", "adi_zynqmp_defconfig"]
+
+        # Select defconfig based on architecture
+        if arch == "arm64":
+            defconfig = "adi_zynqmp_defconfig"
+        else:  # arch == "arm"
+            defconfig = "zynq_xcomm_adv7511_defconfig"
+
+        config_cmd = ["make", defconfig]
         config_result = subprocess.run(
             config_cmd,
             cwd=kernel_path,
@@ -275,7 +319,10 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
 
     # Step 3: Compile DTB using kernel make system
     # Target format: xilinx/filename.dtb (relative to arch/arm64/boot/dts/)
-    make_target = f"xilinx/{dts_filename.replace('.dts', '.dtb')}"
+    if arch == "arm64":
+        make_target = f"xilinx/{dts_filename.replace('.dts', '.dtb')}"
+    else:
+        make_target = f"{dts_filename.replace('.dts', '.dtb')}"
     make_cmd = ["make", make_target]
 
     make_result = subprocess.run(
@@ -365,7 +412,7 @@ class TestAD9081MultiRateHardware:
     All configurations use JESD204 parameters: L=4, M=8, Np=16
     Lane rates verified to stay under 10 Gbps limit.
     """
-
+    # @pytest.mark.timeout(60*2)
     @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
     def test_sample_rate_deployment(
         self,
@@ -399,7 +446,7 @@ class TestAD9081MultiRateHardware:
 
         # Step 1: Generate configuration
         print(f"[1/9] Generating configuration...")
-        config = generate_ad9081_config(sample_rate_msps)
+        config = generate_ad9081_config(sample_rate_msps, platform="zcu102")
 
         # Step 2: Generate DTS
         print(f"[2/9] Generating DTS file...")
@@ -425,10 +472,15 @@ class TestAD9081MultiRateHardware:
         # Step 3: Compile DTS to DTB using kernel build system
         print(f"[3/9] Compiling DTS to DTB...")
         dtb_filename = dtb_output_dir / f"ad9081_{sample_rate_msps}msps.dtb"
+
+        # Extract architecture from board config
+        arch = board.platform_config["arch"]  # "arm64" for ZCU102
+
         compile_dts_to_dtb(
             dts_path=Path(generated_dts),
             dtb_path=dtb_filename,
-            kernel_path=kernel_path
+            kernel_path=kernel_path,
+            arch=arch  # Pass architecture parameter
         )
 
         assert dtb_filename.exists(), f"DTB file not created: {dtb_filename}"
@@ -521,3 +573,225 @@ class TestAD9081MultiRateHardware:
         print(f"\n{'='*70}")
         print(f"✓✓✓ Test PASSED for {sample_rate_msps} MSPS ✓✓✓")
         print(f"{'='*70}\n")
+
+
+# Test class for ZC706 platform
+
+class TestAD9081ZC706Hardware:
+    """Hardware test suite for AD9081 on ZC706 platform.
+
+    Tests AD9081 FMC board on ZC706 (Zynq-7000) at a single sample rate
+    to verify ZC706 support. Uses ARM 32-bit compilation and platform-specific
+    JESD configuration (M=8, L=4, S=1, NP=16).
+
+    Key differences from ZCU102:
+    - Architecture: ARM (32-bit) vs ARM64
+    - DTB filename: devicetree.dtb vs system.dtb
+    - Transceiver: GTX vs GTH
+    - Defconfig: zynq_xcomm_adv7511_defconfig vs adi_zynqmp_defconfig
+    """
+
+    #@pytest.mark.timeout(60*5)  # 5 minute timeout for full boot cycle
+    @pytest.mark.skip(reason='Not fully verified. SDMux not supported of ZC706.')
+    def test_zc706_deployment(
+        self,
+        kernel_path,
+        tmp_path,
+        strategy
+    ):
+        """Test AD9081 on ZC706 at 100 MSPS with full hardware deployment.
+
+        This test verifies ZC706 platform support by:
+        - Using pre-computed configuration for 100 MSPS
+        - Compiling DTB with ARM 32-bit toolchain
+        - Deploying devicetree.dtb (not system.dtb)
+        - Verifying IIO device enumeration
+
+        Args:
+            kernel_path: Path to Linux kernel source (fixture)
+            tmp_path: Temporary directory for DTB files (fixture)
+            strategy: Labgrid strategy fixture for hardware control
+
+        Raises:
+            AssertionError: If any verification step fails
+            RuntimeError: If DTS/DTB generation fails
+        """
+        sample_rate_msps = 100  # Test at 100 MSPS
+        platform = "zc706"
+
+        print(f"\n{'='*70}")
+        print(f"Testing AD9081 on ZC706 @ {sample_rate_msps} MSPS")
+        print(f"{'='*70}")
+
+        # Step 1: Use static configuration for ZC706 @ 100 MSPS
+        # This avoids needing CPLEX/gekko solver
+        print(f"[1/9] Loading static configuration for ZC706...")
+        config = {
+            "converter": {"type": "ad9081"},
+            "clock": {
+                "vcxo": 122880000,
+                "vco": 2949120000,
+                "output_clocks": {
+                    "AD9081_ref_clk": {"divider": 12},
+                    "adc_sysref": {"divider": 1536},
+                    "dac_sysref": {"divider": 1536},
+                    "adc_fpga_ref_clk": {"divider": 12},
+                    "adc_fpga_link_out_clk": {"divider": 12},
+                    "dac_fpga_ref_clk": {"divider": 12},
+                    "dac_fpga_link_out_clk": {"divider": 12}
+                }
+            },
+            "fpga_adc": {
+                "sys_clk_select": "XCVR_QPLL",
+                "out_clk_select": "XCVR_REFCLK_DIV2"
+            },
+            "fpga_dac": {
+                "sys_clk_select": "XCVR_QPLL",
+                "out_clk_select": "XCVR_REFCLK_DIV2"
+            },
+            "jesd_adc": {
+                "M": 8, "L": 4, "S": 1, "F": 4, "K": 32, "Np": 16,
+                "CS": 0, "HD": 0, "jesd_mode": 10, "jesd_class": "jesd204b",
+                "converter_clock": 1600000000,
+                "sample_clock": 100000000
+            },
+            "jesd_dac": {
+                "M": 8, "L": 4, "S": 1, "F": 4, "K": 32, "Np": 16,
+                "CS": 0, "HD": 0, "jesd_mode": 9, "jesd_class": "jesd204b",
+                "converter_clock": 3200000000,
+                "sample_clock": 100000000
+            },
+            "datapath_adc": {
+                "cddc": {
+                    "enabled": [True, True, True, True],
+                    "decimations": [4, 4, 4, 4],
+                    "nco_frequencies": [0, 0, 0, 0]
+                },
+                "fddc": {
+                    "enabled": [True, True, True, True, True, True, True, True],
+                    "decimations": [4, 4, 4, 4, 4, 4, 4, 4],
+                    "nco_frequencies": [0, 0, 0, 0, 0, 0, 0, 0]
+                }
+            },
+            "datapath_dac": {
+                "cduc": {
+                    "enabled": [True, True, True, True],
+                    "interpolation": 4,
+                    "sources": [[0, 1], [2, 3], [4, 5], [6, 7]],
+                    "nco_frequencies": [0, 0, 0, 0]
+                },
+                "fduc": {
+                    "enabled": [True, True, True, True, True, True, True, True],
+                    "interpolation": 8,
+                    "nco_frequencies": [0, 0, 0, 0, 0, 0, 0, 0]
+                }
+            }
+        }
+        print(f"      ✓ Configuration loaded")
+
+        # Step 2: Generate DTS
+        print(f"[2/9] Generating DTS file...")
+        board = ad9081_fmc(platform=platform, kernel_path=kernel_path)
+        config = board.validate_and_default_fpga_config(config)
+
+        dts_filename = tmp_path / f"ad9081_zc706_{sample_rate_msps}msps.dts"
+        board.output_filename = str(dts_filename)
+
+        clock, adc, dac, fpga = board.map_clocks_to_board_layout(config)
+        generated_dts = board.gen_dt(
+            clock=clock,
+            adc=adc,
+            dac=dac,
+            fpga=fpga,
+            config_source=f"zc706_{sample_rate_msps}msps"
+        )
+
+        assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
+        print(f"      ✓ Generated DTS: {generated_dts}")
+
+        # Step 3: Compile DTS to DTB using ARM 32-bit toolchain
+        print(f"[3/9] Compiling DTS to DTB (ARM 32-bit)...")
+        dtb_filename = tmp_path / f"ad9081_zc706_{sample_rate_msps}msps.dtb"
+
+        # Extract architecture from board config
+        arch = board.platform_config["arch"]  # Should be "arm" for ZC706
+
+        compile_dts_to_dtb(
+            dts_path=Path(generated_dts),
+            dtb_path=dtb_filename,
+            kernel_path=kernel_path,
+            arch=arch  # Pass architecture parameter
+        )
+
+        assert dtb_filename.exists(), f"DTB file not created: {dtb_filename}"
+        assert dtb_filename.stat().st_size > 0, "DTB file is empty"
+        print(f"      ✓ Compiled DTB: {dtb_filename} ({dtb_filename.stat().st_size} bytes)")
+
+        # Step 4: Power off board
+        print(f"[4/9] Powering off board...")
+        strategy.transition("powered_off")
+        print(f"      ✓ Board powered off")
+
+        # Step 5: Deploy DTB as devicetree.dtb (ZC706 requirement)
+        print(f"[5/9] Deploying DTB to board...")
+        kuiper = strategy.target.get_driver("KuiperDLDriver")
+
+        # ZC706 requires devicetree.dtb, not system.dtb
+        devicetree_filename = tmp_path / "devicetree.dtb"
+        shutil.copy2(dtb_filename, devicetree_filename)
+        kuiper.add_files_to_target(str(devicetree_filename))
+        print(f"      ✓ DTB deployed as devicetree.dtb")
+
+        # Step 6: Boot to shell
+        print(f"[6/9] Booting board to shell...")
+        strategy.transition("shell")
+        print(f"      ✓ Board booted successfully")
+
+        # Step 7: Create IIO context
+        print(f"[7/9] Creating IIO context...")
+        shell = strategy.target.get_driver("ADIShellDriver")
+        addresses = shell.get_ip_addresses()
+        ip_address = str(addresses[0].ip)
+        if '/' in ip_address:
+            ip_address = ip_address.split('/')[0]
+
+        ctx = iio.Context(f"ip:{ip_address}")
+        assert ctx is not None, "Failed to create IIO context"
+        print(f"      ✓ IIO context created: {ip_address}")
+
+        # Step 8: Extract kernel log for debugging
+        print(f"[8/9] Extracting kernel logs...")
+        dmesg_res = shell.run("dmesg")
+        if isinstance(dmesg_res, tuple):
+            dmesg_output = dmesg_res[0]
+        else:
+            dmesg_output = dmesg_res
+
+        if isinstance(dmesg_output, list):
+            dmesg_output = "\n".join(dmesg_output)
+
+        dmesg_log_path = tmp_path / f"dmesg_zc706_{sample_rate_msps}msps.log"
+        with open(dmesg_log_path, 'w') as f:
+            f.write(dmesg_output)
+        print(f"      ✓ Kernel logs saved: {dmesg_log_path}")
+
+        # Step 9: Verify devices
+        print(f"[9/9] Verifying IIO devices...")
+        expected_devices = ["axi-ad9081-rx-hpc", "axi-ad9081-tx-hpc"]
+        found_devices = [d.name for d in ctx.devices]
+
+        for device_name in expected_devices:
+            assert device_name in found_devices, (
+                f"Expected IIO device '{device_name}' not found on ZC706. "
+                f"Available devices: {found_devices}"
+            )
+            device = [d for d in ctx.devices if d.name == device_name][0]
+            num_channels = len(device.channels)
+            print(f"      ✓ Found IIO device: {device_name} ({num_channels} channels)")
+
+        print(f"\n{'='*70}")
+        print(f"✓✓✓ Test PASSED for AD9081 on ZC706 @ {sample_rate_msps} MSPS ✓✓✓")
+        print(f"{'='*70}\n")
+
+        # Power off after test
+        strategy.transition("soft_off")
