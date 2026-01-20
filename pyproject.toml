@@ -37,6 +37,9 @@ dependencies = [
 dev = [
     "pytest",
     "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@tfcollins/selmap",
+    "usbsdmux",
+    "pyadi-iio",
+    "pyadi-jif[cplex,draw]",
 ]
 
 [project.scripts]
