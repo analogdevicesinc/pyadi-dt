@@ -9,6 +9,7 @@ class layout:
 
     template_filename = None
     output_filename = None
+    use_plugin_mode = True  # Set to False for standalone DTS (not overlay)
 
     def gen_dt_preprocess(self, **kwargs):
         return kwargs
@@ -45,7 +46,13 @@ class layout:
         }
         render_context.update(kwargs) # Add all other kwargs
 
-        output = "/dts-v1/;\n/plugin/;\n" + template.render(**render_context)
+        # Generate DTS header based on plugin mode
+        if self.use_plugin_mode:
+            dts_header = "/dts-v1/;\n/plugin/;\n"
+        else:
+            dts_header = "/dts-v1/;\n"
+
+        output = dts_header + template.render(**render_context)
 
         with open(self.output_filename, "w") as f:
             f.write(output)
