@@ -125,6 +125,69 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
             tarball_path.unlink()
         raise RuntimeError(f"Failed to download/extract toolchain: {e}")
 
+def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2", platform: str = "vpk180", cross_compile: str = None) -> None:
+    """Compile kernel using kernel build system with cross-compiler.
+    """
+    # Validate architecture
+    if arch not in ["arm", "arm64"]:
+        raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
+
+    if platform not in ["vpk180", "zcu102", "zc706"]:
+        raise ValueError(f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'")
+
+    # Download and cache cross-compiler if not provided
+    if cross_compile is None:
+        print(f"      Setting up {arch.upper()} cross-compiler...")
+        toolchain_bin = download_and_cache_toolchain(arch=arch, version=version)
+
+        if version == "2023.2":
+            if arch == "arm64":
+                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2023_R2_ARCH_ARM64}-"
+            else:  # arch == "arm"
+                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2023_R2_ARCH_ARM32}-"
+        elif version == "2025.1":
+            if arch == "arm64":
+                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2025_R1_ARCH_ARM64}-"
+            else:  # arch == "arm"
+                # Assuming 2025.1 arm32 follows same pattern or is not supported yet?
+                # The file didn't define TOOLCHAIN_2025_R1_ARCH_ARM32, so we might fail here if used.
+                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2025_R1_ARCH_ARM32}-"
+        else:
+            raise ValueError(f"Unsupported version: {version}. Must be '2023.2' or '2025.1'")
+
+    if platform == "vpk180":
+        defconfig = "adi_versal_apollo_defconfig"
+    elif platform == "zcu102":
+        defconfig = "adi_zynqmp_defconfig"
+    elif platform == "zc706":
+        defconfig = "adi_zynq_defconfig"
+    else:
+        raise ValueError(f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'")
+
+    # Run clean, make defconfig, make
+    # print(f"      Running make clean...")
+    # subprocess.run(["make", "clean"], cwd=kernel_path, check=True)
+    # Set up environment for kernel compilation
+    env = os.environ.copy()
+    env['ARCH'] = arch
+    if cross_compile:
+        env['CROSS_COMPILE'] = cross_compile
+        
+    print(f"      Running make {defconfig}...")
+    subprocess.run(["make", defconfig], cwd=kernel_path, env=env, check=True)
+    print(f"      Running make...")
+    subprocess.run(["make", "-j"], cwd=kernel_path, env=env, check=True)
+
+    # Check if kernel image exists
+    kernel_path = Path(kernel_path)
+    kernel_image = kernel_path / "arch" / arch / "boot" / "Image"
+    if not kernel_image.exists():
+        raise RuntimeError(f"Kernel image not found: {kernel_image}")
+
+    return kernel_image        
+
+    
+
 
 def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: str = "arm64", version: str = "2023.2", platform: str = "vpk180", cross_compile: str = None) -> None:
     """Compile DTS to DTB using kernel build system with cross-compiler.
@@ -176,7 +239,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     kernel_dtb_path = kernel_dts_path.with_suffix('.dtb')
 
     # Step 1: Copy DTS file into kernel tree
-    shutil.copy2(dts_path, kernel_dts_path)
+    shutil.copy2(dts_path, kernel_dts_dir)
 
     # Step 2: Ensure kernel is configured
     print("      Configuring kernel...")
@@ -311,3 +374,59 @@ def verify_dts_match(gen_dtb: Path, ref_dtb: Path, kernel_path: str, dtb_output_
     except Exception as e:
         print(f"      Warning: DTC comparison failed: {e}")
         raise e
+
+
+def add_profile_to_defconfig(kernel_path: Path, board_name: str, profile_name: str):
+
+    if board_name == "vpk180":
+        defconfig = "adi_versal_apollo_defconfig"
+        arch = "arm64"
+    elif board_name == "zcu102":
+        defconfig = "adi_zynqmp_defconfig"
+        arch = "arm64"
+    elif board_name == "zc706":
+        defconfig = "zynq_xcomm_adv7511_defconfig"
+        arch = "arm"
+    else:
+        raise ValueError(f"Unsupported board: {board_name}")
+
+    if not isinstance(kernel_path, Path):
+        kernel_path = Path(kernel_path)
+    
+    defconfig_path = kernel_path / "arch" / arch / "configs" / defconfig
+    
+    with open(defconfig_path, "r") as f:
+        lines = f.readlines()
+
+    if ".bin" not in profile_name:
+        profile_name += ".bin"
+    
+    out_lines = []
+    config_line = "CONFIG_EXTRA_FIRMWARE="
+    for line in lines:
+        if config_line in line:
+            parts = line.split(" ")
+            last_profile = parts[-1]
+            if ".bin" not in last_profile:
+                raise ValueError(f"Last profile {last_profile} does not end in .bin")
+            new_line = line.replace(last_profile, profile_name)
+            if new_line[-1] != '\n':
+                new_line += '\n'
+            if new_line[-2] != '"':
+                new_line = new_line[:-1] + '"\n'
+
+            out_lines.append(new_line)
+
+        else:
+            out_lines.append(line)
+
+    with open(defconfig_path, "w") as f:
+        f.writelines(out_lines)
+
+
+    
+    
+
+
+def generate_boot_scr():
+    ...
