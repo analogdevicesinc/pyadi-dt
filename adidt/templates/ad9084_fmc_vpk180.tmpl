@@ -114,7 +114,7 @@
 };
 
 / {
-	model = "Analog Devices AD9084-FMCA-EBZ @Xilinx/vpk180";
+	model = "Analog Devices AD9084-FMCA-EBZ (Rev. B0) @Xilinx/vpk180";
 
 	chosen {
 		bootargs = "console=ttyAMA0 earlycon=pl011,mmio32,0xFF000000,115200n8 clk_ignore_unused root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait";
@@ -344,6 +344,29 @@
 	};
 };
 
+&gem0 {
+	local-mac-address = [00 0a 35 ad 90 81];
+};
+
+&i2c1 {
+	eeprom@50 {
+		compatible = "at24,24c02";
+		reg = <0x50>;
+	};
+	ltc2977@5c {
+		compatible = "lltc,ltc2977";
+		reg = <0x5C>;
+	};
+	ltm4681_c23@4f {
+		compatible = "lltc,ltm4680";
+		reg = <0x4F>;
+	};
+	ltm4681_c01@4e {
+		compatible = "lltc,ltm4680";
+		reg = <0x4E>;
+	};
+};
+
 #include <dt-bindings/iio/frequency/hmc7044.h>
 #include <dt-bindings/iio/adc/adi,ad9081.h>
 
@@ -403,7 +426,7 @@
 			reg = <{{ clock['map'][chan]['source_port'] }}>;
 			adi,extended-name = "{{ chan }}";
 			adi,divider = <{{ clock['map'][chan]['divider'] }}>;
-			adi,driver-mode = <HMC7044_DRIVER_MODE_LVDS>;
+			adi,driver-mode = <{% if clock['map'][chan]['source_port'] == 3 %}HMC7044_DRIVER_MODE_LVPECL{% else %}HMC7044_DRIVER_MODE_LVDS{% endif %}>;
 		};
 		{% endfor %}
 	};
@@ -437,7 +460,7 @@
 		adi,vco-frequency-hz = <{{ clock['clock'].get('hmc7044_vco', 2500000000) }}>;
 		adi,bsync-frequency-hz = <SYSREF_CLK_MHz>;
 		adi,bsync-autoalign-reference-channel = <0>;
-		adi,bsync-autoalign-iteration-count = <6>;
+			adi,bsync-autoalign-iteration-count = <6>;
 		adi,bsync-secondary-frequency-hz = <12500000>;
 
 		channel@0 {
@@ -445,6 +468,23 @@
 			adi,extended-name = "ADF4030_SCLKOUT3";
 			auto-align-on-sync-en;
 			adi,rcm = <1>;
+			adi,link-rx-en;
+			adi,float-rx-en;
+		};
+		channel@1 {
+			reg = <1>;
+			adi,extended-name = "BSYNC1_DEBUG";
+			adi,input-output-reconfig-en;
+			adi,rcm = <62>;
+			adi,link-rx-en;
+			adi,float-rx-en;
+			adi,output-en;
+		};
+		channel@2 {
+			reg = <2>;
+			adi,extended-name = "BSYNC2_DEBUG";
+			adi,input-output-reconfig-en;
+			adi,rcm = <62>;
 			adi,link-rx-en;
 			adi,float-rx-en;
 		};
@@ -466,6 +506,15 @@
 			adi,link-rx-en;
 			adi,float-rx-en;
 			adi,input-output-reconfig-en;
+		};
+		channel@9 {
+			reg = <9>;
+			adi,extended-name = "SYSREF_OUT_FMC";
+			adi,input-output-reconfig-en;
+			adi,output-en;
+			adi,rcm = <62>;
+			adi,link-rx-en;
+			adi,float-rx-en;
 		};
 	};
 #endif /* WITH_AION */
@@ -523,9 +572,11 @@
 
 		adi,device-profile-fw-name = DEVICE_PROFILE_NAME;
 
-		{% if adc['lane_mapping'] %}
+						{% if adc['lane_mapping'] %}
 		adi,jrx0-physical-lane-mapping = <{% for lane in adc['lane_mapping'].get('rx_physical', [5, 1, 3, 7, 11, 11, 11, 11, 11, 11, 11, 11]) %}{{ lane }} {% endfor %}>;
+		adi,jrx1-physical-lane-mapping = <{% for lane in adc['lane_mapping'].get('jrx1_physical', [1, 7, 10, 3, 11, 11, 11, 11, 11, 11, 11, 11]) %}{{ lane }} {% endfor %}>;
 		adi,jtx0-logical-lane-mapping = <{% for lane in dac['lane_mapping'].get('tx_logical', [11, 11, 11, 1, 11, 11, 11, 11, 2, 3, 11, 0]) %}{{ lane }} {% endfor %}>;
+		adi,jtx1-logical-lane-mapping = <{% for lane in dac['lane_mapping'].get('jtx1_logical', [11, 11, 1, 0, 11, 2, 11, 3, 11, 11, 11, 11]) %}{{ lane }} {% endfor %}>;
 		{% endif %}
 
 		adi,jtx-ser-amplitude = <0>;
@@ -536,4 +587,8 @@
 
 		adi,invalid-en;
 	};
+};
+
+&sdhci0 {
+ no-1-8-v;
 };
