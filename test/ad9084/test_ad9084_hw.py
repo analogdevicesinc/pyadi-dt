@@ -23,12 +23,13 @@ import shutil
 import subprocess
 import urllib.request
 import tarfile
+import sys
 from pathlib import Path
 from adidt.boards.ad9084_fmc import ad9084_fmc
 import iio
 import adijif
 import adi
-from test.dts_utils import download_and_cache_toolchain, compile_dts_to_dtb, verify_dts_match, TOOLCHAIN_2025_R1_ARCH_ARM64
+from test.dts_utils import download_and_cache_toolchain, compile_dts_to_dtb, verify_dts_match, TOOLCHAIN_2025_R1_ARCH_ARM64, compile_kernel, add_profile_to_defconfig
 
 TFTP_BOOT_FOLDER = "/var/lib/tftpboot/"
 
@@ -99,6 +100,13 @@ def post_power_off(strategy):
 
 class TestAD9084Hardware:
     """Hardware test suite for AD9084"""
+
+    @pytest.fixture(autouse=True)
+    def setup_path(self):
+        """Ensure venv/bin is in PATH for all tests."""
+        venv_bin = os.path.dirname(sys.executable)
+        if venv_bin not in os.environ['PATH']:
+            os.environ['PATH'] = f"{venv_bin}:{os.environ['PATH']}"
 
     def test_vpk180_rev10_ad9084(
         self,
@@ -171,6 +179,17 @@ class TestAD9084Hardware:
         assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
         print(f"      ✓ Generated DTS: {generated_dts}")
 
+        # Step 2.2: Update defconfig
+        print(f"[2.2/4] Updating defconfig...")
+        add_profile_to_defconfig(Path(kernel_path), "vpk180", config["device_profile"])
+
+        # Step 2.5: Build kernel
+        print(f"[2.5/4] Building kernel...")
+        built_kernel_path = compile_kernel(kernel_path, arch="arm64", version="2025.1", platform="vpk180")
+        
+        # Copy kernel to TFTP directory
+        shutil.copy2(built_kernel_path, Path(TFTP_BOOT_FOLDER) / "Image")
+
         # Step 3: Verify against reference
         print(f"[2/4] Verifying against reference...")
         
@@ -201,14 +220,9 @@ class TestAD9084Hardware:
         make_cmd = ["make", make_target]
         print(f"      Compiling Reference: {' '.join(make_cmd)}")
         
-        # Clean and configure might be needed if not already done, but usually incremental is fine.
-        # Ideally we should match compile_dts_to_dtb steps but simpler here.
-        # compile_dts_to_dtb does: make defconfig, make target.
-        # let's rely on compile_dts_to_dtb side-effects if we want, OR just call make.
-        # We'll use the same commands.
-        
-        subprocess.run(["make", "adi_versal_apollo_defconfig"], cwd=kernel_path, env=env, check=True, capture_output=True)
-        subprocess.run(make_cmd, cwd=kernel_path, env=env, check=True, capture_output=True)
+        # Remove capture_output=True to allow stdout/stderr to be seen in pytest logs
+        subprocess.run(["make", "adi_versal_apollo_defconfig"], cwd=kernel_path, env=env, check=True)
+        subprocess.run(make_cmd, cwd=kernel_path, env=env, check=True)
         
         built_ref_dtb = Path(kernel_path) / "arch/arm64/boot/dts" / make_target
         shutil.copy2(built_ref_dtb, ref_dtb)
@@ -257,3 +271,163 @@ class TestAD9084Hardware:
         assert "axi-ad9084-tx-hpc" in [d.name for d in ctx.devices]
         
         print("      ✓ Referenced configuration verification passed")
+
+
+    def test_vpk180_rev10_ad9084_json_profile(
+        self,
+        kernel_path,
+        dtb_output_dir,
+        post_power_off
+    ):
+        """Test configuration from JSON profile"""
+        strategy = post_power_off
+        
+        # Profile paths
+        profile_dir = Path(__file__).parent / "profiles" / "L4_M4_VPK180"
+        profile_json = profile_dir / "id_vpk180_4x4_L4_M4_NP16.json"
+        profile_bin = profile_dir / "id_vpk180_4x4_L4_M4_NP16.bin"
+        
+        if not profile_json.exists():
+            pytest.skip(f"Profile JSON not found: {profile_json}")
+        if not profile_bin.exists():
+            pytest.skip(f"Profile BIN not found: {profile_bin}")
+            
+        # Step 1: Generate configuration from Profile
+        print(f"[1/4] Generating configuration from profile {profile_json.name}...")
+        
+        vcxo = 125000000
+        sys = adijif.system("ad9084_rx", "hmc7044", "xilinx", vcxo)
+        
+        # Setup PLLs as per example for high-speed clocking
+        sys.converter.clocking_option = "direct"
+        sys.add_pll_inline("adf4382", vcxo, sys.converter)
+        sys.add_pll_sysref("adf4030", vcxo, sys.converter, sys.fpga)
+        sys.clock.minimize_feedback_dividers = False
+
+        # Apply profile
+        sys.converter.apply_profile_settings(str(profile_json), bypass_version_check=True)
+        # Manually configure FPGA since vpk180 is not in pyadi-jif yet
+        # sys.fpga.setup_by_dev_kit_name("vpk180")
+        sys.fpga.transceiver_type = "GTYE4"
+        sys.fpga.fpga_family = "Versal"
+        sys.fpga.fpga_package = "FL"
+        sys.fpga.speed_grade = -2
+        sys.fpga.ref_clock_min = 60000000
+        sys.fpga.ref_clock_max = 820000000
+        sys.fpga.max_serdes_lanes = 24
+        sys.fpga.name = "vpk180"
+        
+        # Solve
+        cfg = sys.solve()
+        
+        # Map generated keys to expected keys for adidt
+        clks = cfg["clock"]["output_clocks"]
+        print(f"DEBUG: Available clocks: {clks.keys()}")
+
+        if "AD9084_RX_ref_clk" in clks:
+             clks["DEV_CLK"] = clks.pop("AD9084_RX_ref_clk")
+             clks["DEV_CLK"]["channel"] = 13
+             clks["DEV_CLK"]["source_port"] = 13
+        elif "AD9084_ref_clk" in clks:
+             clks["DEV_CLK"] = clks.pop("AD9084_ref_clk")
+             clks["DEV_CLK"]["channel"] = 13
+             clks["DEV_CLK"]["source_port"] = 13
+        
+        # DEV_SYSREF might be missing if using PLLs or not generated
+        if "AD9084_RX_sysref" in clks:
+             clks["DEV_SYSREF"] = clks.pop("AD9084_RX_sysref")
+             clks["DEV_SYSREF"]["channel"] = 12
+             clks["DEV_SYSREF"]["source_port"] = 12
+        elif "adc_sysref" in clks: # Fallback
+             clks["DEV_SYSREF"] = clks.pop("adc_sysref")
+             clks["DEV_SYSREF"]["channel"] = 12
+             clks["DEV_SYSREF"]["source_port"] = 12
+             
+        if "vpk180_AD9084_RX_ref_clk" in clks:
+             clks["FMC_CLK"] = clks.pop("vpk180_AD9084_RX_ref_clk")
+             clks["FMC_CLK"]["channel"] = 1
+             clks["FMC_CLK"]["source_port"] = 1
+        elif "vpk180_adc_ref_clk" in clks:
+             clks["FMC_CLK"] = clks.pop("vpk180_adc_ref_clk")
+             clks["FMC_CLK"]["channel"] = 1
+             clks["FMC_CLK"]["source_port"] = 1
+             
+        if "vpk180_AD9084_RX_sysref" in clks:
+             clks["FMC_SYSREF"] = clks.pop("vpk180_AD9084_RX_sysref")
+             clks["FMC_SYSREF"]["channel"] = 3
+             clks["FMC_SYSREF"]["source_port"] = 3
+        elif "dac_sysref" in clks:
+             clks["FMC_SYSREF"] = clks.pop("dac_sysref")
+             clks["FMC_SYSREF"]["channel"] = 3
+             clks["FMC_SYSREF"]["source_port"] = 3
+        
+        # Cleanup unused
+        if "vpk180_adc_device_clk" in clks: clks.pop("vpk180_adc_device_clk")
+        if "vpk180_dac_ref_clk" in clks: clks.pop("vpk180_dac_ref_clk")
+        if "vpk180_dac_device_clk" in clks: clks.pop("vpk180_dac_device_clk")
+        if "vpk180_AD9084_RX_device_clk" in clks: clks.pop("vpk180_AD9084_RX_device_clk")
+        
+        # Set profile binary name
+        cfg["device_profile"] = profile_bin.name
+        
+        # Step 2: Generate DTS
+        print(f"[2/4] Generating DTS...")
+        board = ad9084_fmc_no_plugin(platform="vpk180", kernel_path=kernel_path)
+        
+        # Apply defaults
+        config = board.validate_and_default_fpga_config(cfg)
+    
+        dts_filename = dtb_output_dir / "generated_ad9084_profile.dts"
+        board.output_filename = str(dts_filename)
+    
+        # Map configuration
+        ccfg, adc, dac, fpga = board.map_clocks_to_board_layout(config)
+    
+        # Generate
+        generated_dts = board.gen_dt(
+            clock=ccfg,
+            adc=adc,
+            dac=dac,
+            fpga=fpga,
+            config_source="profile_config"
+        )
+        
+        assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
+        print(f"      ✓ Generated DTS: {generated_dts}")
+
+        # Step 2.5: Compile kernel with new firmware binary
+        print(f"[2.5/4] Compiling kernel with new firmware binary...")
+        # Copy firmware to kernel source tree
+        shutil.copy2(profile_bin, Path(kernel_path) / "firmware" / profile_bin.name)
+        # Update defconfig
+        add_profile_to_defconfig(kernel_path, "vpk180", config["device_profile"])
+        # Recompile kernel
+        compile_kernel(kernel_path, arch="arm64", version="2025.1", platform="vpk180")
+        # Copy new kernel (Image) and DTB to TFTP
+        print(f'      Copying {Path(kernel_path) / "arch" / "arm64" / "boot" / "Image"} to {Path(TFTP_BOOT_FOLDER) / "Image"}')
+        shutil.copy2(Path(kernel_path) / "arch" / "arm64" / "boot" / "Image", Path(TFTP_BOOT_FOLDER) / "Image")
+
+        # Step 3: Compile DTB
+        print(f"[3/4] Compiling DTB...")
+        gen_dtb = dtb_output_dir / "system.dtb"
+        compile_dts_to_dtb(Path(generated_dts), gen_dtb, kernel_path, arch="arm64", version="2025.1", platform="vpk180")
+
+        # Step 4: Deploy and Verify
+        print(f"[4/4] Deploying to board...")
+        strategy.transition("powered_off")
+        
+        # Copy DTB to TFTP
+        print(f"      Copying {gen_dtb} to {TFTP_BOOT_FOLDER} as reference.dtb")
+        shutil.copy2(gen_dtb, Path(TFTP_BOOT_FOLDER) / "reference.dtb")
+                
+        strategy.transition("shell")
+        
+        # Test drivers
+        shell = strategy.target.get_driver("ADIShellDriver")
+        ip = str(shell.get_ip_addresses()[0].ip).split('/')[0]
+                    
+        # Verify IIO
+        ctx = iio.Context(f"ip:{ip}")
+        assert "axi-ad9084-rx-hpc" in [d.name for d in ctx.devices]
+        assert "axi-ad9084-tx-hpc" in [d.name for d in ctx.devices]
+        print("      ✓ IIO Devices Verified")
