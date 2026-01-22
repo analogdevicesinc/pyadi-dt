@@ -176,7 +176,7 @@ def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2
     print(f"      Running make {defconfig}...")
     subprocess.run(["make", defconfig], cwd=kernel_path, env=env, check=True)
     print(f"      Running make...")
-    subprocess.run(["make", "-j"], cwd=kernel_path, env=env, check=True)
+    subprocess.run(["make", "-j2"], cwd=kernel_path, env=env, check=True)
 
     # Check if kernel image exists
     kernel_path = Path(kernel_path)

@@ -30,6 +30,8 @@ import iio
 import adijif
 import adi
 from test.dts_utils import download_and_cache_toolchain, compile_dts_to_dtb, verify_dts_match, TOOLCHAIN_2025_R1_ARCH_ARM64, compile_kernel, add_profile_to_defconfig
+from test.boot_script import make_boot_scr
+import socket
 
 TFTP_BOOT_FOLDER = "/var/lib/tftpboot/"
 
@@ -108,6 +110,7 @@ class TestAD9084Hardware:
         if venv_bin not in os.environ['PATH']:
             os.environ['PATH'] = f"{venv_bin}:{os.environ['PATH']}"
 
+    @pytest.mark.lg_feature(["ad9084", "vpk180"])
     def test_vpk180_rev10_ad9084(
         self,
         kernel_path,
@@ -257,7 +260,29 @@ class TestAD9084Hardware:
         # I'll stick to 'reference.dtb' name for TFTP to be safe if that's what was working, 
         # but the content will be from generated DTB.
         
-        shutil.copy2(gen_dtb, Path(TFTP_BOOT_FOLDER) / "reference.dtb")
+        # shutil.copy2(gen_dtb, Path(TFTP_BOOT_FOLDER) / "reference.dtb")
+
+        # Get host running python IP address
+        def get_ip_address():
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            ip = None
+            try:
+                # doesn't even have to be reachable
+                s.connect(("8.8.8.8", 1))
+                ip = s.getsockname()[0]
+            finally:
+                s.close()
+            if not ip:
+                raise Exception("Unable to determine local IP address")
+            return ip
+        local_ip_address = get_ip_address()
+        print(f"      Local IP Address: {local_ip_address}")
+
+        # Generate boot.scr for TFTP
+        print(f"      Generating boot.scr... with local IP address: {local_ip_address}")
+        make_boot_scr("versal_net", TFTP_BOOT_FOLDER, local_ip_address)
+        kuiper = strategy.target.get_driver("KuiperDLDriver")
+        kuiper.add_files_to_target(str(Path(TFTP_BOOT_FOLDER) / "boot.scr"))
         
         strategy.transition("shell")
         
@@ -273,6 +298,7 @@ class TestAD9084Hardware:
         print("      ✓ Referenced configuration verification passed")
 
 
+    @pytest.mark.lg_feature(["ad9084", "vpk180"])
     def test_vpk180_rev10_ad9084_json_profile(
         self,
         kernel_path,

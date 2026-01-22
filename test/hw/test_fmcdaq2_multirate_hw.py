@@ -312,6 +312,7 @@ class TestFmcdaq2MultiRateHardware:
     """
 
     @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
+    @pytest.mark.lg_feature(["fmcdaq2", "zcu102"])
     def test_sample_rate_deployment(
         self,
         sample_rate_msps,
