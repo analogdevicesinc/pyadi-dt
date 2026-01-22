@@ -62,6 +62,7 @@ class adrv9009_fmc(layout):
 
     template_filename = "adrv9009_fmc_zcu102.tmpl"
     output_filename = "adrv9009_fmc_zcu102.dts"
+    use_plugin_mode = False
 
     def __init__(self, platform="zcu102", kernel_path=None):
         """Initialize ADRV9009 FMC board.

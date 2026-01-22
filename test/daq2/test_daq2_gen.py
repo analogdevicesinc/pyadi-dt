@@ -276,7 +276,7 @@ class TestFPGAConfiguration:
         cfg = {}
         cfg = board.validate_and_default_fpga_config(cfg)
 
-        assert cfg["fpga_adc"]["sys_clk_select"] == "XCVR_QPLL"
+        assert cfg["fpga_adc"]["sys_clk_select"] == "XCVR_CPLL"
         assert cfg["fpga_dac"]["sys_clk_select"] == "XCVR_QPLL"
 
     def test_fpga_explicit_values_preserved(self, kernel_path):

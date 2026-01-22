@@ -59,6 +59,7 @@ class ad9084_fmc(layout):
 
     template_filename = "ad9084_fmc_vpk180.tmpl"
     output_filename = "ad9084_fmc_vpk180.dts"
+    use_plugin_mode = False
 
     def __init__(self, platform="vpk180", kernel_path=None):
         """Initialize AD9084 FMC board.

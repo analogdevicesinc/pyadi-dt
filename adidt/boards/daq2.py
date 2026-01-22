@@ -16,14 +16,25 @@ class daq2(layout):
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
         "zcu102": {
-            "template_filename": "daq2.tmpl",
+            "template_filename": "daq2_zcu102.tmpl",
             "base_dts_file": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-fmcdaq2.dts",
             "base_dts_include": "zynqmp-zcu102-rev10-fmcdaq2.dts",
             "arch": "arm64",
             "jesd_phy": "GTH",
-            "default_fpga_adc_pll": "XCVR_QPLL",
+            "default_fpga_adc_pll": "XCVR_CPLL",
             "default_fpga_dac_pll": "XCVR_QPLL",
             "spi_bus": "spi1",
+            "output_dir": "generated_dts",
+        },
+        "zc706": {
+            "template_filename": "daq2_zc706.tmpl",
+            "base_dts_file": "arch/arm/boot/dts/xilinx/zynq-zc706.dts",
+            "base_dts_include": "zynq-zc706.dts",
+            "arch": "arm",
+            "jesd_phy": "GTX",
+            "default_fpga_adc_pll": "XCVR_CPLL",
+            "default_fpga_dac_pll": "XCVR_QPLL",
+            "spi_bus": "spi0",
             "output_dir": "generated_dts",
         },
     }
@@ -179,21 +190,28 @@ class daq2(layout):
 
     def make_ints(self, cfg, keys):
         for key in keys:
-            if isinstance(cfg[key], float) and cfg[key].is_integer():
+            if key in cfg and isinstance(cfg[key], float) and cfg[key].is_integer():
                 cfg[key] = int(cfg[key])
         return cfg
 
     def map_jesd_structs(self, cfg):
-        adc = cfg["converter_AD9680"]
-        adc["jesd"] = cfg["jesd_AD9680"]
-        adc["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
-            adc["jesd"]["jesd_class"]
-        )
-        dac = cfg["converter_AD9144"]
-        dac["jesd"] = cfg["jesd_AD9144"]
-        dac["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
-            dac["jesd"]["jesd_class"]
-        )
+        adc = cfg["converter_ADC"]
+        adc["jesd"] = cfg["jesd_ADC"]
+        if "jesd_class" in adc["jesd"]:
+            adc["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
+                adc["jesd"]["jesd_class"]
+            )
+        else:
+            adc["jesd"]["jesd_class_int"] = adc["jesd"].get("subclass", 1)
+
+        dac = cfg["converter_DAC"]
+        dac["jesd"] = cfg["jesd_DAC"]
+        if "jesd_class" in dac["jesd"]:
+            dac["jesd"]["jesd_class_int"] = self.map_jesd_subclass(
+                dac["jesd"]["jesd_class"]
+            )
+        else:
+            dac["jesd"]["jesd_class_int"] = dac["jesd"].get("subclass", 1)
 
         adc["jesd"] = self.make_ints(adc["jesd"], ["converter_clock", "sample_clock"])
         dac["jesd"] = self.make_ints(dac["jesd"], ["converter_clock", "sample_clock"])
@@ -204,8 +222,8 @@ class daq2(layout):
 
         # Fix ups
         for key in ["vco", "vcxo"]:
-            if isinstance(cfg["clock"][key], float) and cfg["clock"][key].is_integer():
-                cfg[key] = int(cfg["clock"][key])
+            if key in cfg["clock"] and isinstance(cfg["clock"][key], float) and cfg["clock"][key].is_integer():
+                cfg["clock"][key] = int(cfg["clock"][key])
 
         map = {}
         clk = cfg["clock"]["output_clocks"]
@@ -213,34 +231,34 @@ class daq2(layout):
         # AD9680 side
         map["ADC_CLK"] = {
             "source_port": 13,
-            "divider": clk["AD9680_ref_clk"]["divider"],
+            "divider": clk["ADC_CLK"]["divider"],
         }
         map["ADC_CLK_FMC"] = {
             "source_port": 4,
-            "divider": clk["zcu102_AD9680_ref_clk"]["divider"],
+            "divider": clk["ADC_CLK_FMC"]["divider"],
         }
         map["ADC_SYSREF"] = {
             "source_port": 5,
-            "divider": clk["AD9680_sysref"]["divider"],
+            "divider": clk["ADC_SYSREF"]["divider"],
         }
         map["CLKD_ADC_SYSREF"] = {
             "source_port": 6,
-            "divider": clk["AD9680_sysref"]["divider"],
+            "divider": clk["CLKD_ADC_SYSREF"]["divider"],
         }
 
         # AD9144 side
-        map["DAC_CLK"] = {"source_port": 1, "divider": clk["AD9144_ref_clk"]["divider"]}
+        map["DAC_CLK"] = {"source_port": 1, "divider": clk["DAC_CLK"]["divider"]}
         map["FMC_DAC_REF_CLK"] = {
             "source_port": 9,
-            "divider": clk["zcu102_AD9144_ref_clk"]["divider"],
+            "divider": clk["FMC_DAC_REF_CLK"]["divider"],
         }
         map["DAC_SYSREF"] = {
             "source_port": 8,
-            "divider": clk["AD9144_sysref"]["divider"],
+            "divider": clk["DAC_SYSREF"]["divider"],
         }
         map["CLKD_DAC_SYSREF"] = {
             "source_port": 7,
-            "divider": clk["AD9144_sysref"]["divider"],
+            "divider": clk["CLKD_DAC_SYSREF"]["divider"],
         }
 
         ccfg = {"map": map, "clock": cfg["clock"]}

@@ -414,6 +414,7 @@ class TestAD9081MultiRateHardware:
     """
     # @pytest.mark.timeout(60*2)
     @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
+    @pytest.mark.lg_feature(["ad9081", "zcu102"])
     def test_sample_rate_deployment(
         self,
         sample_rate_msps,
@@ -593,6 +594,7 @@ class TestAD9081ZC706Hardware:
 
     #@pytest.mark.timeout(60*5)  # 5 minute timeout for full boot cycle
     @pytest.mark.skip(reason='Not fully verified. SDMux not supported of ZC706.')
+    @pytest.mark.lg_feature(["ad9081", "zc706"])
     def test_zc706_deployment(
         self,
         kernel_path,

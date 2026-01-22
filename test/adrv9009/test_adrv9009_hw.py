@@ -283,6 +283,7 @@ def post_power_off(strategy):
 class TestADRV9009Hardware:
     """Hardware test suite for ADRV9009"""
     @pytest.mark.skip(reason='Not fully verified. All profile fields not generated from jif.')
+    @pytest.mark.lg_feature(["adrv9009", "zcu102"])
     def test_hw_deployment(
         self,
         kernel_path,
@@ -406,6 +407,7 @@ class TestADRV9009Hardware:
             num_channels = len(device.channels)
             print(f"      ✓ Found IIO device: {device_name} ({num_channels} channels)")
 
+    @pytest.mark.lg_feature(["adrv9009", "zcu102"])
     def test_zcu102_rev10_adrv9009(
         self,
         kernel_path,
