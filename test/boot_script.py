@@ -2,58 +2,85 @@ import os
 import subprocess
 import shutil
 
+
 def make_boot_scr(carrier, output_dir=".", tftp_ip="10.0.0.156"):
     """
     Creates u-boot.scr file for specified carrier.
-    
+
     Args:
         carrier (str): The carrier/platform name (no_bitfile, cyclone5, jupiter_sdr, versal, versal_net).
         output_dir (str): Directory to write output files. Defaults to current directory.
-        
+
     Raises:
         ValueError: If carrier is not supported.
         subprocess.CalledProcessError: If mkimage fails.
         FileNotFoundError: If mkimage is not found.
     """
-    
+
     if not shutil.which("mkimage"):
-        raise FileNotFoundError("mkimage command not found. Please install u-boot-tools.")
+        raise FileNotFoundError(
+            "mkimage command not found. Please install u-boot-tools."
+        )
 
     uboot_txt_path = os.path.join(output_dir, "u-boot.txt")
-    
+
     # Ensure output directory exists
     os.makedirs(output_dir, exist_ok=True)
 
     lines = []
     description = ""
-    output_scr = "boot.scr" # Default unless changed
-    mkimage_args = [] # Custom args if needed
+    output_scr = "boot.scr"  # Default unless changed
+    mkimage_args = []  # Custom args if needed
 
     if carrier == "no_bitfile":
-        lines = [
-            "load mmc 0:1 ${loadaddr} soc_system.rbf;"
-        ]
+        lines = ["load mmc 0:1 ${loadaddr} soc_system.rbf;"]
         subdir = os.path.join(output_dir, "u-boot_scr_wo_bitfile")
         os.makedirs(subdir, exist_ok=True)
         output_scr = os.path.join("u-boot_scr_wo_bitfile", "u-boot.scr")
         description = "Boot script without bitfile"
-        mkimage_args = ["-A", "arm", "-O", "linux", "-T", "script", "-C", "none", "-a", "0", "-e", "0"]
+        mkimage_args = [
+            "-A",
+            "arm",
+            "-O",
+            "linux",
+            "-T",
+            "script",
+            "-C",
+            "none",
+            "-a",
+            "0",
+            "-e",
+            "0",
+        ]
 
     elif carrier == "cyclone5":
         lines = [
             "load mmc 0:1 ${loadaddr} soc_system.rbf;",
-            "fpga load 0 ${loadaddr} ${filesize};"
+            "fpga load 0 ${loadaddr} ${filesize};",
         ]
         output_scr = "u-boot.scr"
         description = "Boot script"
-        mkimage_args = ["-A", "arm", "-O", "linux", "-T", "script", "-C", "none", "-a", "0", "-e", "0"]
+        mkimage_args = [
+            "-A",
+            "arm",
+            "-O",
+            "linux",
+            "-T",
+            "script",
+            "-C",
+            "none",
+            "-a",
+            "0",
+            "-e",
+            "0",
+        ]
 
     elif carrier == "jupiter_sdr":
         lines = [
             "setenv bootargs earlycon clk_ignore_unused root=/dev/mmcblk0p2 rw rootwait",
             "load mmc 0:1 0x00100000 system.dtb",
             "load mmc 0:1 0x00200000 Image",
-            "booti 0x00200000 - 0x00100000"
+            "booti 0x00200000 - 0x00100000",
         ]
         output_scr = "boot.scr"
         description = "Boot script for jupiter_sdr"
@@ -68,11 +95,24 @@ def make_boot_scr(carrier, output_dir=".", tftp_ip="10.0.0.156"):
             "sleep 60",
             "fatload mmc 0 0x00200000 Image",
             "fatload mmc 0 0x00001000 system.dtb",
-            "booti 0x00200000 - 0x00001000"
+            "booti 0x00200000 - 0x00001000",
         ]
         output_scr = "boot.scr"
         description = "Boot script for Versal"
-        mkimage_args = ["-A", "arm", "-O", "linux", "-T", "script", "-C", "none", "-a", "0", "-e", "0"]
+        mkimage_args = [
+            "-A",
+            "arm",
+            "-O",
+            "linux",
+            "-T",
+            "script",
+            "-C",
+            "none",
+            "-a",
+            "0",
+            "-e",
+            "0",
+        ]
 
     elif carrier == "versal_net":
         lines = [
@@ -86,11 +126,24 @@ def make_boot_scr(carrier, output_dir=".", tftp_ip="10.0.0.156"):
             "sf write 0x80000 0x00200000 $filesize",
             "tftpboot 0x80000 system.dtb",
             "sf write 0x80000 0x00001000 $filesize",
-            "booti 0x00200000 - 0x00001000"
+            "booti 0x00200000 - 0x00001000",
         ]
         output_scr = "boot.scr"
         description = "Boot script for Versal"
-        mkimage_args = ["-A", "arm", "-O", "linux", "-T", "script", "-C", "none", "-a", "0", "-e", "0"]
+        mkimage_args = [
+            "-A",
+            "arm",
+            "-O",
+            "linux",
+            "-T",
+            "script",
+            "-C",
+            "none",
+            "-a",
+            "0",
+            "-e",
+            "0",
+        ]
 
     else:
         raise ValueError(f"No flow defined for boot.scr of {carrier}!")
@@ -101,11 +154,17 @@ def make_boot_scr(carrier, output_dir=".", tftp_ip="10.0.0.156"):
 
     # Run mkimage
     dest_path = os.path.join(output_dir, output_scr)
-    cmd = ["mkimage"] + mkimage_args + ["-n", description, "-d", uboot_txt_path, dest_path]
-    
+    cmd = (
+        ["mkimage"]
+        + mkimage_args
+        + ["-n", description, "-d", uboot_txt_path, dest_path]
+    )
+
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
-        raise subprocess.CalledProcessError(result.returncode, cmd, output=result.stdout, stderr=result.stderr)
+        raise subprocess.CalledProcessError(
+            result.returncode, cmd, output=result.stdout, stderr=result.stderr
+        )
 
     # clean up
     os.remove(uboot_txt_path)
@@ -115,10 +174,17 @@ def make_boot_scr(carrier, output_dir=".", tftp_ip="10.0.0.156"):
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Create u-boot.scr file for specified carrier.")
+
+    parser = argparse.ArgumentParser(
+        description="Create u-boot.scr file for specified carrier."
+    )
     parser.add_argument("carrier", type=str, help="Carrier/platform name")
     parser.add_argument("--output_dir", type=str, default=".", help="Output directory")
-    parser.add_argument("--tftp_ip", type=str, default="10.0.0.156", help="TFTP server IP (if needed)")
+    parser.add_argument(
+        "--tftp_ip", type=str, default="10.0.0.156", help="TFTP server IP (if needed)"
+    )
     args = parser.parse_args()
 
-    print(f"Boot script created at {make_boot_scr(args.carrier, args.output_dir, args.tftp_ip)}")
+    print(
+        f"Boot script created at {make_boot_scr(args.carrier, args.output_dir, args.tftp_ip)}"
+    )

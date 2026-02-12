@@ -224,7 +224,7 @@ def sd_move(ctx, rd, reboot, show, dry_run):
     )
     d.update_existing_boot_files(rd, show=show, dryrun=dry_run)
     if reboot and not dry_run:
-        d._runr(f"reboot", warn=True)
+        d._runr("reboot", warn=True)
         if ctx.obj["no_color"]:
             print("Board rebooting")
         else:
@@ -275,7 +275,7 @@ def sd_remote_copy(ctx, files, reboot, show, dry_run):
     file_list = files.split(",")
     d.copy_local_files_to_remote_sd_card(file_list, show=show, dryrun=dry_run)
     if reboot and not dry_run:
-        d._runr(f"reboot", warn=True)
+        d._runr("reboot", warn=True)
         if ctx.obj["no_color"]:
             print("Board rebooting")
         else:
@@ -697,7 +697,7 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
                 dtc_cmd.extend(["-i", inc_path])
             dtc_cmd.extend(["-o", dtb_file, output_file])
 
-            click.echo(f"Compiling DTS to DTB...")
+            click.echo("Compiling DTS to DTB...")
             click.echo(f"Command: {' '.join(dtc_cmd)}")
 
             try:

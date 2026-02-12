@@ -3,13 +3,12 @@ from typing import Dict
 from adidt.dt import dt
 from adidt.utils import profilewiz, tes
 import fdt
-import math
 import logging
 
 
 def parse_talInit(file):
     d = tes.parse_talise_config_c(file)
-    return d.data['talInit']
+    return d.data["talInit"]
 
 
 def handle_ints(val):
@@ -20,18 +19,18 @@ def handle_ints(val):
 
 def handle_channel_enable(data: dict, key: str, default: int = 0):
     channel_enable_map = {
-        'TAL_RXOFF': 0,
-        'TAL_RX1': 1,
-        'TAL_RX2': 2,
-        'TAL_RX1RX2': 3,
-        'TAL_ORXOFF': 0,
-        'TAL_ORX1': 1,
-        'TAL_ORX2': 2,
-        'TAL_ORX1ORX2': 3,
-        'TAL_TXOFF': 0,
-        'TAL_TX1': 1,
-        'TAL_TX2': 2,
-        'TAL_TX1TX2': 3,
+        "TAL_RXOFF": 0,
+        "TAL_RX1": 1,
+        "TAL_RX2": 2,
+        "TAL_RX1RX2": 3,
+        "TAL_ORXOFF": 0,
+        "TAL_ORX1": 1,
+        "TAL_ORX2": 2,
+        "TAL_ORX1ORX2": 3,
+        "TAL_TXOFF": 0,
+        "TAL_TX1": 1,
+        "TAL_TX2": 2,
+        "TAL_TX1TX2": 3,
     }
 
     if key not in data.keys():
@@ -49,11 +48,11 @@ def parse_profile(filename):
     nsxml = profilewiz.profile_to_xml(filename)
     profile = xmltodict.parse(nsxml)["profile"]
 
-    rx = profile['rx']
-    tx = profile['tx']
-    orx = profile['obsRx']
-    lpbk = profile['lpbk']
-    clocks = profile['clocks']
+    rx = profile["rx"]
+    tx = profile["tx"]
+    orx = profile["obsRx"]
+    lpbk = profile["lpbk"]
+    clocks = profile["clocks"]
 
     # Custom translations
     # Clock Divide Ratio; 0=2.0, 1=2.5, 2=3.0, 3=4.0, 4=5.0
@@ -79,26 +78,33 @@ def parse_profile(filename):
     if int(orx["filter"]["@gain_dB"]) < 0:
         orx["filter"]["@gain_dB"] = f"({orx['filter']['@gain_dB']})"
     if int(tx["filter"]["@gain_dB"]) < 0:
-
         tx["filter"]["@gain_dB"] = f"({tx['filter']['@gain_dB']})"
 
-    rx["rxAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(rx["rxAdcProfile"]["#text"])
-    del(rx["rxAdcProfile"]["#text"])
+    rx["rxAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(
+        rx["rxAdcProfile"]["#text"]
+    )
+    del rx["rxAdcProfile"]["#text"]
     rx["filter"]["coefs"] = profilewiz.coefs_to_long_string(rx["filter"]["#text"])
-    del(rx["filter"]["#text"])
+    del rx["filter"]["#text"]
 
     orx["filter"]["coefs"] = profilewiz.coefs_to_long_string(orx["filter"]["#text"])
-    del(orx["filter"]["#text"])
-    orx["orxBandPassAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(orx["orxBandPassAdcProfile"]["#text"])
-    del(orx["orxBandPassAdcProfile"]["#text"])
-    orx["orxLowPassAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(orx["orxLowPassAdcProfile"]["#text"])
-    del(orx["orxLowPassAdcProfile"]["#text"])
+    del orx["filter"]["#text"]
+    orx["orxBandPassAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(
+        orx["orxBandPassAdcProfile"]["#text"]
+    )
+    del orx["orxBandPassAdcProfile"]["#text"]
+    orx["orxLowPassAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(
+        orx["orxLowPassAdcProfile"]["#text"]
+    )
+    del orx["orxLowPassAdcProfile"]["#text"]
 
     tx["filter"]["coefs"] = profilewiz.coefs_to_long_string(tx["filter"]["#text"])
-    del(tx["filter"]["#text"])
+    del tx["filter"]["#text"]
 
-    lpbk["lpbkAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(lpbk["lpbkAdcProfile"]["#text"])
-    del(lpbk["lpbkAdcProfile"]["#text"])
+    lpbk["lpbkAdcProfile"]["coefs"] = profilewiz.coefs_to_long_string(
+        lpbk["lpbkAdcProfile"]["#text"]
+    )
+    del lpbk["lpbkAdcProfile"]["#text"]
 
     return {"rx": rx, "tx": tx, "orx": orx, "lpbk": lpbk, "clocks": clocks}
 

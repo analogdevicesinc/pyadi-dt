@@ -21,9 +21,6 @@
 #include <dt-bindings/iio/adc/adi,ad9081.h>
 #include <dt-bindings/jesd204/adxcvr.h>
 
-#define CDDC_I 0
-#define CDDC_Q 1
-
 &i2c_mux {
 	i2c@5 { /* HPC IIC */
 		#address-cells = <1>;
@@ -258,7 +255,6 @@
 		#jesd204-cells = <2>;
 		jesd204-top-device = <0>; /* This is the TOP device */
 		jesd204-link-ids = <FRAMER_LINK0_RX DEFRAMER_LINK0_TX>;
-		jesd204-ignore-errors;//DEBUG ONLY REMOVE LATER!!
 
 		jesd204-inputs =
 			<&axi_ad9081_core_rx 0 FRAMER_LINK0_RX>,
@@ -407,7 +403,7 @@
 					{%- for ce in adc['datapath']['cddc']['enabled'] %}
 					{%- if ce %}{% set ns.c = ns.c + 1 %}
 						{%- if ns.c > 1 %},{% endif %}
-						<&ad9081_adc{{ loop.index0 }} CDDC_I>, <&ad9081_adc{{ loop.index0 }} CDDC_Q>
+						<&ad9081_adc{{ loop.index0 }} FDDC_I>, <&ad9081_adc{{ loop.index0 }} FDDC_Q>
 					{%- endif -%}
 					{% if loop.last %};{% endif %}
 					{%- endfor %}

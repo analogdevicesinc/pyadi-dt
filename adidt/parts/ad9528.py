@@ -50,7 +50,7 @@ def parse_profile(filename):
         "3": "SYSREF_PATTERN_STOP",
     }
     sysref_nshot_mode = {
-        "0": "SYSREF_NSHOT_1_PULSE", # FIXME: zero is undefined in AD9528 datasheet
+        "0": "SYSREF_NSHOT_1_PULSE",  # FIXME: zero is undefined in AD9528 datasheet
         "1": "SYSREF_NSHOT_1_PULSE",
         "2": "SYSREF_NSHOT_2_PULSES",
         "3": "SYSREF_NSHOT_4_PULSES",
@@ -65,7 +65,7 @@ def parse_profile(filename):
     pll1["refA_bufferCtrl"] = ref_buffer_ctrl[pll1["refA_bufferCtrl"]]
     pll1["refB_bufferCtrl"] = ref_buffer_ctrl[pll1["refB_bufferCtrl"]]
 
-    out["outPowerDown"] = f'0x{int(out["outPowerDown"]):x}'
+    out["outPowerDown"] = f"0x{int(out['outPowerDown']):x}"
     out["outSource"] = [output_signal_source[i] for i in out["outSource"].split()]
     out["outAnalogDelay"] = [int(i) for i in out["outAnalogDelay"].split()]
     out["outDigitalDelay"] = [int(i) for i in out["outDigitalDelay"].split()]
@@ -73,10 +73,14 @@ def parse_profile(filename):
     out["outChannelDiv"] = [int(i) for i in out["outChannelDiv"].split()]
     out["outFrequency_Hz"] = [int(i) for i in out["outFrequency_Hz"].split()]
 
-    sysref["sysrefRequestMethod"] = sysref["sysrefRequestMethod"] == '1' # enables GPIO SYSREF request otherwise SPI
+    sysref["sysrefRequestMethod"] = (
+        sysref["sysrefRequestMethod"] == "1"
+    )  # enables GPIO SYSREF request otherwise SPI
     sysref["sysrefSource"] = sysref_source[sysref["sysrefSource"]]
-    sysref['sysrefPinEdgeMode'] = sysref_request_method[sysref['sysrefPinEdgeMode']]
-    del(sysref['sysrefPinBufferMode']) # SYSREF_REQ input buffer mode control not supported by kernel driver
+    sysref["sysrefPinEdgeMode"] = sysref_request_method[sysref["sysrefPinEdgeMode"]]
+    del sysref[
+        "sysrefPinBufferMode"
+    ]  # SYSREF_REQ input buffer mode control not supported by kernel driver
     sysref["sysrefPatternMode"] = sysref_pattern_mode[sysref["sysrefPatternMode"]]
     sysref["sysrefNshotMode"] = sysref_nshot_mode[sysref["sysrefNshotMode"]]
 

@@ -1,6 +1,7 @@
 """Device tree interface class."""
+
 import fdt
-from fabric import Connection, Config
+from fabric import Connection
 import random
 import string
 import os.path
@@ -54,8 +55,7 @@ class dt(sd):
                     username=username,
                     ip=ip,
                     port=22,
-                    connect_timeout=5,
-                ),
+                    ),
                 connect_kwargs={"password": password},
             )
             self._set_arch(arch)
@@ -68,7 +68,7 @@ class dt(sd):
                 self._set_arch(arch)
                 self._import_sysfs()
             elif dt_source == "local_file":
-                if arch=="auto":
+                if arch == "auto":
                     raise Exception("arch must be set when using local_file mode")
                 self._import_file()
             else:
@@ -135,13 +135,15 @@ class dt(sd):
     def _import_remote_sd(self):
         # Mount SD and get path
         folder = self._handle_sd_mount()
-        with self._con as c, c.sftp() as sftp, sftp.open(
-            f"{folder}/{self._dt_filename}", "rb"
-        ) as file:
+        with (
+            self._con as c,
+            c.sftp() as sftp,
+            sftp.open(f"{folder}/{self._dt_filename}", "rb") as file,
+        ):
             self._dtb_data_file = file.read()
             self._dt = fdt.parse_dtb(self._dtb_data_file)
         self._con._sftp = None
-        self._runr(f"umount /dev/mmcblk0p1")
+        self._runr("umount /dev/mmcblk0p1")
         self._runr(f"rm -rf {folder}")
 
     def _import_remote_sysfs(self):
@@ -169,7 +171,7 @@ class dt(sd):
             self._dtb_data_file = f.read()
             self._dt = fdt.parse_dtb(self._dtb_data_file)
         self._con._sftp = None
-        self._runr(f"umount /dev/mmcblk0p1")
+        self._runr("umount /dev/mmcblk0p1")
         self._runr(f"rm -rf {folder}")
 
     def _import_sysfs(self):
@@ -188,7 +190,7 @@ class dt(sd):
         for prop in node.props:
             try:
                 print(prop.name, prop.value)
-            except:
+            except (AttributeError, TypeError):
                 print(prop.name)
 
     def list_child_props(self, node):
@@ -196,7 +198,7 @@ class dt(sd):
             for prop in node.props:
                 try:
                     print(prop.name, prop.value)
-                except:
+                except (AttributeError, TypeError):
                     print(prop.name)
 
     def get_node_by_compatible(self, compatible_id: str):
@@ -214,22 +216,23 @@ class dt(sd):
 
     def _update_sd(self, reboot=False):
         folder = self._handle_sd_mount()
-        with self._con as c, c.sftp() as sftp, sftp.open(
-            f"{folder}/{self._dt_filename}", "wb"
-        ) as file:
+        with (
+            self._con as c,
+            c.sftp() as sftp,
+            sftp.open(f"{folder}/{self._dt_filename}", "wb") as file,
+        ):
             file.write(self._dt.to_dtb())
         self._con._sftp = None
-        self._runr(f"umount /dev/mmcblk0p1")
+        self._runr("umount /dev/mmcblk0p1")
         self._runr(f"rm -rf {folder}")
         if reboot:
-            self._runr(f"reboot")
+            self._runr("reboot")
             print("Device rebooting")
 
-    def _update_fs(self):
-        ...
+    def _update_fs(self): ...
 
     def _update_file(self):
-        with open(self.local_dt_filepath,"wb") as file:
+        with open(self.local_dt_filepath, "wb") as file:
             file.write(self._dt.to_dtb())
 
     def update_current_dt(self, reboot=False):

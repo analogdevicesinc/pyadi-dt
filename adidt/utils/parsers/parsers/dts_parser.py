@@ -6,7 +6,7 @@ Parses device tree source files to extract include dependencies.
 
 import re
 import os
-from typing import List, Tuple, Optional
+from typing import List
 from ..dependency_types import Dependency, DependencyType
 
 
@@ -27,7 +27,9 @@ class IncludeStatement:
         self.include_type = include_type
 
     def __repr__(self) -> str:
-        return f"Include({self.file}, line={self.line_number}, type={self.include_type})"
+        return (
+            f"Include({self.file}, line={self.line_number}, type={self.include_type})"
+        )
 
 
 class DTSParser:
@@ -39,9 +41,9 @@ class DTSParser:
 
     # Regular expressions for different include formats
     INCLUDE_PATTERNS = [
-        (r'^\s*#include\s+<([^>]+)>', 'system'),      # System: #include <file.h>
-        (r'^\s*#include\s+"([^"]+)"', 'local'),       # Local: #include "file.dtsi"
-        (r'^\s*/include/\s+"([^"]+)"', 'legacy'),     # Legacy: /include/ "file.dtsi"
+        (r"^\s*#include\s+<([^>]+)>", "system"),  # System: #include <file.h>
+        (r'^\s*#include\s+"([^"]+)"', "local"),  # Local: #include "file.dtsi"
+        (r'^\s*/include/\s+"([^"]+)"', "legacy"),  # Legacy: /include/ "file.dtsi"
     ]
 
     def __init__(self):
@@ -69,7 +71,7 @@ class DTSParser:
             raise FileNotFoundError(f"DTS file not found: {file_path}")
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
         except IOError as e:
             raise IOError(f"Failed to read DTS file {file_path}: {e}")
@@ -89,12 +91,12 @@ class DTSParser:
         includes = []
 
         # Split into lines for line number tracking
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         for line_num, line in enumerate(lines, start=1):
             # Skip comment lines
             stripped = line.strip()
-            if stripped.startswith('//') or stripped.startswith('/*'):
+            if stripped.startswith("//") or stripped.startswith("/*"):
                 continue
 
             # Try each pattern
@@ -102,19 +104,19 @@ class DTSParser:
                 match = pattern.search(line)
                 if match:
                     included_file = match.group(1)
-                    includes.append(IncludeStatement(
-                        file=included_file,
-                        line_number=line_num,
-                        include_type=inc_type
-                    ))
+                    includes.append(
+                        IncludeStatement(
+                            file=included_file,
+                            line_number=line_num,
+                            include_type=inc_type,
+                        )
+                    )
                     break  # Only match one pattern per line
 
         return includes
 
     def extract_includes_as_dependencies(
-        self,
-        file_path: str,
-        source_file: str
+        self, file_path: str, source_file: str
     ) -> List[Dependency]:
         """
         Parse a DTS file and return dependencies.
@@ -136,7 +138,7 @@ class DTSParser:
                 source_file=source_file,
                 line_number=inc.line_number,
                 resolved=False,  # Will be resolved by main parser
-                metadata={'include_type': inc.include_type}
+                metadata={"include_type": inc.include_type},
             )
             dependencies.append(dep)
 
@@ -155,7 +157,7 @@ class DTSParser:
         Returns:
             True if it's a system include
         """
-        system_prefixes = ['dt-bindings/', 'linux/', 'asm/']
+        system_prefixes = ["dt-bindings/", "linux/", "asm/"]
         return any(include_path.startswith(prefix) for prefix in system_prefixes)
 
     @staticmethod
@@ -173,10 +175,10 @@ class DTSParser:
         path = include_path.strip()
 
         # Normalize path separators
-        path = path.replace('\\', '/')
+        path = path.replace("\\", "/")
 
         # Remove redundant slashes
-        while '//' in path:
-            path = path.replace('//', '/')
+        while "//" in path:
+            path = path.replace("//", "/")
 
         return path

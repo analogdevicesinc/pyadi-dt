@@ -23,7 +23,9 @@ TOOLCHAIN_2025_R1_VERSION = "13.3.rel1"
 TOOLCHAIN_2025_R1_ARCH_ARM64 = "aarch64-none-elf"
 
 
-def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", cache_dir: Path = None) -> Path:
+def download_and_cache_toolchain(
+    arch: str = "arm64", version: str = "2023.2", cache_dir: Path = None
+) -> Path:
     """Download and cache ARM GNU toolchain for cross-compilation.
 
     Downloads the ARM GNU toolchain for arm or arm64 from ARM's official site
@@ -41,7 +43,7 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
         RuntimeError: If download or extraction fails or arch is invalid
     """
     # Select toolchain based on architecture
-    if version == "2023.2": 
+    if version == "2023.2":
         if arch == "arm64":
             toolchain_url = TOOLCHAIN_2023_R2_URL_ARM64
             toolchain_version = TOOLCHAIN_2023_R2_VERSION
@@ -51,7 +53,9 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
             toolchain_version = TOOLCHAIN_2023_R2_VERSION
             toolchain_arch = TOOLCHAIN_2023_R2_ARCH_ARM32
         else:
-            raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
+            raise ValueError(
+                f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'"
+            )
     elif version == "2025.1":
         if arch == "arm64":
             toolchain_url = TOOLCHAIN_2025_R1_URL_ARM64
@@ -60,7 +64,9 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
         else:
             raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm64'")
     else:
-        raise ValueError(f"Unsupported version: {version}. Must be '2023.2' or '2025.1'")
+        raise ValueError(
+            f"Unsupported version: {version}. Must be '2023.2' or '2025.1'"
+        )
 
     if toolchain_url == "":
         raise ValueError(f"Toolchain URL not found for version: {version}")
@@ -87,11 +93,11 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
 
     try:
         with urllib.request.urlopen(toolchain_url) as response:
-            total_size = int(response.headers.get('content-length', 0))
+            total_size = int(response.headers.get("content-length", 0))
             downloaded = 0
             chunk_size = 1024 * 1024  # 1MB chunks
 
-            with open(tarball_path, 'wb') as f:
+            with open(tarball_path, "wb") as f:
                 while True:
                     chunk = response.read(chunk_size)
                     if not chunk:
@@ -100,18 +106,23 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
                     downloaded += len(chunk)
                     if total_size > 0:
                         percent = (downloaded / total_size) * 100
-                        print(f"      Progress: {percent:.1f}% ({downloaded // (1024*1024)}MB / {total_size // (1024*1024)}MB)", end='\r')
+                        print(
+                            f"      Progress: {percent:.1f}% ({downloaded // (1024 * 1024)}MB / {total_size // (1024 * 1024)}MB)",
+                            end="\r",
+                        )
 
         print(f"\n      Download complete: {tarball_path}")
 
         # Extract toolchain
-        print(f"      Extracting toolchain...")
-        with tarfile.open(tarball_path, 'r:xz') as tar:
+        print("      Extracting toolchain...")
+        with tarfile.open(tarball_path, "r:xz") as tar:
             tar.extractall(cache_dir)
 
         # Verify extraction
         if not toolchain_bin.exists():
-            raise RuntimeError(f"Toolchain extraction failed: {toolchain_bin} not found")
+            raise RuntimeError(
+                f"Toolchain extraction failed: {toolchain_bin} not found"
+            )
 
         # Clean up tarball to save space
         tarball_path.unlink()
@@ -125,15 +136,23 @@ def download_and_cache_toolchain(arch: str = "arm64", version: str = "2023.2", c
             tarball_path.unlink()
         raise RuntimeError(f"Failed to download/extract toolchain: {e}")
 
-def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2", platform: str = "vpk180", cross_compile: str = None) -> None:
-    """Compile kernel using kernel build system with cross-compiler.
-    """
+
+def compile_kernel(
+    kernel_path: str,
+    arch: str = "arm64",
+    version: str = "2023.2",
+    platform: str = "vpk180",
+    cross_compile: str = None,
+) -> None:
+    """Compile kernel using kernel build system with cross-compiler."""
     # Validate architecture
     if arch not in ["arm", "arm64"]:
         raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
 
     if platform not in ["vpk180", "zcu102", "zc706"]:
-        raise ValueError(f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'")
+        raise ValueError(
+            f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'"
+        )
 
     # Download and cache cross-compiler if not provided
     if cross_compile is None:
@@ -149,11 +168,13 @@ def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2
             if arch == "arm64":
                 cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2025_R1_ARCH_ARM64}-"
             else:  # arch == "arm"
-                # Assuming 2025.1 arm32 follows same pattern or is not supported yet?
-                # The file didn't define TOOLCHAIN_2025_R1_ARCH_ARM32, so we might fail here if used.
-                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2025_R1_ARCH_ARM32}-"
+                # 2025.1 arm32 toolchain is not defined yet
+                # For now, use the same pattern as 2023.2
+                cross_compile = f"{toolchain_bin}/{TOOLCHAIN_2023_R2_ARCH_ARM32}-"
         else:
-            raise ValueError(f"Unsupported version: {version}. Must be '2023.2' or '2025.1'")
+            raise ValueError(
+                f"Unsupported version: {version}. Must be '2023.2' or '2025.1'"
+            )
 
     if platform == "vpk180":
         defconfig = "adi_versal_apollo_defconfig"
@@ -162,20 +183,22 @@ def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2
     elif platform == "zc706":
         defconfig = "adi_zynq_defconfig"
     else:
-        raise ValueError(f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'")
+        raise ValueError(
+            f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'"
+        )
 
     # Run clean, make defconfig, make
     # print(f"      Running make clean...")
     # subprocess.run(["make", "clean"], cwd=kernel_path, check=True)
     # Set up environment for kernel compilation
     env = os.environ.copy()
-    env['ARCH'] = arch
+    env["ARCH"] = arch
     if cross_compile:
-        env['CROSS_COMPILE'] = cross_compile
-        
+        env["CROSS_COMPILE"] = cross_compile
+
     print(f"      Running make {defconfig}...")
     subprocess.run(["make", defconfig], cwd=kernel_path, env=env, check=True)
-    print(f"      Running make...")
+    print("      Running make...")
     subprocess.run(["make", "-j2"], cwd=kernel_path, env=env, check=True)
 
     # Check if kernel image exists
@@ -184,20 +207,27 @@ def compile_kernel(kernel_path: str, arch: str = "arm64", version: str = "2023.2
     if not kernel_image.exists():
         raise RuntimeError(f"Kernel image not found: {kernel_image}")
 
-    return kernel_image        
-
-    
+    return kernel_image
 
 
-def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: str = "arm64", version: str = "2023.2", platform: str = "vpk180", cross_compile: str = None) -> None:
-    """Compile DTS to DTB using kernel build system with cross-compiler.
-    """
+def compile_dts_to_dtb(
+    dts_path: Path,
+    dtb_path: Path,
+    kernel_path: str,
+    arch: str = "arm64",
+    version: str = "2023.2",
+    platform: str = "vpk180",
+    cross_compile: str = None,
+) -> None:
+    """Compile DTS to DTB using kernel build system with cross-compiler."""
     # Validate architecture
     if arch not in ["arm", "arm64"]:
         raise ValueError(f"Unsupported architecture: {arch}. Must be 'arm' or 'arm64'")
 
     if platform not in ["vpk180", "zcu102", "zc706"]:
-        raise ValueError(f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'")
+        raise ValueError(
+            f"Unsupported platform: {platform}. Must be 'vpk180', 'zcu102', or 'zc706'"
+        )
 
     # Download and cache cross-compiler if not provided
     if cross_compile is None:
@@ -218,14 +248,16 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
                 # Lines 81-87 in download_and_cache_toolchain suggest 2025.1 only supports arm64 for now.
                 raise ValueError("ARM32 not supported for version 2025.1")
         else:
-            raise ValueError(f"Unsupported version: {version}. Must be '2023.2' or '2025.1'")
+            raise ValueError(
+                f"Unsupported version: {version}. Must be '2023.2' or '2025.1'"
+            )
 
         print(f"      ✓ Cross-compiler ready: {cross_compile}")
 
     # Set up environment for kernel compilation
     env = os.environ.copy()
-    env['ARCH'] = arch
-    env['CROSS_COMPILE'] = cross_compile
+    env["ARCH"] = arch
+    env["CROSS_COMPILE"] = cross_compile
 
     # Determine platform-specific paths
     dts_filename = dts_path.name
@@ -236,7 +268,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     kernel_dts_path = kernel_dts_dir / dts_filename
 
     # DTB will be compiled to same location with .dtb extension
-    kernel_dtb_path = kernel_dts_path.with_suffix('.dtb')
+    kernel_dtb_path = kernel_dts_path.with_suffix(".dtb")
 
     # Step 1: Copy DTS file into kernel tree
     shutil.copy2(dts_path, kernel_dts_dir)
@@ -244,11 +276,11 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     # Step 2: Ensure kernel is configured
     print("      Configuring kernel...")
 
-    if platform == 'vpk180':
+    if platform == "vpk180":
         defconfig = "adi_versal_apollo_defconfig"
-    elif platform == 'zcu102':
+    elif platform == "zcu102":
         defconfig = "adi_zynqmp_defconfig"
-    elif platform == 'zc706':
+    elif platform == "zc706":
         defconfig = "zynq_xcomm_adv7511_defconfig"
     else:
         raise ValueError(f"Unsupported platform: {platform}")
@@ -256,11 +288,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     config_cmd = ["make", defconfig]
     print(f"      Running: {' '.join(config_cmd)}")
     config_result = subprocess.run(
-        config_cmd,
-        cwd=kernel_path,
-        capture_output=True,
-        text=True,
-        env=env
+        config_cmd, cwd=kernel_path, capture_output=True, text=True, env=env
     )
     if config_result.returncode != 0:
         raise RuntimeError(f"Kernel configuration failed: {config_result.stderr}")
@@ -276,11 +304,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     print(f"      Running: {' '.join(make_cmd)}")
 
     make_result = subprocess.run(
-        make_cmd,
-        cwd=kernel_path,
-        capture_output=True,
-        text=True,
-        env=env
+        make_cmd, cwd=kernel_path, capture_output=True, text=True, env=env
     )
 
     if make_result.returncode != 0:
@@ -299,7 +323,9 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, arch: s
     shutil.copy2(kernel_dtb_path, dtb_path)
 
 
-def verify_dts_match(gen_dtb: Path, ref_dtb: Path, kernel_path: str, dtb_output_dir: Path) -> None:
+def verify_dts_match(
+    gen_dtb: Path, ref_dtb: Path, kernel_path: str, dtb_output_dir: Path
+) -> None:
     """Verify generated DTB matches reference DTB line-by-line after decompilation.
 
     Args:
@@ -307,77 +333,96 @@ def verify_dts_match(gen_dtb: Path, ref_dtb: Path, kernel_path: str, dtb_output_
         ref_dtb: Path to reference DTB file
         kernel_path: Path to kernel source (to find dtc)
         dtb_output_dir: Directory to store intermediate flat DTS files
-    
+
     Raises:
         Exception: If mismatches are found
     """
     print(f"      Generated DTB Size: {gen_dtb.stat().st_size}")
     print(f"      Reference DTB Size: {ref_dtb.stat().st_size}")
 
-    print(f"[Content Verification] Comparing decompiled DTS...")
-    
+    print("[Content Verification] Comparing decompiled DTS...")
+
     dtc_path = Path(kernel_path) / "scripts/dtc/dtc"
     if not dtc_path.exists():
-            dtc_path = "dtc"
-    
+        dtc_path = "dtc"
+
     def dtb_to_dts(dtb, output):
-        cmd = [str(dtc_path), "-I", "dtb", "-O", "dts", "-o", str(output), "-s", str(dtb)]
+        cmd = [
+            str(dtc_path),
+            "-I",
+            "dtb",
+            "-O",
+            "dts",
+            "-o",
+            str(output),
+            "-s",
+            str(dtb),
+        ]
         subprocess.run(cmd, check=True, capture_output=True)
-        
+
     gen_dts_flat = dtb_output_dir / "generated_flat.dts"
     ref_dts_flat = dtb_output_dir / "reference_flat.dts"
-    
+
     try:
         dtb_to_dts(gen_dtb, gen_dts_flat)
         dtb_to_dts(ref_dtb, ref_dts_flat)
-        
+
         # Read and Compare text
-        with open(gen_dts_flat) as f: gen_text = f.readlines()
-        with open(ref_dts_flat) as f: ref_text = f.readlines()
-        
+        with open(gen_dts_flat) as f:
+            gen_text = f.readlines()
+        with open(ref_dts_flat) as f:
+            ref_text = f.readlines()
+
         print("      Comparing flattened DTS content...")
-        
+
         mismatches = []
-        
-        ref_set = set([l.strip() for l in ref_text])
-        
+
+        ref_set = set([line_text.strip() for line_text in ref_text])
+
         for line in gen_text:
-            l = line.strip()
-            if not l: continue
+            line_stripped = line.strip()
+            if not line_stripped:
+                continue
             # Skip phandle noise if it varies
-            if "phandle =" in l: continue 
-            if "linux,phandle" in l: continue
-            
-            if l not in ref_set:
-                    mismatches.append(f"Excess in GEN: {l}")
-        
+            if "phandle =" in line_stripped:
+                continue
+            if "linux,phandle" in line_stripped:
+                continue
+
+            if line_stripped not in ref_set:
+                mismatches.append(f"Excess in GEN: {line_stripped}")
+
         # Also check if REF has lines missing in GEN (Critical!)
-        gen_set = set([l.strip() for l in gen_text])
+        gen_set = set([line_text.strip() for line_text in gen_text])
         for line in ref_text:
-            l = line.strip()
-            if not l: continue
-            if "phandle =" in l: continue 
-            if "linux,phandle" in l: continue
-            
-            if l not in gen_set:
-                    mismatches.append(f"Missing in GEN: {l}")
+            line_stripped = line.strip()
+            if not line_stripped:
+                continue
+            if "phandle =" in line_stripped:
+                continue
+            if "linux,phandle" in line_stripped:
+                continue
+
+            if line_stripped not in gen_set:
+                mismatches.append(f"Missing in GEN: {line_stripped}")
 
         if mismatches:
             # Dump first few
             print("      Mismatch details:")
             for m in mismatches[:50]:
                 print(f"      {m}")
-            raise Exception(f"Found {len(mismatches)} mismatches in generated DTS content")
+            raise Exception(
+                f"Found {len(mismatches)} mismatches in generated DTS content"
+            )
 
         print("      ✓ DTS Content Matches Reference")
-        
+
     except Exception as e:
         print(f"      Warning: DTC comparison failed: {e}")
         raise e
 
 
 def add_profile_to_defconfig(kernel_path: Path, board_name: str, profile_name: str):
-
     if board_name == "vpk180":
         defconfig = "adi_versal_apollo_defconfig"
         arch = "arm64"
@@ -392,15 +437,15 @@ def add_profile_to_defconfig(kernel_path: Path, board_name: str, profile_name: s
 
     if not isinstance(kernel_path, Path):
         kernel_path = Path(kernel_path)
-    
+
     defconfig_path = kernel_path / "arch" / arch / "configs" / defconfig
-    
+
     with open(defconfig_path, "r") as f:
         lines = f.readlines()
 
     if ".bin" not in profile_name:
         profile_name += ".bin"
-    
+
     out_lines = []
     config_line = "CONFIG_EXTRA_FIRMWARE="
     for line in lines:
@@ -410,8 +455,8 @@ def add_profile_to_defconfig(kernel_path: Path, board_name: str, profile_name: s
             if ".bin" not in last_profile:
                 raise ValueError(f"Last profile {last_profile} does not end in .bin")
             new_line = line.replace(last_profile, profile_name)
-            if new_line[-1] != '\n':
-                new_line += '\n'
+            if new_line[-1] != "\n":
+                new_line += "\n"
             if new_line[-2] != '"':
                 new_line = new_line[:-1] + '"\n'
 
@@ -424,9 +469,4 @@ def add_profile_to_defconfig(kernel_path: Path, board_name: str, profile_name: s
         f.writelines(out_lines)
 
 
-    
-    
-
-
-def generate_boot_scr():
-    ...
+def generate_boot_scr(): ...

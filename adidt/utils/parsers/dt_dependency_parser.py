@@ -5,14 +5,12 @@ Main parser orchestrating dependency analysis for device tree files.
 """
 
 import os
-import json
 from pathlib import Path
 from typing import List, Optional, Dict, Set
 from .dependency_types import (
     Dependency,
     MissingDependency,
     DependencyType,
-    DependencyFormat
 )
 from .dependency_tree import DependencyTree, DependencyNode
 from .parsers.dts_parser import DTSParser
@@ -65,9 +63,9 @@ class DTDependencyParser:
 
         # Build default search paths
         self.default_search_paths = [
-            os.path.join(self.project_root, 'adidt', 'templates'),
-            '/usr/include',
-            '/usr/src/linux/include',
+            os.path.join(self.project_root, "adidt", "templates"),
+            "/usr/include",
+            "/usr/src/linux/include",
         ]
 
     def _find_project_root(self) -> str:
@@ -75,7 +73,7 @@ class DTDependencyParser:
         current = Path.cwd()
         # Look for pyproject.toml or setup.py
         while current != current.parent:
-            if (current / 'pyproject.toml').exists() or (current / 'setup.py').exists():
+            if (current / "pyproject.toml").exists() or (current / "setup.py").exists():
                 return str(current)
             current = current.parent
         return str(Path.cwd())
@@ -109,10 +107,7 @@ class DTDependencyParser:
         return self.tree
 
     def _parse_recursive(
-        self,
-        file_path: str,
-        node_name: str,
-        parent_name: Optional[str]
+        self, file_path: str, node_name: str, parent_name: Optional[str]
     ) -> None:
         """
         Recursively parse a file and its includes.
@@ -140,7 +135,7 @@ class DTDependencyParser:
         # Parse the file for includes
         try:
             includes = self.dts_parser.parse_file(file_path)
-        except (FileNotFoundError, IOError) as e:
+        except (FileNotFoundError, IOError):
             # File can't be read, but we already added it
             return
 
@@ -154,7 +149,7 @@ class DTDependencyParser:
                 type=DependencyType.FILE_INCLUDE,
                 source_file=node_name,
                 line_number=inc.line_number,
-                metadata={'include_type': inc.include_type}
+                metadata={"include_type": inc.include_type},
             )
 
             # Try to resolve the include path
@@ -177,7 +172,7 @@ class DTDependencyParser:
                     referenced_by=node_name,
                     line=inc.line_number,
                     include_type=inc.include_type,
-                    searched_paths=self._get_search_paths(base_dir)
+                    searched_paths=self._get_search_paths(base_dir),
                 )
                 self.tree.add_missing_dependency(missing)
 
@@ -266,9 +261,7 @@ class DTDependencyParser:
         return self.tree.missing_dependencies
 
     def render_tree(
-        self,
-        max_depth: Optional[int] = None,
-        show_missing: bool = True
+        self, max_depth: Optional[int] = None, show_missing: bool = True
     ) -> str:
         """
         Generate ASCII tree visualization.
@@ -298,16 +291,22 @@ class DTDependencyParser:
             lines.append("")
             lines.append("Missing Dependencies:")
             for missing in self.tree.missing_dependencies:
-                ref = f"{missing.referenced_by}:{missing.line}" if missing.line else missing.referenced_by
+                ref = (
+                    f"{missing.referenced_by}:{missing.line}"
+                    if missing.line
+                    else missing.referenced_by
+                )
                 lines.append(f"- {missing.file} (referenced at {ref})")
 
         # Add statistics
         stats = self.tree.get_statistics()
         lines.append("")
-        lines.append(f"Statistics: {stats['total_nodes']} nodes, "
-                    f"{stats['resolved_dependencies']} resolved, "
-                    f"{stats['missing_dependencies']} missing, "
-                    f"max depth: {stats['max_depth']}")
+        lines.append(
+            f"Statistics: {stats['total_nodes']} nodes, "
+            f"{stats['resolved_dependencies']} resolved, "
+            f"{stats['missing_dependencies']} missing, "
+            f"max depth: {stats['max_depth']}"
+        )
 
         return "\n".join(lines)
 
@@ -318,14 +317,14 @@ class DTDependencyParser:
         is_last: bool,
         lines: List[str],
         max_depth: Optional[int],
-        current_depth: int
+        current_depth: int,
     ) -> None:
         """Recursively render a node and its children."""
         if max_depth is not None and current_depth >= max_depth:
             return
 
         for i, child in enumerate(node.children):
-            is_last_child = (i == len(node.children) - 1)
+            is_last_child = i == len(node.children) - 1
 
             # Determine line characters
             if is_last_child:
@@ -346,7 +345,9 @@ class DTDependencyParser:
             lines.append(f"{prefix}{line_char}{child.name}{dep_info}")
 
             # Recursively render children
-            self._render_node(child, new_prefix, is_last_child, lines, max_depth, current_depth + 1)
+            self._render_node(
+                child, new_prefix, is_last_child, lines, max_depth, current_depth + 1
+            )
 
     def export_dot(self, show_missing: bool = True) -> str:
         """
@@ -362,15 +363,17 @@ class DTDependencyParser:
             return ""
 
         dot_lines = [
-            'digraph dt_dependencies {',
-            '    rankdir=TB;',
-            '    node [shape=box];',
-            ''
+            "digraph dt_dependencies {",
+            "    rankdir=TB;",
+            "    node [shape=box];",
+            "",
         ]
 
         # Style root node
-        dot_lines.append(f'    "{self.tree.root.name}" [style=filled, fillcolor=lightblue];')
-        dot_lines.append('')
+        dot_lines.append(
+            f'    "{self.tree.root.name}" [style=filled, fillcolor=lightblue];'
+        )
+        dot_lines.append("")
 
         # Add edges for resolved dependencies
         for node_name, node in self.tree.nodes.items():
@@ -383,8 +386,8 @@ class DTDependencyParser:
 
         # Add missing dependencies with dashed red edges
         if show_missing and self.tree.missing_dependencies:
-            dot_lines.append('')
-            dot_lines.append('    // Missing dependencies')
+            dot_lines.append("")
+            dot_lines.append("    // Missing dependencies")
             for missing in self.tree.missing_dependencies:
                 dot_lines.append(
                     f'    "{missing.referenced_by}" -> "{missing.file}" '
@@ -394,8 +397,8 @@ class DTDependencyParser:
                     f'    "{missing.file}" [shape=ellipse, style=filled, fillcolor=pink];'
                 )
 
-        dot_lines.append('}')
-        return '\n'.join(dot_lines)
+        dot_lines.append("}")
+        return "\n".join(dot_lines)
 
     def export_json(self) -> Dict:
         """
@@ -413,7 +416,7 @@ class DTDependencyParser:
                 "type": "file",
                 "path": node.path,
                 "depth": node.depth,
-                "dependencies": [dep.to_dict() for dep in node.dependencies]
+                "dependencies": [dep.to_dict() for dep in node.dependencies],
             }
 
         cycles = self.detect_circular_dependencies()
@@ -422,7 +425,9 @@ class DTDependencyParser:
             "root": self.tree.root.name,
             "nodes": nodes_data,
             "resolution_order": self.get_resolution_order(),
-            "missing_dependencies": [m.to_dict() for m in self.tree.missing_dependencies],
+            "missing_dependencies": [
+                m.to_dict() for m in self.tree.missing_dependencies
+            ],
             "cycles": cycles,
-            "statistics": self.tree.get_statistics()
+            "statistics": self.tree.get_statistics(),
         }

@@ -36,11 +36,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@tfcollins/selmap",
+    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",
+    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
     "usbsdmux",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
 ]
+
+#[tool.uv.sources]
+#pyadi-build = { path = "./pyadi-build", editable = true }
 
 [project.scripts]
 adidtc = "adidt.cli.main:cli"
@@ -54,3 +58,20 @@ include = ["adidt*"]
 
 [tool.setuptools.package-data]
 adidt = ["templates/*.tmpl"]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+norecursedirs = [
+    "test/hw",
+    "linux",
+    "u-boot-xlnx",
+    ".nox",
+    ".git",
+    "build",
+    "dist",
+    "*.egg",
+]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --ignore-glob=*_hw.py"

@@ -117,8 +117,9 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
+# Old mkdocs documentation (can be removed after migration verified)
 /site
+docs_old/
 
 # mypy
 .mypy_cache/

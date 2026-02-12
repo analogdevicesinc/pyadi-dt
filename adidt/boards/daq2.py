@@ -4,7 +4,6 @@ from .layout import layout
 
 
 class daq2(layout):
-
     clock = "ad9523_1"
 
     adc = "ad9680"
@@ -219,10 +218,13 @@ class daq2(layout):
         return adc, dac
 
     def map_clocks_to_board_layout(self, cfg):
-
         # Fix ups
         for key in ["vco", "vcxo"]:
-            if key in cfg["clock"] and isinstance(cfg["clock"][key], float) and cfg["clock"][key].is_integer():
+            if (
+                key in cfg["clock"]
+                and isinstance(cfg["clock"][key], float)
+                and cfg["clock"][key].is_integer()
+            ):
                 cfg["clock"][key] = int(cfg["clock"][key])
 
         map = {}
@@ -270,10 +272,10 @@ class daq2(layout):
         # FIXME
 
         adc, dac = self.map_jesd_structs(cfg)
-        adc['fpga_sys_clk_select'] = cfg['fpga_adc']['sys_clk_select']
-        adc['fpga_out_clk_select'] = cfg['fpga_adc']['out_clk_select']
-        dac['fpga_sys_clk_select'] = cfg['fpga_dac']['sys_clk_select']
-        dac['fpga_out_clk_select'] = cfg['fpga_dac']['out_clk_select']
+        adc["fpga_sys_clk_select"] = cfg["fpga_adc"]["sys_clk_select"]
+        adc["fpga_out_clk_select"] = cfg["fpga_adc"]["out_clk_select"]
+        dac["fpga_sys_clk_select"] = cfg["fpga_dac"]["sys_clk_select"]
+        dac["fpga_out_clk_select"] = cfg["fpga_dac"]["out_clk_select"]
 
         # Create fpga dict matching AD9081 pattern
         fpga = {}
@@ -301,4 +303,3 @@ class daq2(layout):
         kwargs["platform"] = self.platform
         kwargs["config_source"] = kwargs.get("config_source", "unknown")
         return kwargs
-

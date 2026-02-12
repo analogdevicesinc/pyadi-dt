@@ -2,12 +2,11 @@
 Tests for dependency_types module
 """
 
-import pytest
 from adidt.utils.parsers.dependency_types import (
     DependencyType,
     Dependency,
     MissingDependency,
-    DependencyFormat
+    DependencyFormat,
 )
 
 
@@ -35,9 +34,7 @@ class TestDependency:
     def test_create_basic_dependency(self):
         """Test creating a basic dependency"""
         dep = Dependency(
-            target="test.dtsi",
-            type=DependencyType.FILE_INCLUDE,
-            source_file="main.dts"
+            target="test.dtsi", type=DependencyType.FILE_INCLUDE, source_file="main.dts"
         )
         assert dep.target == "test.dtsi"
         assert dep.type == DependencyType.FILE_INCLUDE
@@ -51,7 +48,7 @@ class TestDependency:
             target="common.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="board.dts",
-            line_number=42
+            line_number=42,
         )
         assert dep.line_number == 42
 
@@ -61,7 +58,7 @@ class TestDependency:
             target="clock.h",
             type=DependencyType.FILE_INCLUDE,
             source_file="main.dts",
-            metadata={"include_type": "system"}
+            metadata={"include_type": "system"},
         )
         assert dep.metadata["include_type"] == "system"
 
@@ -72,7 +69,7 @@ class TestDependency:
             type=DependencyType.FILE_INCLUDE,
             source_file="main.dts",
             line_number=10,
-            resolved=True
+            resolved=True,
         )
         str_repr = str(dep)
         assert "test.dtsi" in str_repr
@@ -85,7 +82,7 @@ class TestDependency:
             target="missing.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="main.dts",
-            resolved=False
+            resolved=False,
         )
         str_repr = str(dep)
         assert "✗" in str_repr  # Unresolved indicator
@@ -96,7 +93,7 @@ class TestDependency:
             target="optional.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="main.dts",
-            optional=True
+            optional=True,
         )
         str_repr = str(dep)
         assert "(optional)" in str_repr
@@ -109,7 +106,7 @@ class TestDependency:
             source_file="main.dts",
             line_number=15,
             resolved=True,
-            metadata={"foo": "bar"}
+            metadata={"foo": "bar"},
         )
         dep_dict = dep.to_dict()
         assert dep_dict["target"] == "test.dtsi"
@@ -125,28 +122,21 @@ class TestMissingDependency:
 
     def test_create_missing_dependency(self):
         """Test creating a missing dependency"""
-        missing = MissingDependency(
-            file="missing.dtsi",
-            referenced_by="main.dts"
-        )
+        missing = MissingDependency(file="missing.dtsi", referenced_by="main.dts")
         assert missing.file == "missing.dtsi"
         assert missing.referenced_by == "main.dts"
 
     def test_missing_dependency_with_line(self):
         """Test missing dependency with line number"""
         missing = MissingDependency(
-            file="notfound.dtsi",
-            referenced_by="board.dts",
-            line=25
+            file="notfound.dtsi", referenced_by="board.dts", line=25
         )
         assert missing.line == 25
 
     def test_missing_dependency_with_type(self):
         """Test missing dependency with include type"""
         missing = MissingDependency(
-            file="system.h",
-            referenced_by="main.dts",
-            include_type="system"
+            file="system.h", referenced_by="main.dts", include_type="system"
         )
         assert missing.include_type == "system"
 
@@ -154,18 +144,14 @@ class TestMissingDependency:
         """Test missing dependency with searched paths"""
         paths = ["/usr/include", "/usr/local/include"]
         missing = MissingDependency(
-            file="missing.h",
-            referenced_by="main.dts",
-            searched_paths=paths
+            file="missing.h", referenced_by="main.dts", searched_paths=paths
         )
         assert missing.searched_paths == paths
 
     def test_missing_dependency_string_representation(self):
         """Test missing dependency string representation"""
         missing = MissingDependency(
-            file="missing.dtsi",
-            referenced_by="main.dts",
-            line=10
+            file="missing.dtsi", referenced_by="main.dts", line=10
         )
         str_repr = str(missing)
         assert "missing.dtsi" in str_repr
@@ -179,7 +165,7 @@ class TestMissingDependency:
             referenced_by="main.dts",
             line=20,
             include_type="local",
-            searched_paths=["/path1", "/path2"]
+            searched_paths=["/path1", "/path2"],
         )
         miss_dict = missing.to_dict()
         assert miss_dict["file"] == "missing.dtsi"

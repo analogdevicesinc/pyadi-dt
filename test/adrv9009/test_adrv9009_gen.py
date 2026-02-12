@@ -17,13 +17,13 @@ Tests cover:
 import pytest
 import json
 import os
-import tempfile
 import shutil
 from pathlib import Path
 
 # Import will fail until board class is implemented - this is expected for TDD
 try:
     from adidt.boards.adrv9009_fmc import adrv9009_fmc
+
     ADRV9009_AVAILABLE = True
 except ImportError:
     ADRV9009_AVAILABLE = False
@@ -37,8 +37,7 @@ def is_dtc_available():
 
 # Skip all tests if board class not implemented yet
 pytestmark = pytest.mark.skipif(
-    not ADRV9009_AVAILABLE,
-    reason="adrv9009_fmc board class not yet implemented"
+    not ADRV9009_AVAILABLE, reason="adrv9009_fmc board class not yet implemented"
 )
 
 
@@ -190,7 +189,12 @@ class TestDTSGeneration:
         clock, rx, tx, orx, fpga = board.map_clocks_to_board_layout(cfg)
 
         board.gen_dt(
-            clock=clock, rx=rx, tx=tx, orx=orx, fpga=fpga, config_source="test_config.json"
+            clock=clock,
+            rx=rx,
+            tx=tx,
+            orx=orx,
+            fpga=fpga,
+            config_source="test_config.json",
         )
 
         with open(output_file, "r") as f:
@@ -210,7 +214,12 @@ class TestDTSGeneration:
         clock, rx, tx, orx, fpga = board.map_clocks_to_board_layout(cfg)
 
         board.gen_dt(
-            clock=clock, rx=rx, tx=tx, orx=orx, fpga=fpga, config_source="test_config.json"
+            clock=clock,
+            rx=rx,
+            tx=tx,
+            orx=orx,
+            fpga=fpga,
+            config_source="test_config.json",
         )
 
         with open(output_file, "r") as f:
@@ -230,7 +239,12 @@ class TestDTSGeneration:
         clock, rx, tx, orx, fpga = board.map_clocks_to_board_layout(cfg)
 
         board.gen_dt(
-            clock=clock, rx=rx, tx=tx, orx=orx, fpga=fpga, config_source="test_config.json"
+            clock=clock,
+            rx=rx,
+            tx=tx,
+            orx=orx,
+            fpga=fpga,
+            config_source="test_config.json",
         )
 
         with open(output_file, "r") as f:
@@ -365,18 +379,22 @@ class TestDTSCompilation:
         cpp_result = subprocess.run(cpp_cmd, capture_output=True, text=True)
         if cpp_result.returncode != 0:
             pytest.fail(
-                f"DTS preprocessing failed for {platform}:\n"
-                f"STDERR: {cpp_result.stderr}"
+                f"DTS preprocessing failed for {platform}:\nSTDERR: {cpp_result.stderr}"
             )
 
         dtc_cmd = ["dtc", "-@", "-I", "dts", "-O", "dtb"]
         for inc_path in include_paths:
             dtc_cmd.extend(["-i", inc_path])
-        dtc_cmd.extend([
-            "-W", "no-unit_address_vs_reg",
-            "-W", "no-reg_format",
-            "-W", "no-avoid_default_addr_size",
-        ])
+        dtc_cmd.extend(
+            [
+                "-W",
+                "no-unit_address_vs_reg",
+                "-W",
+                "no-reg_format",
+                "-W",
+                "no-avoid_default_addr_size",
+            ]
+        )
         dtc_cmd.extend(["-o", str(dtb_file), "-"])
 
         result = subprocess.run(
@@ -385,8 +403,7 @@ class TestDTSCompilation:
 
         if result.returncode != 0:
             pytest.fail(
-                f"DTS compilation failed for {platform}:\n"
-                f"STDERR: {result.stderr}"
+                f"DTS compilation failed for {platform}:\nSTDERR: {result.stderr}"
             )
 
         assert os.path.exists(dtb_file)

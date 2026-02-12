@@ -17,15 +17,15 @@ Tests cover:
 import pytest
 import json
 import os
-import tempfile
 import shutil
 from pathlib import Path
 
 # Import will fail until board class is extended - check for PLATFORM_CONFIGS
 try:
     from adidt.boards.daq2 import daq2
+
     # Check if PLATFORM_CONFIGS exists (indicates multi-platform support)
-    DAQ2_MULTIPLATFORM = hasattr(daq2, 'PLATFORM_CONFIGS')
+    DAQ2_MULTIPLATFORM = hasattr(daq2, "PLATFORM_CONFIGS")
 except ImportError:
     DAQ2_MULTIPLATFORM = False
 
@@ -39,7 +39,7 @@ def is_dtc_available():
 # Skip all tests if board class not extended yet
 pytestmark = pytest.mark.skipif(
     not DAQ2_MULTIPLATFORM,
-    reason="daq2 board class not yet extended with multi-platform support"
+    reason="daq2 board class not yet extended with multi-platform support",
 )
 
 
@@ -382,18 +382,22 @@ class TestDTSCompilation:
         cpp_result = subprocess.run(cpp_cmd, capture_output=True, text=True)
         if cpp_result.returncode != 0:
             pytest.fail(
-                f"DTS preprocessing failed for {platform}:\n"
-                f"STDERR: {cpp_result.stderr}"
+                f"DTS preprocessing failed for {platform}:\nSTDERR: {cpp_result.stderr}"
             )
 
         dtc_cmd = ["dtc", "-@", "-I", "dts", "-O", "dtb"]
         for inc_path in include_paths:
             dtc_cmd.extend(["-i", inc_path])
-        dtc_cmd.extend([
-            "-W", "no-unit_address_vs_reg",
-            "-W", "no-reg_format",
-            "-W", "no-avoid_default_addr_size",
-        ])
+        dtc_cmd.extend(
+            [
+                "-W",
+                "no-unit_address_vs_reg",
+                "-W",
+                "no-reg_format",
+                "-W",
+                "no-avoid_default_addr_size",
+            ]
+        )
         dtc_cmd.extend(["-o", str(dtb_file), "-"])
 
         result = subprocess.run(
@@ -402,8 +406,7 @@ class TestDTSCompilation:
 
         if result.returncode != 0:
             pytest.fail(
-                f"DTS compilation failed for {platform}:\n"
-                f"STDERR: {result.stderr}"
+                f"DTS compilation failed for {platform}:\nSTDERR: {result.stderr}"
             )
 
         assert os.path.exists(dtb_file)

@@ -1,12 +1,10 @@
-from adidt import parts
-from typing import Dict
 import fdt
 import math
 
 
 class clock_dt:
     def handle_64bit(self, prop, node, num):
-        if num > 2 ** 31:
+        if num > 2**31:
             h = hex(int(num))
             # Inflate
             h = "0x" + "0" * (16 - len(h) + 2) + h[2:]
@@ -63,6 +61,7 @@ class clock_dt:
     Returns:
         A list containing all nodes refered to in the "clocks" phandle array
     """
+
     def get_used_clocks(self, node):
         used_clocks = []
         clocks_prop = node.get_property("clocks")
@@ -72,7 +71,7 @@ class clock_dt:
             # first value in "clocks" property is a phandle
             # next phandle is located after "#clock-cells"+1 positions
             i = 0
-            while (i < len(clocks_val)):
+            while i < len(clocks_val):
                 clock_phandle = clocks_val[i]
                 phandle_props = self._dt.search("phandle")
 
