@@ -1,4 +1,3 @@
-import xmltodict
 
 
 def coefs_to_long_string(coefs):

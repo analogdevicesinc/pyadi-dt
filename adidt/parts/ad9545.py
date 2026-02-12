@@ -32,9 +32,7 @@ class ad9545_dt(dt):
                 clock_pos = i
 
         if clock_pos == -1:
-            raise Exception(
-                "AD9545: missing PLL" + str(pll_nr) + " in assigned-clocks"
-            )
+            raise Exception("AD9545: missing PLL" + str(pll_nr) + " in assigned-clocks")
 
         assigned_clock_rates_prop = node.get_property("assigned-clock-rates")
         assigned_clock_rates = list(assigned_clock_rates_prop)
@@ -95,13 +93,9 @@ class ad9545_dt(dt):
                 priority_attr = "priority_source_" + str(adi_pll_source_nr)
                 if priority_attr in config[pll_name]:
                     new_priority = config[pll_name][priority_attr]
-                    pll_profile_node.set_property(
-                        "adi,profile-priority",
-                        new_priority
-                    )
+                    pll_profile_node.set_property("adi,profile-priority", new_priority)
 
-    def set_dt_node_from_config(self, node: fdt.Node,
-                                config: Dict, append=False):
+    def set_dt_node_from_config(self, node: fdt.Node, config: Dict, append=False):
         """Set AD9545 node from JIF configuration
 
         Args:
@@ -119,9 +113,7 @@ class ad9545_dt(dt):
             if r_div != 0:
                 ref_node = node.get_subnode("ref-input-clk@" + str(i))
                 if ref_node is None:
-                    raise Exception(
-                        "AD9545: missing node: ref-input-clk@" + str(i)
-                    )
+                    raise Exception("AD9545: missing node: ref-input-clk@" + str(i))
 
                 ref_node.set_property("adi,r-divider-ratio", r_div)
 
@@ -146,7 +138,7 @@ class ad9545_dt(dt):
                 continue
 
             pll_dict = config["PLL" + str(i)]
-            hitless_enable = ("hitless" in pll_dict)
+            hitless_enable = "hitless" in pll_dict
             pll_node = node.get_subnode("pll-clk@" + str(i))
 
             if hitless_enable:
@@ -171,13 +163,9 @@ class ad9545_dt(dt):
                 )
             else:
                 try:
-                    pll_node.remove_property(
-                        "adi,pll-internal-zero-delay-feedback"
-                    )
+                    pll_node.remove_property("adi,pll-internal-zero-delay-feedback")
 
-                    pll_node.remove_property(
-                        "adi,pll-internal-zero-delay-feedback-hz"
-                    )
+                    pll_node.remove_property("adi,pll-internal-zero-delay-feedback-hz")
 
                     # set slew rate limit to default value during PBO mode
                     pll_node.set_property(

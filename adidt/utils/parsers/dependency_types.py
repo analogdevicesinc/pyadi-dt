@@ -7,17 +7,17 @@ between device tree files and nodes.
 
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional
 
 
 class DependencyType(Enum):
     """Enumeration of different dependency relationship types."""
 
     FILE_INCLUDE = "file_include"  # #include statements in DTS files
-    PHANDLE_REF = "phandle_ref"    # Runtime node references via phandles
-    COMPATIBLE = "compatible"       # Device driver dependencies
-    OVERLAY_BASE = "overlay_base"   # Base tree requirements for overlays
-    TEMPLATE_VAR = "template_var"   # Jinja2 template variable dependencies
+    PHANDLE_REF = "phandle_ref"  # Runtime node references via phandles
+    COMPATIBLE = "compatible"  # Device driver dependencies
+    OVERLAY_BASE = "overlay_base"  # Base tree requirements for overlays
+    TEMPLATE_VAR = "template_var"  # Jinja2 template variable dependencies
 
 
 @dataclass
@@ -34,6 +34,7 @@ class Dependency:
         optional: Whether this is an optional dependency
         metadata: Additional dependency-specific metadata
     """
+
     target: str
     type: DependencyType
     source_file: str
@@ -58,7 +59,7 @@ class Dependency:
             "line_number": self.line_number,
             "resolved": self.resolved,
             "optional": self.optional,
-            "metadata": self.metadata or {}
+            "metadata": self.metadata or {},
         }
 
 
@@ -74,6 +75,7 @@ class MissingDependency:
         include_type: Type of include (system/local)
         searched_paths: List of paths that were searched
     """
+
     file: str
     referenced_by: str
     line: Optional[int] = None
@@ -92,14 +94,14 @@ class MissingDependency:
             "referenced_by": self.referenced_by,
             "line": self.line,
             "include_type": self.include_type,
-            "searched_paths": self.searched_paths or []
+            "searched_paths": self.searched_paths or [],
         }
 
 
 class DependencyFormat(Enum):
     """Output format options for dependency visualization."""
 
-    TREE = "tree"      # ASCII tree format
-    JSON = "json"      # JSON format
-    DOT = "dot"        # GraphViz DOT format
-    FLAT = "flat"      # Flat list format
+    TREE = "tree"  # ASCII tree format
+    JSON = "json"  # JSON format
+    DOT = "dot"  # GraphViz DOT format
+    FLAT = "flat"  # Flat list format

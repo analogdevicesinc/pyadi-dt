@@ -60,11 +60,11 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
 
     try:
         with urllib.request.urlopen(TOOLCHAIN_URL) as response:
-            total_size = int(response.headers.get('content-length', 0))
+            total_size = int(response.headers.get("content-length", 0))
             downloaded = 0
             chunk_size = 1024 * 1024  # 1MB chunks
 
-            with open(tarball_path, 'wb') as f:
+            with open(tarball_path, "wb") as f:
                 while True:
                     chunk = response.read(chunk_size)
                     if not chunk:
@@ -73,18 +73,23 @@ def download_and_cache_toolchain(cache_dir: Path = None) -> Path:
                     downloaded += len(chunk)
                     if total_size > 0:
                         percent = (downloaded / total_size) * 100
-                        print(f"      Progress: {percent:.1f}% ({downloaded // (1024*1024)}MB / {total_size // (1024*1024)}MB)", end='\r')
+                        print(
+                            f"      Progress: {percent:.1f}% ({downloaded // (1024 * 1024)}MB / {total_size // (1024 * 1024)}MB)",
+                            end="\r",
+                        )
 
         print(f"\n      Download complete: {tarball_path}")
 
         # Extract toolchain
-        print(f"      Extracting toolchain...")
-        with tarfile.open(tarball_path, 'r:xz') as tar:
+        print("      Extracting toolchain...")
+        with tarfile.open(tarball_path, "r:xz") as tar:
             tar.extractall(cache_dir)
 
         # Verify extraction
         if not toolchain_bin.exists():
-            raise RuntimeError(f"Toolchain extraction failed: {toolchain_bin} not found")
+            raise RuntimeError(
+                f"Toolchain extraction failed: {toolchain_bin} not found"
+            )
 
         # Clean up tarball to save space
         tarball_path.unlink()
@@ -135,7 +140,9 @@ def generate_fmcdaq2_config(sample_rate_msps: int) -> dict:
     return sys
 
 
-def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_compile: str = None) -> None:
+def compile_dts_to_dtb(
+    dts_path: Path, dtb_path: Path, kernel_path: str, cross_compile: str = None
+) -> None:
     """Compile DTS to DTB using kernel build system with cross-compiler.
 
     Places the DTS file in the kernel tree and uses the kernel's make system
@@ -166,17 +173,17 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
     # ARCH=arm64: Target architecture
     # CROSS_COMPILE=<prefix>: Cross-compiler prefix for aarch64
     env = os.environ.copy()
-    env['ARCH'] = 'arm64'
-    env['CROSS_COMPILE'] = cross_compile
+    env["ARCH"] = "arm64"
+    env["CROSS_COMPILE"] = cross_compile
 
     # Determine platform-specific paths
     # For ZCU102: arch/arm64/boot/dts/xilinx/
     dts_filename = dts_path.name
     kernel_dts_dir = Path(kernel_path) / "arch" / "arm64" / "boot" / "dts" / "xilinx"
-    
+
     # Copy all files from the dts_path directory to the kernel_dts_dir
     if dts_path.parent.is_dir():
-        for file in dts_path.parent.glob('*'):
+        for file in dts_path.parent.glob("*"):
             try:
                 shutil.copy2(file, kernel_dts_dir)
             except shutil.SameFileError:
@@ -184,9 +191,8 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
 
     kernel_dts_path = kernel_dts_dir / dts_filename
 
-
     # DTB will be compiled to same location with .dtb extension
-    kernel_dtb_path = kernel_dts_path.with_suffix('.dtb')
+    kernel_dtb_path = kernel_dts_path.with_suffix(".dtb")
 
     # Step 1: Copy DTS file into kernel tree
     if kernel_dts_path.exists():
@@ -204,7 +210,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
             cwd=kernel_path,
             capture_output=True,
             text=True,
-            env=env  # Use cross-compiler environment
+            env=env,  # Use cross-compiler environment
         )
         if config_result.returncode != 0:
             raise RuntimeError(f"Kernel configuration failed: {config_result.stderr}")
@@ -219,7 +225,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
         cwd=kernel_path,
         capture_output=True,
         text=True,
-        env=env  # Use cross-compiler environment
+        env=env,  # Use cross-compiler environment
     )
 
     if make_result.returncode != 0:
@@ -229,6 +235,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
 
         # Attempt to parse error message for DTS syntax error
         import re
+
         match = re.search(r"Error: (.+):(\d+)\.(\d+)-\d+ syntax error", error_message)
         if match:
             syntax_error_file = match.group(1)
@@ -239,18 +246,21 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
             try:
                 # Construct absolute path for reading the DTS file
                 absolute_syntax_error_file = Path(kernel_path) / syntax_error_file
-                with open(absolute_syntax_error_file, 'r') as f:
+                with open(absolute_syntax_error_file, "r") as f:
                     lines = f.readlines()
                     start_line = max(0, syntax_error_line - 3)
                     end_line = min(len(lines), syntax_error_line + 2)
                     dts_content_snippet = "\n".join(
-                        f"{i+1}: {line.rstrip()}" for i, line in enumerate(lines[start_line:end_line], start_line + 1)
+                        f"{i + 1}: {line.rstrip()}"
+                        for i, line in enumerate(
+                            lines[start_line:end_line], start_line + 1
+                        )
                     )
             except Exception as e:
                 dts_content_snippet = f"Could not read DTS file for snippet: {e}"
         else:
             dts_content_snippet = "Could not locate or read the problematic DTS file."
-        
+
         raise RuntimeError(
             f"DTB compilation failed:\n"
             f"Command: {' '.join(make_cmd)}\n"
@@ -264,7 +274,9 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path, kernel_path: str, cross_c
 
     shutil.copy2(kernel_dtb_path, dtb_path)
 
+
 # Pytest fixtures
+
 
 @pytest.fixture(scope="module")
 def kernel_path():
@@ -307,36 +319,31 @@ def post_power_off(strategy):
 
 # Test class
 
+
 class TestFmcdaq2MultiRateHardware:
-    """Hardware test suite for FMCDAQ2 at multiple sample rates.
-    """
+    """Hardware test suite for FMCDAQ2 at multiple sample rates."""
 
     @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
     @pytest.mark.lg_feature(["fmcdaq2", "zcu102"])
     def test_sample_rate_deployment(
-        self,
-        sample_rate_msps,
-        kernel_path,
-        dtb_output_dir,
-        post_power_off
+        self, sample_rate_msps, kernel_path, dtb_output_dir, post_power_off
     ):
-        """Test FMCDAQ2 at specific sample rate with full hardware deployment.
-        """
+        """Test FMCDAQ2 at specific sample rate with full hardware deployment."""
         strategy = post_power_off
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"Testing DAQ2 @ {sample_rate_msps} MSPS")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")
 
         # Step 1: Generate configuration
-        print(f"[1/9] Generating adijif configuration...")
+        print("[1/9] Generating adijif configuration...")
         sys = generate_fmcdaq2_config(sample_rate_msps)
-        config_adijif = sys.solve() # Rename to avoid confusion with adidt config
-        print(f"      ✓ Configuration solved successfully")
+        config_adijif = sys.solve()  # Rename to avoid confusion with adidt config
+        print("      ✓ Configuration solved successfully")
 
-        print(f"[2/9] Creating board instance and validating FPGA config...")
+        print("[2/9] Creating board instance and validating FPGA config...")
         board = daq2(platform="zcu102", kernel_path=kernel_path)
-        
+
         # Create config dictionary matching adidt.boards.daq2 expected structure
         config = {
             "clock": {
@@ -378,60 +385,60 @@ class TestFmcdaq2MultiRateHardware:
         }
 
         config = board.validate_and_default_fpga_config(config)
-        print(f"      ✓ FPGA config validated")
+        print("      ✓ FPGA config validated")
 
-        print(f"[3/9] Mapping clocks to board layout...")
+        print("[3/9] Mapping clocks to board layout...")
         # Step 2: Generate DTS
         ccfg, adc, dac, fpga = board.map_clocks_to_board_layout(config)
-        print(f"      ✓ Clock mapping complete")
+        print("      ✓ Clock mapping complete")
 
-        print(f"[4/9] Generating DTS file...")
+        print("[4/9] Generating DTS file...")
         generated_dts = board.gen_dt(clock=ccfg, adc=adc, dac=dac, fpga=fpga)
         assert os.path.exists(generated_dts), f"DTS file not generated: {generated_dts}"
         print(f"      ✓ Generated DTS: {generated_dts}")
 
         # Step 3: Compile DTS to DTB using kernel build system
-        print(f"[5/9] Compiling DTS to DTB...")
+        print("[5/9] Compiling DTS to DTB...")
         dtb_filename = dtb_output_dir / f"fmcdaq2_{sample_rate_msps}msps.dtb"
         compile_dts_to_dtb(
-            dts_path=Path(generated_dts),
-            dtb_path=dtb_filename,
-            kernel_path=kernel_path
+            dts_path=Path(generated_dts), dtb_path=dtb_filename, kernel_path=kernel_path
         )
 
         assert dtb_filename.exists(), f"DTB file not created: {dtb_filename}"
         assert dtb_filename.stat().st_size > 0, "DTB file is empty"
-        print(f"      ✓ Compiled DTB: {dtb_filename} ({dtb_filename.stat().st_size} bytes)")
+        print(
+            f"      ✓ Compiled DTB: {dtb_filename} ({dtb_filename.stat().st_size} bytes)"
+        )
 
         # Step 4: Power off board
-        print(f"[6/9] Deploying DTB to board...")
+        print("[6/9] Deploying DTB to board...")
         strategy.transition("powered_off")
 
         # Step 5: Deploy DTB
-        kuiper = strategy.target.get_driver("KuiperDLDriver")
+        strategy.target.get_driver("KuiperDLDriver")
         # Copy to system.dtb for KuiperDLDriver
         shutil.copy2(dtb_filename, dtb_output_dir / "system.dtb")
-        print(f"      ✓ DTB deployed to SD card")
+        print("      ✓ DTB deployed to SD card")
 
         # Step 6: Boot to shell
-        print(f"[7/9] Booting board to shell...")
-        os.environ['PATH'] = f'{os.getcwd()}/venv/bin:' + os.environ['PATH']
+        print("[7/9] Booting board to shell...")
+        os.environ["PATH"] = f"{os.getcwd()}/venv/bin:" + os.environ["PATH"]
         strategy.transition("shell")
-        print(f"      ✓ Board booted successfully")
+        print("      ✓ Board booted successfully")
 
         # Step 7: Create IIO context
-        print(f"[8/9] Creating IIO context...")
+        print("[8/9] Creating IIO context...")
         shell = strategy.target.get_driver("ADIShellDriver")
         addresses = shell.get_ip_addresses()
         ip_address = str(addresses[0].ip)
-        if '/' in ip_address:
-            ip_address = ip_address.split('/')[0]
+        if "/" in ip_address:
+            ip_address = ip_address.split("/")[0]
 
         ctx = iio.Context(f"ip:{ip_address}")
         assert ctx is not None, "Failed to create IIO context"
         print(f"      ✓ IIO context created: {ip_address}")
 
-        print(f"[9/9] Verifying IIO devices...")
+        print("[9/9] Verifying IIO devices...")
 
         # Step 8: Extract kernel log for debugging
         dmesg_res = shell.run("dmesg")
@@ -440,32 +447,39 @@ class TestFmcdaq2MultiRateHardware:
             dmesg_output = dmesg_res[0]
         else:
             dmesg_output = dmesg_res
-            
+
         if isinstance(dmesg_output, list):
             dmesg_output = "\n".join(dmesg_output)
 
         dmesg_log_path_local = dtb_output_dir / f"dmesg_{sample_rate_msps}msps.log"
-        with open(dmesg_log_path_local, 'w') as f:
+        with open(dmesg_log_path_local, "w") as f:
             f.write(dmesg_output)
 
         # Create debug directory and copy dmesg log
         debug_dir = Path("./generated_dts_debug")
         debug_dir.mkdir(exist_ok=True)
-        shutil.copy2(dmesg_log_path_local, debug_dir / f"dmesg_{sample_rate_msps}msps.log")
-        
+        shutil.copy2(
+            dmesg_log_path_local, debug_dir / f"dmesg_{sample_rate_msps}msps.log"
+        )
+
         dmesg_err_res = shell.run("dmesg --level=err,warn")
         if isinstance(dmesg_err_res, tuple):
             dmesg_error_output = dmesg_err_res[0]
         else:
             dmesg_error_output = dmesg_err_res
-            
+
         if isinstance(dmesg_error_output, list):
             dmesg_error_output = "\n".join(dmesg_error_output)
 
-        dmesg_error_log_path_local = dtb_output_dir / f"dmesg_errors_{sample_rate_msps}msps.log"
-        with open(dmesg_error_log_path_local, 'w') as f:
+        dmesg_error_log_path_local = (
+            dtb_output_dir / f"dmesg_errors_{sample_rate_msps}msps.log"
+        )
+        with open(dmesg_error_log_path_local, "w") as f:
             f.write(dmesg_error_output)
-        shutil.copy2(dmesg_error_log_path_local, debug_dir / f"dmesg_errors_{sample_rate_msps}msps.log")
+        shutil.copy2(
+            dmesg_error_log_path_local,
+            debug_dir / f"dmesg_errors_{sample_rate_msps}msps.log",
+        )
         # Step 9: Verify devices
         expected_devices = ["axi-ad9680-hpc", "axi-ad9144-hpc"]
         found_devices = [d.name for d in ctx.devices]
@@ -481,14 +495,13 @@ class TestFmcdaq2MultiRateHardware:
             print(f"      ✓ Found IIO device: {device_name} ({num_channels} channels)")
 
         # CANNOT BE CHECKED WITH PYADI-IIO
-        dev = adi.DAQ2(uri=f"ip:{ip_address}")
-        sample_rate = dev.sample_rate
-        #print(f"      ✓ Sample rate: {sample_rate}")
-        #assert sample_rate == sample_rate_msps * 1_000_000, (
+        adi.DAQ2(uri=f"ip:{ip_address}")
+        # print(f"      ✓ Sample rate: {sample_rate}")
+        # assert sample_rate == sample_rate_msps * 1_000_000, (
         #    f"Expected sample rate {sample_rate_msps * 1_000_000} Hz, "
         #    f"got {sample_rate} Hz"
-        #)
+        # )
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"✓✓✓ Test PASSED for DAQ2 @ {sample_rate_msps} MSPS ✓✓✓")
-        print(f"{'='*70}\n")
+        print(f"{'=' * 70}\n")

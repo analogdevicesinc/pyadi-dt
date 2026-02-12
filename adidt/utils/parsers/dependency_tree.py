@@ -5,7 +5,7 @@ This module implements the tree data structure for managing and traversing
 device tree dependencies.
 """
 
-from typing import List, Optional, Set, Dict, Tuple
+from typing import List, Optional, Dict
 from .dependency_types import Dependency, MissingDependency, DependencyType
 
 
@@ -27,20 +27,22 @@ class DependencyNode:
         self.path = path or name
         self.depth = depth
         self.dependencies: List[Dependency] = []
-        self.parent: Optional['DependencyNode'] = None
-        self.children: List['DependencyNode'] = []
+        self.parent: Optional["DependencyNode"] = None
+        self.children: List["DependencyNode"] = []
 
     def add_dependency(self, dep: Dependency) -> None:
         """Add a dependency to this node."""
         self.dependencies.append(dep)
 
-    def add_child(self, child: 'DependencyNode') -> None:
+    def add_child(self, child: "DependencyNode") -> None:
         """Add a child node."""
         child.parent = self
         child.depth = self.depth + 1
         self.children.append(child)
 
-    def get_all_dependencies(self, dep_type: Optional[DependencyType] = None) -> List[Dependency]:
+    def get_all_dependencies(
+        self, dep_type: Optional[DependencyType] = None
+    ) -> List[Dependency]:
         """
         Get all dependencies, optionally filtered by type.
 
@@ -78,7 +80,9 @@ class DependencyTree:
         self.nodes: Dict[str, DependencyNode] = {root_name: self.root}
         self.missing_dependencies: List[MissingDependency] = []
 
-    def add_node(self, name: str, path: Optional[str] = None, parent_name: Optional[str] = None) -> DependencyNode:
+    def add_node(
+        self, name: str, path: Optional[str] = None, parent_name: Optional[str] = None
+    ) -> DependencyNode:
         """
         Add a node to the tree.
 

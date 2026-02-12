@@ -1,5 +1,5 @@
 import adidt.dt as dt
-import adidt.parts as parts
+import adidt.parts as parts  # noqa: F401 - Used in eval()
 
 
 class clock(dt):
@@ -9,7 +9,6 @@ class clock(dt):
         return name.lower().replace("-", "_")
 
     def set(self, part: str, config, append=False):
-
         if part not in self.supported_parts:
             raise Exception(f"Unknown or unsupported part: {part}")
 

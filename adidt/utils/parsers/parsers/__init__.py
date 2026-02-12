@@ -2,4 +2,4 @@
 
 from .dts_parser import DTSParser
 
-__all__ = ['DTSParser']
+__all__ = ["DTSParser"]

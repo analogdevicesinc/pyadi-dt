@@ -2,12 +2,11 @@
 Tests for dependency_tree module
 """
 
-import pytest
 from adidt.utils.parsers.dependency_tree import DependencyNode, DependencyTree
 from adidt.utils.parsers.dependency_types import (
     Dependency,
     MissingDependency,
-    DependencyType
+    DependencyType,
 )
 
 
@@ -35,7 +34,7 @@ class TestDependencyNode:
         dep = Dependency(
             target="common.dtsi",
             type=DependencyType.FILE_INCLUDE,
-            source_file="test.dts"
+            source_file="test.dts",
         )
         node.add_dependency(dep)
         assert len(node.dependencies) == 1
@@ -71,12 +70,12 @@ class TestDependencyNode:
         dep1 = Dependency(
             target="file1.dtsi",
             type=DependencyType.FILE_INCLUDE,
-            source_file="test.dts"
+            source_file="test.dts",
         )
         dep2 = Dependency(
             target="file2.dtsi",
             type=DependencyType.FILE_INCLUDE,
-            source_file="test.dts"
+            source_file="test.dts",
         )
         node.add_dependency(dep1)
         node.add_dependency(dep2)
@@ -88,14 +87,10 @@ class TestDependencyNode:
         """Test filtering dependencies by type"""
         node = DependencyNode("test.dts")
         dep1 = Dependency(
-            target="file.dtsi",
-            type=DependencyType.FILE_INCLUDE,
-            source_file="test.dts"
+            target="file.dtsi", type=DependencyType.FILE_INCLUDE, source_file="test.dts"
         )
         dep2 = Dependency(
-            target="node",
-            type=DependencyType.PHANDLE_REF,
-            source_file="test.dts"
+            target="node", type=DependencyType.PHANDLE_REF, source_file="test.dts"
         )
         node.add_dependency(dep1)
         node.add_dependency(dep2)
@@ -170,9 +165,7 @@ class TestDependencyTree:
         """Test tracking missing dependencies"""
         tree = DependencyTree("root.dts")
         missing = MissingDependency(
-            file="missing.dtsi",
-            referenced_by="root.dts",
-            line=10
+            file="missing.dtsi", referenced_by="root.dts", line=10
         )
         tree.add_missing_dependency(missing)
 
@@ -182,14 +175,14 @@ class TestDependencyTree:
     def test_detect_cycles_no_cycle(self):
         """Test cycle detection with no cycles"""
         tree = DependencyTree("root.dts")
-        child = tree.add_node("child.dtsi", parent_name="root.dts")
+        tree.add_node("child.dtsi", parent_name="root.dts")
 
         # Add dependencies
         dep = Dependency(
             target="child.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="root.dts",
-            resolved=True
+            resolved=True,
         )
         tree.root.add_dependency(dep)
 
@@ -206,13 +199,13 @@ class TestDependencyTree:
             target="b.dts",
             type=DependencyType.FILE_INCLUDE,
             source_file="a.dts",
-            resolved=True
+            resolved=True,
         )
         dep_ba = Dependency(
             target="a.dts",
             type=DependencyType.FILE_INCLUDE,
             source_file="b.dts",
-            resolved=True
+            resolved=True,
         )
 
         tree.root.add_dependency(dep_ab)
@@ -224,13 +217,13 @@ class TestDependencyTree:
     def test_get_resolution_order_simple(self):
         """Test getting resolution order"""
         tree = DependencyTree("main.dts")
-        child = tree.add_node("common.dtsi", parent_name="main.dts")
+        tree.add_node("common.dtsi", parent_name="main.dts")
 
         dep = Dependency(
             target="common.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="main.dts",
-            resolved=True
+            resolved=True,
         )
         tree.root.add_dependency(dep)
 
@@ -242,15 +235,21 @@ class TestDependencyTree:
     def test_get_resolution_order_complex(self):
         """Test resolution order with complex dependencies"""
         tree = DependencyTree("main.dts")
-        common = tree.add_node("common.dtsi", parent_name="main.dts")
+        tree.add_node("common.dtsi", parent_name="main.dts")
         board = tree.add_node("board.dtsi", parent_name="main.dts")
-        clock = tree.add_node("clock.dtsi", parent_name="board.dtsi")
+        tree.add_node("clock.dtsi", parent_name="board.dtsi")
 
         # main depends on common and board
         # board depends on clock
-        dep1 = Dependency("common.dtsi", DependencyType.FILE_INCLUDE, "main.dts", resolved=True)
-        dep2 = Dependency("board.dtsi", DependencyType.FILE_INCLUDE, "main.dts", resolved=True)
-        dep3 = Dependency("clock.dtsi", DependencyType.FILE_INCLUDE, "board.dtsi", resolved=True)
+        dep1 = Dependency(
+            "common.dtsi", DependencyType.FILE_INCLUDE, "main.dts", resolved=True
+        )
+        dep2 = Dependency(
+            "board.dtsi", DependencyType.FILE_INCLUDE, "main.dts", resolved=True
+        )
+        dep3 = Dependency(
+            "clock.dtsi", DependencyType.FILE_INCLUDE, "board.dtsi", resolved=True
+        )
 
         tree.root.add_dependency(dep1)
         tree.root.add_dependency(dep2)
@@ -265,28 +264,25 @@ class TestDependencyTree:
     def test_get_max_depth(self):
         """Test getting maximum tree depth"""
         tree = DependencyTree("root.dts")
-        level1 = tree.add_node("level1.dtsi", parent_name="root.dts")
-        level2 = tree.add_node("level2.dtsi", parent_name="level1.dtsi")
+        tree.add_node("level1.dtsi", parent_name="root.dts")
+        tree.add_node("level2.dtsi", parent_name="level1.dtsi")
 
         assert tree.get_max_depth() == 2
 
     def test_get_statistics(self):
         """Test getting tree statistics"""
         tree = DependencyTree("root.dts")
-        child = tree.add_node("child.dtsi", parent_name="root.dts")
+        tree.add_node("child.dtsi", parent_name="root.dts")
 
         dep = Dependency(
             target="child.dtsi",
             type=DependencyType.FILE_INCLUDE,
             source_file="root.dts",
-            resolved=True
+            resolved=True,
         )
         tree.root.add_dependency(dep)
 
-        missing = MissingDependency(
-            file="missing.dtsi",
-            referenced_by="root.dts"
-        )
+        missing = MissingDependency(file="missing.dtsi", referenced_by="root.dts")
         tree.add_missing_dependency(missing)
 
         stats = tree.get_statistics()
@@ -299,9 +295,9 @@ class TestDependencyTree:
     def test_traverse_dfs(self):
         """Test depth-first traversal"""
         tree = DependencyTree("root.dts")
-        child1 = tree.add_node("child1.dtsi", parent_name="root.dts")
-        child2 = tree.add_node("child2.dtsi", parent_name="root.dts")
-        grandchild = tree.add_node("grandchild.dtsi", parent_name="child1.dtsi")
+        tree.add_node("child1.dtsi", parent_name="root.dts")
+        tree.add_node("child2.dtsi", parent_name="root.dts")
+        tree.add_node("grandchild.dtsi", parent_name="child1.dtsi")
 
         nodes = tree.traverse_dfs()
         assert len(nodes) == 4

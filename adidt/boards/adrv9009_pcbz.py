@@ -1,6 +1,5 @@
 from .layout import layout
 from ..parts import ad9528, adrv9009
-import numpy as np
 from pathlib import Path
 import logging
 
@@ -98,7 +97,7 @@ class adrv9009_pcbz(layout):
 
         self.xcvr_profile = adrv9009.parse_profile(filename)
 
-        ad9528_file = filename.parent / (filename.stem + '_AD9528.txt')
+        ad9528_file = filename.parent / (filename.stem + "_AD9528.txt")
         if not ad9528_file.exists():
             raise Exception(f"AD9528 Profile file not found: {ad9528_file}")
 
@@ -111,7 +110,7 @@ class adrv9009_pcbz(layout):
 
         logging.info(f"loading JESD204 parameters from {filename}")
         talInit = adrv9009.parse_talInit(filename)
-        self.jesd204 = talInit['jesd204Settings']
+        self.jesd204 = talInit["jesd204Settings"]
 
     def gen_dt_preprocess(self):
         return {
@@ -119,7 +118,6 @@ class adrv9009_pcbz(layout):
             "pll2": self.clock_profile["pll2"],
             "sysref": self.clock_profile["sysref"],
             "out": self.clock_profile["out"],
-
             "rx": self.xcvr_profile["rx"],
             "tx": self.xcvr_profile["tx"],
             "orx": self.xcvr_profile["orx"],

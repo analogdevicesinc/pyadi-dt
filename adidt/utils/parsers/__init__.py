@@ -34,16 +34,16 @@ from .dependency_types import (
     DependencyType,
     Dependency,
     MissingDependency,
-    DependencyFormat
+    DependencyFormat,
 )
 from .dependency_tree import DependencyTree, DependencyNode
 
 __all__ = [
-    'DTDependencyParser',
-    'DependencyType',
-    'Dependency',
-    'MissingDependency',
-    'DependencyFormat',
-    'DependencyTree',
-    'DependencyNode',
+    "DTDependencyParser",
+    "DependencyType",
+    "Dependency",
+    "MissingDependency",
+    "DependencyFormat",
+    "DependencyTree",
+    "DependencyNode",
 ]

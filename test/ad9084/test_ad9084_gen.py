@@ -16,13 +16,13 @@ Tests cover:
 import pytest
 import json
 import os
-import tempfile
 import shutil
 from pathlib import Path
 
 # Import will fail until board class is implemented - this is expected for TDD
 try:
     from adidt.boards.ad9084_fmc import ad9084_fmc
+
     AD9084_AVAILABLE = True
 except ImportError:
     AD9084_AVAILABLE = False
@@ -36,8 +36,7 @@ def is_dtc_available():
 
 # Skip all tests if board class not implemented yet
 pytestmark = pytest.mark.skipif(
-    not AD9084_AVAILABLE,
-    reason="ad9084_fmc board class not yet implemented"
+    not AD9084_AVAILABLE, reason="ad9084_fmc board class not yet implemented"
 )
 
 
@@ -373,11 +372,16 @@ class TestDTSCompilation:
         dtc_cmd = ["dtc", "-@", "-I", "dts", "-O", "dtb"]
         for inc_path in include_paths:
             dtc_cmd.extend(["-i", inc_path])
-        dtc_cmd.extend([
-            "-W", "no-unit_address_vs_reg",
-            "-W", "no-reg_format",
-            "-W", "no-avoid_default_addr_size",
-        ])
+        dtc_cmd.extend(
+            [
+                "-W",
+                "no-unit_address_vs_reg",
+                "-W",
+                "no-reg_format",
+                "-W",
+                "no-avoid_default_addr_size",
+            ]
+        )
         dtc_cmd.extend(["-o", str(dtb_file), "-"])
 
         result = subprocess.run(
@@ -386,8 +390,7 @@ class TestDTSCompilation:
 
         if result.returncode != 0:
             pytest.fail(
-                f"DTS compilation failed for {platform}:\n"
-                f"STDERR: {result.stderr}"
+                f"DTS compilation failed for {platform}:\nSTDERR: {result.stderr}"
             )
 
         assert os.path.exists(dtb_file), f"DTB file not created: {dtb_file}"

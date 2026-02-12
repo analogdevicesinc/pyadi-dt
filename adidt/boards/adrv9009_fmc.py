@@ -163,19 +163,25 @@ class adrv9009_fmc(layout):
 
         # Apply defaults for RX
         if "sys_clk_select" not in cfg["fpga_rx"]:
-            cfg["fpga_rx"]["sys_clk_select"] = self.platform_config["default_fpga_rx_pll"]
+            cfg["fpga_rx"]["sys_clk_select"] = self.platform_config[
+                "default_fpga_rx_pll"
+            ]
         if "out_clk_select" not in cfg["fpga_rx"]:
             cfg["fpga_rx"]["out_clk_select"] = "XCVR_REFCLK"
 
         # Apply defaults for TX
         if "sys_clk_select" not in cfg["fpga_tx"]:
-            cfg["fpga_tx"]["sys_clk_select"] = self.platform_config["default_fpga_tx_pll"]
+            cfg["fpga_tx"]["sys_clk_select"] = self.platform_config[
+                "default_fpga_tx_pll"
+            ]
         if "out_clk_select" not in cfg["fpga_tx"]:
             cfg["fpga_tx"]["out_clk_select"] = "XCVR_REFCLK"
 
         # Apply defaults for ORX
         if "sys_clk_select" not in cfg["fpga_orx"]:
-            cfg["fpga_orx"]["sys_clk_select"] = self.platform_config["default_fpga_orx_pll"]
+            cfg["fpga_orx"]["sys_clk_select"] = self.platform_config[
+                "default_fpga_orx_pll"
+            ]
         if "out_clk_select" not in cfg["fpga_orx"]:
             cfg["fpga_orx"]["out_clk_select"] = "XCVR_REFCLK"
 

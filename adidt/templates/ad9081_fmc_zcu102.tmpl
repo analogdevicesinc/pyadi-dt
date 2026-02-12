@@ -18,17 +18,14 @@
 #include <dt-bindings/iio/adc/adi,ad9081.h>
 #include <dt-bindings/jesd204/adxcvr.h>
 
-#define CDDC_I 0
-#define CDDC_Q 1
-
 &axi_ad9081_rx_jesd {
-	clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_ad9081_adxcvr_rx 1>, <&axi_ad9081_adxcvr_rx 0>;
-	clock-names = "s_axi_aclk", "device_clk", "link_clk", "lane_clk";
+	clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_ad9081_adxcvr_rx 0>;
+	clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 };
 
 &axi_ad9081_tx_jesd {
-	clocks = <&zynqmp_clk 71>, <&hmc7044 6>, <&axi_ad9081_adxcvr_tx 1>, <&axi_ad9081_adxcvr_tx 0>;
-	clock-names = "s_axi_aclk", "device_clk", "link_clk", "lane_clk";
+	clocks = <&zynqmp_clk 71>, <&hmc7044 6>, <&axi_ad9081_adxcvr_tx 0>;
+	clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 };
 
 &axi_ad9081_adxcvr_rx {
@@ -124,6 +121,14 @@
 		reg = <0>;
 		spi-max-frequency = <5000000>;
 
+		/* GPIO Control */
+		reset-gpios = <&gpio 133 0>;
+		sysref-req-gpios = <&gpio 121 0>;
+		rx2-enable-gpios = <&gpio 135 0>;
+		rx1-enable-gpios = <&gpio 134 0>;
+		tx2-enable-gpios = <&gpio 137 0>;
+		tx1-enable-gpios = <&gpio 136 0>;
+
 		/* Clocks */
 		clocks = <&hmc7044 2>;
 		clock-names = "dev_clk";
@@ -135,7 +140,6 @@
 		#jesd204-cells = <2>;
 		jesd204-top-device = <0>; /* This is the TOP device */
 		jesd204-link-ids = <FRAMER_LINK0_RX DEFRAMER_LINK0_TX>;
-		jesd204-ignore-errors;//DEBUG ONLY REMOVE LATER!!
 
 		jesd204-inputs =
 			<&axi_ad9081_core_rx 0 FRAMER_LINK0_RX>,
@@ -284,7 +288,7 @@
 					{%- for ce in adc['datapath']['cddc']['enabled'] %}
 					{%- if ce %}{% set ns.c = ns.c + 1 %}
 						{%- if ns.c > 1 %},{% endif %}
-						<&ad9081_adc{{ loop.index0 }} CDDC_I>, <&ad9081_adc{{ loop.index0 }} CDDC_Q>
+						<&ad9081_adc{{ loop.index0 }} FDDC_I>, <&ad9081_adc{{ loop.index0 }} FDDC_Q>
 					{%- endif -%}
 					{% if loop.last %};{% endif %}
 					{%- endfor %}

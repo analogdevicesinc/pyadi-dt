@@ -1,6 +1,5 @@
 from rich.console import Console
-from rich.table import Column, Table
-from rich import box
+from rich.table import Table
 from rich.text import Text
 
 console = Console()
@@ -9,15 +8,15 @@ console = Console()
 def to_str(p):
     try:
         data = p.data
-    except:
+    except (AttributeError, TypeError):
         try:
             return str(p.value)
-        except:
+        except (AttributeError, TypeError):
             return ""
     if len(data) == 0:
         try:
             return str(p.value)
-        except:
+        except (AttributeError, TypeError):
             return ""
     elif len(data) == 1:
         return str(data[0])
