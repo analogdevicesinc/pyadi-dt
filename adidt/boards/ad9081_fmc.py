@@ -82,9 +82,9 @@ class ad9081_fmc(layout):
             self.platform_config["output_dir"], base_name
         )
 
-        # ZC706 needs standalone DTS (not overlay) for bootable devicetree
-        if platform == "zc706":
-            self.use_plugin_mode = False
+        # All platforms need standalone DTS (not overlay) for bootable devicetree
+        # Don't add /dts-v1/ header as it's in the include chain (zynqmp-zcu102-revA.dts)
+        self.use_plugin_mode = False
 
         # Store original kernel_path argument to determine validation strategy
         self._kernel_path_explicit = kernel_path is not None

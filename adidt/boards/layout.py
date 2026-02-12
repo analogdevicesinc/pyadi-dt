@@ -44,15 +44,16 @@ class layout:
         render_context = {
             "base_dts_include": self.platform_config["base_dts_include"],
         }
-        render_context.update(kwargs) # Add all other kwargs
+        render_context.update(kwargs)  # Add all other kwargs
 
         # Generate DTS header based on plugin mode
         if self.use_plugin_mode:
             dts_header = "/dts-v1/;\n/plugin/;\n"
+            output = dts_header + template.render(**render_context)
         else:
-            dts_header = "/dts-v1/;\n"
-
-        output = dts_header + template.render(**render_context)
+            # For standalone DTS files, don't add any header
+            # The /dts-v1/; will be provided by the include chain or kernel build system
+            output = template.render(**render_context)
 
         with open(self.output_filename, "w") as f:
             f.write(output)
