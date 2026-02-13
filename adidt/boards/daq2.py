@@ -9,6 +9,10 @@ class daq2(layout):
     adc = "ad9680"
     dac = "ad9144"
 
+    # Generate standalone device tree, not overlay
+    # (like ad9081_fmc, adrv9009_fmc, ad9084_fmc boards)
+    use_plugin_mode = False
+
     # Default kernel source path
     DEFAULT_KERNEL_PATH = "./linux"
 
