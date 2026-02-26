@@ -68,9 +68,12 @@ def parse_profile(filename):
     except KeyError:
         raise ValueError(f"Unknown clock divider value {clocks['clkPllHsDiv']}")
 
-    handle_channel_enable(rx, "rxChannels", 0)
-    handle_channel_enable(orx, "obsRxChannels", 0)
-    handle_channel_enable(tx, "txChannels", 0)
+    handle_channel_enable(rx, "rxChannels", 3)  # default TAL_RX1RX2
+    # Handle both "obsRxChannels" and "obsRxChannelsEnable" field names
+    if "obsRxChannelsEnable" in orx and "obsRxChannels" not in orx:
+        orx["obsRxChannels"] = orx["obsRxChannelsEnable"]
+    handle_channel_enable(orx, "obsRxChannels", 1)  # default TAL_ORX1
+    handle_channel_enable(tx, "txChannels", 3)  # default TAL_TX1TX2
 
     # Gains can be negative so must be wrapped
     if int(rx["filter"]["@gain_dB"]) < 0:
