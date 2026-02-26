@@ -317,13 +317,13 @@
 			adi,driver-mode = <DRIVER_MODE_LVDS>;
 			adi,divider-phase = <0>;
 			adi,channel-divider = <{{ clk['divider'] }}>;
-			adi,signal-source = <SOURCE_VCO>;
+			adi,signal-source = <{% if 'SYSREF' in name %}SOURCE_SYSREF_VCO{% else %}SOURCE_VCO{% endif %}>;
 		};
 		{% endfor %}
 	};
 
 	trx0_adrv9009: adrv9009-phy@1 {
-		compatible = "adrv9009";
+		compatible = "adi,adrv9009", "adrv9009";
 		reg = <1>;
 
 		#address-cells = <1>;
@@ -414,49 +414,49 @@
 		adi,jesd204-sysref-lvds-pn-invert = <0>;
 
 		/* RX Profile */
-		adi,rx-profile-rx-fir-gain_db = <({{ rx['profile'].get('fir_gain_db', -6) }})>;
+		adi,rx-profile-rx-fir-gain_db = <{{ rx['profile'].get('filter', {}).get('@gain_dB', '(-6)') }}>;
 		{% if rx.get('filter') %}
 		adi,rx-profile-rx-fir-num-fir-coefs = <{{ rx['filter']['@numFirCoefs'] }}>;
 		adi,rx-profile-rx-fir-coefs = /bits/ 16 <{{ rx['filter']['coefs'] }}>;
 		{% endif %}
-		adi,rx-profile-rx-fir-decimation = <{{ rx['profile'].get('fir_decimation', 2) }}>;
-		adi,rx-profile-rx-dec5-decimation = <{{ rx['profile'].get('dec5_decimation', 4) }}>;
-		adi,rx-profile-rhb1-decimation = <{{ rx['profile'].get('rhb1_decimation', 1) }}>;
-		adi,rx-profile-rx-output-rate_khz = <{{ rx['profile'].get('output_rate_khz', 245760) }}>;
-		adi,rx-profile-rf-bandwidth_hz = <{{ rx['profile'].get('rf_bandwidth_hz', 200000000) }}>;
-		adi,rx-profile-rx-ddc-mode = <{{ rx['profile'].get('ddc_mode', 0) }}>;
+		adi,rx-profile-rx-fir-decimation = <{{ rx['profile'].get('rxFirDecimation', 2) }}>;
+		adi,rx-profile-rx-dec5-decimation = <{{ rx['profile'].get('rxDec5Decimation', 4) }}>;
+		adi,rx-profile-rhb1-decimation = <{{ rx['profile'].get('rhb1Decimation', 1) }}>;
+		adi,rx-profile-rx-output-rate_khz = <{{ rx['profile'].get('rxOutputRate_kHz', 245760) }}>;
+		adi,rx-profile-rf-bandwidth_hz = <{{ rx['profile'].get('rfBandwidth_Hz', 200000000) }}>;
+		adi,rx-profile-rx-ddc-mode = <{{ rx['profile'].get('rxDdcMode', 0) }}>;
 		{% if rx.get('rxAdcProfile') %}
 		adi,rx-profile-rx-adc-profile = /bits/ 16 <{{ rx['rxAdcProfile']['coefs'] }}>;
 		{% endif %}
 
 		/* TX Profile */
-		adi,tx-profile-tx-fir-gain_db = <({{ tx['profile'].get('fir_gain_db', 6) }})>;
+		adi,tx-profile-tx-fir-gain_db = <{{ tx['profile'].get('filter', {}).get('@gain_dB', 6) }}>;
 		{% if tx.get('filter') %}
 		adi,tx-profile-tx-fir-num-fir-coefs = <{{ tx['filter']['@numFirCoefs'] }}>;
 		adi,tx-profile-tx-fir-coefs = /bits/ 16 <{{ tx['filter']['coefs'] }}>;
 		{% endif %}
-		adi,tx-profile-tx-fir-interpolation = <{{ tx['profile'].get('fir_interpolation', 1) }}>;
-		adi,tx-profile-thb1-interpolation = <{{ tx['profile'].get('thb1_interpolation', 2) }}>;
-		adi,tx-profile-thb2-interpolation = <{{ tx['profile'].get('thb2_interpolation', 2) }}>;
-		adi,tx-profile-thb3-interpolation = <{{ tx['profile'].get('thb3_interpolation', 2) }}>;
-		adi,tx-profile-tx-int5-interpolation = <1>;
-		adi,tx-profile-tx-input-rate_khz = <{{ tx['profile'].get('input_rate_khz', 245760) }}>;
-		adi,tx-profile-rf-bandwidth_hz = <{{ tx['profile'].get('rf_bandwidth_hz', 225000000) }}>;
+		adi,tx-profile-tx-fir-interpolation = <{{ tx['profile'].get('txFirInterpolation', 1) }}>;
+		adi,tx-profile-thb1-interpolation = <{{ tx['profile'].get('thb1Interpolation', 2) }}>;
+		adi,tx-profile-thb2-interpolation = <{{ tx['profile'].get('thb2Interpolation', 2) }}>;
+		adi,tx-profile-thb3-interpolation = <{{ tx['profile'].get('thb3Interpolation', 2) }}>;
+		adi,tx-profile-tx-int5-interpolation = <{{ tx['profile'].get('txInt5Interpolation', 1) }}>;
+		adi,tx-profile-tx-input-rate_khz = <{{ tx['profile'].get('txInputRate_kHz', 245760) }}>;
+		adi,tx-profile-rf-bandwidth_hz = <{{ tx['profile'].get('rfBandwidth_Hz', 225000000) }}>;
 		{% if tx.get('lpbkAdcProfile') %}
 		adi,tx-profile-loop-back-adc-profile = /bits/ 16 <{{ tx['lpbkAdcProfile']['coefs'] }}>;
 		{% endif %}
 
 		/* ORX Profile */
-		adi,orx-profile-rx-fir-gain_db = <({{ orx['profile'].get('fir_gain_db', 6) }})>;
+		adi,orx-profile-rx-fir-gain_db = <{{ orx['profile'].get('filter', {}).get('@gain_dB', '(-6)') }}>;
 		{% if orx.get('filter') %}
 		adi,orx-profile-rx-fir-num-fir-coefs = <{{ orx['filter']['@numFirCoefs'] }}>;
 		adi,orx-profile-rx-fir-coefs = /bits/ 16 <{{ orx['filter']['coefs'] }}>;
 		{% endif %}
-		adi,orx-profile-rx-fir-decimation = <{{ orx['profile'].get('fir_decimation', 1) }}>;
-		adi,orx-profile-rx-dec5-decimation = <4>;
-		adi,orx-profile-rhb1-decimation = <2>;
-		adi,orx-profile-orx-output-rate_khz = <{{ orx['profile'].get('output_rate_khz', 245760) }}>;
-		adi,orx-profile-rf-bandwidth_hz = <{{ orx['profile'].get('rf_bandwidth_hz', 200000000) }}>;
+		adi,orx-profile-rx-fir-decimation = <{{ orx['profile'].get('rxFirDecimation', 1) }}>;
+		adi,orx-profile-rx-dec5-decimation = <{{ orx['profile'].get('rxDec5Decimation', 4) }}>;
+		adi,orx-profile-rhb1-decimation = <{{ orx['profile'].get('rhb1Decimation', 2) }}>;
+		adi,orx-profile-orx-output-rate_khz = <{{ orx['profile'].get('orxOutputRate_kHz', 245760) }}>;
+		adi,orx-profile-rf-bandwidth_hz = <{{ orx['profile'].get('rfBandwidth_Hz', 200000000) }}>;
 		adi,orx-profile-orx-ddc-mode = <0>;
 		adi,orx-profile-orx-merge-filter = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0>;
 
@@ -474,18 +474,18 @@
 
 		/* RX Settings */
 		adi,rx-settings-framer-sel = <0>;
-		adi,rx-settings-rx-channels = <3>;
+		adi,rx-settings-rx-channels = <{{ rx.get('channels', 3) }}>;
 
 		/* TX Settings */
 		adi,tx-settings-deframer-sel = <0>;
-		adi,tx-settings-tx-channels = <3>;
+		adi,tx-settings-tx-channels = <{{ tx.get('channels', 3) }}>;
 		adi,tx-settings-tx-atten-step-size = <0>;
 		adi,tx-settings-tx1-atten_md-b = <10000>;
 		adi,tx-settings-tx2-atten_md-b = <10000>;
 
 		/* OBS Settings */
 		adi,obs-settings-framer-sel = <1>;
-		adi,obs-settings-obs-rx-channels-enable = <1>;
+		adi,obs-settings-obs-rx-channels-enable = <{{ orx.get('channels', 1) }}>;
 		adi,obs-settings-obs-rx-lo-source = <0>;
 	};
 };

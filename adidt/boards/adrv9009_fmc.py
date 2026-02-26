@@ -54,7 +54,7 @@ class adrv9009_fmc(layout):
             "default_fpga_rx_pll": "XCVR_CPLL",
             "default_fpga_tx_pll": "XCVR_QPLL",
             "default_fpga_orx_pll": "XCVR_CPLL",
-            "spi_bus": "spi0",
+            "spi_bus": "spi1",
             "output_dir": "generated_dts",
             "clock_ref": "clkc 16",
         },
@@ -192,6 +192,7 @@ class adrv9009_fmc(layout):
         kwargs["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         kwargs["platform"] = self.platform
         kwargs["base_dts_include"] = self.platform_config["base_dts_include"]
+        kwargs["spi_bus"] = self.platform_config["spi_bus"]
         kwargs["config_source"] = kwargs.get("config_source", "unknown")
         return kwargs
 
@@ -231,23 +232,69 @@ class adrv9009_fmc(layout):
             "sysref": clock_cfg.get("sysref", {}),
         }
 
+        # Helper to extract profile fields
+        def extract_profile_fields(prof_data):
+            fields = {}
+            if not prof_data:
+                return fields
+            
+            # Keep original fields
+            fields.update(prof_data)
+            
+            # Map common fields to standardized names
+            mapping = {
+                "rxFirDecimation": "fir_decimation",
+                "rxDec5Decimation": "dec5_decimation",
+                "rhb1Decimation": "rhb1_decimation",
+                "rxOutputRate_kHz": "output_rate_khz",
+                "orxOutputRate_kHz": "output_rate_khz",
+                "rfBandwidth_Hz": "rf_bandwidth_hz",
+                "rxDdcMode": "ddc_mode",
+                "orxDdcMode": "ddc_mode",
+                "rxBbf3dBCorner_kHz": "rx_bbf3d_bcorner_khz",
+                "txFirInterpolation": "fir_interpolation",
+                "thb1Interpolation": "thb1_interpolation",
+                "thb2Interpolation": "thb2_interpolation",
+                "thb3Interpolation": "thb3_interpolation",
+                "txInputRate_kHz": "input_rate_khz",
+                "rxChannels": "channels",
+                "txChannels": "channels",
+                "obsRxChannels": "channels",
+            }
+            
+            for src, dst in mapping.items():
+                if src in prof_data:
+                    fields[dst] = prof_data[src]
+            
+            # Handle gain separately as it might be in filter
+            if "filter" in prof_data and "@gain_dB" in prof_data["filter"]:
+                fields["fir_gain_db"] = prof_data["filter"]["@gain_dB"]
+            
+            return fields
+
         # RX configuration (framer)
-        rx = {
-            "profile": cfg.get("rx_profile", {}),
+        rx_prof = cfg.get("rx_profile", {})
+        rx = extract_profile_fields(rx_prof)
+        rx.update({
+            "profile": rx_prof,
             "framer": cfg.get("jesd204", {}).get("framer_a", {}),
-        }
+        })
 
         # TX configuration (deframer)
-        tx = {
-            "profile": cfg.get("tx_profile", {}),
+        tx_prof = cfg.get("tx_profile", {})
+        tx = extract_profile_fields(tx_prof)
+        tx.update({
+            "profile": tx_prof,
             "deframer": cfg.get("jesd204", {}).get("deframer_a", {}),
-        }
+        })
 
         # ORX configuration (framer B)
-        orx = {
-            "profile": cfg.get("orx_profile", {}),
+        orx_prof = cfg.get("orx_profile", {})
+        orx = extract_profile_fields(orx_prof)
+        orx.update({
+            "profile": orx_prof,
             "framer": cfg.get("jesd204", {}).get("framer_b", {}),
-        }
+        })
 
         # FPGA configuration
         fpga = {
