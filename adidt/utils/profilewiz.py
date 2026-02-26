@@ -12,7 +12,10 @@ def coefs_to_long_string(coefs):
     result = ""
     for coef in coefs.split("\n"):
         coef = coef.replace(" ", "")
-        result += f"({coef}) "
+        if coef.startswith("-"):
+            result += f"({coef}) "
+        else:
+            result += f"{coef} "
     return result[:-1]
 
 
