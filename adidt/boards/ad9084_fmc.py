@@ -55,6 +55,19 @@ class ad9084_fmc(layout):
             "spi_bus": "spi0",
             "output_dir": "generated_dts",
         },
+        "vcu118": {
+            "template_filename": "ad9084_fmc_vcu118.tmpl",
+            # base_dts_file is None: VCU118 DTS is placed directly in the kernel tree
+            # The generated DTS includes the existing hardware base DTS from the kernel
+            "base_dts_file": None,
+            "base_dts_include": "vcu118_ad9084_204C_M4_L8_NP16_20p0_4x4.dts",
+            "arch": "microblaze",
+            "jesd_phy": "GTY",
+            "default_fpga_adc_pll": "XCVR_QPLL1",
+            "default_fpga_dac_pll": "XCVR_QPLL1",
+            "spi_bus": "axi_spi_2",
+            "output_dir": None,  # Set directly via output_filename in tests
+        },
     }
 
     template_filename = "ad9084_fmc_vpk180.tmpl"
@@ -85,9 +98,12 @@ class ad9084_fmc(layout):
         # Set template and output based on platform
         self.template_filename = self.platform_config["template_filename"]
         base_name = f"ad9084_fmc_{platform}.dts"
-        self.output_filename = os.path.join(
-            self.platform_config["output_dir"], base_name
-        )
+        output_dir = self.platform_config["output_dir"]
+        if output_dir is not None:
+            self.output_filename = os.path.join(output_dir, base_name)
+        else:
+            # No default output dir (e.g. VCU118): caller must set output_filename
+            self.output_filename = base_name
 
         # Store original kernel_path argument to determine validation strategy
         self._kernel_path_explicit = kernel_path is not None
@@ -146,6 +162,11 @@ class ad9084_fmc(layout):
                 f"  2. Set LINUX_KERNEL_PATH environment variable\n"
                 f"  3. Clone kernel source to {self.DEFAULT_KERNEL_PATH}"
             )
+
+        # Skip base DTS validation if not specified (e.g. VCU118 where the
+        # generated DTS is placed directly in the kernel tree)
+        if self.platform_config["base_dts_file"] is None:
+            return
 
         base_dts_path = os.path.join(
             self.kernel_path, self.platform_config["base_dts_file"]
