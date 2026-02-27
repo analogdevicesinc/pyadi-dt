@@ -48,6 +48,7 @@ def test_profile(profile):
     assert "orx" in profile_data
     assert "clocks" in profile_data
 
+@pytest.mark.lg_feature(["adrv9009", "zcu102"])
 @pytest.mark.parametrize("profile", profile_names)
 def test_adrv9009_new(strategy, target, profile):
     # Skip profiles that are too large for now if needed

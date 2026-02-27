@@ -82,6 +82,7 @@ def _gen_dt(kernel_path: Path, profile_name: str, cfg: dict, converter) -> Path:
     return dts_path, dts_name
 
 
+@pytest.mark.lg_feature(["ad9084", "vcu118"])
 @pytest.mark.parametrize("profile", profile_names)
 def test_ad9084_new(strategy, target, profile):
     profile_stem = Path(profile).stem
