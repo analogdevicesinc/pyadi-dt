@@ -1,0 +1,24 @@
+# ADI Linux Kernel Build Configuration for ad9084 development branch
+# This configuration supports building the ADI Linux kernel for Microblaze
+
+project: linux
+repository: https://github.com/analogdevicesinc/linux.git
+tag: staging/xlnx/main-next-ad9084-dev
+
+build:
+  parallel_jobs: 4
+  clean_before: false
+  output_dir: ./build
+
+platforms:
+  microblaze:
+    arch: microblaze
+    cross_compile: microblazeel-xilinx-linux-gnu-
+    defconfig: adi_mb_apollo_defconfig
+    kernel_target: simpleImage.vcu118_ad9084_204C_M4_L8_NP16_20p0_4x4.strip
+    simpleimage_targets:
+      - simpleImage.vcu118_ad9084_204C_M4_L8_NP16_20p0_4x4
+    dtbs: []
+
+    toolchain:
+      preferred: vivado
