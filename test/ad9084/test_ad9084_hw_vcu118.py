@@ -84,7 +84,7 @@ def _gen_dt(kernel_path: Path, profile_name: str, cfg: dict, converter) -> Path:
 
 @pytest.mark.lg_feature(["ad9084", "vcu118"])
 @pytest.mark.parametrize("profile", profile_names)
-def test_ad9084_new(strategy, target, profile):
+def test_ad9084_new(target, profile):
     profile_stem = Path(profile).stem
 
     # 1. Initialize Builder
@@ -153,6 +153,8 @@ def test_ad9084_new(strategy, target, profile):
         xilinx_device_jtag.kernel_path += ".strip"
 
     print(f"Deploying: {xilinx_device_jtag.kernel_path}")
+
+    strategy = target.get_driver("Strategy")
 
     # Power off → boot with new image
     strategy.transition("powered_off")
