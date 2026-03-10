@@ -50,7 +50,7 @@ def test_profile(profile):
 
 @pytest.mark.lg_feature(["adrv9009", "zcu102"])
 @pytest.mark.parametrize("profile", profile_names)
-def test_adrv9009_new(strategy, target, profile):
+def test_adrv9009_new(target, profile):
     # Skip profiles that are too large for now if needed
     # if "400" in profile:
     #     pytest.skip("Skipping 400MHz profile for speed")
@@ -134,6 +134,8 @@ def test_adrv9009_new(strategy, target, profile):
     dtb = dtbs[0]
     os.rename(dtb, "system.dtb")
     dtb = Path("system.dtb")
+
+    strategy = target.get_driver("Strategy")
 
     # Power off board before deploying new DTB so it boots with the new one
     strategy.transition("powered_off")
