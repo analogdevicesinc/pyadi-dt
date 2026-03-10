@@ -10,12 +10,18 @@ class SdtgenRunner:
     def __init__(self, binary: str = "sdtgen"):
         self.binary = binary
         # Instance-level cache avoids cross-test interference
-        self._flags: tuple[str, str] | None = None
+        self._checked: bool = False
 
-    def _detect_flags(self) -> tuple[str, str]:
-        """Confirm binary exists and return (src_flag, out_flag)."""
-        if self._flags is not None:
-            return self._flags
+    def _check_binary(self) -> None:
+        """Confirm the sdtgen binary exists and is reachable.
+
+        Runs ``sdtgen --help`` to verify the binary is on PATH.  Raises
+        SdtgenNotFoundError if the binary cannot be found, or SdtgenError if
+        the probe call times out.  Does nothing if the binary was already
+        confirmed during this runner's lifetime.
+        """
+        if self._checked:
+            return
         try:
             subprocess.run(
                 [self.binary, "--help"],
@@ -27,9 +33,8 @@ class SdtgenRunner:
         except FileNotFoundError:
             raise SdtgenNotFoundError()
         except subprocess.TimeoutExpired:
-            raise SdtgenError(f"sdtgen --help timed out after 10s")
-        self._flags = ("-s", "-d")
-        return self._flags
+            raise SdtgenError("sdtgen --help timed out after 10s")
+        self._checked = True
 
     def run(self, xsa_path: Path, output_dir: Path, timeout: int = 120) -> Path:
         """Run sdtgen and return the path to the generated base DTS file.
@@ -38,7 +43,8 @@ class SdtgenRunner:
             SdtgenNotFoundError: If sdtgen is not on PATH.
             SdtgenError: If sdtgen fails, times out, or produces no output.
         """
-        src_flag, out_flag = self._detect_flags()
+        self._check_binary()
+        src_flag, out_flag = "-s", "-d"
         cmd = [self.binary, src_flag, str(xsa_path), out_flag, str(output_dir)]
         try:
             result = subprocess.run(

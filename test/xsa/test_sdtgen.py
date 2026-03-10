@@ -32,7 +32,7 @@ def test_run_invokes_sdtgen_with_correct_args(tmp_path):
 
     # New runner per test avoids module-level cache interference
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=[_help_result(), _ok_result()]) as mock_run:
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]) as mock_run:
         result = runner.run(xsa, out_dir)
 
     # The second call is the actual sdtgen invocation
@@ -51,7 +51,7 @@ def test_run_raises_not_found_when_binary_missing(tmp_path):
     out_dir.mkdir()
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=FileNotFoundError):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=FileNotFoundError):
         with pytest.raises(SdtgenNotFoundError):
             runner.run(xsa, out_dir)
 
@@ -68,7 +68,7 @@ def test_run_raises_error_on_nonzero_exit(tmp_path):
     fail_result.stdout = ""
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=[_help_result(), fail_result]):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), fail_result]):
         with pytest.raises(SdtgenError) as exc_info:
             runner.run(xsa, out_dir)
     assert "fatal: bad xsa" in exc_info.value.stderr
@@ -81,7 +81,7 @@ def test_run_raises_error_on_timeout(tmp_path):
     out_dir.mkdir()
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=[_help_result(), subprocess.TimeoutExpired("sdtgen", 5)]):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), subprocess.TimeoutExpired("sdtgen", 5)]):
         with pytest.raises(SdtgenError, match="timed out"):
             runner.run(xsa, out_dir, timeout=5)
 
@@ -94,7 +94,7 @@ def test_run_scans_for_dts_when_system_top_absent(tmp_path):
     (out_dir / "other_name.dts").write_text("/dts-v1/;")
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=[_help_result(), _ok_result()]):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]):
         result = runner.run(xsa, out_dir)
     assert result == out_dir / "other_name.dts"
 
@@ -106,7 +106,7 @@ def test_run_raises_error_when_no_dts_produced(tmp_path):
     out_dir.mkdir()
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=[_help_result(), _ok_result()]):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]):
         with pytest.raises(SdtgenError, match=r"no \.dts output"):
             runner.run(xsa, out_dir)
 
@@ -118,6 +118,6 @@ def test_help_timeout_raises_sdtgen_error(tmp_path):
     out_dir.mkdir()
 
     runner = SdtgenRunner()
-    with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("sdtgen", 10)):
+    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=subprocess.TimeoutExpired("sdtgen", 10)):
         with pytest.raises(SdtgenError, match="timed out"):
             runner.run(xsa, out_dir)
