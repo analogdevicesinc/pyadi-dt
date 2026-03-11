@@ -10,6 +10,8 @@ _LABEL_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:\s*\w", re.MULTILINE)
 _NODE_ADDR_RE = re.compile(r"@([0-9a-fA-F]+)\s*\{")
 _log = logging.getLogger(__name__)
 
+_BUS_LABELS = {"amba", "axi", "ahb", "soc", "bus"}
+
 
 class DtsMerger:
     """Merges ADI DTS node strings into a base DTS, producing overlay and merged outputs."""
@@ -45,11 +47,12 @@ class DtsMerger:
         return set(_LABEL_RE.findall(dts))
 
     def _bus_label(self, labels: set[str]) -> str | None:
+        # Prefer "amba" (standard Xilinx/ARM bus label)
         if "amba" in labels:
             return "amba"
-        for label in sorted(labels):
-            if label not in {"root"}:
-                return label
+        # Fall back to other recognized bus labels in sorted order
+        for label in sorted(labels & _BUS_LABELS):
+            return label
         return None
 
     def _build_overlay(self, base_dts: str, all_nodes: list[str]) -> str:

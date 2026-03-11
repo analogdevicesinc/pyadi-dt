@@ -43,6 +43,7 @@ class XsaPipeline:
 
         topology = XsaParser().parse(xsa_path)
         name = self._derive_name(topology)
+        safe_name = re.sub(r"[^\w\-.]", "_", name)  # Same logic as visualizer
         nodes = NodeBuilder().build(topology, cfg)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
         HtmlVisualizer().generate(topology, cfg, merged_content, output_dir, name)
@@ -51,7 +52,7 @@ class XsaPipeline:
             "base_dir": base_dir,
             "overlay": output_dir / f"{name}.dtso",
             "merged": output_dir / f"{name}.dts",
-            "report": output_dir / f"{name}_report.html",
+            "report": output_dir / f"{safe_name}_report.html",
         }
 
     def _derive_name(self, topology: XsaTopology) -> str:

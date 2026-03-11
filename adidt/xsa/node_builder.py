@@ -83,6 +83,10 @@ class NodeBuilder:
         clkgen_label: str,
         hmc_channel: int,
     ) -> str:
+        from .exceptions import ConfigError
+        for key in ("F", "K"):
+            if key not in jesd_params:
+                raise ConfigError(f"jesd.{inst.direction}.{key}")
         return env.get_template("jesd204_fsm.tmpl").render(
             instance=inst, jesd=jesd_params,
             clkgen_label=clkgen_label, hmc_channel=hmc_channel,
