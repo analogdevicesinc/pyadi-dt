@@ -1,0 +1,13 @@
+{# Context vars: instance (ConverterInstance), rx_jesd_label, tx_jesd_label, spi_label, spi_cs #}
+	{{ instance.name }}: ad9081@{{ spi_cs }} {
+		compatible = "adi,ad9081";
+		reg = <{{ spi_cs }}>;
+		spi-max-frequency = <1000000>;
+
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-top-device = <0>;
+		jesd204-link-ids = <JESD204_LINK_IDS_TX_RX>;
+
+		jesd204-inputs = <&{{ rx_jesd_label }} 0 JESD204_SUBDEV_RX>;
+	};

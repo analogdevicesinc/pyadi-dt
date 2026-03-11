@@ -58,7 +58,7 @@ where = ["."]
 include = ["adidt*"]
 
 [tool.setuptools.package-data]
-adidt = ["templates/*.tmpl"]
+adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
