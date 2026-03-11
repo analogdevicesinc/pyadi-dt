@@ -1,10 +1,17 @@
 # test/xsa/test_topology.py
+import io
+import warnings
+import zipfile
+import pytest
+from pathlib import Path
 from adidt.xsa.topology import (
     Jesd204Instance,
     ClkgenInstance,
     ConverterInstance,
     XsaTopology,
+    XsaParser,
 )
+from adidt.xsa.exceptions import XsaParseError
 
 
 def test_jesd204_instance_creation():
@@ -49,14 +56,6 @@ def test_xsa_topology_defaults_to_empty():
     assert topo.converters == []
     assert topo.fpga_part == ""
 
-
-import io
-import warnings
-import zipfile
-import pytest
-from pathlib import Path
-from adidt.xsa.topology import XsaParser
-from adidt.xsa.exceptions import XsaParseError
 
 FIXTURE_HWH = Path(__file__).parent / "fixtures" / "ad9081_zcu102.hwh"
 
