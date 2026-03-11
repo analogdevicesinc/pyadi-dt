@@ -786,17 +786,19 @@ def xsa2dt(ctx, xsa, config, output, timeout):
         click.echo(f"  Merged:   {result['merged']}")
         click.echo(f"  Report:   {result['report']}")
 
+    except FileNotFoundError as e:
+        click.echo(click.style(f"Error: {e}", fg="red"))
+    except json.JSONDecodeError as e:
+        click.echo(click.style(f"Error: invalid JSON in config file: {e}", fg="red"))
+    except SdtgenNotFoundError as e:
+        click.echo(click.style(str(e), fg="red"))
+    except SdtgenError as e:
+        click.echo(click.style(f"sdtgen failed: {e}", fg="red"))
+        if e.stderr:
+            click.echo(e.stderr)
+    except (XsaParseError, ConfigError) as e:
+        click.echo(click.style(str(e), fg="red"))
     except Exception as e:
-        from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError, XsaParseError, ConfigError
-        if isinstance(e, SdtgenNotFoundError):
-            click.echo(click.style(str(e), fg="red"))
-        elif isinstance(e, SdtgenError):
-            click.echo(click.style(f"sdtgen failed: {e}", fg="red"))
-            if e.stderr:
-                click.echo(e.stderr)
-        elif isinstance(e, (XsaParseError, ConfigError)):
-            click.echo(click.style(str(e), fg="red"))
-        else:
-            click.echo(click.style(f"Unexpected error: {e}", fg="red"))
-            import traceback
-            traceback.print_exc()
+        click.echo(click.style(f"Unexpected error: {e}", fg="red"))
+        import traceback
+        traceback.print_exc()
