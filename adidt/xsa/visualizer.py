@@ -1,4 +1,5 @@
 # adidt/xsa/visualizer.py
+import html
 import json
 import re
 from pathlib import Path
@@ -29,9 +30,10 @@ class HtmlVisualizer:
         tree_data = self._dts_to_tree(merged_dts)
         clock_data = self._build_clock_data(topology, cfg)
         jesd_data = self._build_jesd_data(topology)
-        html = self._render_html(tree_data, clock_data, jesd_data, name)
-        (output_dir / f"{name}_report.html").write_text(html)
-        return html
+        html_content = self._render_html(tree_data, clock_data, jesd_data, name)
+        safe_name = re.sub(r"[^\w\-.]", "_", name)
+        (output_dir / f"{safe_name}_report.html").write_text(html_content)
+        return html_content
 
     def _dts_to_tree(self, dts: str) -> list[dict]:
         return [
@@ -54,10 +56,18 @@ class HtmlVisualizer:
             "converters": [{"name": c.name, "type": c.ip_type} for c in topology.converters],
         }
 
+    def _json_safe(self, data) -> str:
+        """Return JSON safe for inline JavaScript — escapes </script> sequence."""
+        return json.dumps(data).replace("</", "<\\/")
+
     def _render_html(self, tree_data, clock_data, jesd_data, title: str) -> str:
+        safe_title = html.escape(title)
+        tree_json = self._json_safe(tree_data)
+        clock_json = self._json_safe(clock_data)
+        jesd_json = self._json_safe(jesd_data)
         return f"""<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><title>ADI DTS Report: {title}</title>
+<head><meta charset="UTF-8"><title>ADI DTS Report: {safe_title}</title>
 <style>
 body{{font-family:monospace;background:#1e1e1e;color:#d4d4d4;margin:0}}
 .panel{{padding:1em;border-bottom:1px solid #444}}
@@ -69,7 +79,7 @@ h2{{color:#569cd6}}
 .search{{background:#252526;color:#d4d4d4;border:1px solid #555;padding:4px;width:300px}}
 </style></head>
 <body>
-<div class="panel"><h2>DTS Node Tree — {title}</h2>
+<div class="panel"><h2>DTS Node Tree — {safe_title}</h2>
 <input class="search" type="text" id="search" placeholder="Search nodes..." oninput="filterNodes()">
 <ul class="node-list" id="node-list"></ul></div>
 <div class="panel"><h2>Clock Topology</h2><svg id="clock-svg"></svg></div>
@@ -78,9 +88,9 @@ h2{{color:#569cd6}}
 {_D3_BUNDLE}
 </script>
 <script>
-const treeData={json.dumps(tree_data)};
-const clockData={json.dumps(clock_data)};
-const jesdData={json.dumps(jesd_data)};
+const treeData={tree_json};
+const clockData={clock_json};
+const jesdData={jesd_json};
 function renderTree(data){{
   const list=document.getElementById("node-list");
   list.innerHTML="";

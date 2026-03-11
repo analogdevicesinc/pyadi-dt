@@ -77,3 +77,33 @@ def test_missing_d3_bundle_raises(topo, cfg, merged_dts, tmp_path, monkeypatch):
     monkeypatch.setattr(vis_mod, "_D3_BUNDLE", "")
     with pytest.raises(RuntimeError, match="D3 bundle missing"):
         HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "fail")
+
+
+def test_title_with_html_chars_is_escaped(topo, cfg, merged_dts, tmp_path):
+    html_output = HtmlVisualizer().generate(
+        topo, cfg, merged_dts, tmp_path, '</title><script>alert(1)</script>'
+    )
+    assert "<script>alert(1)</script>" not in html_output
+    assert "&lt;/title&gt;" in html_output or "&lt;" in html_output
+
+
+def test_node_name_closing_script_tag_is_safe(topo, cfg, tmp_path):
+    dts_with_injection = "/dts-v1/;\n/ {\n\tmalicious@abc { };\n};\n"
+    # Build a topology where a converter name contains </script>
+    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    topo_injected = XsaTopology(
+        converters=[ConverterInstance(
+            name="</script><script>alert(1)</script>",
+            ip_type="axi_ad9081",
+            base_addr=0x44A00000,
+            spi_bus=None,
+            spi_cs=None,
+        )]
+    )
+    cfg_simple = {"clock": {}, "jesd": {}}
+    merged_dts_simple = "/dts-v1/;\n/ {};\n"
+    html_output = HtmlVisualizer().generate(
+        topo_injected, cfg_simple, merged_dts_simple, tmp_path, "safe"
+    )
+    # The </script> sequence should be escaped in the JSON data
+    assert "<script>alert(1)</script>" not in html_output
