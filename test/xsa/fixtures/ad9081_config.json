@@ -1,0 +1,15 @@
+{
+  "clock": {
+    "part": "hmc7044",
+    "hmc7044_out_freq": {
+      "rx_device_clk": 250000000,
+      "tx_device_clk": 250000000
+    },
+    "hmc7044_rx_channel": 10,
+    "hmc7044_tx_channel": 6
+  },
+  "jesd": {
+    "rx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
+    "tx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1}
+  }
+}
