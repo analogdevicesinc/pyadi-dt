@@ -33,6 +33,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+xsa = ["lopper"]
 dev = [
     "pytest",
     "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",

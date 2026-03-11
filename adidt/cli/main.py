@@ -737,3 +737,66 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
 
         traceback.print_exc()
         return
+
+
+@cli.command("xsa2dt")
+@click.option("--xsa", "-x", required=True, type=click.Path(exists=True),
+              help="Path to Vivado .xsa file")
+@click.option("--config", "-c", required=True, type=click.Path(exists=True),
+              help="Path to pyadi-jif JSON configuration file")
+@click.option("--output", "-o", default="./generated", type=click.Path(), show_default=True,
+              help="Output directory")
+@click.option("--timeout", "-t", default=120, type=int, show_default=True,
+              help="sdtgen subprocess timeout in seconds")
+@click.pass_context
+def xsa2dt(ctx, xsa, config, output, timeout):
+    """Generate ADI device tree from Vivado XSA file
+
+    \b
+    Invokes sdtgen against the XSA, detects ADI IPs, generates JESD204
+    FSM-compatible nodes, and produces overlay (.dtso), merged (.dts), and
+    interactive HTML visualization report.
+
+    \b
+    Requires sdtgen (lopper) on PATH.
+    Install from: https://github.com/devicetree-org/lopper
+
+    \b
+    Examples:
+      adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json
+      adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
+    """
+    try:
+        from adidt.xsa.pipeline import XsaPipeline
+        from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError, XsaParseError, ConfigError
+    except ImportError:
+        click.echo(click.style(
+            "Error: xsa support not installed. Run: pip install adidt[xsa]", fg="red"
+        ))
+        return
+
+    try:
+        with open(config, "r") as f:
+            cfg = json.load(f)
+
+        result = XsaPipeline().run(Path(xsa), cfg, Path(output), sdtgen_timeout=timeout)
+
+        click.echo(click.style("Done!", fg="green", bold=True))
+        click.echo(f"  Overlay:  {result['overlay']}")
+        click.echo(f"  Merged:   {result['merged']}")
+        click.echo(f"  Report:   {result['report']}")
+
+    except Exception as e:
+        from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError, XsaParseError, ConfigError
+        if isinstance(e, SdtgenNotFoundError):
+            click.echo(click.style(str(e), fg="red"))
+        elif isinstance(e, SdtgenError):
+            click.echo(click.style(f"sdtgen failed: {e}", fg="red"))
+            if e.stderr:
+                click.echo(e.stderr)
+        elif isinstance(e, (XsaParseError, ConfigError)):
+            click.echo(click.style(str(e), fg="red"))
+        else:
+            click.echo(click.style(f"Unexpected error: {e}", fg="red"))
+            import traceback
+            traceback.print_exc()
