@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from .sdtgen import SdtgenRunner
-from .topology import XsaParser
+from .topology import XsaParser, XsaTopology
 from .node_builder import NodeBuilder
 from .merger import DtsMerger
 from .visualizer import HtmlVisualizer
@@ -54,7 +54,7 @@ class XsaPipeline:
             "report": output_dir / f"{name}_report.html",
         }
 
-    def _derive_name(self, topology) -> str:
+    def _derive_name(self, topology: XsaTopology) -> str:
         conv_type = "unknown"
         if topology.converters:
             conv_type = re.sub(r"^axi_", "", topology.converters[0].ip_type)
