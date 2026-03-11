@@ -6,7 +6,7 @@ import warnings
 from pathlib import Path
 from typing import Any
 
-_LABEL_RE = re.compile(r"^\s*(\w+)\s*:\s*\w+", re.MULTILINE)
+_LABEL_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:\s*\w", re.MULTILINE)
 _NODE_ADDR_RE = re.compile(r"@([0-9a-fA-F]+)\s*\{")
 _log = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class DtsMerger:
             if m:
                 addr = m.group(1).lower()
                 conflict_re = re.compile(
-                    r"[ \t]+\w[\w-]*@" + re.escape(addr) + r"\s*\{[^}]*\};",
+                    r"[ \t]+\w[\w-]*@" + re.escape(addr) + r"\s*\{(?:[^{}]|\{[^}]*\})*\};",
                     re.DOTALL,
                 )
                 if conflict_re.search(merged):
