@@ -79,3 +79,20 @@ def test_build_warns_on_unresolvable_clock(cfg):
         warnings.simplefilter("always")
         NodeBuilder().build(topo_no_clkgen, cfg)
     assert any("unresolved clock" in str(warning.message) for warning in w)
+
+
+def test_build_converter_renders_with_jesd_label(topo, cfg):
+    nodes = NodeBuilder().build(topo, cfg)
+    converter_node = nodes["converters"][0]
+    assert "axi_jesd204_rx_0" in converter_node
+
+
+def test_build_converter_fallback_template(cfg):
+    topo_unknown = XsaTopology(
+        converters=[ConverterInstance(
+            name="axi_unknown_0", ip_type="axi_unknown_chip",
+            base_addr=0x44A00000, spi_bus=None, spi_cs=None,
+        )]
+    )
+    nodes = NodeBuilder().build(topo_unknown, cfg)
+    assert "no template for axi_unknown_chip" in nodes["converters"][0]

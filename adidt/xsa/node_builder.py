@@ -5,7 +5,7 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
-from .topology import XsaTopology, Jesd204Instance, ClkgenInstance
+from .topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
 
 
 class NodeBuilder:
@@ -20,26 +20,35 @@ class NodeBuilder:
         env = self._make_jinja_env()
         clock_map = self._build_clock_map(topology)
         result: dict[str, list[str]] = {"jesd204_rx": [], "jesd204_tx": [], "converters": []}
+        rx_labels: list[str] = []
+        tx_labels: list[str] = []
 
         for inst in topology.jesd204_rx:
             clkgen_label, hmc_ch = self._resolve_clock(inst, clock_map, cfg, "rx")
             result["jesd204_rx"].append(
                 self._render_jesd(env, inst, cfg.get("jesd", {}).get("rx", {}), clkgen_label, hmc_ch)
             )
+            rx_labels.append(inst.name.replace("-", "_"))
 
         for inst in topology.jesd204_tx:
             clkgen_label, hmc_ch = self._resolve_clock(inst, clock_map, cfg, "tx")
             result["jesd204_tx"].append(
                 self._render_jesd(env, inst, cfg.get("jesd", {}).get("tx", {}), clkgen_label, hmc_ch)
             )
+            tx_labels.append(inst.name.replace("-", "_"))
 
         for conv in topology.converters:
-            result["converters"].append(self._render_converter(env, conv, result))
+            rx_label = rx_labels[0] if rx_labels else "jesd_rx"
+            tx_label = tx_labels[0] if tx_labels else "jesd_tx"
+            result["converters"].append(self._render_converter(env, conv, rx_label, tx_label))
 
         return result
 
     def _make_jinja_env(self) -> Environment:
-        loc = os.path.join(os.path.dirname(__file__), "..", "templates", "xsa")
+        from .exceptions import XsaParseError
+        loc = os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "templates", "xsa")
+        if not os.path.isdir(loc):
+            raise XsaParseError(f"template directory not found: {loc}")
         return Environment(loader=FileSystemLoader(loc))
 
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
@@ -79,13 +88,12 @@ class NodeBuilder:
             clkgen_label=clkgen_label, hmc_channel=hmc_channel,
         )
 
-    def _render_converter(self, env: Environment, conv, nodes: dict[str, list[str]]) -> str:
+    def _render_converter(self, env: Environment, conv: ConverterInstance, rx_label: str, tx_label: str) -> str:
+        from jinja2 import TemplateNotFound
         try:
             tmpl = env.get_template(f"{conv.ip_type}.tmpl")
-        except Exception:
+        except TemplateNotFound:
             return f"\t/* {conv.name}: no template for {conv.ip_type} */"
-        rx_label = nodes["jesd204_rx"][0].split(":")[0].strip() if nodes["jesd204_rx"] else "jesd_rx"
-        tx_label = nodes["jesd204_tx"][0].split(":")[0].strip() if nodes["jesd204_tx"] else "jesd_tx"
         return tmpl.render(
             instance=conv, rx_jesd_label=rx_label, tx_jesd_label=tx_label,
             spi_label="spi0", spi_cs=conv.spi_cs if conv.spi_cs is not None else 0,
