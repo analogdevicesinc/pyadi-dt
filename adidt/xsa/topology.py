@@ -99,7 +99,13 @@ class XsaParser:
                     raise XsaParseError(
                         f"no hardware handoff (.hwh) file found in {xsa_path.name}"
                     )
-                return zf.read(hwh_names[0]).decode("utf-8")
+                raw_bytes = zf.read(hwh_names[0])
+                try:
+                    return raw_bytes.decode("utf-8")
+                except UnicodeDecodeError as e:
+                    raise XsaParseError(
+                        f"cannot decode {hwh_names[0]} as UTF-8: {e}"
+                    )
         except zipfile.BadZipFile as e:
             raise XsaParseError(f"cannot open {xsa_path.name} as a zip archive: {e}")
 
@@ -119,15 +125,30 @@ class XsaParser:
         mr = mod.find(".//MEMRANGE")
         if mr is None:
             return 0
-        return int(mr.get("BASEVALUE", "0x0"), 16)
+        raw = mr.get("BASEVALUE", "0x0")
+        try:
+            return int(raw, 16)
+        except ValueError:
+            instance = mod.get("INSTANCE", "unknown")
+            raise XsaParseError(
+                f"invalid BASEVALUE '{raw}' for module '{instance}'"
+            )
 
     def _parse_jesd(
         self, mod: ET.Element, name: str, base_addr: int, direction: str
     ) -> Jesd204Instance:
+        num_lanes_str = self._get_param(mod, "C_NUM_LANES", "")
+        if not num_lanes_str:
+            warnings.warn(
+                f"C_NUM_LANES not found for {name}; defaulting to 1",
+                UserWarning,
+                stacklevel=3,
+            )
+            num_lanes_str = "1"
         return Jesd204Instance(
             name=name,
             base_addr=base_addr,
-            num_lanes=int(self._get_param(mod, "C_NUM_LANES", "1")),
+            num_lanes=int(num_lanes_str),
             irq=self._parse_irq(mod),
             link_clk=self._get_port_signame(mod, "device_clk"),
             direction=direction,
@@ -138,7 +159,7 @@ class XsaParser:
             port.get("SIGNAME", "")
             for port in mod.findall(".//PORT")
             if port.get("DIR") == "O"
-            and port.get("SIGIS", "") != "RST"
+            and port.get("SIGIS", "") == "CLK"
             and port.get("SIGNAME", "")
         ]
         return ClkgenInstance(name=name, base_addr=base_addr, output_clks=output_clks)
