@@ -1,7 +1,7 @@
-{# Context vars: instance (Jesd204Instance), jesd (dict), clkgen_label, hmc_channel #}
+{# Context vars: instance (Jesd204Instance), jesd (dict with keys F, K), clkgen_label, hmc_channel #}
 	{{ instance.name | replace("-", "_") }}: axi-jesd204-{{ instance.direction }}@{{ "%08x" | format(instance.base_addr) }} {
 		compatible = "adi,axi-jesd204-{{ instance.direction }}-1.0";
-		reg = <0x0 0x{{ "%08X" | format(instance.base_addr) }} 0x0 0x1000>;
+		reg = <0x0 0x{{ "%08x" | format(instance.base_addr) }} 0x0 0x1000>;
 {%- if instance.irq is not none %}
 		interrupts = <0 {{ instance.irq }} IRQ_TYPE_LEVEL_HIGH>;
 {%- endif %}

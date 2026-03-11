@@ -1,4 +1,4 @@
-{# Context vars: instance (ConverterInstance), rx_jesd_label, tx_jesd_label, spi_label, spi_cs #}
+{# Context vars: instance (ConverterInstance), rx_jesd_label, spi_cs #}
 	{{ instance.name }}: ad9081@{{ spi_cs }} {
 		compatible = "adi,ad9081";
 		reg = <{{ spi_cs }}>;
