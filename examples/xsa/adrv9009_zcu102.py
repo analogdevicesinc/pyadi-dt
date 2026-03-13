@@ -46,6 +46,7 @@ import shutil
 import subprocess
 import tarfile
 from pathlib import Path
+from typing import Any
 
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.topology import XsaParser
@@ -54,10 +55,159 @@ HERE = Path(__file__).parent
 DEFAULT_OUT_DIR = HERE / "output"
 DEFAULT_KUIPER_RELEASE = "2023_r2"
 DEFAULT_KUIPER_PROJECT = "zynqmp-zcu102-rev10-adrv9009"
+DEFAULT_VCXO_HZ = 122.88e6
+DEFAULT_SAMPLE_RATE_HZ = 245.76e6
 
 
-def _config() -> dict:
-    # Matches the working HW-test defaults for ADRV9009 on ZCU102.
+def _resolve_config_from_adijif(
+    vcxo_hz: float, sample_rate_hz: float, solve: bool = False
+) -> tuple[dict, dict]:
+    """Build XSA pipeline config using pyadi-jif settings from adrv9009_pcbz example.
+
+    Reference:
+    https://raw.githubusercontent.com/analogdevicesinc/pyadi-jif/refs/heads/main/examples/adrv9009_pcbz_example.py
+    """
+    import adijif
+
+    sys = adijif.system("adrv9009", "ad9528", "xilinx", vcxo=vcxo_hz)
+
+    # Match adrv9009_pcbz_example.py clocking constraints.
+    # sys.clock.m1 = 3
+    # sys.clock.use_vcxo_doubler = True
+    sys.fpga.setup_by_dev_kit_name("zcu102")
+    # sys.fpga.force_qpll = True
+
+    mode_rx = adijif.utils.get_jesd_mode_from_params(
+        sys.converter.adc,
+        M=4,
+        L=2,
+        S=1,
+        Np=16,
+    )
+    mode_tx = adijif.utils.get_jesd_mode_from_params(
+        sys.converter.dac,
+        M=4,
+        L=4,
+        S=1,
+        Np=16,
+    )
+    if not mode_rx or not mode_tx:
+        raise RuntimeError("No matching ADRV9009 JESD modes found via adijif")
+
+    sys.converter.adc.set_quick_configuration_mode(
+        mode_rx[0]["mode"], mode_rx[0]["jesd_class"]
+    )
+    sys.converter.dac.set_quick_configuration_mode(
+        mode_tx[0]["mode"], mode_tx[0]["jesd_class"]
+    )
+
+    sys.converter.adc.decimation = 8
+    sys.converter.adc.sample_clock = sample_rate_hz
+    sys.converter.dac.interpolation = 8
+    sys.converter.dac.sample_clock = sample_rate_hz
+
+    rx_settings = mode_rx[0]["settings"]
+    tx_settings = mode_tx[0]["settings"]
+
+    # Keep clock labels aligned with current ADRV9009 NodeBuilder path.
+    cfg: dict[str, Any] = {
+        "jesd": {
+            "rx": {
+                "F": int(rx_settings["F"]),
+                "K": int(rx_settings["K"]),
+                "M": int(rx_settings["M"]),
+                "L": int(rx_settings["L"]),
+                "Np": int(rx_settings["Np"]),
+                "S": int(rx_settings["S"]),
+            },
+            "tx": {
+                "F": int(tx_settings["F"]),
+                "K": int(tx_settings["K"]),
+                "M": int(tx_settings["M"]),
+                "L": int(tx_settings["L"]),
+                "Np": int(tx_settings["Np"]),
+                "S": int(tx_settings["S"]),
+            },
+        },
+        "clock": {
+            "rx_device_clk_label": "clkgen",
+            "tx_device_clk_label": "clkgen",
+            "hmc7044_rx_channel": 0,
+            "hmc7044_tx_channel": 0,
+        },
+    }
+
+    summary: dict[str, Any] = {
+        "vcxo_hz": vcxo_hz,
+        "sample_rate_hz": sample_rate_hz,
+        "clock_m1": 3,
+        "clock_use_vcxo_doubler": True,
+        "rx_mode": mode_rx[0]["mode"],
+        "tx_mode": mode_tx[0]["mode"],
+        "rx_jesd_class": mode_rx[0]["jesd_class"],
+        "tx_jesd_class": mode_tx[0]["jesd_class"],
+        "solver_used": None,
+        "solver_succeeded": False,
+        "solver_attempted": solve,
+        "clock_output_clocks": None,
+        "solve_error": None,
+    }
+
+    if solve:
+        # Optional full solve for clock outputs; not required for DTS generation.
+        try:
+            conf = sys.solve()
+            summary["solver_used"] = "default"
+            summary["solver_succeeded"] = True
+            summary["clock_output_clocks"] = conf.get("clock", {}).get("output_clocks")
+            rx_conf = conf.get("jesd_ADRV9009_RX", {})
+            tx_conf = conf.get("jesd_ADRV9009_TX", {})
+            for key in ("F", "K", "M", "L", "Np", "S"):
+                if key in rx_conf:
+                    cfg["jesd"]["rx"][key] = int(rx_conf[key])
+                if key in tx_conf:
+                    cfg["jesd"]["tx"][key] = int(tx_conf[key])
+        except Exception as ex:
+            summary["solve_error"] = str(ex)
+
+    return cfg, summary
+
+
+def _print_adijif_details(cfg: dict, summary: dict):
+    print()
+    print("adijif-derived configuration:")
+    print(f"  VCXO (Hz)           : {summary['vcxo_hz']}")
+    print(f"  Sample rate (Hz)    : {summary['sample_rate_hz']}")
+    print(f"  AD9528 m1           : {summary['clock_m1']}")
+    print(f"  VCXO doubler        : {summary['clock_use_vcxo_doubler']}")
+    print(
+        f"  RX JESD             : mode={summary['rx_mode']} class={summary['rx_jesd_class']} "
+        f"F={cfg['jesd']['rx']['F']} K={cfg['jesd']['rx']['K']} "
+        f"L={cfg['jesd']['rx']['L']} M={cfg['jesd']['rx']['M']}"
+    )
+    print(
+        f"  TX JESD             : mode={summary['tx_mode']} class={summary['tx_jesd_class']} "
+        f"F={cfg['jesd']['tx']['F']} K={cfg['jesd']['tx']['K']} "
+        f"L={cfg['jesd']['tx']['L']} M={cfg['jesd']['tx']['M']}"
+    )
+    if summary["solver_succeeded"]:
+        print("  Solver              : succeeded")
+        if summary["clock_output_clocks"] is not None:
+            print(f"  Clock outputs       : {summary['clock_output_clocks']}")
+    elif not summary["solver_attempted"]:
+        print(
+            "  Solver              : skipped (use --solve-adijif to attempt full solve)"
+        )
+    else:
+        print(
+            "  Solver              : unavailable/failed, using quick-mode JESD config"
+        )
+        if summary["solve_error"]:
+            print(f"  Solver error        : {summary['solve_error']}")
+
+
+def _default_config() -> dict:
+    """Fallback config when adijif is unavailable."""
     return {
         "jesd": {
             "rx": {"F": 4, "K": 32, "M": 4, "L": 4, "Np": 16, "S": 1},
@@ -215,6 +365,23 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Compile generated DTS into DTB using dtc",
     )
+    parser.add_argument(
+        "--vcxo-hz",
+        type=float,
+        default=DEFAULT_VCXO_HZ,
+        help=f"VCXO frequency for adijif setup (default: {DEFAULT_VCXO_HZ})",
+    )
+    parser.add_argument(
+        "--sample-rate-hz",
+        type=float,
+        default=DEFAULT_SAMPLE_RATE_HZ,
+        help=f"ADC/DAC sample rate for adijif setup (default: {DEFAULT_SAMPLE_RATE_HZ})",
+    )
+    parser.add_argument(
+        "--solve-adijif",
+        action="store_true",
+        help="Attempt full adijif solve to extract solved clock outputs",
+    )
     return parser.parse_args()
 
 
@@ -250,9 +417,20 @@ def main():
     print(f"CLKGEN instances : {len(topo.clkgens)}")
     print(f"Converters       : {[c.ip_type for c in topo.converters]}")
 
+    try:
+        cfg, summary = _resolve_config_from_adijif(
+            args.vcxo_hz, args.sample_rate_hz, solve=args.solve_adijif
+        )
+        _print_adijif_details(cfg, summary)
+    except Exception as ex:
+        print()
+        print("adijif configuration failed; using fallback static config.")
+        print(f"  reason: {ex}")
+        cfg = _default_config()
+
     result = XsaPipeline().run(
         xsa_path=xsa_path,
-        cfg=_config(),
+        cfg=cfg,
         output_dir=out_dir,
         sdtgen_timeout=300,
     )
