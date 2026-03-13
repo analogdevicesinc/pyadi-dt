@@ -77,3 +77,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --ignore-glob=*_hw.py"
+markers = [
+    "network: tests requiring internet downloads",
+]

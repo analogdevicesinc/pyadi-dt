@@ -1,5 +1,3 @@
-
-
 def coefs_to_long_string(coefs):
     """Convert coefficient array to string.
 

@@ -71,6 +71,70 @@ ADRV9009
    :undoc-members:
    :show-inheritance:
 
+XSA Module
+----------
+
+.. automodule:: adidt.xsa
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Topology
+^^^^^^^^
+
+.. automodule:: adidt.xsa.topology
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Pipeline
+^^^^^^^^
+
+.. automodule:: adidt.xsa.pipeline
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Node Builder
+^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.node_builder
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+DTS Merger
+^^^^^^^^^^
+
+.. automodule:: adidt.xsa.merger
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+HTML Visualizer
+^^^^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.visualizer
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+SDT Generator Runner
+^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.sdtgen
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Exceptions
+^^^^^^^^^^
+
+.. automodule:: adidt.xsa.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Boards Module
 -------------
 

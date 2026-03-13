@@ -1,11 +1,10 @@
 class SdtgenNotFoundError(Exception):
     """Raised when sdtgen/lopper binary is not found on PATH."""
+
     INSTALL_URL = "https://github.com/devicetree-org/lopper"
 
     def __init__(self, message: str = "sdtgen not found on PATH"):
-        super().__init__(
-            f"{message}\nInstall lopper/sdtgen from: {self.INSTALL_URL}"
-        )
+        super().__init__(f"{message}\nInstall lopper/sdtgen from: {self.INSTALL_URL}")
 
 
 class SdtgenError(Exception):
@@ -18,6 +17,7 @@ class SdtgenError(Exception):
 
 class XsaParseError(Exception):
     """Raised when the XSA file cannot be parsed."""
+
     pass
 
 

@@ -31,6 +31,7 @@ Table of Contents
    parts
    utils
    examples
+   xsa
 
 .. toctree::
    :maxdepth: 2

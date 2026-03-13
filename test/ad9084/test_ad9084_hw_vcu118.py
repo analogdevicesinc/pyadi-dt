@@ -48,7 +48,6 @@ def _gen_dt(kernel_path: Path, profile_name: str, cfg: dict, converter) -> Path:
     Returns the path to the generated DTS file.
     """
     jesd = cfg["jesd_AD9084_RX"]
-    fpga = cfg["fpga_AD9084_RX"]
     sysref_clks = cfg["clock_ext_pll_sysref_adf4030"]["output_clocks"]
 
     bit_clock_hz = jesd["bit_clock"]
@@ -108,7 +107,7 @@ def test_ad9084_new(target, profile):
     jesd = cfg["jesd_AD9084_RX"]
     print(
         f"JESD204C: M={jesd['M']} L={jesd['L']} S={jesd['S']} "
-        f"Np={jesd['Np']} lane_rate={jesd['bit_clock']/1e9:.4f} Gbps"
+        f"Np={jesd['Np']} lane_rate={jesd['bit_clock'] / 1e9:.4f} Gbps"
     )
 
     # 4. Generate devicetree
@@ -126,7 +125,9 @@ def test_ad9084_new(target, profile):
     # Get defconfig path from platform config
     defconfig_filename = platform_config["defconfig"]
     defconfig_filename = Path(defconfig_filename)
-    defconfig_path = kernel_path / "arch" / "microblaze" / "configs" / defconfig_filename
+    defconfig_path = (
+        kernel_path / "arch" / "microblaze" / "configs" / defconfig_filename
+    )
     print(f"Updating defconfig: {defconfig_path}")
     with open(defconfig_path, "r") as f:
         lines = f.readlines()
@@ -177,14 +178,16 @@ def test_ad9084_new(target, profile):
 
     # Find the AD9084 RX IIO device
     ad9084_search = shell.run_check(
-        'for d in /sys/bus/iio/devices/iio:device*; do '
+        "for d in /sys/bus/iio/devices/iio:device*; do "
         'name=$(cat "$d/name" 2>/dev/null); '
         '[ "$name" = "axi-ad9084-rx-hpc" ] && echo "$d"; '
-        'done; true'
+        "done; true"
     )
 
     if ad9084_search and len(ad9084_search) > 0 and ad9084_search[0]:
         ad9084_phy = ad9084_search[0].strip()
         print(f"Found AD9084 RX device: {ad9084_phy}")
     else:
-        assert False, f"AD9084 RX device not found. IIO devices present: {iio_names}\n{dmesg_full}"
+        assert False, (
+            f"AD9084 RX device not found. IIO devices present: {iio_names}\n{dmesg_full}"
+        )

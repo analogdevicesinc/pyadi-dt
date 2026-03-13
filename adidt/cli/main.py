@@ -740,14 +740,36 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
 
 
 @cli.command("xsa2dt")
-@click.option("--xsa", "-x", required=True, type=click.Path(exists=True),
-              help="Path to Vivado .xsa file")
-@click.option("--config", "-c", required=True, type=click.Path(exists=True),
-              help="Path to pyadi-jif JSON configuration file")
-@click.option("--output", "-o", default="./generated", type=click.Path(), show_default=True,
-              help="Output directory")
-@click.option("--timeout", "-t", default=120, type=int, show_default=True,
-              help="sdtgen subprocess timeout in seconds")
+@click.option(
+    "--xsa",
+    "-x",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to Vivado .xsa file",
+)
+@click.option(
+    "--config",
+    "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to pyadi-jif JSON configuration file",
+)
+@click.option(
+    "--output",
+    "-o",
+    default="./generated",
+    type=click.Path(),
+    show_default=True,
+    help="Output directory",
+)
+@click.option(
+    "--timeout",
+    "-t",
+    default=120,
+    type=int,
+    show_default=True,
+    help="sdtgen subprocess timeout in seconds",
+)
 @click.pass_context
 def xsa2dt(ctx, xsa, config, output, timeout):
     """Generate ADI device tree from Vivado XSA file
@@ -768,11 +790,19 @@ def xsa2dt(ctx, xsa, config, output, timeout):
     """
     try:
         from adidt.xsa.pipeline import XsaPipeline
-        from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError, XsaParseError, ConfigError
+        from adidt.xsa.exceptions import (
+            SdtgenNotFoundError,
+            SdtgenError,
+            XsaParseError,
+            ConfigError,
+        )
     except ImportError:
-        click.echo(click.style(
-            "Error: xsa support not installed. Run: pip install adidt[xsa]", fg="red"
-        ))
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
         return
 
     try:
@@ -801,4 +831,5 @@ def xsa2dt(ctx, xsa, config, output, timeout):
     except Exception as e:
         click.echo(click.style(f"Unexpected error: {e}", fg="red"))
         import traceback
+
         traceback.print_exc()

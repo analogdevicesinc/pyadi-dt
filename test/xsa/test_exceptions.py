@@ -1,4 +1,9 @@
-from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError, XsaParseError, ConfigError
+from adidt.xsa.exceptions import (
+    SdtgenNotFoundError,
+    SdtgenError,
+    XsaParseError,
+    ConfigError,
+)
 
 
 def test_sdtgen_not_found_error_is_exception():

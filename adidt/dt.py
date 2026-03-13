@@ -55,7 +55,7 @@ class dt(sd):
                     username=username,
                     ip=ip,
                     port=22,
-                    ),
+                ),
                 connect_kwargs={"password": password},
             )
             self._set_arch(arch)

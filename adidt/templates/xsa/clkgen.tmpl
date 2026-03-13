@@ -1,0 +1,8 @@
+	{{ instance.name | replace("-", "_") }}: axi-clkgen@{{ "%08x" | format(instance.base_addr) }} {
+		compatible = "adi,axi-clkgen-2.00.a";
+		reg = <0x0 0x{{ "%08x" | format(instance.base_addr) }} 0x0 0x10000>;
+		#clock-cells = <1>;
+		clocks = <&zynqmp_clk 71>, <&zynqmp_clk 71>;
+		clock-names = "clkin1", "s_axi_aclk";
+		clock-output-names = "{{ instance.name | replace("-", "_") }}_0", "{{ instance.name | replace("-", "_") }}_1";
+	};

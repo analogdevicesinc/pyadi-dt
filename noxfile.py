@@ -66,18 +66,31 @@ def format_check(session):
 
 @nox.session(python="3.11")
 def docs(session):
-    """Build documentation with mkdocs."""
-    session.install("mkdocs", "mkdocs-material")
+    """Build documentation with Sphinx."""
+    session.install(
+        "sphinx",
+        "myst-parser",
+        "sphinx-click",
+        "sphinxcontrib-mermaid",
+        "adi-doctools",
+    )
     session.install(".")
-    session.run("mkdocs", "build", "--verbose", "--strict")
+    session.run("sphinx-build", "-b", "html", "doc/source", "doc/build/html")
 
 
 @nox.session(python="3.11")
 def docs_serve(session):
-    """Serve documentation locally with mkdocs."""
-    session.install("mkdocs", "mkdocs-material")
+    """Build and serve documentation locally with Sphinx autobuild."""
+    session.install(
+        "sphinx",
+        "myst-parser",
+        "sphinx-click",
+        "sphinxcontrib-mermaid",
+        "adi-doctools",
+        "sphinx-autobuild",
+    )
     session.install(".")
-    session.run("mkdocs", "serve")
+    session.run("sphinx-autobuild", "doc/source", "doc/build/html")
 
 
 @nox.session(python="3.11")

@@ -29,7 +29,9 @@ def cfg():
 
 def _fake_sdtgen_run(xsa_path, output_dir, timeout=120):
     dts = output_dir / "system-top.dts"
-    dts.write_text("/dts-v1/;\n/ {\n\tamba: axi {\n\t\t#address-cells = <2>;\n\t};\n};\n")
+    dts.write_text(
+        "/dts-v1/;\n/ {\n\tamba: axi {\n\t\t#address-cells = <2>;\n\t};\n};\n"
+    )
     return dts
 
 

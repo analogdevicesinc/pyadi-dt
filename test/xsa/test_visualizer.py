@@ -1,29 +1,53 @@
 # test/xsa/test_visualizer.py
-from pathlib import Path
 import pytest
-from adidt.xsa.topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
+from adidt.xsa.topology import (
+    XsaTopology,
+    Jesd204Instance,
+    ClkgenInstance,
+    ConverterInstance,
+)
 from adidt.xsa.visualizer import HtmlVisualizer
 
 
 @pytest.fixture
 def topo():
     return XsaTopology(
-        jesd204_rx=[Jesd204Instance(
-            name="axi_jesd204_rx_0", base_addr=0x44A90000,
-            num_lanes=4, irq=54, link_clk="jesd_rx_device_clk", direction="rx",
-        )],
-        jesd204_tx=[Jesd204Instance(
-            name="axi_jesd204_tx_0", base_addr=0x44B90000,
-            num_lanes=4, irq=55, link_clk="jesd_tx_device_clk", direction="tx",
-        )],
-        clkgens=[ClkgenInstance(
-            name="axi_clkgen_0", base_addr=0x43C00000,
-            output_clks=["jesd_rx_device_clk"],
-        )],
-        converters=[ConverterInstance(
-            name="axi_ad9081_0", ip_type="axi_ad9081",
-            base_addr=0x44A00000, spi_bus=None, spi_cs=None,
-        )],
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_jesd204_rx_0",
+                base_addr=0x44A90000,
+                num_lanes=4,
+                irq=54,
+                link_clk="jesd_rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_jesd204_tx_0",
+                base_addr=0x44B90000,
+                num_lanes=4,
+                irq=55,
+                link_clk="jesd_tx_device_clk",
+                direction="tx",
+            )
+        ],
+        clkgens=[
+            ClkgenInstance(
+                name="axi_clkgen_0",
+                base_addr=0x43C00000,
+                output_clks=["jesd_rx_device_clk"],
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081_0",
+                ip_type="axi_ad9081",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
         fpga_part="xczu9eg-ffvb1156-2",
     )
 
@@ -74,6 +98,7 @@ def test_html_file_written(topo, cfg, merged_dts, tmp_path):
 
 def test_missing_d3_bundle_raises(topo, cfg, merged_dts, tmp_path, monkeypatch):
     import adidt.xsa.visualizer as vis_mod
+
     monkeypatch.setattr(vis_mod, "_D3_BUNDLE", "")
     with pytest.raises(RuntimeError, match="D3 bundle missing"):
         HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "fail")
@@ -81,24 +106,26 @@ def test_missing_d3_bundle_raises(topo, cfg, merged_dts, tmp_path, monkeypatch):
 
 def test_title_with_html_chars_is_escaped(topo, cfg, merged_dts, tmp_path):
     html_output = HtmlVisualizer().generate(
-        topo, cfg, merged_dts, tmp_path, '</title><script>alert(1)</script>'
+        topo, cfg, merged_dts, tmp_path, "</title><script>alert(1)</script>"
     )
     assert "<script>alert(1)</script>" not in html_output
     assert "&lt;/title&gt;" in html_output or "&lt;" in html_output
 
 
 def test_node_name_closing_script_tag_is_safe(topo, cfg, tmp_path):
-    dts_with_injection = "/dts-v1/;\n/ {\n\tmalicious@abc { };\n};\n"
     # Build a topology where a converter name contains </script>
     from adidt.xsa.topology import ConverterInstance, XsaTopology
+
     topo_injected = XsaTopology(
-        converters=[ConverterInstance(
-            name="</script><script>alert(1)</script>",
-            ip_type="axi_ad9081",
-            base_addr=0x44A00000,
-            spi_bus=None,
-            spi_cs=None,
-        )]
+        converters=[
+            ConverterInstance(
+                name="</script><script>alert(1)</script>",
+                ip_type="axi_ad9081",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ]
     )
     cfg_simple = {"clock": {}, "jesd": {}}
     merged_dts_simple = "/dts-v1/;\n/ {};\n"

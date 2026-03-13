@@ -237,10 +237,10 @@ class adrv9009_fmc(layout):
             fields = {}
             if not prof_data:
                 return fields
-            
+
             # Keep original fields
             fields.update(prof_data)
-            
+
             # Map common fields to standardized names
             mapping = {
                 "rxFirDecimation": "fir_decimation",
@@ -261,40 +261,46 @@ class adrv9009_fmc(layout):
                 "txChannels": "channels",
                 "obsRxChannels": "channels",
             }
-            
+
             for src, dst in mapping.items():
                 if src in prof_data:
                     fields[dst] = prof_data[src]
-            
+
             # Handle gain separately as it might be in filter
             if "filter" in prof_data and "@gain_dB" in prof_data["filter"]:
                 fields["fir_gain_db"] = prof_data["filter"]["@gain_dB"]
-            
+
             return fields
 
         # RX configuration (framer)
         rx_prof = cfg.get("rx_profile", {})
         rx = extract_profile_fields(rx_prof)
-        rx.update({
-            "profile": rx_prof,
-            "framer": cfg.get("jesd204", {}).get("framer_a", {}),
-        })
+        rx.update(
+            {
+                "profile": rx_prof,
+                "framer": cfg.get("jesd204", {}).get("framer_a", {}),
+            }
+        )
 
         # TX configuration (deframer)
         tx_prof = cfg.get("tx_profile", {})
         tx = extract_profile_fields(tx_prof)
-        tx.update({
-            "profile": tx_prof,
-            "deframer": cfg.get("jesd204", {}).get("deframer_a", {}),
-        })
+        tx.update(
+            {
+                "profile": tx_prof,
+                "deframer": cfg.get("jesd204", {}).get("deframer_a", {}),
+            }
+        )
 
         # ORX configuration (framer B)
         orx_prof = cfg.get("orx_profile", {})
         orx = extract_profile_fields(orx_prof)
-        orx.update({
-            "profile": orx_prof,
-            "framer": cfg.get("jesd204", {}).get("framer_b", {}),
-        })
+        orx.update(
+            {
+                "profile": orx_prof,
+                "framer": cfg.get("jesd204", {}).get("framer_b", {}),
+            }
+        )
 
         # FPGA configuration
         fpga = {

@@ -155,3 +155,75 @@ def test_parser_warns_when_no_adi_ips(tmp_path):
         topo = XsaParser().parse(xsa)
     assert topo.jesd204_rx == []
     assert any("no recognized ADI" in str(warning.message) for warning in w)
+
+
+def test_parser_uses_global_memrange_when_module_memrange_is_zero(tmp_path):
+    xsa = tmp_path / "global_memmap.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER>
+    <DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/>
+  </HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_adrv9009_rx_jesd_rx_axi">
+      <MEMORYMAP>
+        <MEMRANGE BASEVALUE="0x00000000" HIGHVALUE="0x00003FFF"/>
+      </MEMORYMAP>
+      <PORTS>
+        <PORT NAME="device_clk" SIGNAME="rx_clk"/>
+      </PORTS>
+      <PARAMETERS>
+        <PARAMETER NAME="C_NUM_LANES" VALUE="4"/>
+      </PARAMETERS>
+    </MODULE>
+  </MODULES>
+  <MEMORYMAP>
+    <MEMRANGE INSTANCE="axi_adrv9009_rx_jesd_rx_axi" BASEVALUE="0x84AA0000" HIGHVALUE="0x84AA3FFF"/>
+  </MEMORYMAP>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert len(topo.jesd204_rx) == 1
+    assert topo.jesd204_rx[0].base_addr == 0x84AA0000
+
+
+def test_parser_uses_num_lanes_and_core_clk_fallback(tmp_path):
+    xsa = tmp_path / "num_lanes_core_clk.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER>
+    <DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/>
+  </HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_clkgen" INSTANCE="axi_clkgen_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x43C00000" HIGHVALUE="0x43C0FFFF"/></MEMORYMAP>
+      <PORTS>
+        <PORT DIR="O" NAME="clk_0" SIGIS="clk" SIGNAME="rx_clk_net"/>
+      </PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_rx_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84AA0000" HIGHVALUE="0x84AA3FFF"/></MEMORYMAP>
+      <PARAMETERS>
+        <PARAMETER NAME="NUM_LANES" VALUE="2"/>
+      </PARAMETERS>
+      <PORTS>
+        <PORT NAME="core_clk" SIGNAME="rx_clk_net"/>
+      </PORTS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert len(topo.clkgens) == 1
+    assert topo.clkgens[0].output_clks == ["rx_clk_net"]
+    assert len(topo.jesd204_rx) == 1
+    assert topo.jesd204_rx[0].num_lanes == 2
+    assert topo.jesd204_rx[0].link_clk == "rx_clk_net"

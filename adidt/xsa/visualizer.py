@@ -44,16 +44,26 @@ class HtmlVisualizer:
     def _build_clock_data(self, topology: XsaTopology, cfg: dict) -> dict:
         clock_cfg = cfg.get("clock", {})
         return {
-            "clkgens": [{"name": cg.name, "outputs": cg.output_clks} for cg in topology.clkgens],
+            "clkgens": [
+                {"name": cg.name, "outputs": cg.output_clks} for cg in topology.clkgens
+            ],
             "hmc_rx_ch": clock_cfg.get("hmc7044_rx_channel", "?"),
             "hmc_tx_ch": clock_cfg.get("hmc7044_tx_channel", "?"),
         }
 
     def _build_jesd_data(self, topology: XsaTopology) -> dict:
         return {
-            "rx": [{"name": i.name, "addr": hex(i.base_addr), "lanes": i.num_lanes} for i in topology.jesd204_rx],
-            "tx": [{"name": i.name, "addr": hex(i.base_addr), "lanes": i.num_lanes} for i in topology.jesd204_tx],
-            "converters": [{"name": c.name, "type": c.ip_type} for c in topology.converters],
+            "rx": [
+                {"name": i.name, "addr": hex(i.base_addr), "lanes": i.num_lanes}
+                for i in topology.jesd204_rx
+            ],
+            "tx": [
+                {"name": i.name, "addr": hex(i.base_addr), "lanes": i.num_lanes}
+                for i in topology.jesd204_tx
+            ],
+            "converters": [
+                {"name": c.name, "type": c.ip_type} for c in topology.converters
+            ],
         }
 
     def _json_safe(self, data) -> str:
