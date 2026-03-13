@@ -119,7 +119,8 @@ class NodeBuilder:
         direction: str,
     ) -> tuple[str, str, int]:
         clkgen = clock_map.get(inst.link_clk)
-        if clkgen is None:
+        unresolved_clk = clkgen is None
+        if unresolved_clk:
             warnings.warn(
                 f"unresolved clock net '{inst.link_clk}' for {inst.name}; "
                 "using literal net name as clock label",
@@ -133,6 +134,10 @@ class NodeBuilder:
         clock_cfg = cfg.get("clock", {})
         device_clk_label = clock_cfg.get(f"{direction}_device_clk_label", "hmc7044")
         if device_clk_label == "clkgen":
+            if unresolved_clk:
+                # External clock nets from HWH are not valid DTS labels.
+                # Fall back to a known PS clock phandle to keep DTS valid.
+                return (clkgen_label, "zynqmp_clk", 71)
             device_clk_label = clkgen_label
 
         if device_clk_label == "hmc7044":

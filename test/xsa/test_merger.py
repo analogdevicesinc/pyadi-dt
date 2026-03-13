@@ -164,3 +164,29 @@ def test_include_bus_insertion_happens_after_delete_directives(tmp_path):
     delete_idx = merged.index("/delete-node/ &axi_jesd204_rx_0;")
     block_idx = merged.index("&amba_pl {")
     assert delete_idx < block_idx
+
+
+def test_merge_does_not_remove_unrelated_at_zero_nodes(tmp_path):
+    base = """\
+/dts-v1/;
+/ {
+\tcpu0: cpu@0 {
+\t\tdevice_type = "cpu";
+\t};
+\tamba: amba {
+\t\t#address-cells = <2>;
+\t\t#size-cells = <2>;
+\t};
+};"""
+    nodes = {
+        "clkgens": [],
+        "jesd204_rx": [],
+        "jesd204_tx": [],
+        "converters": [
+            '\taxi_ad9081_0: ad9081@0 {\n\t\tcompatible = "adi,ad9081";\n\t};'
+        ],
+    }
+    _, merged = DtsMerger().merge(base, nodes, tmp_path, "at0")
+    assert "cpu0: cpu@0" in merged
+    assert "axi_ad9081_0: ad9081@0" in merged
+    assert "cpu0:\n};" not in merged

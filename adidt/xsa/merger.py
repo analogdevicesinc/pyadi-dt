@@ -113,6 +113,11 @@ class DtsMerger:
             m = _NODE_ADDR_RE.search(node)
             if m:
                 addr = m.group(1).lower()
+                # Address 0x0 is common for unrelated CPU/memory stubs in base
+                # trees; global replacement by unit-address can corrupt DTS.
+                # Label-based replacement above already handles true duplicates.
+                if int(addr, 16) == 0:
+                    continue
                 conflict_re = re.compile(
                     r"[ \t]+\w[\w-]*@"
                     + re.escape(addr)

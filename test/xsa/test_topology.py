@@ -227,3 +227,89 @@ def test_parser_uses_num_lanes_and_core_clk_fallback(tmp_path):
     assert len(topo.jesd204_rx) == 1
     assert topo.jesd204_rx[0].num_lanes == 2
     assert topo.jesd204_rx[0].link_clk == "rx_clk_net"
+
+
+def test_parser_reads_part_from_systeminfo_attributes(tmp_path):
+    xsa = tmp_path / "systeminfo_part.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKSYSTEM>
+  <SYSTEMINFO DEVICE="xczu9eg" PACKAGE="ffvb1156" SPEEDGRADE="-2"/>
+  <MODULES>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_rx_0">
+      <PARAMETERS>
+        <PARAMETER NAME="C_BASEADDR" VALUE="0x84AA0000"/>
+        <PARAMETER NAME="NUM_LANES" VALUE="4"/>
+      </PARAMETERS>
+      <PORTS>
+        <PORT NAME="device_clk" SIGNAME="rx_clk"/>
+      </PORTS>
+    </MODULE>
+  </MODULES>
+</EDKSYSTEM>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert topo.fpga_part == "xczu9eg-ffvb1156-2"
+
+
+def test_parser_uses_c_baseaddr_when_memrange_missing(tmp_path):
+    xsa = tmp_path / "c_baseaddr_only.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER>
+    <DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/>
+  </HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_jesd204_tx" INSTANCE="axi_tx_0">
+      <PARAMETERS>
+        <PARAMETER NAME="C_BASEADDR" VALUE="0x84B90000"/>
+        <PARAMETER NAME="NUM_LANES" VALUE="4"/>
+      </PARAMETERS>
+      <PORTS>
+        <PORT NAME="device_clk" SIGNAME="tx_clk"/>
+      </PORTS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert len(topo.jesd204_tx) == 1
+    assert topo.jesd204_tx[0].base_addr == 0x84B90000
+
+
+def test_parser_infers_ad9081_converter_from_tpl_blocks(tmp_path):
+    xsa = tmp_path / "infer_ad9081.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER>
+    <DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/>
+  </HEADER>
+  <MODULES>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_adc" INSTANCE="rx_mxfe_tpl_core_adc_tpl_core">
+      <PARAMETERS>
+        <PARAMETER NAME="C_BASEADDR" VALUE="0x84A10000"/>
+      </PARAMETERS>
+    </MODULE>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_dac" INSTANCE="tx_mxfe_tpl_core_dac_tpl_core">
+      <PARAMETERS>
+        <PARAMETER NAME="C_BASEADDR" VALUE="0x84B10000"/>
+      </PARAMETERS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert len(topo.converters) == 1
+    assert topo.converters[0].ip_type == "axi_ad9081"
+    assert topo.converters[0].base_addr == 0x84A10000

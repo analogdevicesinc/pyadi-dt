@@ -48,6 +48,8 @@ class XsaTopology:
 _ADI_JESD_RX_TYPES = {"axi_jesd204_rx"}
 _ADI_JESD_TX_TYPES = {"axi_jesd204_tx"}
 _ADI_CLKGEN_TYPES = {"axi_clkgen"}
+_ADI_AD9081_TPL_ADC_TYPES = {"ad_ip_jesd204_tpl_adc"}
+_ADI_AD9081_TPL_DAC_TYPES = {"ad_ip_jesd204_tpl_dac"}
 _ADI_CONVERTER_TYPES = {
     "axi_ad9081",
     "axi_ad9084",
@@ -178,6 +180,8 @@ class XsaParser:
         global_base_addrs = self._parse_global_base_addrs(root)
 
         found_adi = False
+        ad9081_tpl_adc_base: Optional[int] = None
+        ad9081_tpl_dac_seen = False
         for mod in root.findall(".//MODULE"):
             mod_type = mod.get("MODTYPE", "").lower()
             instance = mod.get("INSTANCE", mod_type)
@@ -196,11 +200,35 @@ class XsaParser:
             elif mod_type in _ADI_CLKGEN_TYPES:
                 found_adi = True
                 topology.clkgens.append(self._parse_clkgen(mod, instance, base_addr))
+            elif mod_type in _ADI_AD9081_TPL_ADC_TYPES:
+                # AD9081 HDL designs can expose TPL blocks but no explicit
+                # axi_ad9081 converter module in the HWH.
+                found_adi = True
+                if ad9081_tpl_adc_base is None:
+                    ad9081_tpl_adc_base = base_addr
+            elif mod_type in _ADI_AD9081_TPL_DAC_TYPES:
+                found_adi = True
+                ad9081_tpl_dac_seen = True
             elif mod_type in _ADI_CONVERTER_TYPES:
                 found_adi = True
                 topology.converters.append(
                     self._parse_converter(mod, instance, mod_type, base_addr)
                 )
+
+        if (
+            not topology.converters
+            and ad9081_tpl_adc_base is not None
+            and ad9081_tpl_dac_seen
+        ):
+            topology.converters.append(
+                ConverterInstance(
+                    name="axi_ad9081_0",
+                    ip_type="axi_ad9081",
+                    base_addr=ad9081_tpl_adc_base,
+                    spi_bus=None,
+                    spi_cs=None,
+                )
+            )
 
         if not found_adi:
             warnings.warn(
@@ -252,13 +280,22 @@ class XsaParser:
     def _parse_part(self, root: ET.Element) -> str:
         """Return dash-separated FPGA part string, e.g. 'xczu9eg-ffvb1156-2'."""
         device_el = root.find(".//DEVICE")
-        if device_el is None:
-            return ""
-        parts = [
-            device_el.get("Name", ""),
-            device_el.get("Package", ""),
-            device_el.get("SpeedGrade", ""),
-        ]
+        if device_el is not None:
+            part = device_el.get("Name", "")
+            package = device_el.get("Package", "")
+            speed = device_el.get("SpeedGrade", "")
+        else:
+            # Newer Vivado exports place part metadata in SYSTEMINFO attrs.
+            sysinfo = root.find(".//SYSTEMINFO")
+            if sysinfo is None:
+                return ""
+            part = sysinfo.get("DEVICE", "") or sysinfo.get("Name", "")
+            package = sysinfo.get("PACKAGE", "") or sysinfo.get("Package", "")
+            speed = sysinfo.get("SPEEDGRADE", "") or sysinfo.get("SpeedGrade", "")
+
+        if speed.startswith("-"):
+            speed = speed[1:]
+        parts = [part, package, speed]
         return "-".join(p for p in parts if p)
 
     def _parse_base_addr(
@@ -278,6 +315,15 @@ class XsaParser:
         global_addr = global_base_addrs.get(instance)
         if global_addr is not None and (module_addr == 0 or mr is None):
             return global_addr
+        if module_addr == 0:
+            c_baseaddr = self._get_param(mod, "C_BASEADDR", "")
+            if c_baseaddr:
+                try:
+                    return int(c_baseaddr, 16)
+                except ValueError:
+                    raise XsaParseError(
+                        f"invalid C_BASEADDR '{c_baseaddr}' for module '{instance}'"
+                    )
         return module_addr
 
     def _parse_jesd(
@@ -342,8 +388,16 @@ class XsaParser:
 
     def _parse_irq(self, mod: ET.Element) -> Optional[int]:
         for port in mod.findall(".//PORT"):
-            if port.get("NAME") == "interrupt":
+            if port.get("NAME") in ("interrupt", "irq"):
                 m = re.search(r"(\d+)$", port.get("SIGNAME", ""))
                 if m:
                     return int(m.group(1))
+        for param_name in ("C_IRQ", "IRQ"):
+            irq_str = self._get_param(mod, param_name, "")
+            if not irq_str:
+                continue
+            try:
+                return int(irq_str, 0)
+            except ValueError:
+                continue
         return None

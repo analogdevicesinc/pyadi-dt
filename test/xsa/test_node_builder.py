@@ -131,10 +131,32 @@ def test_build_warns_on_unresolvable_clock(cfg):
     assert any("unresolved clock" in str(warning.message) for warning in w)
 
 
+def test_build_falls_back_to_zynqmp_clk_when_unresolvable_and_clkgen_requested(cfg):
+    topo_no_clkgen = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x44A90000,
+                num_lanes=4,
+                irq=None,
+                link_clk="External_Ports_rx_device_clk",
+                direction="rx",
+            )
+        ]
+    )
+    cfg["clock"]["rx_device_clk_label"] = "clkgen"
+    nodes = NodeBuilder().build(topo_no_clkgen, cfg)
+    rx = nodes["jesd204_rx"][0]
+    assert "clocks = <&zynqmp_clk 71>, <&zynqmp_clk 71>, <&axi_mxfe_rx_xcvr 0>;" in rx
+
+
 def test_build_converter_renders_with_jesd_label(topo, cfg):
     nodes = NodeBuilder().build(topo, cfg)
     converter_node = nodes["converters"][0]
     assert "axi_jesd204_rx_0" in converter_node
+    assert "JESD204_" not in converter_node
+    assert "jesd204-link-ids = <1 0>;" in converter_node
+    assert "jesd204-inputs = <&axi_jesd204_rx_0 0 1>;" in converter_node
 
 
 def test_build_converter_fallback_template(cfg):
