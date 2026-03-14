@@ -147,11 +147,12 @@ matching profile when available (for example, ``ad9081_zcu102``).
 If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
 also writes parity artifacts:
 
-- ``<name>.map.json`` – role-level parity summary
-- ``<name>.coverage.md`` – human-readable coverage report
+- ``<name>.map.json`` – role and required-link parity summary
+- ``<name>.coverage.md`` – human-readable role/link coverage report
 
 When ``strict_parity=True`` is used with ``reference_dts``, the pipeline raises
-``ParityError`` if any required manifest roles are missing in the generated DTS.
+``ParityError`` if any required manifest roles or links are missing in the
+generated DTS.
 
 Configuration
 -------------

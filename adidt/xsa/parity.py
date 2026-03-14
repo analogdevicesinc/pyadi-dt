@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -14,11 +15,23 @@ class RoleCoverage:
 
 
 @dataclass
+class LinkCoverage:
+    source_label: str
+    property_name: str
+    target_label: str
+    found: bool
+
+
+@dataclass
 class ParityReport:
     total_roles: int
     matched_roles: int
+    total_links: int = 0
+    matched_links: int = 0
     missing_roles: list[str] = field(default_factory=list)
+    missing_links: list[str] = field(default_factory=list)
     items: list[RoleCoverage] = field(default_factory=list)
+    link_items: list[LinkCoverage] = field(default_factory=list)
 
 
 def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> ParityReport:
@@ -38,13 +51,37 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
         if not found and req.role not in missing_roles:
             missing_roles.append(req.role)
 
+    link_items: list[LinkCoverage] = []
+    missing_links: list[str] = []
+    for req in manifest.links:
+        pattern = rf"{re.escape(req.property_name)}\s*=\s*[^;]*&{re.escape(req.target_label)}\\b"
+        found = re.search(pattern, merged_dts) is not None
+        link_items.append(
+            LinkCoverage(
+                source_label=req.source_label,
+                property_name=req.property_name,
+                target_label=req.target_label,
+                found=found,
+            )
+        )
+        if not found:
+            missing_links.append(
+                f"{req.source_label}.{req.property_name}->{req.target_label}"
+            )
+
     matched_roles = len({item.role for item in items if item.found})
     total_roles = len({item.role for item in items})
+    total_links = len(manifest.links)
+    matched_links = sum(1 for item in link_items if item.found)
     return ParityReport(
         total_roles=total_roles,
         matched_roles=matched_roles,
+        total_links=total_links,
+        matched_links=matched_links,
         missing_roles=missing_roles,
+        missing_links=missing_links,
         items=items,
+        link_items=link_items,
     )
 
 
@@ -57,8 +94,12 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
             {
                 "total_roles": report.total_roles,
                 "matched_roles": report.matched_roles,
+                "total_links": report.total_links,
+                "matched_links": report.matched_links,
                 "missing_roles": report.missing_roles,
+                "missing_links": report.missing_links,
                 "items": [asdict(item) for item in report.items],
+                "link_items": [asdict(item) for item in report.link_items],
             },
             indent=2,
         )
@@ -70,7 +111,10 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         "",
         f"- Total roles: {report.total_roles}",
         f"- Matched roles: {report.matched_roles}",
+        f"- Total links: {report.total_links}",
+        f"- Matched links: {report.matched_links}",
         f"- Missing roles: {', '.join(report.missing_roles) if report.missing_roles else 'none'}",
+        f"- Missing links: {', '.join(report.missing_links) if report.missing_links else 'none'}",
         "",
         "| Role | Compatible | Found |",
         "| --- | --- | --- |",
@@ -79,7 +123,18 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         lines.append(
             f"| {item.role} | `{item.compatible}` | {'yes' if item.found else 'no'} |"
         )
+
+    lines.extend(
+        [
+            "",
+            "| Source | Property | Target | Found |",
+            "| --- | --- | --- | --- |",
+        ]
+    )
+    for item in report.link_items:
+        lines.append(
+            f"| {item.source_label} | `{item.property_name}` | `{item.target_label}` | {'yes' if item.found else 'no'} |"
+        )
     coverage_path.write_text("\n".join(lines) + "\n")
 
     return map_path, coverage_path
-

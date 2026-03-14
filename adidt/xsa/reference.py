@@ -11,9 +11,18 @@ class RoleRequirement:
     source_file: Path
 
 
+@dataclass(frozen=True)
+class LinkRequirement:
+    source_label: str
+    property_name: str
+    target_label: str
+    source_file: Path
+
+
 @dataclass
 class DriverManifest:
     roles: list[RoleRequirement] = field(default_factory=list)
+    links: list[LinkRequirement] = field(default_factory=list)
     included_files: list[Path] = field(default_factory=list)
 
 
@@ -24,6 +33,11 @@ class ReferenceManifestExtractor:
         re.S,
     )
     _string_re = re.compile(r'"([^"]+)"')
+    _node_block_re = re.compile(
+        r'(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};', re.S
+    )
+    _jesd_inputs_re = re.compile(r'jesd204-inputs\s*=\s*(?P<value>[^;]+);', re.S)
+    _phandle_re = re.compile(r'&(?P<label>[A-Za-z_][\w\-]*)')
 
     _ROLE_BY_PREFIX = {
         "adi,axi-jesd204-rx": "jesd_rx_link",
@@ -73,10 +87,26 @@ class ReferenceManifestExtractor:
                 )
             )
 
+        for node_match in self._node_block_re.finditer(text):
+            source_label = node_match.group("label")
+            body = node_match.group("body")
+            jesd_match = self._jesd_inputs_re.search(body)
+            if not jesd_match:
+                continue
+            value = jesd_match.group("value")
+            for phandle in self._phandle_re.findall(value):
+                manifest.links.append(
+                    LinkRequirement(
+                        source_label=source_label,
+                        property_name="jesd204-inputs",
+                        target_label=phandle,
+                        source_file=path,
+                    )
+                )
+
     def _resolve_role(self, compatibles: list[str]) -> tuple[str | None, str | None]:
         for compatible in compatibles:
             for prefix, role in self._ROLE_BY_PREFIX.items():
                 if compatible.startswith(prefix):
                     return role, compatible
         return None, None
-
