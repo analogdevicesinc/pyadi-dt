@@ -22,6 +22,55 @@ The pipeline performs five stages:
 5. **HTML visualization** – generates a self-contained interactive report
    with D3.js topology, clock tree, and JESD204 parameter panels.
 
+Pipeline diagram
+~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   flowchart LR
+       XSA["Vivado .xsa"] --> SDT["sdtgen/lopper<br/>base DTS artifacts"]
+       XSA --> HWH["HWH parser<br/>ADI IP topology"]
+       CFG["pyadi-jif / JSON config<br/>JESD + clock settings"] --> NB["NodeBuilder<br/>ADI DTS nodes"]
+       HWH --> NB
+       SDT --> MG["DtsMerger<br/>overlay + merged DTS"]
+       NB --> MG
+       MG --> DTBO["overlay .dtso"]
+       MG --> DTS["merged .dts"]
+       DTS --> DTC["dtc/cpp"]
+       DTC --> DTB["system.dtb"]
+       NB --> REP["HTML report<br/>topology + clocks + JESD"]
+
+Hardware test flow with ``pyadi-build``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The hardware tests can optionally build and inject a kernel image with
+``pyadi-build`` while still using the DTB generated from the XSA pipeline.
+
+.. mermaid::
+
+   flowchart TD
+       KREL["Kuiper release BOOT.BIN"] --> DEPLOY["KuiperDLDriver deploy"]
+       XSA2["XSA from examples or Kuiper project"] --> PIPE["XsaPipeline.run()"]
+       CFG2["board config<br/>(JSON or adijif-derived)"] --> PIPE
+       PIPE --> MDTS["merged DTS"]
+       MDTS --> COMPILE["cpp + dtc"]
+       COMPILE --> MDTB["generated system.dtb"]
+       PYB{"ADI_XSA_BUILD_KERNEL=1 ?"} -->|yes| PBUILD["pyadi-build<br/>build kernel image"]
+       PYB -->|no| SKIP["skip kernel replacement"]
+       PBUILD --> DEPLOY
+       MDTB --> DEPLOY
+       SKIP --> DEPLOY
+       DEPLOY --> BOOT["boot target via labgrid"]
+       BOOT --> CHECK["run checks on DUT shell<br/>dmesg + jesd_status + IIO devices"]
+
+Example hardware invocation:
+
+.. code-block:: bash
+
+   source /tools/Xilinx/2025.1/Vivado/settings64.sh
+   LG_ENV=/jenkins/lg_ad9081_zcu102.yaml ADI_XSA_BUILD_KERNEL=1 \
+     pytest -q test/hw/ad9081/test_ad9081_xsa_hw_m4_l8.py
+
 Installation
 ------------
 
@@ -101,13 +150,18 @@ Supported IP Cores
 
 The XSA parser recognises the following ADI IP cores:
 
-============================================  ===========================
-IP type (``MODTYPE``)                         Role
-============================================  ===========================
-``axi_jesd204_rx``, ``axi_jesd204_tx``        JESD204 FSM controllers
-``axi_clkgen``                                PL clock generator
-``axi_ad9081``, ``axi_ad9084``, ``axi_ad9375``  RF data converters
-============================================  ===========================
+.. list-table::
+   :widths: 45 55
+   :header-rows: 1
+
+   * - IP type (``MODTYPE``)
+     - Role
+   * - ``axi_jesd204_rx``, ``axi_jesd204_tx``
+     - JESD204 FSM controllers
+   * - ``axi_clkgen``
+     - PL clock generator
+   * - ``axi_ad9081``, ``axi_ad9084``, ``axi_ad9375``
+     - RF data converters
 
 Parsed topology fields
 ~~~~~~~~~~~~~~~~~~~~~~
