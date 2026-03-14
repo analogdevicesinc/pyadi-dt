@@ -832,6 +832,44 @@ def test_xsa2dt_non_parity_mode_still_prints_artifact_paths(tmp_path):
     assert "Warning: parity coverage report not found" not in result.output
 
 
+def test_xsa2dt_does_not_check_map_root_type_without_parity_mode(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        bad_root_map = out / "bad-root.map.json"
+        bad_root_map.parent.mkdir(parents=True, exist_ok=True)
+        bad_root_map.write_text("[]")
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": bad_root_map,
+            "coverage": out / "a.coverage.md",
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Warning: parity map JSON root is not an object" not in result.output
+    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" not in result.output
+
+
 def test_xsa2dt_warns_when_optional_parity_artifacts_not_pathlike(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
