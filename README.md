@@ -120,8 +120,14 @@ Example diagnostic lines:
 - `Warning: parity map not found: ...`
 - `Warning: parity coverage report not found: ...`
 - `Warning: unable to parse parity map JSON at ...`
+- `Warning: parity map path is not path-like: ...`
+- `Warning: parity coverage report path is not path-like: ...`
 
-The command also fails fast when pipeline results omit required artifacts (`overlay`, `merged`, or `report`).
+The command also fails fast when pipeline results:
+
+- omit required artifacts (`overlay`, `merged`, or `report`)
+- provide empty required artifact values
+- provide non-path required artifact values
 
 ## Building Documentation
 
