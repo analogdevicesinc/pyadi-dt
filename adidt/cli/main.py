@@ -865,8 +865,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                     f"{len(missing_roles)}/{len(missing_links)}/"
                     f"{len(missing_props)}/{len(mismatched_props)}"
                 )
-            except Exception:
-                pass
+            except Exception as ex:
+                click.echo(f"  Warning: unable to parse parity map JSON ({ex})")
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
 
