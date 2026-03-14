@@ -128,6 +128,7 @@ The command also fails fast when pipeline results:
 - omit required artifacts (`overlay`, `merged`, or `report`)
 - provide empty required artifact values
 - provide non-path required artifact values
+- receive an invalid JSON config file
 
 ## Building Documentation
 
