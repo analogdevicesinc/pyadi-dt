@@ -137,6 +137,9 @@ The command also fails fast when pipeline results:
 - encounter sdtgen execution or availability failures
 - hit unexpected runtime exceptions in the XSA pipeline flow
 
+Required artifact error messages follow canonical pipeline order:
+`overlay, merged, report`.
+
 ## Building Documentation
 
 Documentation is built using Sphinx with the ADI cosmic theme.
