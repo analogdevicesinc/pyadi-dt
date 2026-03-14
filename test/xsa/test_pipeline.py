@@ -200,3 +200,28 @@ def test_pipeline_strict_parity_raises_when_properties_missing(
                 reference_dts=reference,
                 strict_parity=True,
             )
+
+
+def test_pipeline_strict_parity_raises_when_property_values_mismatch(
+    xsa_path, cfg, tmp_path
+):
+    reference = tmp_path / "ref_property_value.dts"
+    reference.write_text(
+        '/ {\n'
+        '\trx0: jesd-rx@0 {\n'
+        '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
+        '\t\tadi,octets-per-frame = <99>;\n'
+        '\t};\n'
+        '};\n'
+    )
+
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        with pytest.raises(ParityError, match="missing required properties"):
+            XsaPipeline().run(
+                xsa_path,
+                cfg,
+                tmp_path,
+                reference_dts=reference,
+                strict_parity=True,
+            )

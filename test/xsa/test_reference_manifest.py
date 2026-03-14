@@ -71,6 +71,9 @@ def test_extract_manifest_collects_required_properties(tmp_path: Path):
 
     names = sorted(p.property_name for p in manifest.properties)
     assert names == ["adi,frames-per-multiframe", "adi,octets-per-frame"]
+    values = {p.property_name: p.expected_value for p in manifest.properties}
+    assert values["adi,octets-per-frame"] == "<4>"
+    assert values["adi,frames-per-multiframe"] == "<32>"
 
 
 def test_extract_manifest_handles_include_cycles(tmp_path: Path):

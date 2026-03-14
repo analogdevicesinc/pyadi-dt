@@ -23,6 +23,7 @@ class LinkRequirement:
 class PropertyRequirement:
     source_label: str
     property_name: str
+    expected_value: str
     source_file: Path
 
 
@@ -46,7 +47,7 @@ class ReferenceManifestExtractor:
     )
     _jesd_inputs_re = re.compile(r'jesd204-inputs\s*=\s*(?P<value>[^;]+);', re.S)
     _phandle_re = re.compile(r'&(?P<label>[A-Za-z_][\w\-]*)')
-    _property_name_re = re.compile(r'(?P<name>[A-Za-z_][\w,\-]*)\s*=\s*[^;]+;')
+    _property_re = re.compile(r'(?P<name>[A-Za-z_][\w,\-]*)\s*=\s*(?P<value>[^;]+);')
 
     _ROLE_BY_PREFIX = {
         "adi,axi-jesd204-rx": "jesd_rx_link",
@@ -121,12 +122,14 @@ class ReferenceManifestExtractor:
                         )
                     )
 
-            for prop_name in self._property_name_re.findall(body):
+            for prop_match in self._property_re.finditer(body):
+                prop_name = prop_match.group("name")
                 if prop_name.startswith("adi,"):
                     manifest.properties.append(
                         PropertyRequirement(
                             source_label=source_label,
                             property_name=prop_name,
+                            expected_value=prop_match.group("value").strip(),
                             source_file=path,
                         )
                     )

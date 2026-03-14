@@ -35,6 +35,7 @@ class LinkCoverage:
 class PropertyCoverage:
     source_label: str
     property_name: str
+    expected_value: str
     found: bool
 
 
@@ -95,17 +96,21 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
     missing_properties: list[str] = []
     for req in manifest.properties:
         body = node_bodies.get(req.source_label, "")
-        pattern = rf"{re.escape(req.property_name)}\s*="
-        found = re.search(pattern, body) is not None
+        pattern = rf"{re.escape(req.property_name)}\s*=\s*(?P<value>[^;]+);"
+        match = re.search(pattern, body)
+        found = bool(match and match.group("value").strip() == req.expected_value)
         property_items.append(
             PropertyCoverage(
                 source_label=req.source_label,
                 property_name=req.property_name,
+                expected_value=req.expected_value,
                 found=found,
             )
         )
         if not found:
-            missing_properties.append(f"{req.source_label}.{req.property_name}")
+            missing_properties.append(
+                f"{req.source_label}.{req.property_name}={req.expected_value}"
+            )
 
     matched_roles = len({item.role for item in items if item.found})
     total_roles = len({item.role for item in items})
@@ -196,7 +201,7 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
     )
     for item in report.property_items:
         lines.append(
-            f"| {item.source_label} | `{item.property_name}` | {'yes' if item.found else 'no'} |"
+            f"| {item.source_label} | `{item.property_name} = {item.expected_value}` | {'yes' if item.found else 'no'} |"
         )
     coverage_path.write_text("\n".join(lines) + "\n")
 

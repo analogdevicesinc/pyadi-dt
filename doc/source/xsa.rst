@@ -149,10 +149,14 @@ also writes parity artifacts:
 
 - ``<name>.map.json`` – role and required-link parity summary
 - ``<name>.coverage.md`` – human-readable role/link/property coverage report
+  (property checks are value-sensitive)
 
 When ``strict_parity=True`` is used with ``reference_dts``, the pipeline raises
 ``ParityError`` if any required manifest roles, links, or properties are
 missing in the generated DTS.
+
+For properties, parity checks compare both property name and value from the
+reference DTS role node.
 
 Configuration
 -------------

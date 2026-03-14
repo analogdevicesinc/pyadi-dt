@@ -61,6 +61,7 @@ def test_check_manifest_against_dts_marks_missing_properties(tmp_path: Path):
             PropertyRequirement(
                 source_label="rx0",
                 property_name="adi,octets-per-frame",
+                expected_value="<4>",
                 source_file=tmp_path / "ref.dts",
             )
         ]
@@ -71,7 +72,7 @@ def test_check_manifest_against_dts_marks_missing_properties(tmp_path: Path):
 
     assert report.total_properties == 1
     assert report.matched_properties == 0
-    assert report.missing_properties == ["rx0.adi,octets-per-frame"]
+    assert report.missing_properties == ["rx0.adi,octets-per-frame=<4>"]
 
 
 def test_check_manifest_against_dts_scopes_link_to_source_node(tmp_path: Path):
@@ -104,6 +105,7 @@ def test_check_manifest_against_dts_scopes_property_to_source_node(tmp_path: Pat
             PropertyRequirement(
                 source_label="rx0",
                 property_name="adi,octets-per-frame",
+                expected_value="<4>",
                 source_file=tmp_path / "ref.dts",
             )
         ]
@@ -118,4 +120,24 @@ def test_check_manifest_against_dts_scopes_property_to_source_node(tmp_path: Pat
     report = check_manifest_against_dts(manifest, merged_dts)
 
     assert report.matched_properties == 0
-    assert report.missing_properties == ["rx0.adi,octets-per-frame"]
+    assert report.missing_properties == ["rx0.adi,octets-per-frame=<4>"]
+
+
+def test_check_manifest_against_dts_marks_mismatched_property_values(tmp_path: Path):
+    manifest = DriverManifest(
+        properties=[
+            PropertyRequirement(
+                source_label="rx0",
+                property_name="adi,octets-per-frame",
+                expected_value="<4>",
+                source_file=tmp_path / "ref.dts",
+            )
+        ]
+    )
+    merged_dts = '/ { rx0: jesd@0 { adi,octets-per-frame = <8>; }; };\n'
+
+    report = check_manifest_against_dts(manifest, merged_dts)
+
+    assert report.total_properties == 1
+    assert report.matched_properties == 0
+    assert report.missing_properties == ["rx0.adi,octets-per-frame=<4>"]
