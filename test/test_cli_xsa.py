@@ -461,6 +461,8 @@ def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not found" in result.output
     assert "Warning: parity coverage report not found" in result.output
+    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
 
 
 def test_xsa2dt_warns_when_optional_parity_artifacts_not_pathlike(tmp_path):

@@ -906,9 +906,10 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             click.echo(f"  Map:      {result['map']}")
             map_path = _path_or_none(result["map"], "parity map")
             if map_path is None:
-                pass
+                _print_unavailable_map_summary()
             elif not map_path.exists():
                 click.echo(f"  Warning: parity map not found: {map_path}")
+                _print_unavailable_map_summary()
             else:
                 try:
                     map_data = json.loads(map_path.read_text())
