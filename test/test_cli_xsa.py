@@ -316,6 +316,58 @@ def test_xsa2dt_normalizes_non_list_gap_fields(tmp_path):
     assert "Warning: unable to parse parity map JSON" not in result.output
 
 
+def test_xsa2dt_normalizes_non_dict_coverage_field(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    ref = tmp_path / "ref.dts"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        (out / "a.map.json").parent.mkdir(parents=True, exist_ok=True)
+        (out / "a.map.json").write_text(
+            json.dumps(
+                {
+                    "coverage": "bad-type",
+                    "missing_roles": ["clock_chip:clk0"],
+                    "missing_links": [],
+                    "missing_properties": [],
+                    "mismatched_properties": [],
+                }
+            )
+        )
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": out / "a.map.json",
+            "coverage": out / "a.coverage.md",
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+                "--reference-dts",
+                str(ref),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    assert "Missing gaps (roles/links/properties/mismatched): 1/0/0/0" in result.output
+    assert "Warning: unable to parse parity map JSON" not in result.output
+
+
 def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"

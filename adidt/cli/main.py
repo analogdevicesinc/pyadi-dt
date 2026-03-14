@@ -858,7 +858,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             else:
                 try:
                     map_data = json.loads(map_path.read_text())
-                    cov = map_data.get("coverage", {})
+                    raw_cov = map_data.get("coverage", {})
+                    cov = raw_cov if isinstance(raw_cov, dict) else {}
                     click.echo(
                         "  Coverage % (roles/links/properties/overall): "
                         f"{cov.get('roles_pct', 'n/a')}/"
