@@ -861,7 +861,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     except (XsaParseError, ConfigError) as e:
         click.echo(click.style(str(e), fg="red"))
     except ParityError as e:
-        click.echo(click.style(str(e), fg="red"))
+        raise click.ClickException(str(e))
     except Exception as e:
         click.echo(click.style(f"Unexpected error: {e}", fg="red"))
         import traceback

@@ -177,5 +177,5 @@ def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
             ],
         )
 
-    assert result.exit_code == 0, result.output
+    assert result.exit_code != 0, result.output
     assert "missing required roles: clock_chip" in result.output
