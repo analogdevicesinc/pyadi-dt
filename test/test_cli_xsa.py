@@ -86,7 +86,11 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
                         "links_pct": 40.0,
                         "properties_pct": 100.0,
                         "overall_pct": 66.7,
-                    }
+                    },
+                    "missing_roles": ["clock_chip:clk0"],
+                    "missing_links": ["rx0.jesd204-inputs->xcvr0", "rx1.jesd204-inputs->xcvr1"],
+                    "missing_properties": [],
+                    "mismatched_properties": ["rx0.adi,octets-per-frame: expected <4>, got <8>"],
                 }
             )
         )
@@ -120,6 +124,7 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
     assert "Map:" in result.output
     assert "Coverage:" in result.output
     assert "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7" in result.output
+    assert "Missing gaps (roles/links/properties/mismatched): 1/2/0/1" in result.output
 
 
 def test_xsa2dt_passes_strict_parity_to_pipeline(tmp_path):

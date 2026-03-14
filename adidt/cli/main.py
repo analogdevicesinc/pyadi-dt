@@ -856,6 +856,15 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                         f"{cov.get('properties_pct', 'n/a')}/"
                         f"{cov.get('overall_pct', 'n/a')}"
                     )
+                missing_roles = map_data.get("missing_roles", [])
+                missing_links = map_data.get("missing_links", [])
+                missing_props = map_data.get("missing_properties", [])
+                mismatched_props = map_data.get("mismatched_properties", [])
+                click.echo(
+                    "  Missing gaps (roles/links/properties/mismatched): "
+                    f"{len(missing_roles)}/{len(missing_links)}/"
+                    f"{len(missing_props)}/{len(mismatched_props)}"
+                )
             except Exception:
                 pass
         if "coverage" in result:
