@@ -848,22 +848,21 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             try:
                 map_data = json.loads(Path(result["map"]).read_text())
                 cov = map_data.get("coverage", {})
-                if cov:
+                click.echo(
+                    "  Coverage % (roles/links/properties/overall): "
+                    f"{cov.get('roles_pct', 'n/a')}/"
+                    f"{cov.get('links_pct', 'n/a')}/"
+                    f"{cov.get('properties_pct', 'n/a')}/"
+                    f"{cov.get('overall_pct', 'n/a')}"
+                )
+                if (
+                    cov.get("overall_matched") is not None
+                    and cov.get("overall_total") is not None
+                ):
                     click.echo(
-                        "  Coverage % (roles/links/properties/overall): "
-                        f"{cov.get('roles_pct', 'n/a')}/"
-                        f"{cov.get('links_pct', 'n/a')}/"
-                        f"{cov.get('properties_pct', 'n/a')}/"
-                        f"{cov.get('overall_pct', 'n/a')}"
+                        "  Overall matched items: "
+                        f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
                     )
-                    if (
-                        cov.get("overall_matched") is not None
-                        and cov.get("overall_total") is not None
-                    ):
-                        click.echo(
-                            "  Overall matched items: "
-                            f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
-                        )
                 missing_roles = map_data.get("missing_roles", [])
                 missing_links = map_data.get("missing_links", [])
                 missing_props = map_data.get("missing_properties", [])
