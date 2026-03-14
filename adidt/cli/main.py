@@ -858,6 +858,20 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             raise click.ClickException(
                 f"pipeline result has empty required artifacts: {empty_joined}"
             )
+        non_path_required = []
+        for key in required_artifacts:
+            value = result.get(key)
+            if value is None:
+                continue
+            try:
+                Path(value)
+            except TypeError:
+                non_path_required.append(key)
+        if non_path_required:
+            non_path_joined = ", ".join(sorted(non_path_required))
+            raise click.ClickException(
+                f"pipeline result has non-path required artifacts: {non_path_joined}"
+            )
 
         click.echo(click.style("Done!", fg="green", bold=True))
         click.echo(f"  Overlay:  {result['overlay']}")
