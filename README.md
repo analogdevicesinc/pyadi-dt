@@ -124,6 +124,8 @@ Example diagnostic lines:
 - `Warning: parity coverage report path is not path-like: ...`
 - `Warning: parity map path is empty`
 - `Warning: parity coverage report path is empty`
+- `Warning: parity map path is invalid: ...`
+- `Warning: parity coverage report path is invalid: ...`
 - `Warning: parity map JSON root is not an object: ...`
 
 The command also fails fast when pipeline results:
