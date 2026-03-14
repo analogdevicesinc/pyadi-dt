@@ -348,6 +348,7 @@ def test_write_parity_reports_emits_stable_schema_keys(tmp_path: Path):
     data = json.loads(map_path.read_text())
 
     expected_keys = {
+        "coverage",
         "total_roles",
         "matched_roles",
         "total_links",
@@ -386,3 +387,25 @@ def test_write_parity_reports_serializes_sorted_gap_lists(tmp_path: Path):
     assert data["missing_links"] == ["a", "b"]
     assert data["missing_properties"] == ["a", "b"]
     assert data["mismatched_properties"] == ["a", "b"]
+
+
+def test_write_parity_reports_emits_coverage_percentages(tmp_path: Path):
+    report = ParityReport(
+        total_roles=4,
+        matched_roles=3,
+        total_links=5,
+        matched_links=2,
+        total_properties=3,
+        matched_properties=3,
+    )
+
+    map_path, coverage_path = write_parity_reports(report, tmp_path, "demo")
+    data = json.loads(map_path.read_text())
+    md = coverage_path.read_text()
+
+    assert data["coverage"]["roles_pct"] == 75.0
+    assert data["coverage"]["links_pct"] == 40.0
+    assert data["coverage"]["properties_pct"] == 100.0
+    assert "Role coverage: 75.0%" in md
+    assert "Link coverage: 40.0%" in md
+    assert "Property coverage: 100.0%" in md

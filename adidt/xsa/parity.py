@@ -19,6 +19,12 @@ def _normalize_property_value(value: str) -> str:
     return re.sub(r"\s+", "", value)
 
 
+def _pct(matched: int, total: int) -> float:
+    if total <= 0:
+        return 100.0
+    return round((matched / total) * 100.0, 1)
+
+
 @dataclass
 class RoleCoverage:
     role: str
@@ -167,6 +173,9 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
     missing_links = sorted(report.missing_links)
     missing_properties = sorted(report.missing_properties)
     mismatched_properties = sorted(report.mismatched_properties)
+    roles_pct = _pct(report.matched_roles, report.total_roles)
+    links_pct = _pct(report.matched_links, report.total_links)
+    properties_pct = _pct(report.matched_properties, report.total_properties)
 
     map_path.write_text(
         json.dumps(
@@ -181,6 +190,11 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
                 "missing_links": missing_links,
                 "missing_properties": missing_properties,
                 "mismatched_properties": mismatched_properties,
+                "coverage": {
+                    "roles_pct": roles_pct,
+                    "links_pct": links_pct,
+                    "properties_pct": properties_pct,
+                },
                 "items": [asdict(item) for item in report.items],
                 "link_items": [asdict(item) for item in report.link_items],
                 "property_items": [asdict(item) for item in report.property_items],
@@ -199,6 +213,9 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         f"- Matched links: {report.matched_links}",
         f"- Total properties: {report.total_properties}",
         f"- Matched properties: {report.matched_properties}",
+        f"- Role coverage: {roles_pct}%",
+        f"- Link coverage: {links_pct}%",
+        f"- Property coverage: {properties_pct}%",
         f"- Missing roles: {', '.join(missing_roles) if missing_roles else 'none'}",
         f"- Missing links: {', '.join(missing_links) if missing_links else 'none'}",
         f"- Missing properties: {', '.join(missing_properties) if missing_properties else 'none'}",
