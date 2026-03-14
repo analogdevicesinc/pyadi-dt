@@ -967,6 +967,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 pass
             elif not cov_path.exists():
                 click.echo(f"  Warning: parity coverage report not found: {cov_path}")
+        else:
+            click.echo("  Warning: parity coverage report not provided by pipeline result")
 
     except FileNotFoundError as e:
         raise click.ClickException(str(e))
