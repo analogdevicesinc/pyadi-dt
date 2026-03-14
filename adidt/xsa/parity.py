@@ -6,6 +6,15 @@ from pathlib import Path
 from .reference import DriverManifest
 
 
+_NODE_BLOCK_RE = re.compile(
+    r'(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};', re.S
+)
+
+
+def _node_bodies_by_label(dts: str) -> dict[str, str]:
+    return {m.group("label"): m.group("body") for m in _NODE_BLOCK_RE.finditer(dts)}
+
+
 @dataclass
 class RoleCoverage:
     role: str
@@ -48,6 +57,7 @@ class ParityReport:
 def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> ParityReport:
     items: list[RoleCoverage] = []
     missing_roles: list[str] = []
+    node_bodies = _node_bodies_by_label(merged_dts)
 
     for req in manifest.roles:
         found = req.compatible in merged_dts
@@ -65,8 +75,9 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
     link_items: list[LinkCoverage] = []
     missing_links: list[str] = []
     for req in manifest.links:
+        body = node_bodies.get(req.source_label, "")
         pattern = rf"{re.escape(req.property_name)}\s*=\s*[^;]*&{re.escape(req.target_label)}\\b"
-        found = re.search(pattern, merged_dts) is not None
+        found = re.search(pattern, body) is not None
         link_items.append(
             LinkCoverage(
                 source_label=req.source_label,
@@ -83,8 +94,9 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
     property_items: list[PropertyCoverage] = []
     missing_properties: list[str] = []
     for req in manifest.properties:
+        body = node_bodies.get(req.source_label, "")
         pattern = rf"{re.escape(req.property_name)}\s*="
-        found = re.search(pattern, merged_dts) is not None
+        found = re.search(pattern, body) is not None
         property_items.append(
             PropertyCoverage(
                 source_label=req.source_label,
