@@ -176,6 +176,10 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
     roles_pct = _pct(report.matched_roles, report.total_roles)
     links_pct = _pct(report.matched_links, report.total_links)
     properties_pct = _pct(report.matched_properties, report.total_properties)
+    overall_pct = _pct(
+        report.matched_roles + report.matched_links + report.matched_properties,
+        report.total_roles + report.total_links + report.total_properties,
+    )
 
     map_path.write_text(
         json.dumps(
@@ -194,6 +198,7 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
                     "roles_pct": roles_pct,
                     "links_pct": links_pct,
                     "properties_pct": properties_pct,
+                    "overall_pct": overall_pct,
                 },
                 "items": [asdict(item) for item in report.items],
                 "link_items": [asdict(item) for item in report.link_items],
@@ -216,6 +221,7 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         f"- Role coverage: {roles_pct}%",
         f"- Link coverage: {links_pct}%",
         f"- Property coverage: {properties_pct}%",
+        f"- Overall coverage: {overall_pct}%",
         f"- Missing roles: {', '.join(missing_roles) if missing_roles else 'none'}",
         f"- Missing links: {', '.join(missing_links) if missing_links else 'none'}",
         f"- Missing properties: {', '.join(missing_properties) if missing_properties else 'none'}",
