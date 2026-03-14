@@ -136,8 +136,8 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
                     f"{req.source_label}.{req.property_name}: expected {req.expected_value}, got {actual_value}"
                 )
 
-    matched_roles = len({item.role for item in items if item.found})
-    total_roles = len({item.role for item in items})
+    matched_roles = sum(1 for item in items if item.found)
+    total_roles = len(items)
     total_links = len(manifest.links)
     matched_links = sum(1 for item in link_items if item.found)
     total_properties = len(manifest.properties)
