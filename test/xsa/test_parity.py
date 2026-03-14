@@ -1,6 +1,7 @@
 from pathlib import Path
+import json
 
-from adidt.xsa.parity import check_manifest_against_dts
+from adidt.xsa.parity import ParityReport, check_manifest_against_dts, write_parity_reports
 from adidt.xsa.reference import (
     DriverManifest,
     LinkRequirement,
@@ -327,3 +328,61 @@ def test_check_manifest_against_dts_deduplicates_gap_lists(tmp_path: Path):
     assert report.mismatched_properties == [
         "rx0.adi,octets-per-frame: expected <8>, got <4>"
     ]
+
+
+def test_write_parity_reports_emits_stable_schema_keys(tmp_path: Path):
+    report = ParityReport(
+        total_roles=1,
+        matched_roles=0,
+        total_links=1,
+        matched_links=0,
+        total_properties=1,
+        matched_properties=0,
+        missing_roles=["clock_chip:clk0"],
+        missing_links=["rx0.jesd204-inputs->xcvr0"],
+        missing_properties=["rx0.adi,octets-per-frame=<4>"],
+        mismatched_properties=["rx1.adi,octets-per-frame: expected <8>, got <4>"],
+    )
+
+    map_path, _ = write_parity_reports(report, tmp_path, "demo")
+    data = json.loads(map_path.read_text())
+
+    expected_keys = {
+        "total_roles",
+        "matched_roles",
+        "total_links",
+        "matched_links",
+        "total_properties",
+        "matched_properties",
+        "missing_roles",
+        "missing_links",
+        "missing_properties",
+        "mismatched_properties",
+        "items",
+        "link_items",
+        "property_items",
+    }
+    assert set(data.keys()) == expected_keys
+
+
+def test_write_parity_reports_serializes_sorted_gap_lists(tmp_path: Path):
+    report = ParityReport(
+        total_roles=0,
+        matched_roles=0,
+        total_links=0,
+        matched_links=0,
+        total_properties=0,
+        matched_properties=0,
+        missing_roles=["b", "a"],
+        missing_links=["b", "a"],
+        missing_properties=["b", "a"],
+        mismatched_properties=["b", "a"],
+    )
+
+    map_path, _ = write_parity_reports(report, tmp_path, "demo")
+    data = json.loads(map_path.read_text())
+
+    assert data["missing_roles"] == ["a", "b"]
+    assert data["missing_links"] == ["a", "b"]
+    assert data["missing_properties"] == ["a", "b"]
+    assert data["mismatched_properties"] == ["a", "b"]

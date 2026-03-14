@@ -163,6 +163,11 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
     map_path = output_dir / f"{name}.map.json"
     coverage_path = output_dir / f"{name}.coverage.md"
 
+    missing_roles = sorted(report.missing_roles)
+    missing_links = sorted(report.missing_links)
+    missing_properties = sorted(report.missing_properties)
+    mismatched_properties = sorted(report.mismatched_properties)
+
     map_path.write_text(
         json.dumps(
             {
@@ -172,10 +177,10 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
                 "matched_links": report.matched_links,
                 "total_properties": report.total_properties,
                 "matched_properties": report.matched_properties,
-                "missing_roles": report.missing_roles,
-                "missing_links": report.missing_links,
-                "missing_properties": report.missing_properties,
-                "mismatched_properties": report.mismatched_properties,
+                "missing_roles": missing_roles,
+                "missing_links": missing_links,
+                "missing_properties": missing_properties,
+                "mismatched_properties": mismatched_properties,
                 "items": [asdict(item) for item in report.items],
                 "link_items": [asdict(item) for item in report.link_items],
                 "property_items": [asdict(item) for item in report.property_items],
@@ -194,10 +199,10 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         f"- Matched links: {report.matched_links}",
         f"- Total properties: {report.total_properties}",
         f"- Matched properties: {report.matched_properties}",
-        f"- Missing roles: {', '.join(report.missing_roles) if report.missing_roles else 'none'}",
-        f"- Missing links: {', '.join(report.missing_links) if report.missing_links else 'none'}",
-        f"- Missing properties: {', '.join(report.missing_properties) if report.missing_properties else 'none'}",
-        f"- Mismatched properties: {', '.join(report.mismatched_properties) if report.mismatched_properties else 'none'}",
+        f"- Missing roles: {', '.join(missing_roles) if missing_roles else 'none'}",
+        f"- Missing links: {', '.join(missing_links) if missing_links else 'none'}",
+        f"- Missing properties: {', '.join(missing_properties) if missing_properties else 'none'}",
+        f"- Mismatched properties: {', '.join(mismatched_properties) if mismatched_properties else 'none'}",
         "",
         "| Role | Compatible | Found |",
         "| --- | --- | --- |",
