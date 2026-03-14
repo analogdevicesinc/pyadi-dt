@@ -838,6 +838,10 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             reference_dts=Path(reference_dts) if reference_dts else None,
             strict_parity=strict_parity,
         )
+        if not isinstance(result, dict):
+            raise click.ClickException(
+                f"pipeline returned invalid result type: {type(result).__name__}"
+            )
         required_artifacts = ("overlay", "merged", "report")
         missing_required = [key for key in required_artifacts if key not in result]
         if missing_required:

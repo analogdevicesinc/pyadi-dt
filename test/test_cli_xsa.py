@@ -481,6 +481,33 @@ def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
     assert "report" in result.output
 
 
+def test_xsa2dt_fails_when_pipeline_result_is_not_a_dict(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        MockPipeline.return_value.run.return_value = ["overlay", "merged", "report"]
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code != 0, result.output
+    assert "pipeline returned invalid result type: list" in result.output
+
+
 def test_xsa2dt_fails_when_required_artifact_value_is_empty(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
