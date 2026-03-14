@@ -206,7 +206,8 @@ def test_xsa2dt_warns_when_map_json_is_invalid(tmp_path):
         )
 
     assert result.exit_code == 0, result.output
-    assert "Warning: unable to parse parity map JSON" in result.output
+    assert "Warning: unable to parse parity map JSON at" in result.output
+    assert "bad.map.json" in result.output
 
 
 def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
