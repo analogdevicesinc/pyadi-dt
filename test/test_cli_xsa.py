@@ -579,3 +579,28 @@ def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "missing required roles: clock_chip" in result.output
+
+
+def test_xsa2dt_fails_when_config_json_is_invalid(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text("{")
+
+    result = runner.invoke(
+        cli,
+        [
+            "xsa2dt",
+            "-x",
+            str(xsa),
+            "-c",
+            str(cfg),
+            "-o",
+            str(out),
+        ],
+    )
+
+    assert result.exit_code != 0, result.output
+    assert "invalid JSON in config file" in result.output

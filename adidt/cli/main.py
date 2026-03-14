@@ -939,9 +939,9 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 click.echo(f"  Warning: parity coverage report not found: {cov_path}")
 
     except FileNotFoundError as e:
-        click.echo(click.style(f"Error: {e}", fg="red"))
+        raise click.ClickException(str(e))
     except json.JSONDecodeError as e:
-        click.echo(click.style(f"Error: invalid JSON in config file: {e}", fg="red"))
+        raise click.ClickException(f"invalid JSON in config file: {e}")
     except SdtgenNotFoundError as e:
         click.echo(click.style(str(e), fg="red"))
     except SdtgenError as e:
