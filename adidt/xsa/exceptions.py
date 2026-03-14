@@ -27,3 +27,15 @@ class ConfigError(Exception):
     def __init__(self, missing_field: str):
         super().__init__(f"Missing required config field: '{missing_field}'")
         self.missing_field = missing_field
+
+
+class ProfileError(Exception):
+    """Raised when a board profile cannot be loaded or is invalid."""
+
+    pass
+
+
+class ParityError(Exception):
+    """Raised when strict manifest parity checks fail."""
+
+    pass

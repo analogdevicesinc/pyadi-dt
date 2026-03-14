@@ -8,6 +8,10 @@ from .topology import XsaParser, XsaTopology
 from .node_builder import NodeBuilder
 from .merger import DtsMerger
 from .visualizer import HtmlVisualizer
+from .profiles import ProfileManager, merge_profile_defaults
+from .reference import ReferenceManifestExtractor
+from .parity import check_manifest_against_dts, write_parity_reports
+from .exceptions import ParityError
 
 _PART_TO_PLATFORM = {
     "xczu9eg": "zcu102",
@@ -28,6 +32,9 @@ class XsaPipeline:
         cfg: dict[str, Any],
         output_dir: Path,
         sdtgen_timeout: int = 120,
+        profile: str | None = None,
+        reference_dts: Path | None = None,
+        strict_parity: bool = False,
     ) -> dict[str, Path]:
         """Run the full pipeline.
 
@@ -44,16 +51,32 @@ class XsaPipeline:
         topology = XsaParser().parse(xsa_path)
         name = self._derive_name(topology)
         safe_name = re.sub(r"[^\w\-.]", "_", name)  # Same logic as visualizer
-        nodes = NodeBuilder().build(topology, cfg)
+        cfg_merged = cfg
+        selected_profile = profile or self._auto_profile_name(topology)
+        if selected_profile:
+            profile_data = ProfileManager().load(selected_profile)
+            cfg_merged = merge_profile_defaults(cfg, profile_data)
+        nodes = NodeBuilder().build(topology, cfg_merged)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
-        HtmlVisualizer().generate(topology, cfg, merged_content, output_dir, name)
+        HtmlVisualizer().generate(topology, cfg_merged, merged_content, output_dir, name)
 
-        return {
+        result = {
             "base_dir": base_dir,
             "overlay": output_dir / f"{name}.dtso",
             "merged": output_dir / f"{name}.dts",
             "report": output_dir / f"{safe_name}_report.html",
         }
+        if reference_dts is not None:
+            manifest = ReferenceManifestExtractor().extract(reference_dts)
+            parity = check_manifest_against_dts(manifest, merged_content)
+            map_path, coverage_path = write_parity_reports(parity, output_dir, name)
+            result["map"] = map_path
+            result["coverage"] = coverage_path
+            if strict_parity and parity.missing_roles:
+                missing = ", ".join(parity.missing_roles)
+                raise ParityError(f"missing required roles: {missing}")
+
+        return result
 
     def _derive_name(self, topology: XsaTopology) -> str:
         conv_type = "unknown"
@@ -65,3 +88,9 @@ class XsaPipeline:
                 platform = plat_name
                 break
         return f"{conv_type}_{platform}"
+
+    def _auto_profile_name(self, topology: XsaTopology) -> str | None:
+        candidate = self._derive_name(topology)
+        if candidate in ProfileManager().list_profiles():
+            return candidate
+        return None

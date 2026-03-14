@@ -96,6 +96,21 @@ Select an explicit board profile (optional):
 
    adidtc xsa2dt -x design.xsa -c config.json --profile ad9081_zcu102 -o out/
 
+Generate manifest parity reports from a reference DTS root:
+
+.. code-block:: bash
+
+   adidtc xsa2dt -x design.xsa -c config.json -o out/ \
+     --reference-dts zynqmp-zcu102-rev10-ad9081-m8-l4.dts
+
+Enable strict parity mode to fail generation when required roles are missing:
+
+.. code-block:: bash
+
+   adidtc xsa2dt -x design.xsa -c config.json -o out/ \
+     --reference-dts zynqmp-zcu102-rev10-ad9081-m8-l4.dts \
+     --strict-parity
+
 List available built-in profiles:
 
 .. code-block:: bash
@@ -128,6 +143,15 @@ Or call the pipeline directly from Python:
 You can also pass ``profile="ad9081_zcu102"`` (or another built-in profile) to
 ``XsaPipeline.run()``. If no profile is passed, the pipeline will auto-select a
 matching profile when available (for example, ``ad9081_zcu102``).
+
+If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
+also writes parity artifacts:
+
+- ``<name>.map.json`` – role-level parity summary
+- ``<name>.coverage.md`` – human-readable coverage report
+
+When ``strict_parity=True`` is used with ``reference_dts``, the pipeline raises
+``ParityError`` if any required manifest roles are missing in the generated DTS.
 
 Configuration
 -------------
@@ -248,6 +272,8 @@ Key           Description
 ``overlay``   ``.dtso`` overlay (ADI nodes only)
 ``merged``    ``.dts`` with base SDT + ADI nodes merged
 ``report``    Self-contained HTML visualisation report
+``map``       (Optional) manifest parity JSON report
+``coverage``  (Optional) manifest parity Markdown summary
 ============  ============================================
 
 Exceptions
@@ -263,6 +289,8 @@ Exceptions
      - The ``.xsa`` ZIP contains no ``.hwh`` file, or the XML is malformed
    * - ``ConfigError``
      - A required JESD204 parameter (``F`` or ``K``) is missing from the config
+   * - ``ParityError``
+     - Strict parity mode is enabled and one or more required roles are missing
    * - ``SdtgenNotFoundError``
      - The ``sdtgen`` / ``lopper`` binary cannot be found on ``PATH``
    * - ``SdtgenError``

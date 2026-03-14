@@ -770,8 +770,25 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
     show_default=True,
     help="sdtgen subprocess timeout in seconds",
 )
+@click.option(
+    "--profile",
+    type=str,
+    default=None,
+    help="Optional board profile name (for example: ad9081_zcu102, adrv9009_zcu102)",
+)
+@click.option(
+    "--reference-dts",
+    type=click.Path(exists=True),
+    default=None,
+    help="Optional reference DTS root file used to generate parity reports",
+)
+@click.option(
+    "--strict-parity",
+    is_flag=True,
+    help="Fail when manifest parity reports missing required roles",
+)
 @click.pass_context
-def xsa2dt(ctx, xsa, config, output, timeout):
+def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_parity):
     """Generate ADI device tree from Vivado XSA file
 
     \b
@@ -787,6 +804,8 @@ def xsa2dt(ctx, xsa, config, output, timeout):
     Examples:
       adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json
       adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --profile ad9081_zcu102
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts
     """
     try:
         from adidt.xsa.pipeline import XsaPipeline
@@ -795,6 +814,7 @@ def xsa2dt(ctx, xsa, config, output, timeout):
             SdtgenError,
             XsaParseError,
             ConfigError,
+            ParityError,
         )
     except ImportError:
         click.echo(
@@ -809,12 +829,24 @@ def xsa2dt(ctx, xsa, config, output, timeout):
         with open(config, "r") as f:
             cfg = json.load(f)
 
-        result = XsaPipeline().run(Path(xsa), cfg, Path(output), sdtgen_timeout=timeout)
+        result = XsaPipeline().run(
+            Path(xsa),
+            cfg,
+            Path(output),
+            sdtgen_timeout=timeout,
+            profile=profile,
+            reference_dts=Path(reference_dts) if reference_dts else None,
+            strict_parity=strict_parity,
+        )
 
         click.echo(click.style("Done!", fg="green", bold=True))
         click.echo(f"  Overlay:  {result['overlay']}")
         click.echo(f"  Merged:   {result['merged']}")
         click.echo(f"  Report:   {result['report']}")
+        if "map" in result:
+            click.echo(f"  Map:      {result['map']}")
+        if "coverage" in result:
+            click.echo(f"  Coverage: {result['coverage']}")
 
     except FileNotFoundError as e:
         click.echo(click.style(f"Error: {e}", fg="red"))
@@ -828,8 +860,59 @@ def xsa2dt(ctx, xsa, config, output, timeout):
             click.echo(e.stderr)
     except (XsaParseError, ConfigError) as e:
         click.echo(click.style(str(e), fg="red"))
+    except ParityError as e:
+        click.echo(click.style(str(e), fg="red"))
     except Exception as e:
         click.echo(click.style(f"Unexpected error: {e}", fg="red"))
         import traceback
 
         traceback.print_exc()
+
+
+@cli.command("xsa-profiles")
+def xsa_profiles():
+    """List available built-in XSA board profiles."""
+    try:
+        from adidt.xsa.profiles import ProfileManager
+    except ImportError:
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
+        return
+
+    names = ProfileManager().list_profiles()
+    if not names:
+        click.echo("No XSA profiles found.")
+        return
+
+    click.echo("Available XSA profiles:")
+    for name in names:
+        click.echo(f"  - {name}")
+
+
+@cli.command("xsa-profile-show")
+@click.argument("name", type=str)
+def xsa_profile_show(name):
+    """Show one built-in XSA board profile as JSON."""
+    try:
+        from adidt.xsa.profiles import ProfileManager
+        from adidt.xsa.exceptions import ProfileError
+    except ImportError:
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
+        return
+
+    try:
+        profile = ProfileManager().load(name)
+    except ProfileError as ex:
+        click.echo(click.style(f"Error: {ex}", fg="red"))
+        return
+
+    click.echo(json.dumps(profile, indent=2))
