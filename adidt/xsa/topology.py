@@ -37,11 +37,22 @@ class ConverterInstance:
 
 
 @dataclass
+class SignalConnection:
+    """Connectivity information for one HWH signal net."""
+
+    signal: str
+    producers: list[str] = field(default_factory=list)
+    consumers: list[str] = field(default_factory=list)
+    bidirectional: list[str] = field(default_factory=list)
+
+
+@dataclass
 class XsaTopology:
     jesd204_rx: list[Jesd204Instance] = field(default_factory=list)
     jesd204_tx: list[Jesd204Instance] = field(default_factory=list)
     clkgens: list[ClkgenInstance] = field(default_factory=list)
     converters: list[ConverterInstance] = field(default_factory=list)
+    signal_connections: list[SignalConnection] = field(default_factory=list)
     fpga_part: str = ""
 
 
@@ -177,6 +188,7 @@ class XsaParser:
         #     f.write(str(root))
         topology = XsaTopology()
         topology.fpga_part = self._parse_part(root)
+        topology.signal_connections = self._parse_signal_connections(root)
         global_base_addrs = self._parse_global_base_addrs(root)
 
         found_adi = False
@@ -239,6 +251,39 @@ class XsaParser:
             )
 
         return topology
+
+    def _parse_signal_connections(self, root: ET.Element) -> list[SignalConnection]:
+        """Extract module-level connectivity using HWH SIGNAME + port directions."""
+        by_signal: dict[str, SignalConnection] = {}
+
+        for mod in root.findall(".//MODULE"):
+            instance = mod.get("INSTANCE", "")
+            if not instance:
+                continue
+
+            # Prefer direct module port lists; fallback for variant structures.
+            ports = mod.findall("./PORTS/PORT")
+            if not ports:
+                ports = mod.findall(".//PORT")
+
+            for port in ports:
+                sig_name = (port.get("SIGNAME") or "").strip()
+                if not sig_name:
+                    continue
+                direction = (port.get("DIR") or "").upper()
+                conn = by_signal.setdefault(sig_name, SignalConnection(signal=sig_name))
+
+                if direction == "O":
+                    if instance not in conn.producers:
+                        conn.producers.append(instance)
+                elif direction == "I":
+                    if instance not in conn.consumers:
+                        conn.consumers.append(instance)
+                else:
+                    if instance not in conn.bidirectional:
+                        conn.bidirectional.append(instance)
+
+        return sorted(by_signal.values(), key=lambda c: c.signal)
 
     def _parse_global_base_addrs(self, root: ET.Element) -> dict[str, int]:
         """Parse top-level MEMORYMAP instance address assignments.

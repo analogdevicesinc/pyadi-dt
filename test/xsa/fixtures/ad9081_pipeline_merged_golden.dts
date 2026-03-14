@@ -1,0 +1,64 @@
+/dts-v1/;
+/ {
+	amba: axi {
+		#address-cells = <2>;
+	axi_clkgen_0: axi-clkgen@43c00000 {
+		compatible = "adi,axi-clkgen-2.00.a";
+		reg = <0x0 0x43c00000 0x0 0x10000>;
+		#clock-cells = <1>;
+		clocks = <&zynqmp_clk 71>, <&zynqmp_clk 71>;
+		clock-names = "clkin1", "s_axi_aclk";
+		clock-output-names = "axi_clkgen_0_0", "axi_clkgen_0_1";
+	};
+
+	axi_jesd204_rx_0: axi-jesd204-rx@44a90000 {
+		compatible = "adi,axi-jesd204-rx-1.0";
+		reg = <0x0 0x44a90000 0x0 0x1000>;
+		interrupts = <0 54 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_clkgen_0 0>;
+		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
+		#clock-cells = <0>;
+		clock-output-names = "axi_jesd204_rx_0_lane_clk";
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-inputs = <&axi_clkgen_0 0 0>;
+
+		adi,octets-per-frame = <4>;
+		adi,frames-per-multiframe = <32>;
+
+		#sound-dai-cells = <0>;
+	};
+
+	axi_jesd204_tx_0: axi-jesd204-tx@44b90000 {
+		compatible = "adi,axi-jesd204-tx-1.0";
+		reg = <0x0 0x44b90000 0x0 0x1000>;
+		interrupts = <0 55 IRQ_TYPE_LEVEL_HIGH>;
+		clocks = <&zynqmp_clk 71>, <&hmc7044 6>, <&axi_clkgen_0 0>;
+		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
+		#clock-cells = <0>;
+		clock-output-names = "axi_jesd204_tx_0_lane_clk";
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-inputs = <&axi_clkgen_0 0 0>;
+
+		adi,octets-per-frame = <4>;
+		adi,frames-per-multiframe = <32>;
+
+		#sound-dai-cells = <0>;
+	};
+
+	axi_ad9081_0: ad9081@0 {
+		compatible = "adi,ad9081";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-top-device = <0>;
+		jesd204-link-ids = <1 0>;
+
+		jesd204-inputs = <&axi_jesd204_rx_0 0 1>;
+	};
+
+	};
+};

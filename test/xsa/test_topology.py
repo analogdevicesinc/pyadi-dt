@@ -54,6 +54,7 @@ def test_xsa_topology_defaults_to_empty():
     assert topo.jesd204_tx == []
     assert topo.clkgens == []
     assert topo.converters == []
+    assert topo.signal_connections == []
     assert topo.fpga_part == ""
 
 
@@ -123,6 +124,24 @@ def test_parser_detects_converter(tmp_path):
     assert conv.base_addr == 0x44A00000
     assert conv.spi_bus is None
     assert conv.spi_cs is None
+
+
+def test_parser_extracts_signal_connection_graph(tmp_path):
+    xsa = tmp_path / "design.xsa"
+    xsa.write_bytes(_make_xsa_bytes(FIXTURE_HWH))
+    topo = XsaParser().parse(xsa)
+
+    by_signal = {c.signal: c for c in topo.signal_connections}
+    assert "jesd_rx_device_clk" in by_signal
+    assert "jesd_tx_device_clk" in by_signal
+
+    rx_clk = by_signal["jesd_rx_device_clk"]
+    assert "axi_clkgen_0" in rx_clk.producers
+    assert "axi_jesd204_rx_0" in rx_clk.consumers
+
+    tx_clk = by_signal["jesd_tx_device_clk"]
+    assert "axi_clkgen_0" in tx_clk.producers
+    assert "axi_jesd204_tx_0" in tx_clk.consumers
 
 
 def test_parser_raises_on_missing_hwh(tmp_path):

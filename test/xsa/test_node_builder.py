@@ -427,6 +427,117 @@ def test_build_ad9081_mxfe_uses_ad9081_default_link_ids(cfg):
     assert "jesd204-inputs = <&axi_mxfe_rx_xcvr 0 2>;" in merged
 
 
+def test_build_ad9081_mxfe_applies_board_overrides(cfg):
+    topo_ad9081 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=8,
+                irq=107,
+                link_clk="External_Ports_rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=8,
+                irq=106,
+                link_clk="External_Ports_tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081_0",
+                ip_type="axi_ad9081",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["ad9081_board"] = {
+        "clock_spi": "spi2",
+        "clock_cs": 1,
+        "adc_spi": "spi3",
+        "adc_cs": 2,
+        "reset_gpio": 99,
+        "sysref_req_gpio": 98,
+        "rx2_enable_gpio": 97,
+        "rx1_enable_gpio": 96,
+        "tx2_enable_gpio": 95,
+        "tx1_enable_gpio": 94,
+    }
+
+    nodes = NodeBuilder().build(topo_ad9081, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "&spi2 {" in merged
+    assert "hmc7044: hmc7044@1" in merged
+    assert "&spi3 {" in merged
+    assert "trx0_ad9081: ad9081@2" in merged
+    assert "reset-gpios = <&gpio 99 0>;" in merged
+    assert "sysref-req-gpios = <&gpio 98 0>;" in merged
+    assert "rx2-enable-gpios = <&gpio 97 0>;" in merged
+    assert "rx1-enable-gpios = <&gpio 96 0>;" in merged
+    assert "tx2-enable-gpios = <&gpio 95 0>;" in merged
+    assert "tx1-enable-gpios = <&gpio 94 0>;" in merged
+
+
+def test_build_ad9081_allows_hmc7044_channel_block_override(cfg):
+    topo_ad9081 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=8,
+                irq=107,
+                link_clk="External_Ports_rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=8,
+                irq=106,
+                link_clk="External_Ports_tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081_0",
+                ip_type="axi_ad9081",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["ad9081_board"] = {
+        "hmc7044_channel_blocks": [
+            "hmc7044_c5: channel@5 {\n"
+            "reg = <5>;\n"
+            'adi,extended-name = "CUSTOM";\n'
+            "adi,divider = <8>;\n"
+            "adi,driver-mode = <1>;\n"
+            "};\n"
+        ]
+    }
+
+    nodes = NodeBuilder().build(topo_ad9081, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "hmc7044_c5: channel@5 {" in merged
+    assert 'adi,extended-name = "CUSTOM";' in merged
+    assert "hmc7044_c13: channel@13" not in merged
+
+
 def test_build_ad9081_mxfe_inferrs_link_modes_from_jesd_params(cfg):
     topo_ad9081 = XsaTopology(
         jesd204_rx=[
@@ -469,3 +580,177 @@ def test_build_ad9081_mxfe_inferrs_link_modes_from_jesd_params(cfg):
     assert "adi,link-mode = <18>;" in merged
     assert "adi,link-mode = <4>;" not in merged
     assert "adi,link-mode = <9>;" not in merged
+
+
+def test_build_adrv9009_applies_board_overrides(cfg):
+    topo_adrv9009 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_rx_clkgen_clk",
+                direction="rx",
+            ),
+            Jesd204Instance(
+                name="axi_adrv9009_rx_os_jesd_rx_axi",
+                base_addr=0x84AB0000,
+                num_lanes=4,
+                irq=104,
+                link_clk="axi_rx_os_clkgen_clk",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=105,
+                link_clk="axi_tx_clkgen_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9009_0",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["adrv9009_board"] = {
+        "misc_clk_hz": 260000000,
+        "spi_bus": "spi5",
+        "clk_cs": 3,
+        "trx_cs": 4,
+        "trx_reset_gpio": 210,
+        "trx_sysref_req_gpio": 211,
+        "trx_spi_max_frequency": 20000000,
+        "ad9528_vcxo_freq": 100000000,
+        "rx_link_id": 9,
+        "rx_os_link_id": 8,
+        "tx_link_id": 7,
+        "tx_octets_per_frame": 5,
+        "rx_os_octets_per_frame": 6,
+    }
+
+    nodes = NodeBuilder().build(topo_adrv9009, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "&spi5 {" in merged
+    assert "clk0_ad9528: ad9528-1@3" in merged
+    assert "reg = <3>;" in merged
+    assert "trx0_adrv9009: adrv9009-phy@4" in merged
+    assert "reg = <4>;" in merged
+    assert "clock-frequency = <260000000>;" in merged
+    assert "spi-max-frequency = <20000000>;" in merged
+    assert "reset-gpios = <&gpio 210 0>;" in merged
+    assert "sysref-req-gpios = <&gpio 211 0>;" in merged
+    assert "adi,vcxo-freq = <100000000>;" in merged
+    assert "jesd204-link-ids = <9 8 7>;" in merged
+    assert "jesd204-inputs = <&axi_adrv9009_rx_xcvr 0 9>, <&axi_adrv9009_rx_os_xcvr 0 8>, <&axi_adrv9009_tx_xcvr 0 7>;" in merged
+    assert "adi,octets-per-frame = <5>;" in merged
+    assert "&axi_adrv9009_rx_os_jesd_rx_axi {" in merged
+    assert "adi,octets-per-frame = <6>;" in merged
+
+
+def test_build_adrv9009_allows_trx_profile_props_override(cfg):
+    topo_adrv9009 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_rx_clkgen_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=105,
+                link_clk="axi_tx_clkgen_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9009_0",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["adrv9009_board"] = {
+        "trx_profile_props": [
+            "adi,custom-profile-property = <123>;",
+        ]
+    }
+
+    nodes = NodeBuilder().build(topo_adrv9009, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "adi,custom-profile-property = <123>;" in merged
+    assert "adi,rx-profile-rx-fir-num-fir-coefs" not in merged
+
+
+def test_build_adrv9009_allows_ad9528_channel_block_override(cfg):
+    topo_adrv9009 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_rx_clkgen_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=105,
+                link_clk="axi_tx_clkgen_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9009_0",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["adrv9009_board"] = {
+        "ad9528_channel_blocks": [
+            "ad9528_0_c9: channel@9 {\n"
+            "reg = <9>;\n"
+            'adi,extended-name = "CUSTOM_CLK";\n'
+            "adi,driver-mode = <1>;\n"
+            "adi,divider-phase = <0>;\n"
+            "adi,channel-divider = <7>;\n"
+            "adi,signal-source = <0>;\n"
+            "};\n"
+        ]
+    }
+
+    nodes = NodeBuilder().build(topo_adrv9009, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "ad9528_0_c9: channel@9 {" in merged
+    assert 'adi,extended-name = "CUSTOM_CLK";' in merged
+    assert "ad9528_0_c13: channel@13" not in merged

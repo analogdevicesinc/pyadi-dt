@@ -242,6 +242,13 @@ class NodeBuilder:
         return env.get_template("clkgen.tmpl").render(instance=inst)
 
     @staticmethod
+    def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
+        lines = block.strip("\n").splitlines()
+        if not lines:
+            return ""
+        return "".join(f"{prefix}{line.lstrip()}\n" for line in lines)
+
+    @staticmethod
     def _ad9081_converter_select(rx_m: int, rx_link_mode: int) -> str:
         # M4/L8 (mode 18) follows the upstream ADI mapping used by the
         # zynqmp-zcu102-rev10-ad9081 reference design.
@@ -357,6 +364,7 @@ class NodeBuilder:
         tx_l = int(tx_cfg.get("L", 4))
         tx_s = int(tx_cfg.get("S", 1))
         ad9081_cfg = cfg.get("ad9081", {})
+        ad9081_board_cfg = cfg.get("ad9081_board", {})
         rx_link_mode = self._resolve_ad9081_link_mode(ad9081_cfg, jesd_cfg, "rx")
         tx_link_mode = self._resolve_ad9081_link_mode(ad9081_cfg, jesd_cfg, "tx")
         adc_frequency_hz = int(ad9081_cfg.get("adc_frequency_hz", 4000000000))
@@ -375,6 +383,75 @@ class NodeBuilder:
         tx_converter_select = self._ad9081_tx_converter_select(tx_m, tx_link_mode)
         rx_lane_map = self._ad9081_lane_map_for_mode("rx", rx_l, rx_link_mode)
         tx_lane_map = self._ad9081_lane_map_for_mode("tx", tx_l, tx_link_mode)
+        clock_spi = str(ad9081_board_cfg.get("clock_spi", "spi1"))
+        clock_cs = int(ad9081_board_cfg.get("clock_cs", 0))
+        adc_spi = str(ad9081_board_cfg.get("adc_spi", "spi0"))
+        adc_cs = int(ad9081_board_cfg.get("adc_cs", 0))
+        reset_gpio = int(ad9081_board_cfg.get("reset_gpio", 133))
+        sysref_req_gpio = int(ad9081_board_cfg.get("sysref_req_gpio", 121))
+        rx2_enable_gpio = int(ad9081_board_cfg.get("rx2_enable_gpio", 135))
+        rx1_enable_gpio = int(ad9081_board_cfg.get("rx1_enable_gpio", 134))
+        tx2_enable_gpio = int(ad9081_board_cfg.get("tx2_enable_gpio", 137))
+        tx1_enable_gpio = int(ad9081_board_cfg.get("tx1_enable_gpio", 136))
+        default_hmc7044_channels_block = (
+            "\t\t\thmc7044_c0: channel@0 {\n"
+            "\t\t\t\treg = <0>;\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_RX";\n'
+            "\t\t\t\tadi,divider = <12>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c2: channel@2 {\n"
+            "\t\t\t\treg = <2>;\n"
+            '\t\t\t\tadi,extended-name = "DEV_REFCLK";\n'
+            "\t\t\t\tadi,divider = <12>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c3: channel@3 {\n"
+            "\t\t\t\treg = <3>;\n"
+            '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
+            "\t\t\t\tadi,divider = <1536>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t\tadi,jesd204-sysref-chan;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c6: channel@6 {\n"
+            "\t\t\t\treg = <6>;\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_TX";\n'
+            "\t\t\t\tadi,divider = <12>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c8: channel@8 {\n"
+            "\t\t\t\treg = <8>;\n"
+            '\t\t\t\tadi,extended-name = "FPGA_REFCLK1";\n'
+            "\t\t\t\tadi,divider = <6>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c10: channel@10 {\n"
+            "\t\t\t\treg = <10>;\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_RX_ALT";\n'
+            "\t\t\t\tadi,divider = <12>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c12: channel@12 {\n"
+            "\t\t\t\treg = <12>;\n"
+            '\t\t\t\tadi,extended-name = "FPGA_REFCLK2";\n'
+            "\t\t\t\tadi,divider = <6>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c13: channel@13 {\n"
+            "\t\t\t\treg = <13>;\n"
+            '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
+            "\t\t\t\tadi,divider = <1536>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t\tadi,jesd204-sysref-chan;\n"
+            "\t\t\t};\n"
+        )
+        custom_hmc7044_blocks = ad9081_board_cfg.get("hmc7044_channel_blocks")
+        if custom_hmc7044_blocks:
+            hmc7044_channels_block = "".join(
+                self._format_nested_block(str(block)) for block in custom_hmc7044_blocks
+            )
+        else:
+            hmc7044_channels_block = default_hmc7044_channels_block
 
         nodes = [
             "\t&axi_mxfe_rx_dma {\n"
@@ -431,11 +508,11 @@ class NodeBuilder:
             "\t\t#jesd204-cells = <2>;\n"
             "\t\tjesd204-inputs = <&axi_mxfe_tx_jesd_tx_axi 0 0>;\n"
             "\t};",
-            "\t&spi1 {\n"
+            f"\t&{clock_spi} {{\n"
             '\t\tstatus = "okay";\n'
-            "\t\thmc7044: hmc7044@0 {\n"
+            f"\t\thmc7044: hmc7044@{clock_cs} {{\n"
             '\t\t\tcompatible = "adi,hmc7044";\n'
-            "\t\t\treg = <0>;\n"
+            f"\t\t\treg = <{clock_cs}>;\n"
             "\t\t\t#address-cells = <1>;\n"
             "\t\t\t#size-cells = <0>;\n"
             "\t\t\t#clock-cells = <1>;\n"
@@ -464,70 +541,21 @@ class NodeBuilder:
             '"hmc7044_out6", "hmc7044_out7", "hmc7044_out8", '
             '"hmc7044_out9", "hmc7044_out10", "hmc7044_out11", '
             '"hmc7044_out12", "hmc7044_out13";\n'
-            "\t\t\thmc7044_c0: channel@0 {\n"
-            "\t\t\t\treg = <0>;\n"
-            '\t\t\t\tadi,extended-name = "CORE_CLK_RX";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c2: channel@2 {\n"
-            "\t\t\t\treg = <2>;\n"
-            '\t\t\t\tadi,extended-name = "DEV_REFCLK";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c3: channel@3 {\n"
-            "\t\t\t\treg = <3>;\n"
-            '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
-            "\t\t\t\tadi,divider = <1536>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t\tadi,jesd204-sysref-chan;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c6: channel@6 {\n"
-            "\t\t\t\treg = <6>;\n"
-            '\t\t\t\tadi,extended-name = "CORE_CLK_TX";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c8: channel@8 {\n"
-            "\t\t\t\treg = <8>;\n"
-            '\t\t\t\tadi,extended-name = "FPGA_REFCLK1";\n'
-            "\t\t\t\tadi,divider = <6>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c10: channel@10 {\n"
-            "\t\t\t\treg = <10>;\n"
-            '\t\t\t\tadi,extended-name = "CORE_CLK_RX_ALT";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c12: channel@12 {\n"
-            "\t\t\t\treg = <12>;\n"
-            '\t\t\t\tadi,extended-name = "FPGA_REFCLK2";\n'
-            "\t\t\t\tadi,divider = <6>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c13: channel@13 {\n"
-            "\t\t\t\treg = <13>;\n"
-            '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
-            "\t\t\t\tadi,divider = <1536>;\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t\tadi,jesd204-sysref-chan;\n"
-            "\t\t\t};\n"
+            f"{hmc7044_channels_block}"
             "\t\t};\n"
             "\t};",
-            "\t&spi0 {\n"
+            f"\t&{adc_spi} {{\n"
             '\t\tstatus = "okay";\n'
-            "\t\ttrx0_ad9081: ad9081@0 {\n"
+            f"\t\ttrx0_ad9081: ad9081@{adc_cs} {{\n"
             '\t\t\tcompatible = "adi,ad9081";\n'
-            "\t\t\treg = <0>;\n"
+            f"\t\t\treg = <{adc_cs}>;\n"
             "\t\t\tspi-max-frequency = <5000000>;\n"
-            "\t\t\treset-gpios = <&gpio 133 0>;\n"
-            "\t\t\tsysref-req-gpios = <&gpio 121 0>;\n"
-            "\t\t\trx2-enable-gpios = <&gpio 135 0>;\n"
-            "\t\t\trx1-enable-gpios = <&gpio 134 0>;\n"
-            "\t\t\ttx2-enable-gpios = <&gpio 137 0>;\n"
-            "\t\t\ttx1-enable-gpios = <&gpio 136 0>;\n"
+            f"\t\t\treset-gpios = <&gpio {reset_gpio} 0>;\n"
+            f"\t\t\tsysref-req-gpios = <&gpio {sysref_req_gpio} 0>;\n"
+            f"\t\t\trx2-enable-gpios = <&gpio {rx2_enable_gpio} 0>;\n"
+            f"\t\t\trx1-enable-gpios = <&gpio {rx1_enable_gpio} 0>;\n"
+            f"\t\t\ttx2-enable-gpios = <&gpio {tx2_enable_gpio} 0>;\n"
+            f"\t\t\ttx1-enable-gpios = <&gpio {tx1_enable_gpio} 0>;\n"
             "\t\t\tclocks = <&hmc7044 2>;\n"
             '\t\t\tclock-names = "dev_clk";\n'
             "\t\t\t#clock-cells = <1>;\n"
@@ -677,6 +705,7 @@ class NodeBuilder:
     def _build_adrv9009_nodes(
         self, topology: XsaTopology, cfg: dict[str, Any]
     ) -> list[str]:
+        board_cfg = cfg.get("adrv9009_board", {})
         labels = {
             j.name.replace("-", "_") for j in topology.jesd204_rx + topology.jesd204_tx
         }
@@ -733,11 +762,19 @@ class NodeBuilder:
             rx_os_xcvr_label = "axi_adrv9009_rx_os_xcvr"
             rx_os_clkgen_label = "axi_adrv9009_rx_os_clkgen"
 
-        trx_link_ids = ["1", "0"]
-        trx_jesd_inputs = [f"<&{rx_xcvr_label} 0 1>", f"<&{tx_xcvr_label} 0 0>"]
+        rx_link_id = int(board_cfg.get("rx_link_id", 1))
+        rx_os_link_id = int(board_cfg.get("rx_os_link_id", 2))
+        tx_link_id = int(board_cfg.get("tx_link_id", 0))
+        tx_octets_per_frame = int(board_cfg.get("tx_octets_per_frame", 2))
+        rx_os_octets_per_frame = int(board_cfg.get("rx_os_octets_per_frame", 2))
+        trx_link_ids = [str(rx_link_id), str(tx_link_id)]
+        trx_jesd_inputs = [
+            f"<&{rx_xcvr_label} 0 {rx_link_id}>",
+            f"<&{tx_xcvr_label} 0 {tx_link_id}>",
+        ]
         if rx_os_jesd_label:
-            trx_link_ids.insert(1, "2")
-            trx_jesd_inputs.insert(1, f"<&{rx_os_xcvr_label} 0 2>")
+            trx_link_ids.insert(1, str(rx_os_link_id))
+            trx_jesd_inputs.insert(1, f"<&{rx_os_xcvr_label} 0 {rx_os_link_id}>")
         trx_clocks = [
             "<&clk0_ad9528 13>",
             "<&clk0_ad9528 1>",
@@ -754,12 +791,76 @@ class NodeBuilder:
         trx_clock_names_value = ", ".join(trx_clock_names)
         trx_link_ids_value = " ".join(trx_link_ids)
         trx_inputs_value = ", ".join(trx_jesd_inputs)
+        misc_clk_hz = int(board_cfg.get("misc_clk_hz", 245760000))
+        spi_bus = str(board_cfg.get("spi_bus", "spi0"))
+        clk_cs = int(board_cfg.get("clk_cs", 0))
+        trx_cs = int(board_cfg.get("trx_cs", 1))
+        trx_reset_gpio = int(board_cfg.get("trx_reset_gpio", 130))
+        trx_sysref_req_gpio = int(board_cfg.get("trx_sysref_req_gpio", 136))
+        trx_spi_max_frequency = int(board_cfg.get("trx_spi_max_frequency", 25000000))
+        ad9528_vcxo_freq = int(board_cfg.get("ad9528_vcxo_freq", 122880000))
+        default_ad9528_channels_block = (
+            "\t\t\tad9528_0_c13: channel@13 {\n"
+            "\t\t\t\treg = <13>;\n"
+            '\t\t\t\tadi,extended-name = "DEV_CLK";\n'
+            "\t\t\t\tadi,driver-mode = <0>;\n"
+            "\t\t\t\tadi,divider-phase = <0>;\n"
+            "\t\t\t\tadi,channel-divider = <5>;\n"
+            "\t\t\t\tadi,signal-source = <0>;\n"
+            "\t\t\t};\n"
+            "\t\t\tad9528_0_c1: channel@1 {\n"
+            "\t\t\t\treg = <1>;\n"
+            '\t\t\t\tadi,extended-name = "FMC_CLK";\n'
+            "\t\t\t\tadi,driver-mode = <0>;\n"
+            "\t\t\t\tadi,divider-phase = <0>;\n"
+            "\t\t\t\tadi,channel-divider = <5>;\n"
+            "\t\t\t\tadi,signal-source = <0>;\n"
+            "\t\t\t};\n"
+            "\t\t\tad9528_0_c12: channel@12 {\n"
+            "\t\t\t\treg = <12>;\n"
+            '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
+            "\t\t\t\tadi,driver-mode = <0>;\n"
+            "\t\t\t\tadi,divider-phase = <0>;\n"
+            "\t\t\t\tadi,channel-divider = <5>;\n"
+            "\t\t\t\tadi,signal-source = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\tad9528_0_c3: channel@3 {\n"
+            "\t\t\t\treg = <3>;\n"
+            '\t\t\t\tadi,extended-name = "FMC_SYSREF";\n'
+            "\t\t\t\tadi,driver-mode = <0>;\n"
+            "\t\t\t\tadi,divider-phase = <0>;\n"
+            "\t\t\t\tadi,channel-divider = <5>;\n"
+            "\t\t\t\tadi,signal-source = <2>;\n"
+            "\t\t\t};\n"
+        )
+        custom_ad9528_blocks = board_cfg.get("ad9528_channel_blocks")
+        if custom_ad9528_blocks:
+            ad9528_channels_block = "".join(
+                self._format_nested_block(str(block)) for block in custom_ad9528_blocks
+            )
+        else:
+            ad9528_channels_block = default_ad9528_channels_block
+        default_trx_profile_props = [
+            "adi,rx-profile-rx-fir-num-fir-coefs = <48>;",
+            "adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-2) (23) (46) (-17) (-104) (10) (208) (23) (-370) (-97) (607) (240) (-942) (-489) (1407) (910) (-2065) (-1637) (3058) (2995) (-4912) (-6526) (9941) (30489) (30489) (9941) (-6526) (-4912) (2995) (3058) (-1637) (-2065) (910) (1407) (-489) (-942) (240) (607) (-97) (-370) (23) (208) (10) (-104) (-17) (46) (23) (-2)>;",
+            "adi,rx-profile-rx-adc-profile = /bits/ 16 <182 142 173 90 1280 982 1335 96 1369 48 1012 18 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
+            "adi,orx-profile-rx-fir-num-fir-coefs = <24>;",
+            "adi,orx-profile-rx-fir-coefs = /bits/ 16 <(-10) (7) (-10) (-12) (6) (-12) (16) (-16) (1) (63) (-431) (17235) (-431) (63) (1) (-16) (16) (-12) (6) (-12) (-10) (7) (-10) (0)>;",
+            "adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
+            "adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0>;",
+            "adi,orx-profile-orx-merge-filter = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0>;",
+            "adi,tx-profile-tx-fir-num-fir-coefs = <40>;",
+            "adi,tx-profile-tx-fir-coefs = /bits/ 16 <(-14) (5) (-9) (6) (-4) (19) (-29) (27) (-30) (46) (-63) (77) (-103) (150) (-218) (337) (-599) (1266) (-2718) (19537) (-2718) (1266) (-599) (337) (-218) (150) (-103) (77) (-63) (46) (-30) (27) (-29) (19) (-4) (6) (-9) (5) (-14) (0)>;",
+            "adi,tx-profile-loop-back-adc-profile = /bits/ 16 <206 132 168 90 1280 641 1307 53 1359 28 1039 30 48 48 37 210 0 0 0 0 53 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
+        ]
+        trx_profile_props = board_cfg.get("trx_profile_props", default_trx_profile_props)
+        trx_profile_props_block = "".join(f"\t\t\t{prop}\n" for prop in trx_profile_props)
 
         nodes = [
             "\t&misc_clk_0 {\n"
             '\t\tcompatible = "fixed-clock";\n'
             "\t\t#clock-cells = <0>;\n"
-            "\t\tclock-frequency = <245760000>;\n"
+            f"\t\tclock-frequency = <{misc_clk_hz}>;\n"
             "\t};",
             f"\t&{rx_clkgen_label} {{\n"
             '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
@@ -782,7 +883,7 @@ class NodeBuilder:
             "\t\t#jesd204-cells = <2>;\n"
             f"\t\tadi,octets-per-frame = <{rx_f}>;\n"
             f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
-            f"\t\tjesd204-inputs = <&{rx_xcvr_label} 0 1>;\n"
+            f"\t\tjesd204-inputs = <&{rx_xcvr_label} 0 {rx_link_id}>;\n"
             "\t};",
             f"\t&{tx_jesd_label} {{\n"
             '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
@@ -791,13 +892,13 @@ class NodeBuilder:
             "\t\t#clock-cells = <0>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
-            "\t\tadi,octets-per-frame = <2>;\n"
+            f"\t\tadi,octets-per-frame = <{tx_octets_per_frame}>;\n"
             f"\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
             "\t\tadi,converter-resolution = <14>;\n"
             "\t\tadi,bits-per-sample = <16>;\n"
             f"\t\tadi,converters-per-device = <{tx_m}>;\n"
             "\t\tadi,control-bits-per-sample = <2>;\n"
-            f"\t\tjesd204-inputs = <&{tx_xcvr_label} 0 0>;\n"
+            f"\t\tjesd204-inputs = <&{tx_xcvr_label} 0 {tx_link_id}>;\n"
             "\t};",
             "\t&axi_adrv9009_rx_dma {\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
@@ -865,11 +966,11 @@ class NodeBuilder:
             '\t\tclock-names = "sampl_clk";\n'
             "\t\tadi,axi-interpolation-core-available;\n"
             "\t};",
-            "\t&spi0 {\n"
+            f"\t&{spi_bus} {{\n"
             '\t\tstatus = "okay";\n'
-            "\t\tclk0_ad9528: ad9528-1@0 {\n"
+            f"\t\tclk0_ad9528: ad9528-1@{clk_cs} {{\n"
             '\t\t\tcompatible = "adi,ad9528";\n'
-            "\t\t\treg = <0>;\n"
+            f"\t\t\treg = <{clk_cs}>;\n"
             "\t\t\t#address-cells = <1>;\n"
             "\t\t\t#size-cells = <0>;\n"
             "\t\t\tspi-max-frequency = <10000000>;\n"
@@ -878,7 +979,7 @@ class NodeBuilder:
             '"ad9528-1_out7", "ad9528-1_out8", "ad9528-1_out9", "ad9528-1_out10", '
             '"ad9528-1_out11", "ad9528-1_out12", "ad9528-1_out13";\n'
             "\t\t\t#clock-cells = <1>;\n"
-            "\t\t\tadi,vcxo-freq = <122880000>;\n"
+            f"\t\t\tadi,vcxo-freq = <{ad9528_vcxo_freq}>;\n"
             "\t\t\tadi,refa-enable;\n"
             "\t\t\tadi,refa-diff-rcv-enable;\n"
             "\t\t\tadi,refa-r-div = <1>;\n"
@@ -897,65 +998,24 @@ class NodeBuilder:
             "\t\t\tadi,sysref-request-trigger-mode = <0>;\n"
             "\t\t\tadi,status-mon-pin0-function-select = <1>;\n"
             "\t\t\tadi,status-mon-pin1-function-select = <7>;\n"
-            "\t\t\tad9528_0_c13: channel@13 {\n"
-            "\t\t\t\treg = <13>;\n"
-            '\t\t\t\tadi,extended-name = "DEV_CLK";\n'
-            "\t\t\t\tadi,driver-mode = <0>;\n"
-            "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <5>;\n"
-            "\t\t\t\tadi,signal-source = <0>;\n"
-            "\t\t\t};\n"
-            "\t\t\tad9528_0_c1: channel@1 {\n"
-            "\t\t\t\treg = <1>;\n"
-            '\t\t\t\tadi,extended-name = "FMC_CLK";\n'
-            "\t\t\t\tadi,driver-mode = <0>;\n"
-            "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <5>;\n"
-            "\t\t\t\tadi,signal-source = <0>;\n"
-            "\t\t\t};\n"
-            "\t\t\tad9528_0_c12: channel@12 {\n"
-            "\t\t\t\treg = <12>;\n"
-            '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
-            "\t\t\t\tadi,driver-mode = <0>;\n"
-            "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <5>;\n"
-            "\t\t\t\tadi,signal-source = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\tad9528_0_c3: channel@3 {\n"
-            "\t\t\t\treg = <3>;\n"
-            '\t\t\t\tadi,extended-name = "FMC_SYSREF";\n'
-            "\t\t\t\tadi,driver-mode = <0>;\n"
-            "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <5>;\n"
-            "\t\t\t\tadi,signal-source = <2>;\n"
-            "\t\t\t};\n"
+            f"{ad9528_channels_block}"
             "\t\t};\n"
-            "\t\ttrx0_adrv9009: adrv9009-phy@1 {\n"
+            f"\t\ttrx0_adrv9009: adrv9009-phy@{trx_cs} {{\n"
             '\t\t\tcompatible = "adi,adrv9009", "adrv9009";\n'
-            "\t\t\treg = <1>;\n"
-            "\t\t\tspi-max-frequency = <25000000>;\n"
+            f"\t\t\treg = <{trx_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{trx_spi_max_frequency}>;\n"
             f"\t\t\tclocks = {trx_clocks_value};\n"
             f"\t\t\tclock-names = {trx_clock_names_value};\n"
             "\t\t\t#clock-cells = <1>;\n"
             '\t\t\tclock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";\n'
-            "\t\t\treset-gpios = <&gpio 130 0>;\n"
-            "\t\t\tsysref-req-gpios = <&gpio 136 0>;\n"
+            f"\t\t\treset-gpios = <&gpio {trx_reset_gpio} 0>;\n"
+            f"\t\t\tsysref-req-gpios = <&gpio {trx_sysref_req_gpio} 0>;\n"
             "\t\t\tjesd204-device;\n"
             "\t\t\t#jesd204-cells = <2>;\n"
             "\t\t\tjesd204-top-device = <0>;\n"
             f"\t\t\tjesd204-link-ids = <{trx_link_ids_value}>;\n"
             f"\t\t\tjesd204-inputs = {trx_inputs_value};\n"
-            "\t\t\tadi,rx-profile-rx-fir-num-fir-coefs = <48>;\n"
-            "\t\t\tadi,rx-profile-rx-fir-coefs = /bits/ 16 <(-2) (23) (46) (-17) (-104) (10) (208) (23) (-370) (-97) (607) (240) (-942) (-489) (1407) (910) (-2065) (-1637) (3058) (2995) (-4912) (-6526) (9941) (30489) (30489) (9941) (-6526) (-4912) (2995) (3058) (-1637) (-2065) (910) (1407) (-489) (-942) (240) (607) (-97) (-370) (23) (208) (10) (-104) (-17) (46) (23) (-2)>;\n"
-            "\t\t\tadi,rx-profile-rx-adc-profile = /bits/ 16 <182 142 173 90 1280 982 1335 96 1369 48 1012 18 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;\n"
-            "\t\t\tadi,orx-profile-rx-fir-num-fir-coefs = <24>;\n"
-            "\t\t\tadi,orx-profile-rx-fir-coefs = /bits/ 16 <(-10) (7) (-10) (-12) (6) (-12) (16) (-16) (1) (63) (-431) (17235) (-431) (63) (1) (-16) (16) (-12) (6) (-12) (-10) (7) (-10) (0)>;\n"
-            "\t\t\tadi,orx-profile-orx-low-pass-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;\n"
-            "\t\t\tadi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0>;\n"
-            "\t\t\tadi,orx-profile-orx-merge-filter = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0>;\n"
-            "\t\t\tadi,tx-profile-tx-fir-num-fir-coefs = <40>;\n"
-            "\t\t\tadi,tx-profile-tx-fir-coefs = /bits/ 16 <(-14) (5) (-9) (6) (-4) (19) (-29) (27) (-30) (46) (-63) (77) (-103) (150) (-218) (337) (-599) (1266) (-2718) (19537) (-2718) (1266) (-599) (337) (-218) (150) (-103) (77) (-63) (46) (-30) (27) (-29) (19) (-4) (6) (-9) (5) (-14) (0)>;\n"
-            "\t\t\tadi,tx-profile-loop-back-adc-profile = /bits/ 16 <206 132 168 90 1280 641 1307 53 1359 28 1039 30 48 48 37 210 0 0 0 0 53 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;\n"
+            f"{trx_profile_props_block}"
             "\t\t};\n"
             "\t};",
             "\t&axi_adrv9009_core_rx {\n\t\tspibus-connected = <&trx0_adrv9009>;\n\t};",
@@ -988,9 +1048,9 @@ class NodeBuilder:
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"
                 "\t\t#jesd204-cells = <2>;\n"
-                "\t\tadi,octets-per-frame = <2>;\n"
+                f"\t\tadi,octets-per-frame = <{rx_os_octets_per_frame}>;\n"
                 f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
-                f"\t\tjesd204-inputs = <&{rx_os_xcvr_label} 0 2>;\n"
+                f"\t\tjesd204-inputs = <&{rx_os_xcvr_label} 0 {rx_os_link_id}>;\n"
                 "\t};",
             )
         return nodes

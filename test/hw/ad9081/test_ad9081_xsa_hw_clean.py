@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,6 +16,20 @@ DEFAULT_OUT_DIR = HERE / "output"
 DEFAULT_KUIPER_RELEASE = "2023_r2"
 DEFAULT_KUIPER_PROJECT = "zynqmp-zcu102-rev10-ad9081"
 DEFAULT_VCXO_HZ = 122.88e6
+DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not in {
+    "0",
+    "false",
+    "no",
+}
+_SYS_CLK_SELECT_MAP = {
+    "XCVR_CPLL": 0,
+    "XCVR_QPLL1": 2,
+    "XCVR_QPLL0": 3,
+}
+_OUT_CLK_SELECT_MAP = {
+    "XCVR_REFCLK": 4,
+    "XCVR_REFCLK_DIV2": 4,
+}
 
 
 def _resolve_config_from_adijif(
@@ -75,23 +90,6 @@ def _resolve_config_from_adijif(
 
     rx_settings = mode_rx[0]["settings"]
     tx_settings = mode_tx[0]["settings"]
-    rx_lane_rate_hz = (
-        float(sys.converter.adc.sample_clock)
-        * float(rx_settings["M"])
-        * float(rx_settings["Np"])
-        * 10.0
-        / (float(rx_settings["L"]) * 8.0)
-    )
-    tx_lane_rate_hz = (
-        float(sys.converter.dac.sample_clock)
-        * float(tx_settings["M"])
-        * float(tx_settings["Np"])
-        * 10.0
-        / (float(tx_settings["L"]) * 8.0)
-    )
-    # CPLL cannot cover higher lane-rate modes; choose QPLL when needed.
-    rx_sys_clk_select = 3 if rx_lane_rate_hz > 12.5e9 else 0
-    tx_sys_clk_select = 3 if tx_lane_rate_hz > 12.5e9 else 0
 
     # Keep clock labels aligned with current AD9081 NodeBuilder path.
     cfg: dict[str, Any] = {
@@ -128,8 +126,8 @@ def _resolve_config_from_adijif(
             "rx_fddc_decimation": fddc,
             "tx_cduc_interpolation": cduc,
             "tx_fduc_interpolation": fduc,
-            "rx_sys_clk_select": rx_sys_clk_select,
-            "tx_sys_clk_select": tx_sys_clk_select,
+            "rx_sys_clk_select": 0,
+            "tx_sys_clk_select": 0,
             "rx_out_clk_select": 4,
             "tx_out_clk_select": 4,
         },
@@ -155,6 +153,24 @@ def _resolve_config_from_adijif(
     summary["solver_used"] = "default"
     summary["solver_succeeded"] = True
     summary["clock_output_clocks"] = conf.get("clock", {}).get("output_clocks")
+    rx_fpga = conf.get("fpga_adc", {})
+    tx_fpga = conf.get("fpga_dac", {})
+    rx_sys_clk_select = int(
+        _SYS_CLK_SELECT_MAP.get(str(rx_fpga.get("sys_clk_select", "")).upper(), 0)
+    )
+    tx_sys_clk_select = int(
+        _SYS_CLK_SELECT_MAP.get(str(tx_fpga.get("sys_clk_select", "")).upper(), 0)
+    )
+    rx_out_clk_select = int(
+        _OUT_CLK_SELECT_MAP.get(str(rx_fpga.get("out_clk_select", "")).upper(), 4)
+    )
+    tx_out_clk_select = int(
+        _OUT_CLK_SELECT_MAP.get(str(tx_fpga.get("out_clk_select", "")).upper(), 4)
+    )
+    cfg["ad9081"]["rx_sys_clk_select"] = rx_sys_clk_select
+    cfg["ad9081"]["tx_sys_clk_select"] = tx_sys_clk_select
+    cfg["ad9081"]["rx_out_clk_select"] = rx_out_clk_select
+    cfg["ad9081"]["tx_out_clk_select"] = tx_out_clk_select
     rx_conf = conf.get("jesd_AD9081_RX", {})
     tx_conf = conf.get("jesd_AD9081_TX", {})
     for key in ("F", "K", "M", "L", "Np", "S"):
@@ -217,8 +233,41 @@ def board(strategy):
     # strategy.transition("soft_off")
 
 
+@pytest.fixture(scope="module")
+def built_kernel_image() -> Path | None:
+    if not DEFAULT_BUILD_KERNEL:
+        return None
+
+    try:
+        from adibuild import LinuxBuilder, BuildConfig
+        from adibuild.platforms import ZynqMPPlatform
+    except ModuleNotFoundError as ex:
+        pytest.skip(f"pyadi-build dependency missing: {ex}")
+
+    config_path = HERE.parent / "2023_R2.yaml"
+    if not config_path.exists():
+        pytest.skip(f"pyadi-build config not found: {config_path}")
+
+    config = BuildConfig.from_yaml(config_path)
+    platform_config = config.get_platform("zynqmp")
+    platform = ZynqMPPlatform(platform_config)
+    builder = LinuxBuilder(config, platform)
+    builder.prepare_source()
+    result = builder.build(clean_before=False)
+
+    kernel = result.get("kernel_image")
+    if not kernel:
+        raise RuntimeError(f"pyadi-build returned no kernel image: {result}")
+
+    kernel_path = Path(kernel)
+    if not kernel_path.exists():
+        raise RuntimeError(f"Built kernel image not found: {kernel_path}")
+
+    return kernel_path
+
+
 @pytest.mark.lg_feature(["ad9081", "zcu102"])
-def test_ad9081_zcu102_xsa_hw(board):
+def test_ad9081_zcu102_xsa_hw(board, built_kernel_image):
 
     here = Path(__file__).parent
     out_dir = here / "output"
@@ -241,6 +290,8 @@ def test_ad9081_zcu102_xsa_hw(board):
 
     kuiper = board.target.get_driver("KuiperDLDriver")
     kuiper.get_boot_files_from_release()
+    if built_kernel_image is not None:
+        kuiper.add_files_to_target(built_kernel_image)
     kuiper.add_files_to_target(dtb)
 
     # Boot
