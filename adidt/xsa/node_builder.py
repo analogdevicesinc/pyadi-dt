@@ -11,6 +11,12 @@ from .topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterIns
 class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
+    _AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
+        # (M, L): (rx_link_mode, tx_link_mode)
+        (8, 4): (17, 18),
+        (4, 8): (10, 11),
+    }
+
     def build(self, topology: XsaTopology, cfg: dict[str, Any]) -> dict[str, list[str]]:
         """Render ADI DTS nodes.
 
@@ -49,6 +55,8 @@ class NodeBuilder:
         for inst in topology.jesd204_rx:
             if is_adrv9009_design and "adrv9009" in inst.name.lower():
                 continue
+            if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
+                continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "rx"
             )
@@ -71,6 +79,8 @@ class NodeBuilder:
 
         for inst in topology.jesd204_tx:
             if is_adrv9009_design and "adrv9009" in inst.name.lower():
+                continue
+            if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "tx"
@@ -231,6 +241,52 @@ class NodeBuilder:
     def _render_clkgen(self, env: Environment, inst: ClkgenInstance) -> str:
         return env.get_template("clkgen.tmpl").render(instance=inst)
 
+    @staticmethod
+    def _ad9081_converter_select(rx_m: int) -> str:
+        # For M=8 keep the existing IQ-pair mapping used by the reference flow.
+        if rx_m >= 8:
+            return (
+                "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
+                "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, "
+                "<&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan2 1>, "
+                "<&ad9081_rx_fddc_chan3 0>, <&ad9081_rx_fddc_chan3 1>"
+            )
+        # For reduced-M modes (e.g. M=4), map one converter per channel.
+        return ", ".join(
+            f"<&ad9081_rx_fddc_chan{i} 0>" for i in range(max(1, min(rx_m, 8)))
+        )
+
+    @staticmethod
+    def _ad9081_lane_map(lanes: int) -> str:
+        lane_count = max(1, min(lanes, 8))
+        values = list(range(lane_count)) + [7] * (8 - lane_count)
+        return " ".join(str(v) for v in values)
+
+    def _resolve_ad9081_link_mode(
+        self,
+        ad9081_cfg: dict[str, Any],
+        jesd_cfg: dict[str, Any],
+        direction: str,
+    ) -> int:
+        from .exceptions import ConfigError
+
+        explicit = ad9081_cfg.get(f"{direction}_link_mode")
+        if explicit is not None:
+            return int(explicit)
+
+        alt_explicit = jesd_cfg.get(direction, {}).get("mode")
+        if alt_explicit is not None:
+            return int(alt_explicit)
+
+        m = int(jesd_cfg.get(direction, {}).get("M", 0))
+        lanes = int(jesd_cfg.get(direction, {}).get("L", 0))
+        modes = self._AD9081_LINK_MODE_BY_ML.get((m, lanes))
+        if modes is None:
+            raise ConfigError(
+                f"ad9081.{direction}_link_mode (missing and could not infer for M={m}, L={lanes})"
+            )
+        return modes[0] if direction == "rx" else modes[1]
+
     def _build_ad9081_nodes(
         self, topology: XsaTopology, cfg: dict[str, Any]
     ) -> list[str]:
@@ -260,6 +316,22 @@ class NodeBuilder:
         tx_m = int(tx_cfg.get("M", 8))
         tx_l = int(tx_cfg.get("L", 4))
         tx_s = int(tx_cfg.get("S", 1))
+        ad9081_cfg = cfg.get("ad9081", {})
+        rx_link_mode = self._resolve_ad9081_link_mode(ad9081_cfg, jesd_cfg, "rx")
+        tx_link_mode = self._resolve_ad9081_link_mode(ad9081_cfg, jesd_cfg, "tx")
+        adc_frequency_hz = int(ad9081_cfg.get("adc_frequency_hz", 4000000000))
+        dac_frequency_hz = int(ad9081_cfg.get("dac_frequency_hz", 12000000000))
+        rx_cddc_decimation = int(ad9081_cfg.get("rx_cddc_decimation", 4))
+        rx_fddc_decimation = int(ad9081_cfg.get("rx_fddc_decimation", 4))
+        tx_cduc_interpolation = int(ad9081_cfg.get("tx_cduc_interpolation", 8))
+        tx_fduc_interpolation = int(ad9081_cfg.get("tx_fduc_interpolation", 6))
+        rx_sys_clk_select = int(ad9081_cfg.get("rx_sys_clk_select", 3))
+        tx_sys_clk_select = int(ad9081_cfg.get("tx_sys_clk_select", 3))
+        rx_out_clk_select = int(ad9081_cfg.get("rx_out_clk_select", 4))
+        tx_out_clk_select = int(ad9081_cfg.get("tx_out_clk_select", 4))
+        rx_converter_select = self._ad9081_converter_select(rx_m)
+        rx_lane_map = self._ad9081_lane_map(rx_l)
+        tx_lane_map = self._ad9081_lane_map(tx_l)
 
         nodes = [
             "\t&axi_mxfe_rx_dma {\n"
@@ -278,6 +350,8 @@ class NodeBuilder:
             '\t\tclock-names = "conv";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "rx_gt_clk", "rx_out_clk";\n'
+            f"\t\tadi,sys-clk-select = <{rx_sys_clk_select}>;\n"
+            f"\t\tadi,out-clk-select = <{rx_out_clk_select}>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             "\t\tjesd204-inputs = <&hmc7044 0 1>;\n"
@@ -288,6 +362,8 @@ class NodeBuilder:
             '\t\tclock-names = "conv";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "tx_gt_clk", "tx_out_clk";\n'
+            f"\t\tadi,sys-clk-select = <{tx_sys_clk_select}>;\n"
+            f"\t\tadi,out-clk-select = <{tx_out_clk_select}>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             "\t\tjesd204-inputs = <&hmc7044 0 0>;\n"
@@ -347,50 +423,50 @@ class NodeBuilder:
             '"hmc7044_out12", "hmc7044_out13";\n'
             "\t\t\thmc7044_c0: channel@0 {\n"
             "\t\t\t\treg = <0>;\n"
-            "\t\t\t\tadi,extended-name = \"CORE_CLK_RX\";\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_RX";\n'
             "\t\t\t\tadi,divider = <12>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c2: channel@2 {\n"
             "\t\t\t\treg = <2>;\n"
-            "\t\t\t\tadi,extended-name = \"DEV_REFCLK\";\n"
+            '\t\t\t\tadi,extended-name = "DEV_REFCLK";\n'
             "\t\t\t\tadi,divider = <12>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c3: channel@3 {\n"
             "\t\t\t\treg = <3>;\n"
-            "\t\t\t\tadi,extended-name = \"DEV_SYSREF\";\n"
+            '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
             "\t\t\t\tadi,divider = <1536>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c6: channel@6 {\n"
             "\t\t\t\treg = <6>;\n"
-            "\t\t\t\tadi,extended-name = \"CORE_CLK_TX\";\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_TX";\n'
             "\t\t\t\tadi,divider = <12>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c8: channel@8 {\n"
             "\t\t\t\treg = <8>;\n"
-            "\t\t\t\tadi,extended-name = \"FPGA_REFCLK1\";\n"
+            '\t\t\t\tadi,extended-name = "FPGA_REFCLK1";\n'
             "\t\t\t\tadi,divider = <6>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c10: channel@10 {\n"
             "\t\t\t\treg = <10>;\n"
-            "\t\t\t\tadi,extended-name = \"CORE_CLK_RX_ALT\";\n"
+            '\t\t\t\tadi,extended-name = "CORE_CLK_RX_ALT";\n'
             "\t\t\t\tadi,divider = <12>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c12: channel@12 {\n"
             "\t\t\t\treg = <12>;\n"
-            "\t\t\t\tadi,extended-name = \"FPGA_REFCLK2\";\n"
+            '\t\t\t\tadi,extended-name = "FPGA_REFCLK2";\n'
             "\t\t\t\tadi,divider = <6>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c13: channel@13 {\n"
             "\t\t\t\treg = <13>;\n"
-            "\t\t\t\tadi,extended-name = \"FPGA_SYSREF\";\n"
+            '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
             "\t\t\t\tadi,divider = <1536>;\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
@@ -421,11 +497,11 @@ class NodeBuilder:
             "\t\t\tadi,tx-dacs {\n"
             "\t\t\t\t#size-cells = <0>;\n"
             "\t\t\t\t#address-cells = <1>;\n"
-            "\t\t\t\tadi,dac-frequency-hz = /bits/ 64 <12000000000>;\n"
+            f"\t\t\t\tadi,dac-frequency-hz = /bits/ 64 <{dac_frequency_hz}>;\n"
             "\t\t\t\tadi,main-data-paths {\n"
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\t#size-cells = <0>;\n"
-            "\t\t\t\t\tadi,interpolation = <8>;\n"
+            f"\t\t\t\t\tadi,interpolation = <{tx_cduc_interpolation}>;\n"
             "\t\t\t\t\tdac@0 { reg = <0>; };\n"
             "\t\t\t\t\tdac@1 { reg = <1>; };\n"
             "\t\t\t\t\tdac@2 { reg = <2>; };\n"
@@ -434,7 +510,7 @@ class NodeBuilder:
             "\t\t\t\tadi,channelizer-paths {\n"
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\t#size-cells = <0>;\n"
-            "\t\t\t\t\tadi,interpolation = <6>;\n"
+            f"\t\t\t\t\tadi,interpolation = <{tx_fduc_interpolation}>;\n"
             "\t\t\t\t\tad9081_tx_fddc_chan0: channel@0 { reg = <0>; };\n"
             "\t\t\t\t\tad9081_tx_fddc_chan1: channel@1 { reg = <1>; };\n"
             "\t\t\t\t\tad9081_tx_fddc_chan2: channel@2 { reg = <2>; };\n"
@@ -449,8 +525,8 @@ class NodeBuilder:
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\tlink@0 {\n"
             "\t\t\t\t\t\treg = <0>;\n"
-            "\t\t\t\t\t\tadi,logical-lane-mapping = /bits/ 8 <0 2 7 7 1 7 7 3>;\n"
-            "\t\t\t\t\t\tadi,link-mode = <9>;\n"
+            f"\t\t\t\t\t\tadi,logical-lane-mapping = /bits/ 8 <{tx_lane_map}>;\n"
+            f"\t\t\t\t\t\tadi,link-mode = <{tx_link_mode}>;\n"
             "\t\t\t\t\t\tadi,subclass = <1>;\n"
             "\t\t\t\t\t\tadi,version = <1>;\n"
             "\t\t\t\t\t\tadi,dual-link = <0>;\n"
@@ -469,39 +545,35 @@ class NodeBuilder:
             "\t\t\tadi,rx-adcs {\n"
             "\t\t\t\t#size-cells = <0>;\n"
             "\t\t\t\t#address-cells = <1>;\n"
-            "\t\t\t\tadi,adc-frequency-hz = /bits/ 64 <4000000000>;\n"
+            f"\t\t\t\tadi,adc-frequency-hz = /bits/ 64 <{adc_frequency_hz}>;\n"
             "\t\t\t\tadi,main-data-paths {\n"
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\t#size-cells = <0>;\n"
-            "\t\t\t\t\tadc@0 { reg = <0>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tadc@1 { reg = <1>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tadc@2 { reg = <2>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tadc@3 { reg = <3>; adi,decimation = <4>; };\n"
+            f"\t\t\t\t\tadc@0 {{ reg = <0>; adi,decimation = <{rx_cddc_decimation}>; }};\n"
+            f"\t\t\t\t\tadc@1 {{ reg = <1>; adi,decimation = <{rx_cddc_decimation}>; }};\n"
+            f"\t\t\t\t\tadc@2 {{ reg = <2>; adi,decimation = <{rx_cddc_decimation}>; }};\n"
+            f"\t\t\t\t\tadc@3 {{ reg = <3>; adi,decimation = <{rx_cddc_decimation}>; }};\n"
             "\t\t\t\t};\n"
             "\t\t\t\tadi,channelizer-paths {\n"
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\t#size-cells = <0>;\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan0: channel@0 { reg = <0>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan1: channel@1 { reg = <1>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan2: channel@2 { reg = <2>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan3: channel@3 { reg = <3>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan4: channel@4 { reg = <4>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan5: channel@5 { reg = <5>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan6: channel@6 { reg = <6>; adi,decimation = <4>; };\n"
-            "\t\t\t\t\tad9081_rx_fddc_chan7: channel@7 { reg = <7>; adi,decimation = <4>; };\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan0: channel@0 {{ reg = <0>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan1: channel@1 {{ reg = <1>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan2: channel@2 {{ reg = <2>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan3: channel@3 {{ reg = <3>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan4: channel@4 {{ reg = <4>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan5: channel@5 {{ reg = <5>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan6: channel@6 {{ reg = <6>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
+            f"\t\t\t\t\tad9081_rx_fddc_chan7: channel@7 {{ reg = <7>; adi,decimation = <{rx_fddc_decimation}>; }};\n"
             "\t\t\t\t};\n"
             "\t\t\t\tadi,jesd-links {\n"
             "\t\t\t\t\t#size-cells = <0>;\n"
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\tlink@0 {\n"
             "\t\t\t\t\t\treg = <0>;\n"
-            "\t\t\t\t\t\tadi,converter-select = "
-            "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
-            "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, "
-            "<&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan2 1>, "
-            "<&ad9081_rx_fddc_chan3 0>, <&ad9081_rx_fddc_chan3 1>;\n"
-            "\t\t\t\t\t\tadi,logical-lane-mapping = /bits/ 8 <2 0 7 7 7 7 3 1>;\n"
-            "\t\t\t\t\t\tadi,link-mode = <4>;\n"
+            f"\t\t\t\t\t\tadi,converter-select = {rx_converter_select};\n"
+            f"\t\t\t\t\t\tadi,logical-lane-mapping = /bits/ 8 <{rx_lane_map}>;\n"
+            f"\t\t\t\t\t\tadi,link-mode = <{rx_link_mode}>;\n"
             "\t\t\t\t\t\tadi,subclass = <1>;\n"
             "\t\t\t\t\t\tadi,version = <1>;\n"
             "\t\t\t\t\t\tadi,dual-link = <0>;\n"
@@ -527,8 +599,15 @@ class NodeBuilder:
                 continue
             nodes.append(
                 f"\t&{lbl} {{\n"
+                '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
                 f"\t\tclocks = <&zynqmp_clk 71>, <&hmc7044 {rx_chan}>, <&axi_mxfe_rx_xcvr 0>;\n"
                 '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
+                "\t\t#clock-cells = <0>;\n"
+                "\t\tjesd204-device;\n"
+                "\t\t#jesd204-cells = <2>;\n"
+                f"\t\tadi,octets-per-frame = <{rx_f}>;\n"
+                f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
+                "\t\tjesd204-inputs = <&axi_mxfe_rx_xcvr 0 1>;\n"
                 "\t};"
             )
         for jesd in topology.jesd204_tx:
@@ -537,8 +616,15 @@ class NodeBuilder:
                 continue
             nodes.append(
                 f"\t&{lbl} {{\n"
+                '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
                 f"\t\tclocks = <&zynqmp_clk 71>, <&hmc7044 {tx_chan}>, <&axi_mxfe_tx_xcvr 0>;\n"
                 '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
+                "\t\t#clock-cells = <0>;\n"
+                "\t\tjesd204-device;\n"
+                "\t\t#jesd204-cells = <2>;\n"
+                f"\t\tadi,octets-per-frame = <{tx_f}>;\n"
+                f"\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
+                "\t\tjesd204-inputs = <&axi_mxfe_tx_xcvr 0 0>;\n"
                 "\t};"
             )
 

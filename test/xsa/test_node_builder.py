@@ -289,14 +289,132 @@ def test_build_ad9081_mxfe_generates_spi_clock_and_core_nodes(cfg):
     assert "trx0_ad9081: ad9081@0" in merged
     assert 'compatible = "adi,axi-ad9081-rx-1.0";' in merged
     assert 'compatible = "adi,axi-ad9081-tx-1.0";' in merged
+    assert "adi,sys-clk-select = <3>;" in merged
+    assert "adi,out-clk-select = <4>;" in merged
     assert "spibus-connected = <&trx0_ad9081>;" in merged
     assert "jesd204-link-ids = <1 0>;" in merged
     assert (
         "jesd204-inputs = <&rx_mxfe_tpl_core_adc_tpl_core 0 1>, <&tx_mxfe_tpl_core_dac_tpl_core 0 0>;"
         in merged
     )
-    assert "clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_mxfe_rx_xcvr 0>;" in jesd
-    assert "clocks = <&zynqmp_clk 71>, <&hmc7044 6>, <&axi_mxfe_tx_xcvr 0>;" in jesd
+    assert jesd == ""
+    assert "clocks = <&zynqmp_clk 71>, <&hmc7044 10>, <&axi_mxfe_rx_xcvr 0>;" in merged
+    assert "clocks = <&zynqmp_clk 71>, <&hmc7044 6>, <&axi_mxfe_tx_xcvr 0>;" in merged
+    assert "&axi_mxfe_rx_jesd_rx_axi {" in merged
+    assert "&axi_mxfe_tx_jesd_tx_axi {" in merged
+    assert 'compatible = "adi,axi-jesd204-rx-1.0";' in merged
+    assert 'compatible = "adi,axi-jesd204-tx-1.0";' in merged
+    assert "jesd204-device;" in merged
+    assert "#jesd204-cells = <2>;" in merged
+    assert "jesd204-inputs = <&axi_mxfe_rx_xcvr 0 1>;" in merged
+    assert "jesd204-inputs = <&axi_mxfe_tx_xcvr 0 0>;" in merged
     assert "/delete-property/ jesd204-device;" not in merged
     assert "/delete-property/ #jesd204-cells;" not in merged
     assert "/delete-property/ jesd204-inputs;" not in merged
+
+
+def test_build_ad9081_mxfe_uses_cfg_rx_m_for_converter_select(cfg):
+    topo_ad9081 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=8,
+                irq=107,
+                link_clk="External_Ports_rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=8,
+                irq=106,
+                link_clk="External_Ports_tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081_0",
+                ip_type="axi_ad9081",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    cfg["jesd"]["rx"]["M"] = 4
+    cfg["jesd"]["rx"]["L"] = 8
+    cfg["jesd"]["tx"]["M"] = 4
+    cfg["jesd"]["tx"]["L"] = 8
+    cfg["ad9081"] = {
+        "adc_frequency_hz": 3000000000,
+        "dac_frequency_hz": 12000000000,
+        "rx_cddc_decimation": 2,
+        "rx_fddc_decimation": 1,
+        "tx_cduc_interpolation": 8,
+        "tx_fduc_interpolation": 1,
+        "rx_link_mode": 10,
+        "tx_link_mode": 11,
+    }
+
+    nodes = NodeBuilder().build(topo_ad9081, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert (
+        "adi,converter-select = <&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan1 0>, "
+        "<&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan3 0>;"
+    ) in merged
+    assert "<&ad9081_rx_fddc_chan4" not in merged
+    assert "adi,adc-frequency-hz = /bits/ 64 <3000000000>;" in merged
+    assert "adi,dac-frequency-hz = /bits/ 64 <12000000000>;" in merged
+    assert "adi,link-mode = <10>;" in merged
+    assert "adi,link-mode = <11>;" in merged
+    assert "adi,decimation = <2>;" in merged
+    assert "adi,interpolation = <1>;" in merged
+
+
+def test_build_ad9081_mxfe_inferrs_link_modes_from_jesd_params(cfg):
+    topo_ad9081 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=107,
+                link_clk="External_Ports_rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=4,
+                irq=106,
+                link_clk="External_Ports_tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081_0",
+                ip_type="axi_ad9081",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+
+    cfg.pop("ad9081", None)
+
+    nodes = NodeBuilder().build(topo_ad9081, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "adi,link-mode = <17>;" in merged
+    assert "adi,link-mode = <18>;" in merged
+    assert "adi,link-mode = <4>;" not in merged
+    assert "adi,link-mode = <9>;" not in merged

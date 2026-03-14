@@ -3,7 +3,6 @@ from __future__ import annotations
 import shutil
 import subprocess
 from pathlib import Path
-import re
 from typing import Any
 
 from adidt.xsa.pipeline import XsaPipeline
@@ -76,6 +75,23 @@ def _resolve_config_from_adijif(
 
     rx_settings = mode_rx[0]["settings"]
     tx_settings = mode_tx[0]["settings"]
+    rx_lane_rate_hz = (
+        float(sys.converter.adc.sample_clock)
+        * float(rx_settings["M"])
+        * float(rx_settings["Np"])
+        * 10.0
+        / (float(rx_settings["L"]) * 8.0)
+    )
+    tx_lane_rate_hz = (
+        float(sys.converter.dac.sample_clock)
+        * float(tx_settings["M"])
+        * float(tx_settings["Np"])
+        * 10.0
+        / (float(tx_settings["L"]) * 8.0)
+    )
+    # CPLL cannot cover higher lane-rate modes; choose QPLL when needed.
+    rx_sys_clk_select = 3 if rx_lane_rate_hz > 12.5e9 else 0
+    tx_sys_clk_select = 3 if tx_lane_rate_hz > 12.5e9 else 0
 
     # Keep clock labels aligned with current AD9081 NodeBuilder path.
     cfg: dict[str, Any] = {
@@ -102,6 +118,20 @@ def _resolve_config_from_adijif(
             "tx_device_clk_label": "hmc7044",
             "hmc7044_rx_channel": 10,
             "hmc7044_tx_channel": 6,
+        },
+        "ad9081": {
+            "rx_link_mode": int(float(mode_rx[0]["mode"])),
+            "tx_link_mode": int(float(mode_tx[0]["mode"])),
+            "adc_frequency_hz": int(sys.converter.adc.sample_clock * cddc * fddc),
+            "dac_frequency_hz": int(sys.converter.dac.sample_clock * cduc * fduc),
+            "rx_cddc_decimation": cddc,
+            "rx_fddc_decimation": fddc,
+            "tx_cduc_interpolation": cduc,
+            "tx_fduc_interpolation": fduc,
+            "rx_sys_clk_select": rx_sys_clk_select,
+            "tx_sys_clk_select": tx_sys_clk_select,
+            "rx_out_clk_select": 4,
+            "tx_out_clk_select": 4,
         },
     }
 
@@ -229,7 +259,9 @@ def test_ad9081_zcu102_xsa_hw(board):
     for cmd in [
         "ls /sys/bus/spi/devices",
         "lsmod | grep -E 'ad9081|hmc7044|jesd204|axi_'",
-        "jesd_status || true",
+        "cat /sys/bus/platform/devices/84a90000.axi_jesd204_rx/status 2>/dev/null || true",
+        "cat /sys/bus/platform/devices/84b90000.axi_jesd204_tx/status 2>/dev/null || true",
+        "timeout 15 jesd_status 2>&1 || true",
         "dmesg | grep -Ei 'ad9081|hmc7044|jesd204|spi|axi-ad9081|probe|failed|error' | tail -n 200",
     ]:
         print(f"$ {cmd}")
@@ -264,17 +296,28 @@ def test_ad9081_zcu102_xsa_hw(board):
         f"Available devices: {found_devices}"
     )
 
-    assert (
-        "AD9081 Rev." in dmesg_txt or "probed ADC AD9081" in dmesg_txt
-    ), "AD9081 probe signature was not found in kernel dmesg output"
+    assert "AD9081 Rev." in dmesg_txt or "probed ADC AD9081" in dmesg_txt, (
+        "AD9081 probe signature was not found in kernel dmesg output"
+    )
 
-    jesd_status_txt = _shell_out(shell, "jesd_status || true")
+    jesd_status_txt = _shell_out(shell, "timeout 15 jesd_status 2>&1 || true")
     print("$ jesd_status")
     print(jesd_status_txt)
-    assert "jesd_status: not found" not in jesd_status_txt, (
-        "jesd_status tool is missing on target image"
+    rx_status_txt = _shell_out(
+        shell, "cat /sys/bus/platform/devices/84a90000.axi_jesd204_rx/status || true"
     )
-    assert re.search(r"\bDATA\b", jesd_status_txt), (
-        "jesd_status did not report DATA mode. "
-        f"Output:\n{jesd_status_txt}"
+    tx_status_txt = _shell_out(
+        shell, "cat /sys/bus/platform/devices/84b90000.axi_jesd204_tx/status || true"
+    )
+    print("$ cat /sys/bus/platform/devices/84a90000.axi_jesd204_rx/status")
+    print(rx_status_txt)
+    print("$ cat /sys/bus/platform/devices/84b90000.axi_jesd204_tx/status")
+    print(tx_status_txt)
+    assert "Link status: DATA" in rx_status_txt, (
+        "RX JESD link is not in DATA mode. "
+        f"RX status:\n{rx_status_txt}\njesd_status output:\n{jesd_status_txt}"
+    )
+    assert "Link status: DATA" in tx_status_txt, (
+        "TX JESD link is not in DATA mode. "
+        f"TX status:\n{tx_status_txt}\njesd_status output:\n{jesd_status_txt}"
     )

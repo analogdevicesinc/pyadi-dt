@@ -150,6 +150,20 @@ DtsMerger().merge(base_dts, nodes, output_dir, "ad9081_zcu102")
 node strings. `DtsMerger` wraps them in a `/plugin/;` overlay targeting the
 `&amba` bus label.
 
+### AD9081 link-mode selection behavior
+
+For AD9081 MXFE pipelines, JESD link modes are no longer hardcoded. The
+builder resolves mode values in this order:
+
+1. `cfg["ad9081"]["rx_link_mode"]` / `cfg["ad9081"]["tx_link_mode"]`
+2. `cfg["jesd"]["rx"]["mode"]` / `cfg["jesd"]["tx"]["mode"]`
+3. Inference from JESD `(M, L)`:
+   - `(8, 4)` -> RX `17`, TX `18`
+   - `(4, 8)` -> RX `10`, TX `11`
+
+If no explicit mode is provided and `(M, L)` is unsupported, generation fails
+with `ConfigError` so invalid link mode assumptions are not emitted into DTS.
+
 ## Full Pipeline (with sdtgen)
 
 When lopper is installed the `adidtc xsa2dt` command runs all five stages,

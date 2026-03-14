@@ -80,6 +80,22 @@ assignments. Example for an AD9081 RX+TX design:
      }
    }
 
+AD9081 link-mode resolution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For AD9081 + MXFE XSA designs, ``NodeBuilder`` resolves
+``adi,link-mode`` using this precedence:
+
+1. ``cfg["ad9081"]["rx_link_mode"]`` / ``cfg["ad9081"]["tx_link_mode"]``
+2. ``cfg["jesd"]["rx"]["mode"]`` / ``cfg["jesd"]["tx"]["mode"]``
+3. Inference from JESD ``(M, L)`` tuples:
+
+   - ``(8, 4)`` -> RX ``17``, TX ``18``
+   - ``(4, 8)`` -> RX ``10``, TX ``11``
+
+If no explicit mode is set and ``(M, L)`` does not match a supported tuple,
+``ConfigError`` is raised instead of silently falling back to hardcoded modes.
+
 Supported IP Cores
 ------------------
 
