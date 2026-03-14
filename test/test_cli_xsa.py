@@ -4,7 +4,7 @@ from unittest.mock import patch
 from click.testing import CliRunner
 
 from adidt.cli.main import cli
-from adidt.xsa.exceptions import ConfigError, ParityError
+from adidt.xsa.exceptions import ConfigError, ParityError, XsaParseError
 
 
 def test_xsa2dt_passes_profile_to_pipeline(tmp_path):
@@ -739,3 +739,30 @@ def test_xsa2dt_fails_when_pipeline_raises_config_error(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "invalid JESD config" in result.output
+
+
+def test_xsa2dt_fails_when_pipeline_raises_parse_error(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        MockPipeline.return_value.run.side_effect = XsaParseError("missing HWH in XSA")
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code != 0, result.output
+    assert "missing HWH in XSA" in result.output
