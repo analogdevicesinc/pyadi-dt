@@ -190,3 +190,18 @@ def test_merge_does_not_remove_unrelated_at_zero_nodes(tmp_path):
     assert "cpu0: cpu@0" in merged
     assert "axi_ad9081_0: ad9081@0" in merged
     assert "cpu0:\n};" not in merged
+
+
+def test_merge_only_top_nodes_does_not_warn_about_missing_bus(tmp_path):
+    base = '/dts-v1/;\n/ {\n\tmodel = "test";\n};\n'
+    nodes = {
+        "clkgens": [],
+        "jesd204_rx": [],
+        "jesd204_tx": [],
+        "converters": ['\t&spi0 {\n\t\tstatus = "okay";\n\t};'],
+    }
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _, merged = DtsMerger().merge(base, nodes, tmp_path, "top-only")
+    assert "&spi0 {" in merged
+    assert not any("no amba/axi bus label found" in str(x.message).lower() for x in w)

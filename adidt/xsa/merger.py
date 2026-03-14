@@ -136,6 +136,8 @@ class DtsMerger:
         top_nodes = [n for n in all_nodes if n.lstrip().startswith("&")]
         nodes_block = "\n".join(bus_nodes) + ("\n" if bus_nodes else "")
         top_nodes_block = "\n".join(top_nodes) + ("\n" if top_nodes else "")
+        if not bus_nodes:
+            return self._append_top_nodes(merged, top_nodes_block)
         merged_labels = self._scan_labels(merged)
         bus = self._bus_label(merged_labels)
         include_bus = self._bus_label(include_labels)

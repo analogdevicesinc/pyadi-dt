@@ -242,7 +242,14 @@ class NodeBuilder:
         return env.get_template("clkgen.tmpl").render(instance=inst)
 
     @staticmethod
-    def _ad9081_converter_select(rx_m: int) -> str:
+    def _ad9081_converter_select(rx_m: int, rx_link_mode: int) -> str:
+        # M4/L8 (mode 18) follows the upstream ADI mapping used by the
+        # zynqmp-zcu102-rev10-ad9081 reference design.
+        if rx_link_mode == 18 and rx_m == 4:
+            return (
+                "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
+                "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>"
+            )
         # For M=8 keep the existing IQ-pair mapping used by the reference flow.
         if rx_m >= 8:
             return (
@@ -257,10 +264,43 @@ class NodeBuilder:
         )
 
     @staticmethod
+    def _ad9081_tx_converter_select(tx_m: int, tx_link_mode: int) -> str:
+        # M4/L8 (mode 17) follows the upstream ADI mapping used by the
+        # zynqmp-zcu102-rev10-ad9081 reference design.
+        if tx_link_mode == 17 and tx_m == 4:
+            return (
+                "<&ad9081_tx_fddc_chan0 0>, <&ad9081_tx_fddc_chan0 1>, "
+                "<&ad9081_tx_fddc_chan1 0>, <&ad9081_tx_fddc_chan1 1>"
+            )
+        if tx_m >= 8:
+            return (
+                "<&ad9081_tx_fddc_chan0 0>, <&ad9081_tx_fddc_chan0 1>, "
+                "<&ad9081_tx_fddc_chan1 0>, <&ad9081_tx_fddc_chan1 1>, "
+                "<&ad9081_tx_fddc_chan2 0>, <&ad9081_tx_fddc_chan2 1>, "
+                "<&ad9081_tx_fddc_chan3 0>, <&ad9081_tx_fddc_chan3 1>"
+            )
+        return ", ".join(
+            f"<&ad9081_tx_fddc_chan{i} 0>" for i in range(max(1, min(tx_m, 8)))
+        )
+
+    @staticmethod
     def _ad9081_lane_map(lanes: int) -> str:
         lane_count = max(1, min(lanes, 8))
         values = list(range(lane_count)) + [7] * (8 - lane_count)
         return " ".join(str(v) for v in values)
+
+    @staticmethod
+    def _ad9081_lane_map_for_mode(direction: str, lanes: int, link_mode: int) -> str:
+        # Board-specific known-good mappings from upstream ADI DTS.
+        if direction == "tx" and link_mode == 17 and lanes == 8:
+            return "0 2 7 6 1 5 4 3"
+        if direction == "rx" and link_mode == 18 and lanes == 8:
+            return "2 0 7 6 5 4 3 1"
+        if direction == "tx" and link_mode == 9 and lanes == 4:
+            return "0 2 7 7 1 7 7 3"
+        if direction == "rx" and link_mode == 10 and lanes == 4:
+            return "2 0 7 7 7 7 3 1"
+        return NodeBuilder._ad9081_lane_map(lanes)
 
     def _resolve_ad9081_link_mode(
         self,
@@ -329,9 +369,12 @@ class NodeBuilder:
         tx_sys_clk_select = int(ad9081_cfg.get("tx_sys_clk_select", 3))
         rx_out_clk_select = int(ad9081_cfg.get("rx_out_clk_select", 4))
         tx_out_clk_select = int(ad9081_cfg.get("tx_out_clk_select", 4))
-        rx_converter_select = self._ad9081_converter_select(rx_m)
-        rx_lane_map = self._ad9081_lane_map(rx_l)
-        tx_lane_map = self._ad9081_lane_map(tx_l)
+        rx_link_id = int(ad9081_cfg.get("rx_link_id", 2))
+        tx_link_id = int(ad9081_cfg.get("tx_link_id", 0))
+        rx_converter_select = self._ad9081_converter_select(rx_m, rx_link_mode)
+        tx_converter_select = self._ad9081_tx_converter_select(tx_m, tx_link_mode)
+        rx_lane_map = self._ad9081_lane_map_for_mode("rx", rx_l, rx_link_mode)
+        tx_lane_map = self._ad9081_lane_map_for_mode("tx", tx_l, tx_link_mode)
 
         nodes = [
             "\t&axi_mxfe_rx_dma {\n"
@@ -354,7 +397,7 @@ class NodeBuilder:
             f"\t\tadi,out-clk-select = <{rx_out_clk_select}>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
-            "\t\tjesd204-inputs = <&hmc7044 0 1>;\n"
+            f"\t\tjesd204-inputs = <&hmc7044 0 {rx_link_id}>;\n"
             "\t};",
             "\t&axi_mxfe_tx_xcvr {\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
@@ -375,7 +418,7 @@ class NodeBuilder:
             "\t\tspibus-connected = <&trx0_ad9081>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
-            "\t\tjesd204-inputs = <&axi_mxfe_rx_jesd_rx_axi 0 1>;\n"
+            f"\t\tjesd204-inputs = <&axi_mxfe_rx_jesd_rx_axi 0 {rx_link_id}>;\n"
             "\t};",
             "\t&tx_mxfe_tpl_core_dac_tpl_core {\n"
             '\t\tcompatible = "adi,axi-ad9081-tx-1.0";\n'
@@ -492,8 +535,8 @@ class NodeBuilder:
             "\t\t\tjesd204-device;\n"
             "\t\t\t#jesd204-cells = <2>;\n"
             "\t\t\tjesd204-top-device = <0>;\n"
-            "\t\t\tjesd204-link-ids = <1 0>;\n"
-            "\t\t\tjesd204-inputs = <&rx_mxfe_tpl_core_adc_tpl_core 0 1>, <&tx_mxfe_tpl_core_dac_tpl_core 0 0>;\n"
+            f"\t\t\tjesd204-link-ids = <{rx_link_id} {tx_link_id}>;\n"
+            f"\t\t\tjesd204-inputs = <&rx_mxfe_tpl_core_adc_tpl_core 0 {rx_link_id}>, <&tx_mxfe_tpl_core_dac_tpl_core 0 {tx_link_id}>;\n"
             "\t\t\tadi,tx-dacs {\n"
             "\t\t\t\t#size-cells = <0>;\n"
             "\t\t\t\t#address-cells = <1>;\n"
@@ -525,6 +568,7 @@ class NodeBuilder:
             "\t\t\t\t\t#address-cells = <1>;\n"
             "\t\t\t\t\tlink@0 {\n"
             "\t\t\t\t\t\treg = <0>;\n"
+            f"\t\t\t\t\t\tadi,converter-select = {tx_converter_select};\n"
             f"\t\t\t\t\t\tadi,logical-lane-mapping = /bits/ 8 <{tx_lane_map}>;\n"
             f"\t\t\t\t\t\tadi,link-mode = <{tx_link_mode}>;\n"
             "\t\t\t\t\t\tadi,subclass = <1>;\n"
@@ -607,7 +651,7 @@ class NodeBuilder:
                 "\t\t#jesd204-cells = <2>;\n"
                 f"\t\tadi,octets-per-frame = <{rx_f}>;\n"
                 f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
-                "\t\tjesd204-inputs = <&axi_mxfe_rx_xcvr 0 1>;\n"
+                f"\t\tjesd204-inputs = <&axi_mxfe_rx_xcvr 0 {rx_link_id}>;\n"
                 "\t};"
             )
         for jesd in topology.jesd204_tx:
@@ -624,7 +668,7 @@ class NodeBuilder:
                 "\t\t#jesd204-cells = <2>;\n"
                 f"\t\tadi,octets-per-frame = <{tx_f}>;\n"
                 f"\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
-                "\t\tjesd204-inputs = <&axi_mxfe_tx_xcvr 0 0>;\n"
+                f"\t\tjesd204-inputs = <&axi_mxfe_tx_xcvr 0 {tx_link_id}>;\n"
                 "\t};"
             )
 
