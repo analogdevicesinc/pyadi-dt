@@ -66,7 +66,11 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
     node_bodies = _node_bodies_by_label(merged_dts)
 
     for req in manifest.roles:
-        found = req.compatible in merged_dts
+        if req.label:
+            body = node_bodies.get(req.label, "")
+            found = req.compatible in body
+        else:
+            found = req.compatible in merged_dts
         items.append(
             RoleCoverage(
                 role=req.role,
@@ -75,8 +79,9 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
                 label=req.label,
             )
         )
-        if not found and req.role not in missing_roles:
-            missing_roles.append(req.role)
+        if not found:
+            missing_id = req.role if not req.label else f"{req.role}:{req.label}"
+            missing_roles.append(missing_id)
 
     link_items: list[LinkCoverage] = []
     missing_links: list[str] = []
