@@ -133,6 +133,7 @@ The command also fails fast when pipeline results:
 - provide empty required artifact values
 - provide non-path required artifact values
 - receive an invalid JSON config file
+- encounter XSA parser/config exceptions raised by the pipeline
 
 ## Building Documentation
 
