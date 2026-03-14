@@ -905,69 +905,73 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
 
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
-            map_path = _path_or_none(result["map"], "parity map")
-            if map_path is None:
-                _print_unavailable_map_summary()
-            elif not map_path.exists():
-                click.echo(f"  Warning: parity map not found: {map_path}")
-                _print_unavailable_map_summary()
-            else:
-                try:
-                    map_data = json.loads(map_path.read_text())
-                    if not isinstance(map_data, dict):
+            if parity_requested:
+                map_path = _path_or_none(result["map"], "parity map")
+                if map_path is None:
+                    _print_unavailable_map_summary()
+                elif not map_path.exists():
+                    click.echo(f"  Warning: parity map not found: {map_path}")
+                    _print_unavailable_map_summary()
+                else:
+                    try:
+                        map_data = json.loads(map_path.read_text())
+                        if not isinstance(map_data, dict):
+                            click.echo(
+                                f"  Warning: parity map JSON root is not an object: {map_path}"
+                            )
+                            _print_unavailable_map_summary()
+                            map_data = None
+                        if map_data is not None:
+                            raw_cov = map_data.get("coverage", {})
+                            cov = raw_cov if isinstance(raw_cov, dict) else {}
+                            click.echo(
+                                "  Coverage % (roles/links/properties/overall): "
+                                f"{cov.get('roles_pct', 'n/a')}/"
+                                f"{cov.get('links_pct', 'n/a')}/"
+                                f"{cov.get('properties_pct', 'n/a')}/"
+                                f"{cov.get('overall_pct', 'n/a')}"
+                            )
+                            if (
+                                cov.get("overall_matched") is not None
+                                and cov.get("overall_total") is not None
+                            ):
+                                click.echo(
+                                    "  Overall matched items: "
+                                    f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                                )
+
+                            def _as_list(value):
+                                return value if isinstance(value, list) else []
+
+                            missing_roles = _as_list(map_data.get("missing_roles", []))
+                            missing_links = _as_list(map_data.get("missing_links", []))
+                            missing_props = _as_list(
+                                map_data.get("missing_properties", [])
+                            )
+                            mismatched_props = _as_list(
+                                map_data.get("mismatched_properties", [])
+                            )
+                            click.echo(
+                                "  Missing gaps (roles/links/properties/mismatched): "
+                                f"{len(missing_roles)}/{len(missing_links)}/"
+                                f"{len(missing_props)}/{len(mismatched_props)}"
+                            )
+                    except Exception as ex:
                         click.echo(
-                            f"  Warning: parity map JSON root is not an object: {map_path}"
+                            f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
                         )
                         _print_unavailable_map_summary()
-                        map_data = None
-                    if map_data is not None:
-                        raw_cov = map_data.get("coverage", {})
-                        cov = raw_cov if isinstance(raw_cov, dict) else {}
-                        click.echo(
-                            "  Coverage % (roles/links/properties/overall): "
-                            f"{cov.get('roles_pct', 'n/a')}/"
-                            f"{cov.get('links_pct', 'n/a')}/"
-                            f"{cov.get('properties_pct', 'n/a')}/"
-                            f"{cov.get('overall_pct', 'n/a')}"
-                        )
-                        if (
-                            cov.get("overall_matched") is not None
-                            and cov.get("overall_total") is not None
-                        ):
-                            click.echo(
-                                "  Overall matched items: "
-                                f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
-                            )
-
-                        def _as_list(value):
-                            return value if isinstance(value, list) else []
-
-                        missing_roles = _as_list(map_data.get("missing_roles", []))
-                        missing_links = _as_list(map_data.get("missing_links", []))
-                        missing_props = _as_list(map_data.get("missing_properties", []))
-                        mismatched_props = _as_list(
-                            map_data.get("mismatched_properties", [])
-                        )
-                        click.echo(
-                            "  Missing gaps (roles/links/properties/mismatched): "
-                            f"{len(missing_roles)}/{len(missing_links)}/"
-                            f"{len(missing_props)}/{len(mismatched_props)}"
-                        )
-                except Exception as ex:
-                    click.echo(
-                        f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
-                    )
-                    _print_unavailable_map_summary()
         elif parity_requested:
             click.echo("  Warning: parity map not provided by pipeline result")
             _print_unavailable_map_summary()
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
-            cov_path = _path_or_none(result["coverage"], "parity coverage report")
-            if cov_path is None:
-                pass
-            elif not cov_path.exists():
-                click.echo(f"  Warning: parity coverage report not found: {cov_path}")
+            if parity_requested:
+                cov_path = _path_or_none(result["coverage"], "parity coverage report")
+                if cov_path is None:
+                    pass
+                elif not cov_path.exists():
+                    click.echo(f"  Warning: parity coverage report not found: {cov_path}")
         elif parity_requested:
             click.echo("  Warning: parity coverage report not provided by pipeline result")
 
