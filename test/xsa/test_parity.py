@@ -407,7 +407,10 @@ def test_write_parity_reports_emits_coverage_percentages(tmp_path: Path):
     assert data["coverage"]["links_pct"] == 40.0
     assert data["coverage"]["properties_pct"] == 100.0
     assert data["coverage"]["overall_pct"] == 66.7
+    assert data["coverage"]["overall_matched"] == 8
+    assert data["coverage"]["overall_total"] == 12
     assert "Role coverage: 75.0%" in md
     assert "Link coverage: 40.0%" in md
     assert "Property coverage: 100.0%" in md
     assert "Overall coverage: 66.7%" in md
+    assert "Overall matched items: 8/12" in md
