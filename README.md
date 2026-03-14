@@ -138,6 +138,9 @@ root, or JSON parsing fails,
 - `Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a`
 - `Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a`
 
+Missing parity artifact warnings are emitted when parity is requested
+(for example with `--reference-dts` or strict parity mode).
+
 The command also fails fast when pipeline results:
 
 - return an invalid result type (must be a dictionary)
