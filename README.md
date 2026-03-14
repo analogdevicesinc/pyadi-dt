@@ -135,6 +135,7 @@ The command also fails fast when pipeline results:
 - receive an invalid JSON config file
 - encounter XSA parser/config exceptions raised by the pipeline
 - encounter sdtgen execution or availability failures
+- hit unexpected runtime exceptions in the XSA pipeline flow
 
 ## Building Documentation
 
