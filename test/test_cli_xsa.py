@@ -793,6 +793,45 @@ def test_xsa2dt_does_not_validate_parity_paths_without_parity_mode(tmp_path):
     assert "Warning: parity coverage report path is invalid" not in result.output
 
 
+def test_xsa2dt_non_parity_mode_still_prints_artifact_paths(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        map_path = out / "missing.map.json"
+        cov_path = out / "missing.coverage.md"
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": map_path,
+            "coverage": cov_path,
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert f"Map:      {map_path}" in result.output
+    assert f"Coverage: {cov_path}" in result.output
+    assert "Warning: parity map not found" not in result.output
+    assert "Warning: parity coverage report not found" not in result.output
+
+
 def test_xsa2dt_warns_when_optional_parity_artifacts_not_pathlike(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
