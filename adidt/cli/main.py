@@ -828,6 +828,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     try:
         with open(config, "r") as f:
             cfg = json.load(f)
+        parity_requested = bool(reference_dts or strict_parity)
 
         result = XsaPipeline().run(
             Path(xsa),
@@ -957,7 +958,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                         f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
                     )
                     _print_unavailable_map_summary()
-        else:
+        elif parity_requested:
             click.echo("  Warning: parity map not provided by pipeline result")
             _print_unavailable_map_summary()
         if "coverage" in result:
@@ -967,7 +968,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 pass
             elif not cov_path.exists():
                 click.echo(f"  Warning: parity coverage report not found: {cov_path}")
-        else:
+        elif parity_requested:
             click.echo("  Warning: parity coverage report not provided by pipeline result")
 
     except FileNotFoundError as e:
