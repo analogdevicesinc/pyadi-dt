@@ -883,6 +883,9 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         click.echo(f"  Report:   {result['report']}")
 
         def _path_or_none(value, label):
+            if value is None:
+                click.echo(f"  Warning: {label} path is null")
+                return None
             if isinstance(value, str) and not value.strip():
                 click.echo(f"  Warning: {label} path is empty")
                 return None

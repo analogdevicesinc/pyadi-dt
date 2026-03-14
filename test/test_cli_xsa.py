@@ -541,6 +541,46 @@ def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_empty(tmp_path):
     assert "Unexpected error:" not in result.output
 
 
+def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_null(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    ref = tmp_path / "ref.dts"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": None,
+            "coverage": None,
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+                "--reference-dts",
+                str(ref),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Warning: parity map path is null" in result.output
+    assert "Warning: parity coverage report path is null" in result.output
+    assert "Unexpected error:" not in result.output
+
+
 def test_xsa2dt_warns_when_optional_parity_artifact_path_is_invalid(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
