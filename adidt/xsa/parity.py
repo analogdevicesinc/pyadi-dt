@@ -23,15 +23,26 @@ class LinkCoverage:
 
 
 @dataclass
+class PropertyCoverage:
+    source_label: str
+    property_name: str
+    found: bool
+
+
+@dataclass
 class ParityReport:
     total_roles: int
     matched_roles: int
     total_links: int = 0
     matched_links: int = 0
+    total_properties: int = 0
+    matched_properties: int = 0
     missing_roles: list[str] = field(default_factory=list)
     missing_links: list[str] = field(default_factory=list)
+    missing_properties: list[str] = field(default_factory=list)
     items: list[RoleCoverage] = field(default_factory=list)
     link_items: list[LinkCoverage] = field(default_factory=list)
+    property_items: list[PropertyCoverage] = field(default_factory=list)
 
 
 def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> ParityReport:
@@ -69,19 +80,40 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
                 f"{req.source_label}.{req.property_name}->{req.target_label}"
             )
 
+    property_items: list[PropertyCoverage] = []
+    missing_properties: list[str] = []
+    for req in manifest.properties:
+        pattern = rf"{re.escape(req.property_name)}\s*="
+        found = re.search(pattern, merged_dts) is not None
+        property_items.append(
+            PropertyCoverage(
+                source_label=req.source_label,
+                property_name=req.property_name,
+                found=found,
+            )
+        )
+        if not found:
+            missing_properties.append(f"{req.source_label}.{req.property_name}")
+
     matched_roles = len({item.role for item in items if item.found})
     total_roles = len({item.role for item in items})
     total_links = len(manifest.links)
     matched_links = sum(1 for item in link_items if item.found)
+    total_properties = len(manifest.properties)
+    matched_properties = sum(1 for item in property_items if item.found)
     return ParityReport(
         total_roles=total_roles,
         matched_roles=matched_roles,
         total_links=total_links,
         matched_links=matched_links,
+        total_properties=total_properties,
+        matched_properties=matched_properties,
         missing_roles=missing_roles,
         missing_links=missing_links,
+        missing_properties=missing_properties,
         items=items,
         link_items=link_items,
+        property_items=property_items,
     )
 
 
@@ -96,10 +128,14 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
                 "matched_roles": report.matched_roles,
                 "total_links": report.total_links,
                 "matched_links": report.matched_links,
+                "total_properties": report.total_properties,
+                "matched_properties": report.matched_properties,
                 "missing_roles": report.missing_roles,
                 "missing_links": report.missing_links,
+                "missing_properties": report.missing_properties,
                 "items": [asdict(item) for item in report.items],
                 "link_items": [asdict(item) for item in report.link_items],
+                "property_items": [asdict(item) for item in report.property_items],
             },
             indent=2,
         )
@@ -113,8 +149,11 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         f"- Matched roles: {report.matched_roles}",
         f"- Total links: {report.total_links}",
         f"- Matched links: {report.matched_links}",
+        f"- Total properties: {report.total_properties}",
+        f"- Matched properties: {report.matched_properties}",
         f"- Missing roles: {', '.join(report.missing_roles) if report.missing_roles else 'none'}",
         f"- Missing links: {', '.join(report.missing_links) if report.missing_links else 'none'}",
+        f"- Missing properties: {', '.join(report.missing_properties) if report.missing_properties else 'none'}",
         "",
         "| Role | Compatible | Found |",
         "| --- | --- | --- |",
@@ -134,6 +173,18 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
     for item in report.link_items:
         lines.append(
             f"| {item.source_label} | `{item.property_name}` | `{item.target_label}` | {'yes' if item.found else 'no'} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "| Source | Property | Found |",
+            "| --- | --- | --- |",
+        ]
+    )
+    for item in report.property_items:
+        lines.append(
+            f"| {item.source_label} | `{item.property_name}` | {'yes' if item.found else 'no'} |"
         )
     coverage_path.write_text("\n".join(lines) + "\n")
 

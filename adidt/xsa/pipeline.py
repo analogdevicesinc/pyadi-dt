@@ -78,6 +78,9 @@ class XsaPipeline:
             if strict_parity and parity.missing_links:
                 missing = ", ".join(parity.missing_links)
                 raise ParityError(f"missing required links: {missing}")
+            if strict_parity and parity.missing_properties:
+                missing = ", ".join(parity.missing_properties)
+                raise ParityError(f"missing required properties: {missing}")
 
         return result
 

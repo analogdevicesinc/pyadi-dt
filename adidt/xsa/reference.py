@@ -19,10 +19,18 @@ class LinkRequirement:
     source_file: Path
 
 
+@dataclass(frozen=True)
+class PropertyRequirement:
+    source_label: str
+    property_name: str
+    source_file: Path
+
+
 @dataclass
 class DriverManifest:
     roles: list[RoleRequirement] = field(default_factory=list)
     links: list[LinkRequirement] = field(default_factory=list)
+    properties: list[PropertyRequirement] = field(default_factory=list)
     included_files: list[Path] = field(default_factory=list)
 
 
@@ -38,6 +46,7 @@ class ReferenceManifestExtractor:
     )
     _jesd_inputs_re = re.compile(r'jesd204-inputs\s*=\s*(?P<value>[^;]+);', re.S)
     _phandle_re = re.compile(r'&(?P<label>[A-Za-z_][\w\-]*)')
+    _property_name_re = re.compile(r'(?P<name>[A-Za-z_][\w,\-]*)\s*=\s*[^;]+;')
 
     _ROLE_BY_PREFIX = {
         "adi,axi-jesd204-rx": "jesd_rx_link",
@@ -90,19 +99,37 @@ class ReferenceManifestExtractor:
         for node_match in self._node_block_re.finditer(text):
             source_label = node_match.group("label")
             body = node_match.group("body")
-            jesd_match = self._jesd_inputs_re.search(body)
-            if not jesd_match:
+
+            compat_match = re.search(r'compatible\s*=\s*(?P<value>[^;]+);', body)
+            if not compat_match:
                 continue
-            value = jesd_match.group("value")
-            for phandle in self._phandle_re.findall(value):
-                manifest.links.append(
-                    LinkRequirement(
-                        source_label=source_label,
-                        property_name="jesd204-inputs",
-                        target_label=phandle,
-                        source_file=path,
+            compatibles = self._string_re.findall(compat_match.group("value"))
+            role, _ = self._resolve_role(compatibles)
+            if not role:
+                continue
+
+            jesd_match = self._jesd_inputs_re.search(body)
+            if jesd_match:
+                value = jesd_match.group("value")
+                for phandle in self._phandle_re.findall(value):
+                    manifest.links.append(
+                        LinkRequirement(
+                            source_label=source_label,
+                            property_name="jesd204-inputs",
+                            target_label=phandle,
+                            source_file=path,
+                        )
                     )
-                )
+
+            for prop_name in self._property_name_re.findall(body):
+                if prop_name.startswith("adi,"):
+                    manifest.properties.append(
+                        PropertyRequirement(
+                            source_label=source_label,
+                            property_name=prop_name,
+                            source_file=path,
+                        )
+                    )
 
     def _resolve_role(self, compatibles: list[str]) -> tuple[str | None, str | None]:
         for compatible in compatibles:

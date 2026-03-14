@@ -55,6 +55,24 @@ def test_extract_manifest_collects_jesd_required_links(tmp_path: Path):
     assert manifest.links[0].target_label == "xcvr0"
 
 
+def test_extract_manifest_collects_required_properties(tmp_path: Path):
+    root = tmp_path / "root.dts"
+    root.write_text(
+        '/ {\n'
+        '\trx0: jesd-rx@0 {\n'
+        '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
+        '\t\tadi,octets-per-frame = <4>;\n'
+        '\t\tadi,frames-per-multiframe = <32>;\n'
+        '\t};\n'
+        '};\n'
+    )
+
+    manifest = ReferenceManifestExtractor().extract(root)
+
+    names = sorted(p.property_name for p in manifest.properties)
+    assert names == ["adi,frames-per-multiframe", "adi,octets-per-frame"]
+
+
 def test_extract_manifest_handles_include_cycles(tmp_path: Path):
     root = tmp_path / "root.dts"
     a = tmp_path / "a.dtsi"

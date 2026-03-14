@@ -1,7 +1,12 @@
 from pathlib import Path
 
 from adidt.xsa.parity import check_manifest_against_dts
-from adidt.xsa.reference import DriverManifest, LinkRequirement, RoleRequirement
+from adidt.xsa.reference import (
+    DriverManifest,
+    LinkRequirement,
+    PropertyRequirement,
+    RoleRequirement,
+)
 
 
 def test_check_manifest_against_dts_marks_missing_roles(tmp_path: Path):
@@ -48,3 +53,22 @@ def test_check_manifest_against_dts_marks_missing_links(tmp_path: Path):
     assert report.total_links == 1
     assert report.matched_links == 0
     assert report.missing_links == ["rx0.jesd204-inputs->xcvr0"]
+
+
+def test_check_manifest_against_dts_marks_missing_properties(tmp_path: Path):
+    manifest = DriverManifest(
+        properties=[
+            PropertyRequirement(
+                source_label="rx0",
+                property_name="adi,octets-per-frame",
+                source_file=tmp_path / "ref.dts",
+            )
+        ]
+    )
+    merged_dts = '/ { rx0: jesd@0 { adi,frames-per-multiframe = <32>; }; };\n'
+
+    report = check_manifest_against_dts(manifest, merged_dts)
+
+    assert report.total_properties == 1
+    assert report.matched_properties == 0
+    assert report.missing_properties == ["rx0.adi,octets-per-frame"]
