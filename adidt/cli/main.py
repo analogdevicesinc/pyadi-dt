@@ -955,11 +955,12 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     except json.JSONDecodeError as e:
         raise click.ClickException(f"invalid JSON in config file: {e}")
     except SdtgenNotFoundError as e:
-        click.echo(click.style(str(e), fg="red"))
+        raise click.ClickException(str(e))
     except SdtgenError as e:
-        click.echo(click.style(f"sdtgen failed: {e}", fg="red"))
+        message = f"sdtgen failed: {e}"
         if e.stderr:
-            click.echo(e.stderr)
+            message = f"{message}\n{e.stderr}"
+        raise click.ClickException(message)
     except (XsaParseError, ConfigError) as e:
         raise click.ClickException(str(e))
     except ParityError as e:
