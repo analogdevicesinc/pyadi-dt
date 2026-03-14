@@ -211,3 +211,63 @@ def test_check_manifest_against_dts_normalizes_property_value_whitespace(tmp_pat
 
     assert report.matched_properties == 1
     assert report.missing_properties == []
+
+
+def test_check_manifest_against_dts_sorts_gap_lists(tmp_path: Path):
+    manifest = DriverManifest(
+        roles=[
+            RoleRequirement(
+                role="clock_chip",
+                compatible="adi,hmc7044",
+                label="clk1",
+                source_file=tmp_path / "ref.dts",
+            ),
+            RoleRequirement(
+                role="clock_chip",
+                compatible="adi,hmc7044",
+                label="clk0",
+                source_file=tmp_path / "ref.dts",
+            ),
+        ],
+        links=[
+            LinkRequirement(
+                source_label="rx1",
+                property_name="jesd204-inputs",
+                target_label="xcvr1",
+                source_file=tmp_path / "ref.dts",
+            ),
+            LinkRequirement(
+                source_label="rx0",
+                property_name="jesd204-inputs",
+                target_label="xcvr0",
+                source_file=tmp_path / "ref.dts",
+            ),
+        ],
+        properties=[
+            PropertyRequirement(
+                source_label="rx1",
+                property_name="adi,octets-per-frame",
+                expected_value="<8>",
+                source_file=tmp_path / "ref.dts",
+            ),
+            PropertyRequirement(
+                source_label="rx0",
+                property_name="adi,octets-per-frame",
+                expected_value="<4>",
+                source_file=tmp_path / "ref.dts",
+            ),
+        ],
+    )
+    merged_dts = '/ { rx1: jesd@1 { adi,octets-per-frame = <4>; }; };\n'
+
+    report = check_manifest_against_dts(manifest, merged_dts)
+
+    assert report.missing_roles == ["clock_chip:clk0", "clock_chip:clk1"]
+    assert report.missing_links == [
+        "rx0.jesd204-inputs->xcvr0",
+        "rx1.jesd204-inputs->xcvr1",
+    ]
+    assert report.missing_properties == ["rx0.adi,octets-per-frame=<4>"]
+    assert report.mismatched_properties == [
+        "rx1.adi,octets-per-frame: expected <8>, got <4>"
+    ]
