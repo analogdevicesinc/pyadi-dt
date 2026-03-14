@@ -877,10 +877,20 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         click.echo(f"  Overlay:  {result['overlay']}")
         click.echo(f"  Merged:   {result['merged']}")
         click.echo(f"  Report:   {result['report']}")
+
+        def _path_or_none(value, label):
+            try:
+                return Path(value)
+            except TypeError:
+                click.echo(f"  Warning: {label} path is not path-like: {value!r}")
+                return None
+
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
-            map_path = Path(result["map"])
-            if not map_path.exists():
+            map_path = _path_or_none(result["map"], "parity map")
+            if map_path is None:
+                pass
+            elif not map_path.exists():
                 click.echo(f"  Warning: parity map not found: {map_path}")
             else:
                 try:
@@ -922,8 +932,10 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                     )
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
-            cov_path = Path(result["coverage"])
-            if not cov_path.exists():
+            cov_path = _path_or_none(result["coverage"], "parity coverage report")
+            if cov_path is None:
+                pass
+            elif not cov_path.exists():
                 click.echo(f"  Warning: parity coverage report not found: {cov_path}")
 
     except FileNotFoundError as e:
