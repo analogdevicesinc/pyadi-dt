@@ -125,6 +125,7 @@ Example diagnostic lines:
 
 The command also fails fast when pipeline results:
 
+- return an invalid result type (must be a dictionary)
 - omit required artifacts (`overlay`, `merged`, or `report`)
 - provide empty required artifact values
 - provide non-path required artifact values
