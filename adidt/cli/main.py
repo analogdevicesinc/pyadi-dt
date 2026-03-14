@@ -838,6 +838,13 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             reference_dts=Path(reference_dts) if reference_dts else None,
             strict_parity=strict_parity,
         )
+        required_artifacts = ("overlay", "merged", "report")
+        missing_required = [key for key in required_artifacts if key not in result]
+        if missing_required:
+            missing_joined = ", ".join(sorted(missing_required))
+            raise click.ClickException(
+                f"pipeline result missing required artifacts: {missing_joined}"
+            )
 
         click.echo(click.style("Done!", fg="green", bold=True))
         click.echo(f"  Overlay:  {result['overlay']}")
@@ -898,6 +905,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         click.echo(click.style(str(e), fg="red"))
     except ParityError as e:
         raise click.ClickException(str(e))
+    except click.ClickException:
+        raise
     except Exception as e:
         click.echo(click.style(f"Unexpected error: {e}", fg="red"))
         import traceback

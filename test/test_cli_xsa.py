@@ -300,6 +300,38 @@ def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
     assert "Warning: parity coverage report not found" in result.output
 
 
+def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code != 0, result.output
+    assert "pipeline result missing required artifacts" in result.output
+    assert "merged" in result.output
+    assert "report" in result.output
+
+
 def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
