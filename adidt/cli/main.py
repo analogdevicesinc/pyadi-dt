@@ -845,37 +845,44 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         click.echo(f"  Report:   {result['report']}")
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
-            try:
-                map_data = json.loads(Path(result["map"]).read_text())
-                cov = map_data.get("coverage", {})
-                click.echo(
-                    "  Coverage % (roles/links/properties/overall): "
-                    f"{cov.get('roles_pct', 'n/a')}/"
-                    f"{cov.get('links_pct', 'n/a')}/"
-                    f"{cov.get('properties_pct', 'n/a')}/"
-                    f"{cov.get('overall_pct', 'n/a')}"
-                )
-                if (
-                    cov.get("overall_matched") is not None
-                    and cov.get("overall_total") is not None
-                ):
+            map_path = Path(result["map"])
+            if not map_path.exists():
+                click.echo(f"  Warning: parity map not found: {map_path}")
+            else:
+                try:
+                    map_data = json.loads(map_path.read_text())
+                    cov = map_data.get("coverage", {})
                     click.echo(
-                        "  Overall matched items: "
-                        f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                        "  Coverage % (roles/links/properties/overall): "
+                        f"{cov.get('roles_pct', 'n/a')}/"
+                        f"{cov.get('links_pct', 'n/a')}/"
+                        f"{cov.get('properties_pct', 'n/a')}/"
+                        f"{cov.get('overall_pct', 'n/a')}"
                     )
-                missing_roles = map_data.get("missing_roles", [])
-                missing_links = map_data.get("missing_links", [])
-                missing_props = map_data.get("missing_properties", [])
-                mismatched_props = map_data.get("mismatched_properties", [])
-                click.echo(
-                    "  Missing gaps (roles/links/properties/mismatched): "
-                    f"{len(missing_roles)}/{len(missing_links)}/"
-                    f"{len(missing_props)}/{len(mismatched_props)}"
-                )
-            except Exception as ex:
-                click.echo(f"  Warning: unable to parse parity map JSON ({ex})")
+                    if (
+                        cov.get("overall_matched") is not None
+                        and cov.get("overall_total") is not None
+                    ):
+                        click.echo(
+                            "  Overall matched items: "
+                            f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                        )
+                    missing_roles = map_data.get("missing_roles", [])
+                    missing_links = map_data.get("missing_links", [])
+                    missing_props = map_data.get("missing_properties", [])
+                    mismatched_props = map_data.get("mismatched_properties", [])
+                    click.echo(
+                        "  Missing gaps (roles/links/properties/mismatched): "
+                        f"{len(missing_roles)}/{len(missing_links)}/"
+                        f"{len(missing_props)}/{len(mismatched_props)}"
+                    )
+                except Exception as ex:
+                    click.echo(f"  Warning: unable to parse parity map JSON ({ex})")
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
+            cov_path = Path(result["coverage"])
+            if not cov_path.exists():
+                click.echo(f"  Warning: parity coverage report not found: {cov_path}")
 
     except FileNotFoundError as e:
         click.echo(click.style(f"Error: {e}", fg="red"))

@@ -259,6 +259,47 @@ def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
     assert "Missing gaps (roles/links/properties/mismatched): 1/0/0/0" in result.output
 
 
+def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    ref = tmp_path / "ref.dts"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        missing_map = out / "missing.map.json"
+        missing_cov = out / "missing.coverage.md"
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": missing_map,
+            "coverage": missing_cov,
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+                "--reference-dts",
+                str(ref),
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Warning: parity map not found" in result.output
+    assert "Warning: parity coverage report not found" in result.output
+
+
 def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
