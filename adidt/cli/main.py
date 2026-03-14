@@ -957,6 +957,9 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                         f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
                     )
                     _print_unavailable_map_summary()
+        else:
+            click.echo("  Warning: parity map not provided by pipeline result")
+            _print_unavailable_map_summary()
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
             cov_path = _path_or_none(result["coverage"], "parity coverage report")
