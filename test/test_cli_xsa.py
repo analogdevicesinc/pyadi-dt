@@ -578,6 +578,8 @@ def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_null(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map path is null" in result.output
     assert "Warning: parity coverage report path is null" in result.output
+    assert "Warning: parity map path is not path-like" not in result.output
+    assert "Warning: parity coverage report path is not path-like" not in result.output
     assert "Unexpected error:" not in result.output
 
 
