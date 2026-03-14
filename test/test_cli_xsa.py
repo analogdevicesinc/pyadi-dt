@@ -545,10 +545,7 @@ def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
     cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
-        MockPipeline.return_value.run.return_value = {
-            "overlay": out / "a.dtso",
-            "base_dir": out / "base",
-        }
+        MockPipeline.return_value.run.return_value = {"base_dir": out / "base"}
         result = runner.invoke(
             cli,
             [
@@ -564,8 +561,7 @@ def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result missing required artifacts" in result.output
-    assert "merged" in result.output
-    assert "report" in result.output
+    assert "overlay, merged, report" in result.output
 
 
 def test_xsa2dt_fails_when_pipeline_result_is_not_a_dict(tmp_path):
@@ -605,9 +601,9 @@ def test_xsa2dt_fails_when_required_artifact_value_is_empty(tmp_path):
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
-            "overlay": out / "a.dtso",
-            "merged": None,
-            "report": out / "a.html",
+            "overlay": " ",
+            "merged": "",
+            "report": "   ",
             "base_dir": out / "base",
         }
         result = runner.invoke(
@@ -625,7 +621,7 @@ def test_xsa2dt_fails_when_required_artifact_value_is_empty(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result has empty required artifacts" in result.output
-    assert "merged" in result.output
+    assert "overlay, merged, report" in result.output
 
 
 def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
@@ -638,8 +634,8 @@ def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
-            "overlay": out / "a.dtso",
-            "merged": out / "a.dts",
+            "overlay": 1,
+            "merged": 2,
             "report": 1234,
             "base_dir": out / "base",
         }
@@ -658,7 +654,7 @@ def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result has non-path required artifacts" in result.output
-    assert "report" in result.output
+    assert "overlay, merged, report" in result.output
 
 
 def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
