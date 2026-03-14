@@ -8,6 +8,7 @@ import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.exceptions import ParityError
+from adidt.xsa.parity import ParityReport
 
 FIXTURE_HWH = Path(__file__).parent / "fixtures" / "ad9081_zcu102.hwh"
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
@@ -215,9 +216,22 @@ def test_pipeline_strict_parity_raises_when_property_values_mismatch(
         '};\n'
     )
 
-    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+    mocked_report = ParityReport(
+        total_roles=0,
+        matched_roles=0,
+        total_links=0,
+        matched_links=0,
+        total_properties=1,
+        matched_properties=0,
+        mismatched_properties=["rx0.adi,octets-per-frame: expected <99>, got <8>"],
+    )
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.check_manifest_against_dts", return_value=mocked_report),
+    ):
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
-        with pytest.raises(ParityError, match="missing required properties"):
+        with pytest.raises(ParityError, match="mismatched required properties"):
             XsaPipeline().run(
                 xsa_path,
                 cfg,

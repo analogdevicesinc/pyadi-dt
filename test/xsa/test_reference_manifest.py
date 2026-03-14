@@ -94,3 +94,28 @@ def test_extract_manifest_handles_include_cycles(tmp_path: Path):
 def test_extract_manifest_raises_for_missing_root(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         ReferenceManifestExtractor().extract(tmp_path / "missing.dts")
+
+
+def test_extract_manifest_deduplicates_duplicate_requirements(tmp_path: Path):
+    root = tmp_path / "root.dts"
+    a = tmp_path / "a.dtsi"
+    b = tmp_path / "b.dtsi"
+
+    root.write_text('#include "a.dtsi"\n#include "b.dtsi"\n')
+    node = (
+        '/ {\n'
+        '\trx0: jesd-rx@0 {\n'
+        '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
+        '\t\tjesd204-inputs = <&xcvr0 0 2>;\n'
+        '\t\tadi,octets-per-frame = <4>;\n'
+        '\t};\n'
+        '};\n'
+    )
+    a.write_text(node)
+    b.write_text(node)
+
+    manifest = ReferenceManifestExtractor().extract(root)
+
+    assert len(manifest.roles) == 1
+    assert len(manifest.links) == 1
+    assert len(manifest.properties) == 1

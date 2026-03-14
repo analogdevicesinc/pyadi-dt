@@ -67,7 +67,39 @@ class ReferenceManifestExtractor:
         manifest = DriverManifest()
         seen: set[Path] = set()
         self._walk(root_dts, seen, manifest)
+        self._dedupe_requirements(manifest)
         return manifest
+
+    def _dedupe_requirements(self, manifest: DriverManifest) -> None:
+        role_seen: set[tuple[str, str, str | None]] = set()
+        roles: list[RoleRequirement] = []
+        for req in manifest.roles:
+            key = (req.role, req.compatible, req.label)
+            if key in role_seen:
+                continue
+            role_seen.add(key)
+            roles.append(req)
+        manifest.roles = roles
+
+        link_seen: set[tuple[str, str, str]] = set()
+        links: list[LinkRequirement] = []
+        for req in manifest.links:
+            key = (req.source_label, req.property_name, req.target_label)
+            if key in link_seen:
+                continue
+            link_seen.add(key)
+            links.append(req)
+        manifest.links = links
+
+        prop_seen: set[tuple[str, str, str]] = set()
+        properties: list[PropertyRequirement] = []
+        for req in manifest.properties:
+            key = (req.source_label, req.property_name, req.expected_value)
+            if key in prop_seen:
+                continue
+            prop_seen.add(key)
+            properties.append(req)
+        manifest.properties = properties
 
     def _walk(self, path: Path, seen: set[Path], manifest: DriverManifest) -> None:
         path = path.resolve()

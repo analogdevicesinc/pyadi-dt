@@ -156,7 +156,7 @@ When ``strict_parity=True`` is used with ``reference_dts``, the pipeline raises
 missing in the generated DTS.
 
 For properties, parity checks compare both property name and value from the
-reference DTS role node.
+reference DTS role node. Value comparison is whitespace-insensitive.
 
 Configuration
 -------------

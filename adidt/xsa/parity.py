@@ -15,6 +15,10 @@ def _node_bodies_by_label(dts: str) -> dict[str, str]:
     return {m.group("label"): m.group("body") for m in _NODE_BLOCK_RE.finditer(dts)}
 
 
+def _normalize_property_value(value: str) -> str:
+    return re.sub(r"\s+", "", value)
+
+
 @dataclass
 class RoleCoverage:
     role: str
@@ -50,6 +54,7 @@ class ParityReport:
     missing_roles: list[str] = field(default_factory=list)
     missing_links: list[str] = field(default_factory=list)
     missing_properties: list[str] = field(default_factory=list)
+    mismatched_properties: list[str] = field(default_factory=list)
     items: list[RoleCoverage] = field(default_factory=list)
     link_items: list[LinkCoverage] = field(default_factory=list)
     property_items: list[PropertyCoverage] = field(default_factory=list)
@@ -94,11 +99,20 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
 
     property_items: list[PropertyCoverage] = []
     missing_properties: list[str] = []
+    mismatched_properties: list[str] = []
     for req in manifest.properties:
         body = node_bodies.get(req.source_label, "")
         pattern = rf"{re.escape(req.property_name)}\s*=\s*(?P<value>[^;]+);"
         match = re.search(pattern, body)
-        found = bool(match and match.group("value").strip() == req.expected_value)
+        if not match:
+            found = False
+            actual_value = None
+        else:
+            actual_value = match.group("value").strip()
+            found = (
+                _normalize_property_value(actual_value)
+                == _normalize_property_value(req.expected_value)
+            )
         property_items.append(
             PropertyCoverage(
                 source_label=req.source_label,
@@ -108,9 +122,14 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
             )
         )
         if not found:
-            missing_properties.append(
-                f"{req.source_label}.{req.property_name}={req.expected_value}"
-            )
+            if actual_value is None:
+                missing_properties.append(
+                    f"{req.source_label}.{req.property_name}={req.expected_value}"
+                )
+            else:
+                mismatched_properties.append(
+                    f"{req.source_label}.{req.property_name}: expected {req.expected_value}, got {actual_value}"
+                )
 
     matched_roles = len({item.role for item in items if item.found})
     total_roles = len({item.role for item in items})
@@ -128,6 +147,7 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
         missing_roles=missing_roles,
         missing_links=missing_links,
         missing_properties=missing_properties,
+        mismatched_properties=mismatched_properties,
         items=items,
         link_items=link_items,
         property_items=property_items,
@@ -150,6 +170,7 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
                 "missing_roles": report.missing_roles,
                 "missing_links": report.missing_links,
                 "missing_properties": report.missing_properties,
+                "mismatched_properties": report.mismatched_properties,
                 "items": [asdict(item) for item in report.items],
                 "link_items": [asdict(item) for item in report.link_items],
                 "property_items": [asdict(item) for item in report.property_items],
@@ -171,6 +192,7 @@ def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> t
         f"- Missing roles: {', '.join(report.missing_roles) if report.missing_roles else 'none'}",
         f"- Missing links: {', '.join(report.missing_links) if report.missing_links else 'none'}",
         f"- Missing properties: {', '.join(report.missing_properties) if report.missing_properties else 'none'}",
+        f"- Mismatched properties: {', '.join(report.mismatched_properties) if report.mismatched_properties else 'none'}",
         "",
         "| Role | Compatible | Found |",
         "| --- | --- | --- |",
