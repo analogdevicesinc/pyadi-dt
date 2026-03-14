@@ -891,6 +891,9 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             except TypeError:
                 click.echo(f"  Warning: {label} path is not path-like: {value!r}")
                 return None
+            except ValueError as ex:
+                click.echo(f"  Warning: {label} path is invalid: {ex}")
+                return None
 
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
