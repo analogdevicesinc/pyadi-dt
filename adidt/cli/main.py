@@ -845,6 +845,19 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         click.echo(f"  Report:   {result['report']}")
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
+            try:
+                map_data = json.loads(Path(result["map"]).read_text())
+                cov = map_data.get("coverage", {})
+                if cov:
+                    click.echo(
+                        "  Coverage % (roles/links/properties/overall): "
+                        f"{cov.get('roles_pct', 'n/a')}/"
+                        f"{cov.get('links_pct', 'n/a')}/"
+                        f"{cov.get('properties_pct', 'n/a')}/"
+                        f"{cov.get('overall_pct', 'n/a')}"
+                    )
+            except Exception:
+                pass
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
 

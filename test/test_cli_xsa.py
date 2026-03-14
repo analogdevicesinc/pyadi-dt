@@ -77,6 +77,19 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        (out / "a.map.json").parent.mkdir(parents=True, exist_ok=True)
+        (out / "a.map.json").write_text(
+            json.dumps(
+                {
+                    "coverage": {
+                        "roles_pct": 75.0,
+                        "links_pct": 40.0,
+                        "properties_pct": 100.0,
+                        "overall_pct": 66.7,
+                    }
+                }
+            )
+        )
         MockPipeline.return_value.run.return_value = {
             "overlay": out / "a.dtso",
             "merged": out / "a.dts",
@@ -106,6 +119,7 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
     assert call.kwargs["reference_dts"] == ref
     assert "Map:" in result.output
     assert "Coverage:" in result.output
+    assert "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7" in result.output
 
 
 def test_xsa2dt_passes_strict_parity_to_pipeline(tmp_path):
