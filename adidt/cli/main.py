@@ -902,6 +902,11 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             else:
                 try:
                     map_data = json.loads(map_path.read_text())
+                    if not isinstance(map_data, dict):
+                        click.echo(
+                            f"  Warning: parity map JSON root is not an object: {map_path}"
+                        )
+                        map_data = {}
                     raw_cov = map_data.get("coverage", {})
                     cov = raw_cov if isinstance(raw_cov, dict) else {}
                     click.echo(
