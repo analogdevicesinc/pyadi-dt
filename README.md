@@ -134,6 +134,7 @@ The command also fails fast when pipeline results:
 - provide non-path required artifact values
 - receive an invalid JSON config file
 - encounter XSA parser/config exceptions raised by the pipeline
+- encounter sdtgen execution or availability failures
 
 ## Building Documentation
 
