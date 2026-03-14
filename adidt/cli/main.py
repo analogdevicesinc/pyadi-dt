@@ -917,38 +917,41 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                         click.echo(
                             f"  Warning: parity map JSON root is not an object: {map_path}"
                         )
-                        map_data = {}
-                    raw_cov = map_data.get("coverage", {})
-                    cov = raw_cov if isinstance(raw_cov, dict) else {}
-                    click.echo(
-                        "  Coverage % (roles/links/properties/overall): "
-                        f"{cov.get('roles_pct', 'n/a')}/"
-                        f"{cov.get('links_pct', 'n/a')}/"
-                        f"{cov.get('properties_pct', 'n/a')}/"
-                        f"{cov.get('overall_pct', 'n/a')}"
-                    )
-                    if (
-                        cov.get("overall_matched") is not None
-                        and cov.get("overall_total") is not None
-                    ):
+                        _print_unavailable_map_summary()
+                        map_data = None
+                    if map_data is not None:
+                        raw_cov = map_data.get("coverage", {})
+                        cov = raw_cov if isinstance(raw_cov, dict) else {}
                         click.echo(
-                            "  Overall matched items: "
-                            f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                            "  Coverage % (roles/links/properties/overall): "
+                            f"{cov.get('roles_pct', 'n/a')}/"
+                            f"{cov.get('links_pct', 'n/a')}/"
+                            f"{cov.get('properties_pct', 'n/a')}/"
+                            f"{cov.get('overall_pct', 'n/a')}"
                         )
-                    def _as_list(value):
-                        return value if isinstance(value, list) else []
+                        if (
+                            cov.get("overall_matched") is not None
+                            and cov.get("overall_total") is not None
+                        ):
+                            click.echo(
+                                "  Overall matched items: "
+                                f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                            )
 
-                    missing_roles = _as_list(map_data.get("missing_roles", []))
-                    missing_links = _as_list(map_data.get("missing_links", []))
-                    missing_props = _as_list(map_data.get("missing_properties", []))
-                    mismatched_props = _as_list(
-                        map_data.get("mismatched_properties", [])
-                    )
-                    click.echo(
-                        "  Missing gaps (roles/links/properties/mismatched): "
-                        f"{len(missing_roles)}/{len(missing_links)}/"
-                        f"{len(missing_props)}/{len(mismatched_props)}"
-                    )
+                        def _as_list(value):
+                            return value if isinstance(value, list) else []
+
+                        missing_roles = _as_list(map_data.get("missing_roles", []))
+                        missing_links = _as_list(map_data.get("missing_links", []))
+                        missing_props = _as_list(map_data.get("missing_properties", []))
+                        mismatched_props = _as_list(
+                            map_data.get("mismatched_properties", [])
+                        )
+                        click.echo(
+                            "  Missing gaps (roles/links/properties/mismatched): "
+                            f"{len(missing_roles)}/{len(missing_links)}/"
+                            f"{len(missing_props)}/{len(mismatched_props)}"
+                        )
                 except Exception as ex:
                     click.echo(
                         f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"

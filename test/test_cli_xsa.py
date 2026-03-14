@@ -262,6 +262,8 @@ def test_xsa2dt_warns_when_map_json_root_is_not_object(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map JSON root is not an object" in result.output
     assert "bad-root.map.json" in result.output
+    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
 
 
 def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
