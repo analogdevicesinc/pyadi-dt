@@ -613,6 +613,58 @@ def test_xsa2dt_warns_missing_coverage_key_in_strict_mode(tmp_path):
     assert "Warning: parity coverage report not provided by pipeline result" in result.output
 
 
+def test_xsa2dt_warns_missing_coverage_key_with_strict_and_map_present(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        (out / "a.map.json").parent.mkdir(parents=True, exist_ok=True)
+        (out / "a.map.json").write_text(
+            json.dumps(
+                {
+                    "coverage": {
+                        "roles_pct": 75.0,
+                        "links_pct": 40.0,
+                        "properties_pct": 100.0,
+                        "overall_pct": 66.7,
+                    },
+                    "missing_roles": [],
+                    "missing_links": [],
+                    "missing_properties": [],
+                    "mismatched_properties": [],
+                }
+            )
+        )
+        MockPipeline.return_value.run.return_value = {
+            "overlay": out / "a.dtso",
+            "merged": out / "a.dts",
+            "report": out / "a.html",
+            "map": out / "a.map.json",
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+                "--strict-parity",
+            ],
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "Warning: parity coverage report not provided by pipeline result" in result.output
+    assert "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7" in result.output
+
+
 def test_xsa2dt_does_not_warn_missing_coverage_without_reference_dts(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
