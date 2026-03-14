@@ -90,6 +90,24 @@ Run the pipeline from the CLI:
 
    adidtc xsa2dt design.xsa config.json --output-dir out/
 
+Select an explicit board profile (optional):
+
+.. code-block:: bash
+
+   adidtc xsa2dt -x design.xsa -c config.json --profile ad9081_zcu102 -o out/
+
+List available built-in profiles:
+
+.. code-block:: bash
+
+   adidtc xsa-profiles
+
+Show one profile and its defaults:
+
+.. code-block:: bash
+
+   adidtc xsa-profile-show ad9081_zcu102
+
 Or call the pipeline directly from Python:
 
 .. code-block:: python
@@ -106,6 +124,10 @@ Or call the pipeline directly from Python:
    )
    print(results["merged"])   # Path to the merged .dts
    print(results["report"])   # Path to the HTML visualization
+
+You can also pass ``profile="ad9081_zcu102"`` (or another built-in profile) to
+``XsaPipeline.run()``. If no profile is passed, the pipeline will auto-select a
+matching profile when available (for example, ``ad9081_zcu102``).
 
 Configuration
 -------------
@@ -144,6 +166,47 @@ For AD9081 + MXFE XSA designs, ``NodeBuilder`` resolves
 
 If no explicit mode is set and ``(M, L)`` does not match a supported tuple,
 ``ConfigError`` is raised instead of silently falling back to hardcoded modes.
+
+Board override keys
+~~~~~~~~~~~~~~~~~~~
+
+The profile/default config can carry board-specific keys to avoid hardcoding in
+the parser implementation.
+
+``ad9081_board`` keys:
+
+- ``clock_spi`` / ``clock_cs`` – SPI bus and chip-select for HMC7044
+- ``adc_spi`` / ``adc_cs`` – SPI bus and chip-select for AD9081
+- ``reset_gpio`` / ``sysref_req_gpio`` / ``rx1_enable_gpio`` /
+  ``rx2_enable_gpio`` / ``tx1_enable_gpio`` / ``tx2_enable_gpio``
+- ``hmc7044_channel_blocks`` – optional replacement list for HMC7044 channel
+  subnodes (raw DTS snippet blocks)
+
+``adrv9009_board`` keys:
+
+- ``misc_clk_hz`` – fixed clock frequency for ``misc_clk_0``
+- ``spi_bus`` / ``clk_cs`` / ``trx_cs`` – SPI and CS assignments
+- ``trx_reset_gpio`` / ``trx_sysref_req_gpio`` / ``trx_spi_max_frequency``
+- ``ad9528_vcxo_freq``
+- ``rx_link_id`` / ``rx_os_link_id`` / ``tx_link_id``
+- ``tx_octets_per_frame`` / ``rx_os_octets_per_frame``
+- ``trx_profile_props`` – optional replacement list for ADRV9009 PHY profile
+  properties (raw DTS property lines)
+- ``ad9528_channel_blocks`` – optional replacement list for AD9528 channel
+  subnodes (raw DTS snippet blocks)
+
+Profile validation
+~~~~~~~~~~~~~~~~~~
+
+Built-in and custom JSON profiles are validated when loaded:
+
+- Unknown keys under ``ad9081_board`` / ``adrv9009_board`` raise
+  ``ProfileError`` (prevents silent typos).
+- Structured snippet fields such as ``hmc7044_channel_blocks``,
+  ``ad9528_channel_blocks``, and ``trx_profile_props`` must be JSON lists.
+
+``merge_profile_defaults()`` deep-copies defaults during merge so mutating the
+effective runtime config does not mutate the source profile data.
 
 Supported IP Cores
 ------------------
