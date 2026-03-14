@@ -130,7 +130,8 @@ Example diagnostic lines:
 - `Warning: parity coverage report path is invalid: ...`
 - `Warning: parity map JSON root is not an object: ...`
 
-When parity map JSON parsing fails, `xsa2dt` now also emits fallback summary lines:
+When parity map data is unavailable (missing/invalid path) or JSON parsing fails,
+`xsa2dt` emits fallback summary lines:
 - `Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a`
 - `Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a`
 
