@@ -968,10 +968,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     except click.ClickException:
         raise
     except Exception as e:
-        click.echo(click.style(f"Unexpected error: {e}", fg="red"))
-        import traceback
-
-        traceback.print_exc()
+        raise click.ClickException(f"Unexpected error: {e}")
 
 
 @cli.command("xsa-profiles")
