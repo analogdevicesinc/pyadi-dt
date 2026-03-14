@@ -104,6 +104,25 @@ See [doc/source/ad9081_device_tree_generation.md](doc/source/ad9081_device_tree_
 - Troubleshooting guide
 - Adding new platforms
 
+## XSA Pipeline Diagnostics
+
+`adidtc xsa2dt` now prints parity artifact diagnostics so incomplete or malformed outputs are visible immediately:
+
+```bash
+adidtc xsa2dt -x examples/xsa/system_top.xsa -c cfg.json -o out --reference-dts ref.dts
+```
+
+Example diagnostic lines:
+
+- `Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7`
+- `Overall matched items: 8/12`
+- `Missing gaps (roles/links/properties/mismatched): 1/2/0/1`
+- `Warning: parity map not found: ...`
+- `Warning: parity coverage report not found: ...`
+- `Warning: unable to parse parity map JSON at ...`
+
+The command also fails fast when pipeline results omit required artifacts (`overlay`, `merged`, or `report`).
+
 ## Building Documentation
 
 Documentation is built using Sphinx with the ADI cosmic theme.
