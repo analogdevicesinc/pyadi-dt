@@ -140,6 +140,7 @@ root, or JSON parsing fails,
 
 Missing parity artifact warnings are emitted when parity is requested
 (for example with `--reference-dts` or strict parity mode).
+In strict mode, this applies even when no reference DTS path is provided.
 
 The command also fails fast when pipeline results:
 
