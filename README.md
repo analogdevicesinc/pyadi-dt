@@ -129,6 +129,7 @@ Example diagnostic lines:
 - `Warning: parity map path is invalid: ...`
 - `Warning: parity coverage report path is invalid: ...`
 - `Warning: parity map JSON root is not an object: ...`
+- `Warning: parity map not provided by pipeline result`
 
 When parity map data is unavailable (missing/invalid path), has a non-object JSON
 root, or JSON parsing fails,
