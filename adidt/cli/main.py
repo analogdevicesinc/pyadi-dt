@@ -874,10 +874,15 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                             "  Overall matched items: "
                             f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
                         )
-                    missing_roles = map_data.get("missing_roles", [])
-                    missing_links = map_data.get("missing_links", [])
-                    missing_props = map_data.get("missing_properties", [])
-                    mismatched_props = map_data.get("mismatched_properties", [])
+                    def _as_list(value):
+                        return value if isinstance(value, list) else []
+
+                    missing_roles = _as_list(map_data.get("missing_roles", []))
+                    missing_links = _as_list(map_data.get("missing_links", []))
+                    missing_props = _as_list(map_data.get("missing_properties", []))
+                    mismatched_props = _as_list(
+                        map_data.get("mismatched_properties", [])
+                    )
                     click.echo(
                         "  Missing gaps (roles/links/properties/mismatched): "
                         f"{len(missing_roles)}/{len(missing_links)}/"
