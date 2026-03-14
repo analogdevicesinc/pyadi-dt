@@ -898,6 +898,10 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 click.echo(f"  Warning: {label} path is invalid: {ex}")
                 return None
 
+        def _print_unavailable_map_summary():
+            click.echo("  Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a")
+            click.echo("  Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a")
+
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
             map_path = _path_or_none(result["map"], "parity map")
@@ -948,6 +952,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                     click.echo(
                         f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
                     )
+                    _print_unavailable_map_summary()
         if "coverage" in result:
             click.echo(f"  Coverage: {result['coverage']}")
             cov_path = _path_or_none(result["coverage"], "parity coverage report")
