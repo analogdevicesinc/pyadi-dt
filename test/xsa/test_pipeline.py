@@ -239,3 +239,41 @@ def test_pipeline_strict_parity_raises_when_property_values_mismatch(
                 reference_dts=reference,
                 strict_parity=True,
             )
+
+
+def test_pipeline_strict_parity_reports_multiple_gap_categories(
+    xsa_path, cfg, tmp_path
+):
+    reference = tmp_path / "ref.dts"
+    reference.write_text('/ { model = "x"; };\n')
+
+    mocked_report = ParityReport(
+        total_roles=1,
+        matched_roles=0,
+        total_links=1,
+        matched_links=0,
+        total_properties=1,
+        matched_properties=0,
+        missing_roles=["clock_chip:clk0"],
+        missing_links=["rx0.jesd204-inputs->xcvr0"],
+        missing_properties=["rx0.adi,octets-per-frame=<4>"],
+    )
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.check_manifest_against_dts", return_value=mocked_report),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        with pytest.raises(ParityError) as ex:
+            XsaPipeline().run(
+                xsa_path,
+                cfg,
+                tmp_path,
+                reference_dts=reference,
+                strict_parity=True,
+            )
+
+    msg = str(ex.value)
+    assert "missing required roles" in msg
+    assert "missing required links" in msg
+    assert "missing required properties" in msg

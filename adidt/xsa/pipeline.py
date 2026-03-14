@@ -72,18 +72,27 @@ class XsaPipeline:
             map_path, coverage_path = write_parity_reports(parity, output_dir, name)
             result["map"] = map_path
             result["coverage"] = coverage_path
-            if strict_parity and parity.missing_roles:
-                missing = ", ".join(parity.missing_roles)
-                raise ParityError(f"missing required roles: {missing}")
-            if strict_parity and parity.missing_links:
-                missing = ", ".join(parity.missing_links)
-                raise ParityError(f"missing required links: {missing}")
-            if strict_parity and parity.missing_properties:
-                missing = ", ".join(parity.missing_properties)
-                raise ParityError(f"missing required properties: {missing}")
-            if strict_parity and parity.mismatched_properties:
-                mismatch = ", ".join(parity.mismatched_properties)
-                raise ParityError(f"mismatched required properties: {mismatch}")
+            if strict_parity:
+                issues: list[str] = []
+                if parity.missing_roles:
+                    issues.append(
+                        f"missing required roles: {', '.join(parity.missing_roles)}"
+                    )
+                if parity.missing_links:
+                    issues.append(
+                        f"missing required links: {', '.join(parity.missing_links)}"
+                    )
+                if parity.missing_properties:
+                    issues.append(
+                        f"missing required properties: {', '.join(parity.missing_properties)}"
+                    )
+                if parity.mismatched_properties:
+                    issues.append(
+                        "mismatched required properties: "
+                        f"{', '.join(parity.mismatched_properties)}"
+                    )
+                if issues:
+                    raise ParityError("; ".join(issues))
 
         return result
 
