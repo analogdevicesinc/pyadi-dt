@@ -869,7 +869,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 continue
             try:
                 Path(value)
-            except TypeError:
+            except (TypeError, ValueError):
                 non_path_required.append(key)
         if non_path_required:
             non_path_joined = ", ".join(non_path_required)

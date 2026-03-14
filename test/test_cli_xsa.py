@@ -702,6 +702,40 @@ def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
     assert "overlay, merged, report" in result.output
 
 
+def test_xsa2dt_fails_when_required_artifact_value_is_invalid_pathlike(tmp_path):
+    runner = CliRunner()
+    xsa = tmp_path / "design.xsa"
+    cfg = tmp_path / "cfg.json"
+    out = tmp_path / "out"
+    xsa.write_bytes(b"PK\x03\x04")
+    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+
+    with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
+        MockPipeline.return_value.run.return_value = {
+            "overlay": _InvalidPathLike(),
+            "merged": _InvalidPathLike(),
+            "report": _InvalidPathLike(),
+            "base_dir": out / "base",
+        }
+        result = runner.invoke(
+            cli,
+            [
+                "xsa2dt",
+                "-x",
+                str(xsa),
+                "-c",
+                str(cfg),
+                "-o",
+                str(out),
+            ],
+        )
+
+    assert result.exit_code != 0, result.output
+    assert "pipeline result has non-path required artifacts" in result.output
+    assert "overlay, merged, report" in result.output
+    assert "Unexpected error:" not in result.output
+
+
 def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
     runner = CliRunner()
     xsa = tmp_path / "design.xsa"
