@@ -961,7 +961,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
         if e.stderr:
             click.echo(e.stderr)
     except (XsaParseError, ConfigError) as e:
-        click.echo(click.style(str(e), fg="red"))
+        raise click.ClickException(str(e))
     except ParityError as e:
         raise click.ClickException(str(e))
     except click.ClickException:
