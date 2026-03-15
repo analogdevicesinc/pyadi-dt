@@ -296,6 +296,7 @@ ADRV family profile variants include:
 - ``adrv9008_zc706``
 - ``adrv9009_zc706``
 - ``adrv9009_zcu102``
+- ``adrv937x_zc706``
 - ``adrv937x_zcu102``
 - ``adrv9025_zcu102`` (also selected from ``adrv9026``-named JESD labels)
 

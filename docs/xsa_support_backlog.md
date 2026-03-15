@@ -52,7 +52,7 @@ Hardware verification legend:
 | 7 | `zynqmp-zcu102-rev10-fmcdaq3` | FMCDAQ3 | WIP | WIP | WIP | Todo | No | Todo | Added `fmcdaq3_zcu102` explicit profile + example; JESD/clock transport defaults in place, board SPI overlay extension pending | WIP |
 | 8 | `zynq-zc706-adv7511-adrv9009` | ADRV9009 (ZC706) | WIP | WIP | WIP | Todo | No | Todo | Added `adrv9009_zc706` explicit profile + example; generic JESD label variant still needs dedicated node mapping for clean DT compile | WIP |
 | 9 | `zynq-zc706-adv7511-adrv9008-1-2` | ADRV9008 (ZC706) | WIP | WIP | WIP | Todo | No | Todo | Added `adrv9008_zc706` explicit profile + example; generic JESD label variant still needs dedicated node mapping for clean DT compile | WIP |
-| 10 | `zynq-zc706-adv7511-adrv937x` | ADRV937x (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |
+| 10 | `zynq-zc706-adv7511-adrv937x` | ADRV937x (ZC706) | WIP | WIP | WIP | Todo | No | Todo | Added `adrv937x_zc706` explicit profile + example; generic JESD label variant still needs dedicated node mapping for clean DT compile | WIP |
 | 11 | `zynq-zc706-adv7511-adrv9002` | ADRV9002 | Todo | Todo | Todo | Todo | No | Todo | Separate RFIC config model | Todo |
 | 12 | `zynq-zc706-adv7511-ad9081` | AD9081 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Extend current AD9081 support to ZC706 | Todo |
 | 13 | `zynq-zc706-adv7511-ad9082` | AD9082 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | ZC706 variant | Todo |

@@ -180,6 +180,29 @@ def test_pipeline_explicit_adrv9008_zc706_profile_applies_defaults(
     assert merged_cfg["adrv9009_board"]["trx_cs"] == 1
 
 
+def test_pipeline_explicit_adrv937x_zc706_profile_applies_defaults(
+    xsa_path, cfg, tmp_path
+):
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa_path, cfg, tmp_path, profile="adrv937x_zc706")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["adrv9009_board"]["spi_bus"] == "spi0"
+    assert merged_cfg["adrv9009_board"]["clk_cs"] == 0
+    assert merged_cfg["adrv9009_board"]["trx_cs"] == 1
+
+
 def test_pipeline_explicit_profile_controls_output_names(xsa_path, cfg, tmp_path):
     with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
