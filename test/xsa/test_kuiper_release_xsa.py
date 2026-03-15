@@ -10,7 +10,11 @@ import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.topology import XsaParser
-from test.xsa.kuiper_release import extract_project_xsa, download_project_xsa
+from test.xsa.kuiper_release import (
+    extract_project_xsa,
+    download_project_xsa,
+    KuiperXsaError,
+)
 
 
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
@@ -54,6 +58,24 @@ def test_extract_project_xsa_from_nested_bootgen_archive(tmp_path):
 
     assert out.name == "system_top.xsa"
     assert out.read_bytes() == expected
+
+
+def test_extract_project_xsa_raises_useful_error_for_unknown_project(tmp_path):
+    tarball = tmp_path / "boot_partition.tar.gz"
+    _build_outer_tar_with_nested_xsa(
+        tarball, "zynqmp-zcu102-rev10-fmcdaq2", b"FAKE_XSA"
+    )
+
+    with pytest.raises(KuiperXsaError) as ex:
+        extract_project_xsa(
+            tarball_path=tarball,
+            project_dir="zynq-zc706-adv7511-fmcdaq2",
+            output_dir=tmp_path / "out",
+        )
+
+    msg = str(ex.value)
+    assert "project not found" in msg
+    assert "zynqmp-zcu102-rev10-fmcdaq2" in msg
 
 
 def test_xsa_parser_detects_axi_adrv9009_converter(tmp_path):
