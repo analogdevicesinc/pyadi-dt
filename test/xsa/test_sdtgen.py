@@ -31,6 +31,14 @@ def _help_result_eval_only():
     return r
 
 
+def _help_illegal_option_result():
+    r = MagicMock()
+    r.returncode = 1
+    r.stdout = ""
+    r.stderr = "error: illegal option '--help'"
+    return r
+
+
 def test_run_invokes_sdtgen_with_correct_args(tmp_path):
     xsa = tmp_path / "design.xsa"
     xsa.write_bytes(b"fake")
@@ -167,6 +175,32 @@ def test_run_uses_eval_mode_for_2025_style_sdtgen(tmp_path):
     assert str(xsa) in cmd[2]
     assert str(out_dir) in cmd[2]
     assert "generate_sdt" in cmd[2]
+    assert result == out_dir / "system-top.dts"
+
+
+def test_run_falls_back_to_dash_help_when_long_help_is_invalid(tmp_path):
+    xsa = tmp_path / "design.xsa"
+    xsa.write_bytes(b"fake")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "system-top.dts").write_text("/dts-v1/;")
+
+    runner = SdtgenRunner()
+    with patch(
+        "adidt.xsa.sdtgen.subprocess.run",
+        side_effect=[
+            _help_illegal_option_result(),
+            _help_result_eval_only(),
+            _ok_result(),
+        ],
+    ) as mock_run:
+        result = runner.run(xsa, out_dir)
+
+    assert mock_run.call_args_list[0][0][0][:2] == ["sdtgen", "--help"]
+    assert mock_run.call_args_list[1][0][0][:2] == ["sdtgen", "-help"]
+    sdtgen_call = mock_run.call_args_list[2]
+    cmd = sdtgen_call[0][0]
+    assert cmd[1] == "-eval"
     assert result == out_dir / "system-top.dts"
 
 

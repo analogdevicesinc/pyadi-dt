@@ -44,18 +44,28 @@ class SdtgenRunner:
         """
         if self._checked:
             return
-        try:
-            result = subprocess.run(
-                [self.binary, "--help"],
-                capture_output=True,
-                text=True,
-                timeout=10,
-                check=False,
-            )
-        except FileNotFoundError:
-            raise SdtgenNotFoundError()
-        except subprocess.TimeoutExpired:
-            raise SdtgenError("sdtgen --help timed out after 10s")
+        result = None
+        for help_opt in ("--help", "-help"):
+            try:
+                result = subprocess.run(
+                    [self.binary, help_opt],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    check=False,
+                )
+            except FileNotFoundError:
+                raise SdtgenNotFoundError()
+            except subprocess.TimeoutExpired:
+                raise SdtgenError(f"sdtgen {help_opt} timed out after 10s")
+            # Prefer the first successful probe but allow fallback to -help for
+            # Vivado wrappers that reject the GNU-style --help option.
+            if result.returncode == 0:
+                break
+
+        if result is None:
+            raise SdtgenError("failed to probe sdtgen help output")
+
         help_text = f"{result.stdout}\n{result.stderr}"
         self._use_eval_mode = self._detect_eval_mode(help_text)
         self._checked = True
