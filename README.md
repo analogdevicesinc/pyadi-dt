@@ -223,6 +223,14 @@ Use the new example script to generate DTS output from an FMCDAQ2 ZC706 XSA:
 
 ```bash
 python examples/xsa/fmcdaq2_zc706.py \
+  --download-kuiper \
+  --output-dir examples/xsa/output_fmcdaq2_zc706
+```
+
+Or provide a local XSA:
+
+```bash
+python examples/xsa/fmcdaq2_zc706.py \
   --xsa /path/to/system_top.xsa \
   --output-dir examples/xsa/output_fmcdaq2_zc706
 ```
@@ -235,6 +243,14 @@ This script:
 ### FMCDAQ2 + ZCU102 Example
 
 Use the ZCU102 variant when the design targets the ZCU102 FMCDAQ2 platform:
+
+```bash
+python examples/xsa/fmcdaq2_zcu102.py \
+  --download-kuiper \
+  --output-dir examples/xsa/output_fmcdaq2_zcu102
+```
+
+Or provide a local XSA:
 
 ```bash
 python examples/xsa/fmcdaq2_zcu102.py \
