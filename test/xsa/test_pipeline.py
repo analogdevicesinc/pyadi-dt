@@ -236,6 +236,54 @@ def test_pipeline_auto_selects_fmcdaq2_profile_from_jesd_labels_only(tmp_path):
     assert merged_cfg["fmcdaq2_board"]["spi_bus"] == "spi0"
 
 
+def test_pipeline_auto_selects_adrv9025_profile_from_adrv9026_jesd_names(tmp_path):
+    xsa = tmp_path / "adrv9025_jesd_only.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_adc" INSTANCE="rx_adrv9026_tpl_core_adc_tpl_core">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84AA0000" HIGHVALUE="0x84AA3FFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_dac" INSTANCE="tx_adrv9026_tpl_core_dac_tpl_core">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A90000" HIGHVALUE="0x84A93FFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_adrv9026_rx_jesd_rx_axi">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84AB0000" HIGHVALUE="0x84AB3FFF"/></MEMORYMAP>
+      <PARAMETERS><PARAMETER NAME="NUM_LANES" VALUE="4"/></PARAMETERS>
+      <PORTS><PORT NAME="core_clk" SIGNAME="rx_clk"/></PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_tx" INSTANCE="axi_adrv9026_tx_jesd_tx_axi">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84AC0000" HIGHVALUE="0x84AC3FFF"/></MEMORYMAP>
+      <PARAMETERS><PARAMETER NAME="NUM_LANES" VALUE="4"/></PARAMETERS>
+      <PORTS><PORT NAME="core_clk" SIGNAME="tx_clk"/></PORTS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa, cfg={}, output_dir=tmp_path / "out")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["adrv9009_board"]["spi_bus"] == "spi0"
+    assert merged_cfg["adrv9009_board"]["clk_cs"] == 0
+
+
 def test_pipeline_derive_name_handles_mxfe_jesd_only():
     from adidt.xsa.topology import Jesd204Instance, XsaTopology
 
@@ -326,6 +374,35 @@ def test_pipeline_derive_name_uses_substring_platform_inference():
         fpga_part="xilinx,xcvp1202,revA",
     )
     assert XsaPipeline()._derive_name(topo) == "unknown_vpk180"
+
+
+def test_pipeline_derive_name_uses_adrv9025_family_for_adrv9026_labels():
+    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+
+    topo = XsaTopology(
+        fpga_part="xczu9eg_ffvb1156_-2",
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9026_rx_jesd_rx_axi",
+                base_addr=0x84AB0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9026_tx_jesd_tx_axi",
+                base_addr=0x84AC0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert XsaPipeline()._derive_name(topo) == "adrv9025_zcu102"
 
 
 def test_pipeline_writes_manifest_parity_reports_when_reference_dts_is_provided(

@@ -180,6 +180,32 @@ def test_xsa_topology_prefers_known_converter_family_when_first_is_unknown():
     assert topo.inferred_converter_family() == "adrv9009"
 
 
+def test_xsa_topology_infers_adrv9025_family_from_adrv9026_jesd_names():
+    topo = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9026_rx_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9026_tx_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert topo.inferred_converter_family() == "adrv9025"
+
+
 def test_xsa_topology_infers_platform_from_part_prefix():
     topo = XsaTopology(fpga_part="xczu9eg_ffvb1156_-2")
     assert topo.inferred_platform() == "zcu102"

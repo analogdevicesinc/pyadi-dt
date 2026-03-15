@@ -255,6 +255,10 @@ Use the ADRV9009 example for a complete adijif-driven flow:
 
 - ``examples/xsa/adrv9009_zcu102.py``
 
+For ADRV9025 ZCU102 XSA flows (Kuiper/local XSA), use:
+
+- ``examples/xsa/adrv9025_zcu102.py``
+
 The script demonstrates both quick-mode JESD extraction and optional
 ``solve()`` usage, then feeds those values directly into ``XsaPipeline``.
 
@@ -266,6 +270,11 @@ Auto-selection also covers FMCDAQ2 variants:
 
 - ``fmcdaq2_zcu102`` (ZynqMP/ZCU102)
 - ``fmcdaq2_zc706`` (Zynq-7000/ZC706)
+
+ADRV family profile variants include:
+
+- ``adrv9009_zcu102``
+- ``adrv9025_zcu102`` (also selected from ``adrv9026``-named JESD labels)
 
 If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
 also writes parity artifacts:

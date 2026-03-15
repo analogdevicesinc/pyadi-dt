@@ -242,6 +242,49 @@ def test_build_adrv9009_includes_top_device_link_ids(cfg):
     )
 
 
+def test_build_adrv9026_label_variant_reuses_adrv9009_generation_path(cfg):
+    topo_adrv9026 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9026_rx_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_rx_clkgen_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9026_tx_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=105,
+                link_clk="axi_tx_clkgen_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9026_0",
+                ip_type="axi_adrv9026",
+                base_addr=0x84A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+
+    nodes = NodeBuilder().build(topo_adrv9026, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "&axi_adrv9026_rx_jesd_rx_axi {" in merged
+    assert "&axi_adrv9026_tx_jesd_tx_axi {" in merged
+    assert "jesd204-link-ids = <1 0>;" in merged
+    assert "trx0_adrv9025: adrv9025-phy@1" in merged
+    assert 'compatible = "adi,adrv9025", "adrv9025";' in merged
+
+
 def test_build_ad9081_mxfe_generates_spi_clock_and_core_nodes(cfg):
     topo_ad9081 = XsaTopology(
         jesd204_rx=[

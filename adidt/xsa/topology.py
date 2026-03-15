@@ -72,15 +72,27 @@ class XsaTopology:
         if self.is_fmcdaq2_design():
             return "fmcdaq2"
         if self.converters:
-            known_priority = ("ad9081", "ad9084", "adrv9009", "ad9680", "ad9144")
+            known_priority = (
+                "ad9081",
+                "ad9084",
+                "adrv9025",
+                "adrv9026",
+                "adrv9009",
+                "ad9680",
+                "ad9144",
+            )
             converter_families = [
                 c.ip_type.removeprefix("axi_").lower() for c in self.converters
             ]
             for family in known_priority:
                 if family in converter_families:
+                    if family == "adrv9026":
+                        return "adrv9025"
                     return family
             return converter_families[0]
         jesd_names = self._jesd_name_blob()
+        if "adrv9026" in jesd_names or "adrv9025" in jesd_names:
+            return "adrv9025"
         if "ad9084" in jesd_names:
             return "ad9084"
         if "mxfe" in jesd_names or "ad9081" in jesd_names:
@@ -112,6 +124,8 @@ _ADI_CONVERTER_TYPES = {
     "axi_ad9162",
     "axi_ad9144",
     "axi_adrv9009",
+    "axi_adrv9025",
+    "axi_adrv9026",
 }
 _PART_TO_PLATFORM = {
     "xczu9eg": "zcu102",

@@ -71,6 +71,12 @@ class NodeBuilder:
         (8, 4): (17, 18),
         (4, 8): (10, 11),
     }
+    _ADRV90XX_KEYWORDS = ("adrv9009", "adrv9025", "adrv9026")
+
+    @classmethod
+    def _is_adrv90xx_name(cls, value: str) -> bool:
+        lower = value.lower()
+        return any(key in lower for key in cls._ADRV90XX_KEYWORDS)
 
     def build(self, topology: XsaTopology, cfg: dict[str, Any]) -> dict[str, list[str]]:
         """Render ADI DTS nodes.
@@ -87,11 +93,12 @@ class NodeBuilder:
             "converters": [],
         }
         is_adrv9009_design = any(
-            c.ip_type == "axi_adrv9009" or "adrv9009" in c.name.lower()
+            c.ip_type in {"axi_adrv9009", "axi_adrv9025", "axi_adrv9026"}
+            or self._is_adrv90xx_name(c.name)
             for c in topology.converters
         )
         is_adrv9009_design = is_adrv9009_design or any(
-            "adrv9009" in j.name.lower()
+            self._is_adrv90xx_name(j.name)
             for j in topology.jesd204_rx + topology.jesd204_tx
         )
         is_ad9081_mxfe_design = any(
@@ -104,12 +111,12 @@ class NodeBuilder:
         tx_labels: list[str] = []
 
         for clkgen in topology.clkgens:
-            if is_adrv9009_design and "adrv9009" in clkgen.name.lower():
+            if is_adrv9009_design and self._is_adrv90xx_name(clkgen.name):
                 continue
             result["clkgens"].append(self._render_clkgen(env, clkgen))
 
         for inst in topology.jesd204_rx:
-            if is_adrv9009_design and "adrv9009" in inst.name.lower():
+            if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
@@ -136,7 +143,7 @@ class NodeBuilder:
             rx_labels.append(inst.name.replace("-", "_"))
 
         for inst in topology.jesd204_tx:
-            if is_adrv9009_design and "adrv9009" in inst.name.lower():
+            if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
@@ -1157,8 +1164,15 @@ class NodeBuilder:
         labels = {
             j.name.replace("-", "_") for j in topology.jesd204_rx + topology.jesd204_tx
         }
-        if not any("adrv9009" in lbl for lbl in labels):
+        if not any(self._is_adrv90xx_name(lbl) for lbl in labels):
             return []
+        is_adrv9025_family = any(
+            "adrv9025" in lbl.lower() or "adrv9026" in lbl.lower() for lbl in labels
+        )
+        phy_family = "adrv9025" if is_adrv9025_family else "adrv9009"
+        phy_label = f"trx0_{phy_family}"
+        phy_node_name = f"{phy_family}-phy"
+        phy_compatible = f'"adi,{phy_family}", "{phy_family}"'
         rx_jesd_label = next(
             (
                 lbl
@@ -1452,8 +1466,8 @@ class NodeBuilder:
             "\t\t\tadi,status-mon-pin1-function-select = <7>;\n"
             f"{ad9528_channels_block}"
             "\t\t};\n"
-            f"\t\ttrx0_adrv9009: adrv9009-phy@{trx_cs} {{\n"
-            '\t\t\tcompatible = "adi,adrv9009", "adrv9009";\n'
+            f"\t\t{phy_label}: {phy_node_name}@{trx_cs} {{\n"
+            f'\t\t\tcompatible = {phy_compatible};\n'
             f"\t\t\treg = <{trx_cs}>;\n"
             f"\t\t\tspi-max-frequency = <{trx_spi_max_frequency}>;\n"
             f"\t\t\tclocks = {trx_clocks_value};\n"
@@ -1470,14 +1484,14 @@ class NodeBuilder:
             f"{trx_profile_props_block}"
             "\t\t};\n"
             "\t};",
-            "\t&axi_adrv9009_core_rx {\n\t\tspibus-connected = <&trx0_adrv9009>;\n\t};",
+            f"\t&axi_adrv9009_core_rx {{\n\t\tspibus-connected = <&{phy_label}>;\n\t}};",
             "\t&axi_adrv9009_core_rx_obs {\n"
-            "\t\tclocks = <&trx0_adrv9009 1>;\n"
+            f"\t\tclocks = <&{phy_label} 1>;\n"
             '\t\tclock-names = "sampl_clk";\n'
             "\t};",
             "\t&axi_adrv9009_core_tx {\n"
-            "\t\tspibus-connected = <&trx0_adrv9009>;\n"
-            "\t\tclocks = <&trx0_adrv9009 2>;\n"
+            f"\t\tspibus-connected = <&{phy_label}>;\n"
+            f"\t\tclocks = <&{phy_label} 2>;\n"
             '\t\tclock-names = "sampl_clk";\n'
             "\t};",
         ]
