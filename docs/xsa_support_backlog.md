@@ -44,7 +44,7 @@ Hardware verification legend:
 | Priority | Kuiper Project | Family | Profile | Example | Unit Tests | HW Test | HW Verified | pyadi-build | Notes | Status |
 |---|---|---|---|---|---|---|---|---|---|
 | 1 | `zynqmp-zcu102-rev10-adrv9025` | ADRV9025 | WIP | WIP | WIP | Todo | No | Todo | Closest to existing ADRV9009 flow | WIP |
-| 2 | `zynqmp-zcu102-rev10-adrv9008-1-2` | ADRV9008 | Todo | Todo | Todo | Todo | No | Todo | Reuse ADRV9009 JESD/topology pattern | Todo |
+| 2 | `zynqmp-zcu102-rev10-adrv9008-1-2` | ADRV9008 | WIP | WIP | WIP | Todo | No | Todo | Explicit `adrv9008_zcu102` profile path (XSA labels are often ADRV9009-style, so auto-detect is ambiguous) | WIP |
 | 3 | `zynqmp-zcu102-rev10-adrv937x` | ADRV937x | Todo | Todo | Todo | Todo | No | Todo | Transceiver-family adjacent | Todo |
 | 4 | `zynqmp-zcu102-rev10-ad9082-m4-l8` | AD9082 | Todo | Todo | Todo | Todo | No | Todo | Similar to AD9081 profile flow | Todo |
 | 5 | `zynqmp-zcu102-rev10-ad9083-fmc-ebz` | AD9083 | Todo | Todo | Todo | Todo | No | Todo | Similar mixed JESD pipeline | Todo |

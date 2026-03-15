@@ -40,7 +40,8 @@ class XsaPipeline:
         base_dts = base_dts_path.read_text()
 
         topology = XsaParser().parse(xsa_path)
-        name = self._derive_name(topology)
+        inferred_name = self._derive_name(topology)
+        name = profile or inferred_name
         safe_name = re.sub(r"[^\w\-.]", "_", name)  # Same logic as visualizer
         cfg_merged = cfg
         selected_profile = profile or self._auto_profile_name(topology)

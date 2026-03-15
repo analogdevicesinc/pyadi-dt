@@ -273,8 +273,13 @@ Auto-selection also covers FMCDAQ2 variants:
 
 ADRV family profile variants include:
 
+- ``adrv9008_zcu102``
 - ``adrv9009_zcu102``
 - ``adrv9025_zcu102`` (also selected from ``adrv9026``-named JESD labels)
+
+For ADRV9008 Kuiper projects, prefer explicit profile selection:
+``profile="adrv9008_zcu102"``. Many ADRV9008 XSAs use ADRV9009-style JESD/IP
+instance names, which makes converter-family auto-inference ambiguous.
 
 If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
 also writes parity artifacts:
