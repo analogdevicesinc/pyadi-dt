@@ -49,14 +49,14 @@ Hardware verification legend:
 | 4 | `zynqmp-zcu102-rev10-ad9082-m4-l8` | AD9082 | WIP | WIP | WIP | Todo | No | Todo | Added `ad9082_zcu102` explicit profile + example; AD9081/AD9082 `mxfe` naming ambiguity requires explicit selection | WIP |
 | 5 | `zynqmp-zcu102-rev10-ad9083-fmc-ebz` | AD9083 | WIP | WIP | WIP | Todo | No | Todo | Added `ad9083_zcu102` explicit profile + example; explicit selection required due shared AD908x `mxfe` naming | WIP |
 | 6 | `zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4` | AD9172 | WIP | WIP | WIP | Todo | No | Todo | Added explicit `ad9172_zcu102` profile + example for JESD/clock transport mapping; SPI board nodes still require dedicated board overlay support | WIP |
-| 7 | `zynqmp-zcu102-rev10-fmcdaq3` | FMCDAQ3 | Todo | Todo | Todo | Todo | No | Todo | Natural follow-on from FMCDAQ2 | Todo |
+| 7 | `zynqmp-zcu102-rev10-fmcdaq3` | FMCDAQ3 | WIP | WIP | WIP | Todo | No | Todo | Added `fmcdaq3_zcu102` explicit profile + example; JESD/clock transport defaults in place, board SPI overlay extension pending | WIP |
 | 8 | `zynq-zc706-adv7511-adrv9009` | ADRV9009 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |
 | 9 | `zynq-zc706-adv7511-adrv9008-1-2` | ADRV9008 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |
 | 10 | `zynq-zc706-adv7511-adrv937x` | ADRV937x (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |
 | 11 | `zynq-zc706-adv7511-adrv9002` | ADRV9002 | Todo | Todo | Todo | Todo | No | Todo | Separate RFIC config model | Todo |
 | 12 | `zynq-zc706-adv7511-ad9081` | AD9081 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Extend current AD9081 support to ZC706 | Todo |
 | 13 | `zynq-zc706-adv7511-ad9082` | AD9082 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | ZC706 variant | Todo |
-| 14 | `zynq-zc706-adv7511-fmcdaq3-revC` | FMCDAQ3 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | FMCDAQ class extension | Todo |
+| 14 | `zynq-zc706-adv7511-fmcdaq3-revC` | FMCDAQ3 (ZC706) | WIP | WIP | WIP | Todo | No | Todo | Added `fmcdaq3_zc706` explicit profile + example; JESD/clock transport defaults in place, board SPI overlay extension pending | WIP |
 | 15 | `zynq-zc706-adv7511-fmcomms11` | FMCOMMS11 | Todo | Todo | Todo | Todo | No | Todo | Distinct mixed-signal topology | Todo |
 | 16 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb` | ADRV9009 + ZU11EG | Todo | Todo | Todo | Todo | No | Todo | Alternate carrier/clocking | Todo |
 | 17 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge` | ADRV9009 + bridge | Todo | Todo | Todo | Todo | No | Todo | Variant topology | Todo |

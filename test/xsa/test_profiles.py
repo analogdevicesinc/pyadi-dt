@@ -14,6 +14,8 @@ def test_profile_manager_lists_builtin_profiles():
     assert "adrv9009_zcu102" in names
     assert "adrv937x_zcu102" in names
     assert "adrv9025_zcu102" in names
+    assert "fmcdaq3_zc706" in names
+    assert "fmcdaq3_zcu102" in names
     assert "fmcdaq2_zc706" in names
     assert "fmcdaq2_zcu102" in names
 
@@ -100,6 +102,24 @@ def test_profile_manager_loads_fmcdaq2_zcu102_profile():
     assert profile["defaults"]["fmcdaq2_board"]["clock_cs"] == 0
     assert profile["defaults"]["fmcdaq2_board"]["adc_cs"] == 2
     assert profile["defaults"]["fmcdaq2_board"]["dac_cs"] == 1
+
+
+def test_profile_manager_loads_fmcdaq3_zcu102_profile():
+    profile = ProfileManager().load("fmcdaq3_zcu102")
+    assert profile["name"] == "fmcdaq3_zcu102"
+    assert profile["defaults"]["clock"]["rx_device_clk_label"] == "clkgen"
+    assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
+    assert profile["defaults"]["jesd"]["rx"]["L"] == 2
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 2
+
+
+def test_profile_manager_loads_fmcdaq3_zc706_profile():
+    profile = ProfileManager().load("fmcdaq3_zc706")
+    assert profile["name"] == "fmcdaq3_zc706"
+    assert profile["defaults"]["clock"]["rx_device_clk_label"] == "clkgen"
+    assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
+    assert profile["defaults"]["jesd"]["rx"]["L"] == 2
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 2
 
 
 def test_profile_manager_rejects_unknown_board_override_key(tmp_path):

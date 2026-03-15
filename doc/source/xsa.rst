@@ -282,6 +282,14 @@ Auto-selection also covers FMCDAQ2 variants:
 - ``fmcdaq2_zcu102`` (ZynqMP/ZCU102)
 - ``fmcdaq2_zc706`` (Zynq-7000/ZC706)
 
+FMCDAQ3 variants are available via explicit profiles:
+
+- ``fmcdaq3_zcu102``
+- ``fmcdaq3_zc706``
+
+Current FMCDAQ3 support focuses on JESD/clock transport defaults and artifact
+generation; board-specific SPI device overlay content remains to be extended.
+
 ADRV family profile variants include:
 
 - ``adrv9008_zcu102``

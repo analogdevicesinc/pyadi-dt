@@ -335,6 +335,86 @@ def test_pipeline_auto_selects_fmcdaq2_profile_from_jesd_labels_only(tmp_path):
     assert merged_cfg["fmcdaq2_board"]["spi_bus"] == "spi0"
 
 
+def test_pipeline_auto_selects_fmcdaq3_zcu102_profile(tmp_path):
+    xsa = tmp_path / "fmcdaq3_zcu102.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_ad9680" INSTANCE="axi_ad9680_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A10000" HIGHVALUE="0x84A1FFFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_ad9152" INSTANCE="axi_ad9152_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A20000" HIGHVALUE="0x84A2FFFF"/></MEMORYMAP>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa, cfg={}, output_dir=tmp_path / "out")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["clock"]["rx_device_clk_label"] == "clkgen"
+    assert merged_cfg["clock"]["tx_device_clk_label"] == "clkgen"
+    assert merged_cfg["jesd"]["rx"]["L"] == 2
+    assert merged_cfg["jesd"]["tx"]["L"] == 2
+
+
+def test_pipeline_auto_selects_fmcdaq3_zc706_profile(tmp_path):
+    xsa = tmp_path / "fmcdaq3_zc706.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xc7z045" Package="ffg900" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_ad9680" INSTANCE="axi_ad9680_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x44A10000" HIGHVALUE="0x44A1FFFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_ad9152" INSTANCE="axi_ad9152_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x44A20000" HIGHVALUE="0x44A2FFFF"/></MEMORYMAP>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa, cfg={}, output_dir=tmp_path / "out")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["clock"]["rx_device_clk_label"] == "clkgen"
+    assert merged_cfg["clock"]["tx_device_clk_label"] == "clkgen"
+    assert merged_cfg["jesd"]["rx"]["L"] == 2
+    assert merged_cfg["jesd"]["tx"]["L"] == 2
+
+
 def test_pipeline_auto_selects_adrv9025_profile_from_adrv9026_jesd_names(tmp_path):
     xsa = tmp_path / "adrv9025_jesd_only.xsa"
     hwh_content = """<?xml version="1.0"?>
@@ -464,6 +544,31 @@ def test_pipeline_derive_name_ignores_unknown_converter_when_known_exists():
         ],
     )
     assert XsaPipeline()._derive_name(topo) == "adrv9009_zcu102"
+
+
+def test_pipeline_derive_name_handles_fmcdaq3_converter_types():
+    from adidt.xsa.topology import ConverterInstance, XsaTopology
+
+    topo = XsaTopology(
+        fpga_part="xczu9eg_ffvb1156_-2",
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9152_0",
+                ip_type="axi_ad9152",
+                base_addr=0x84A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    assert XsaPipeline()._derive_name(topo) == "fmcdaq3_zcu102"
 
 
 def test_pipeline_derive_name_handles_ad9082_converter_type():

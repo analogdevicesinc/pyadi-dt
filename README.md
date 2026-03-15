@@ -176,6 +176,8 @@ auto-apply board profiles based on detected converter + FPGA platform.
 - `adrv9025_zcu102`
 - `fmcdaq2_zc706`
 - `fmcdaq2_zcu102`
+- `fmcdaq3_zc706`
+- `fmcdaq3_zcu102`
 
 ### XSA + adijif Workflow (Quick Guide)
 
@@ -199,6 +201,8 @@ Primary reference:
 - `examples/xsa/adrv9008_zcu102.py` (explicit ADRV9008 profile flow)
 - `examples/xsa/adrv937x_zcu102.py` (explicit ADRV937x profile flow)
 - `examples/xsa/adrv9025_zcu102.py` (Kuiper/local XSA ADRV9025 flow)
+- `examples/xsa/fmcdaq3_zcu102.py` (explicit FMCDAQ3 ZCU102 profile flow)
+- `examples/xsa/fmcdaq3_zc706.py` (explicit FMCDAQ3 ZC706 profile flow)
 
 Detailed API docs, parameter tables, and full adijif mapping are documented in:
 - `doc/source/xsa.rst` (section: **Python API** and **Using adijif (pyadi-jif) With the XSA Flow**)

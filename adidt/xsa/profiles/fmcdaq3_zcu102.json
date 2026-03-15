@@ -1,0 +1,29 @@
+{
+  "name": "fmcdaq3_zcu102",
+  "defaults": {
+    "clock": {
+      "rx_device_clk_label": "clkgen",
+      "tx_device_clk_label": "clkgen",
+      "rx_device_clk_index": 0,
+      "tx_device_clk_index": 0
+    },
+    "jesd": {
+      "rx": {
+        "F": 1,
+        "K": 32,
+        "M": 2,
+        "L": 2,
+        "Np": 16,
+        "S": 1
+      },
+      "tx": {
+        "F": 2,
+        "K": 32,
+        "M": 2,
+        "L": 2,
+        "Np": 16,
+        "S": 1
+      }
+    }
+  }
+}

@@ -106,6 +106,56 @@ def test_xsa_topology_detects_fmcdaq2_from_jesd_names_only():
     assert topo.is_fmcdaq2_design()
 
 
+def test_xsa_topology_detects_fmcdaq3_from_converter_types():
+    topo = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9152_0",
+                ip_type="axi_ad9152",
+                base_addr=0x44A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    assert topo.is_fmcdaq3_design()
+    assert topo.inferred_converter_family() == "fmcdaq3"
+
+
+def test_xsa_topology_detects_fmcdaq3_from_jesd_names_only():
+    topo = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9680_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=2,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9152_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=2,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert topo.is_fmcdaq3_design()
+    assert topo.inferred_converter_family() == "fmcdaq3"
+
+
 def test_xsa_topology_infers_converter_family_from_jesd_names():
     topo = XsaTopology(
         jesd204_rx=[

@@ -68,9 +68,17 @@ class XsaTopology:
         jesd_names = self._jesd_name_blob()
         return "ad9680" in jesd_names and "ad9144" in jesd_names
 
+    def is_fmcdaq3_design(self) -> bool:
+        if self.has_converter_types("axi_ad9680", "axi_ad9152"):
+            return True
+        jesd_names = self._jesd_name_blob()
+        return "ad9680" in jesd_names and "ad9152" in jesd_names
+
     def inferred_converter_family(self) -> str:
         if self.is_fmcdaq2_design():
             return "fmcdaq2"
+        if self.is_fmcdaq3_design():
+            return "fmcdaq3"
         if self.converters:
             known_priority = (
                 "ad9081",
@@ -81,6 +89,7 @@ class XsaTopology:
                 "adrv9009",
                 "ad9371",
                 "ad9680",
+                "ad9152",
                 "ad9144",
             )
             converter_families = [
@@ -130,6 +139,7 @@ _ADI_CONVERTER_TYPES = {
     "axi_ad9084",
     "axi_ad9162",
     "axi_ad9144",
+    "axi_ad9152",
     "axi_adrv9009",
     "axi_adrv9025",
     "axi_adrv9026",
