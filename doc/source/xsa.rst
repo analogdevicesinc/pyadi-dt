@@ -293,6 +293,7 @@ generation; board-specific SPI device overlay content remains to be extended.
 ADRV family profile variants include:
 
 - ``adrv9008_zcu102``
+- ``adrv9008_zc706``
 - ``adrv9009_zc706``
 - ``adrv9009_zcu102``
 - ``adrv937x_zcu102``

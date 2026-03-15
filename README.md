@@ -171,6 +171,7 @@ auto-apply board profiles based on detected converter + FPGA platform.
 - `ad9083_zcu102`
 - `ad9172_zcu102`
 - `adrv9008_zcu102`
+- `adrv9008_zc706`
 - `adrv9009_zc706`
 - `adrv9009_zcu102`
 - `adrv937x_zcu102`
@@ -200,6 +201,7 @@ Primary reference:
 - `examples/xsa/ad9083_zcu102.py` (explicit AD9083 profile flow)
 - `examples/xsa/ad9172_zcu102.py` (explicit AD9172 profile flow)
 - `examples/xsa/adrv9008_zcu102.py` (explicit ADRV9008 profile flow)
+- `examples/xsa/adrv9008_zc706.py` (explicit ADRV9008 ZC706 profile flow)
 - `examples/xsa/adrv9009_zc706.py` (explicit ADRV9009 ZC706 profile flow)
 - `examples/xsa/adrv937x_zcu102.py` (explicit ADRV937x profile flow)
 - `examples/xsa/adrv9025_zcu102.py` (Kuiper/local XSA ADRV9025 flow)
