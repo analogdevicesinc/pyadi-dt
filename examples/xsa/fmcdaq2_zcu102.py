@@ -36,27 +36,35 @@ def _resolve_config_from_adijif(
     sys.converter[1].set_quick_configuration_mode(tx_mode[0]["mode"], "jesd204b")
     sys.converter[0].sample_clock = sample_rate_hz
     sys.converter[1].sample_clock = sample_rate_hz
-    conf = sys.solve()
 
-    rx = conf.get("jesd_AD9680", {})
-    tx = conf.get("jesd_AD9144", {})
+    def _jesd_mode_val(mode: dict[str, Any], key: str, default: int) -> int:
+        settings = mode.get("settings", {}) if isinstance(mode, dict) else {}
+        if key in settings:
+            return int(settings[key])
+        if key in mode:
+            return int(mode[key])
+        return default
+
+    rxm = rx_mode[0]
+    txm = tx_mode[0]
+
     cfg: dict[str, Any] = {
         "jesd": {
             "rx": {
-                "F": int(rx.get("F", 1)),
-                "K": int(rx.get("K", 32)),
-                "M": int(rx.get("M", 2)),
-                "L": int(rx.get("L", 4)),
-                "Np": int(rx.get("Np", 16)),
-                "S": int(rx.get("S", 1)),
+                "F": _jesd_mode_val(rxm, "F", 1),
+                "K": _jesd_mode_val(rxm, "K", 32),
+                "M": _jesd_mode_val(rxm, "M", 2),
+                "L": _jesd_mode_val(rxm, "L", 4),
+                "Np": _jesd_mode_val(rxm, "Np", 16),
+                "S": _jesd_mode_val(rxm, "S", 1),
             },
             "tx": {
-                "F": int(tx.get("F", 1)),
-                "K": int(tx.get("K", 32)),
-                "M": int(tx.get("M", 2)),
-                "L": int(tx.get("L", 4)),
-                "Np": int(tx.get("Np", 16)),
-                "S": int(tx.get("S", 1)),
+                "F": _jesd_mode_val(txm, "F", 1),
+                "K": _jesd_mode_val(txm, "K", 32),
+                "M": _jesd_mode_val(txm, "M", 2),
+                "L": _jesd_mode_val(txm, "L", 4),
+                "Np": _jesd_mode_val(txm, "Np", 16),
+                "S": _jesd_mode_val(txm, "S", 1),
             },
         },
         "clock": {
@@ -65,19 +73,36 @@ def _resolve_config_from_adijif(
             "rx_device_clk_index": 13,
             "tx_device_clk_index": 1,
         },
-        "fpga_adc": conf.get("fpga_adc", {}),
-        "fpga_dac": conf.get("fpga_dac", {}),
     }
-    summary = {
+    summary: dict[str, Any] = {
+        "solver_succeeded": False,
         "sample_rate_hz": sample_rate_hz,
-        "clock_output_clocks": conf.get("clock", {}).get("output_clocks"),
+        "clock_output_clocks": None,
     }
+    try:
+        conf = sys.solve()
+    except Exception:
+        return cfg, summary
+
+    summary["solver_succeeded"] = True
+    summary["clock_output_clocks"] = conf.get("clock", {}).get("output_clocks")
+    rx = conf.get("jesd_AD9680", {})
+    tx = conf.get("jesd_AD9144", {})
+    for key in ("F", "K", "M", "L", "Np", "S"):
+        if key in rx:
+            cfg["jesd"]["rx"][key] = int(rx[key])
+        if key in tx:
+            cfg["jesd"]["tx"][key] = int(tx[key])
+    cfg["fpga_adc"] = conf.get("fpga_adc", {})
+    cfg["fpga_dac"] = conf.get("fpga_dac", {})
     return cfg, summary
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--xsa", type=Path, required=True, help="Path to system_top.xsa")
+    parser.add_argument(
+        "--xsa", type=Path, required=True, help="Path to system_top.xsa"
+    )
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--vcxo-hz", type=float, default=DEFAULT_VCXO_HZ)
     parser.add_argument("--sample-rate-hz", type=float, default=DEFAULT_SAMPLE_RATE_HZ)
