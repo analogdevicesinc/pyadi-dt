@@ -48,7 +48,7 @@ Hardware verification legend:
 | 3 | `zynqmp-zcu102-rev10-adrv937x` | ADRV937x | WIP | WIP | WIP | Todo | No | Todo | Added `adrv937x_zcu102` profile + example + converter-family inference from AD9371 JESD labels; hardware verification pending | WIP |
 | 4 | `zynqmp-zcu102-rev10-ad9082-m4-l8` | AD9082 | WIP | WIP | WIP | Todo | No | Todo | Added `ad9082_zcu102` explicit profile + example; AD9081/AD9082 `mxfe` naming ambiguity requires explicit selection | WIP |
 | 5 | `zynqmp-zcu102-rev10-ad9083-fmc-ebz` | AD9083 | WIP | WIP | WIP | Todo | No | Todo | Added `ad9083_zcu102` explicit profile + example; explicit selection required due shared AD908x `mxfe` naming | WIP |
-| 6 | `zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4` | AD9172 | Todo | Todo | Todo | Todo | No | Todo | DAC-oriented JESD mapping | Todo |
+| 6 | `zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4` | AD9172 | WIP | WIP | WIP | Todo | No | Todo | Added explicit `ad9172_zcu102` profile + example for JESD/clock transport mapping; SPI board nodes still require dedicated board overlay support | WIP |
 | 7 | `zynqmp-zcu102-rev10-fmcdaq3` | FMCDAQ3 | Todo | Todo | Todo | Todo | No | Todo | Natural follow-on from FMCDAQ2 | Todo |
 | 8 | `zynq-zc706-adv7511-adrv9009` | ADRV9009 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |
 | 9 | `zynq-zc706-adv7511-adrv9008-1-2` | ADRV9008 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | Platform variant support | Todo |

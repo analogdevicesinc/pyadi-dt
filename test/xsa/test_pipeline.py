@@ -187,6 +187,31 @@ def test_pipeline_explicit_ad9083_profile_applies_defaults(xsa_path, cfg, tmp_pa
     assert merged_cfg["ad9081_board"]["adc_spi"] == "spi0"
 
 
+def test_pipeline_explicit_ad9172_profile_applies_defaults(xsa_path, cfg, tmp_path):
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        cfg_local = dict(cfg)
+        cfg_local["jesd"] = dict(cfg_local.get("jesd", {}))
+        cfg_local["jesd"]["tx"] = dict(cfg_local["jesd"].get("tx", {}))
+        cfg_local["jesd"]["tx"].pop("L", None)
+        XsaPipeline().run(xsa_path, cfg_local, tmp_path, profile="ad9172_zcu102")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["clock"]["tx_device_clk_label"] == "clkgen"
+    assert merged_cfg["clock"]["tx_device_clk_index"] == 0
+    assert merged_cfg["jesd"]["tx"]["L"] == 8
+
+
 def test_pipeline_auto_selects_fmcdaq2_zc706_profile(tmp_path):
     xsa = tmp_path / "fmcdaq2_zc706.xsa"
     hwh_content = """<?xml version="1.0"?>

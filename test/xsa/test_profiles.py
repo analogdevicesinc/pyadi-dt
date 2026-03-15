@@ -9,6 +9,7 @@ def test_profile_manager_lists_builtin_profiles():
     assert "ad9081_zcu102" in names
     assert "ad9082_zcu102" in names
     assert "ad9083_zcu102" in names
+    assert "ad9172_zcu102" in names
     assert "adrv9008_zcu102" in names
     assert "adrv9009_zcu102" in names
     assert "adrv937x_zcu102" in names
@@ -44,6 +45,14 @@ def test_profile_manager_loads_ad9083_profile():
     assert profile["defaults"]["clock"]["hmc7044_tx_channel"] == 6
     assert profile["defaults"]["ad9081_board"]["clock_spi"] == "spi1"
     assert profile["defaults"]["ad9081_board"]["adc_spi"] == "spi0"
+
+
+def test_profile_manager_loads_ad9172_profile():
+    profile = ProfileManager().load("ad9172_zcu102")
+    assert profile["name"] == "ad9172_zcu102"
+    assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
+    assert profile["defaults"]["clock"]["tx_device_clk_index"] == 0
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 8
 
 
 def test_profile_manager_loads_adrv9009_profile():

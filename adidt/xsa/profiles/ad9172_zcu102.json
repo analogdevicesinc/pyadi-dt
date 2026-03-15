@@ -1,0 +1,19 @@
+{
+  "name": "ad9172_zcu102",
+  "defaults": {
+    "clock": {
+      "tx_device_clk_label": "clkgen",
+      "tx_device_clk_index": 0
+    },
+    "jesd": {
+      "tx": {
+        "F": 4,
+        "K": 32,
+        "M": 4,
+        "L": 8,
+        "Np": 16,
+        "S": 1
+      }
+    }
+  }
+}
