@@ -39,10 +39,11 @@ def test_profile_manager_loads_adrv9009_profile():
 def test_profile_manager_loads_fmcdaq2_zcu102_profile():
     profile = ProfileManager().load("fmcdaq2_zcu102")
     assert profile["name"] == "fmcdaq2_zcu102"
-    assert profile["defaults"]["fmcdaq2_board"]["spi_bus"] == "fmc_spi"
+    assert profile["defaults"]["fmcdaq2_board"]["spi_bus"] == "spi0"
+    assert profile["defaults"]["fmcdaq2_board"]["adc_jesd_link_id"] == 0
     assert profile["defaults"]["fmcdaq2_board"]["clock_cs"] == 0
-    assert profile["defaults"]["fmcdaq2_board"]["adc_cs"] == 1
-    assert profile["defaults"]["fmcdaq2_board"]["dac_cs"] == 2
+    assert profile["defaults"]["fmcdaq2_board"]["adc_cs"] == 2
+    assert profile["defaults"]["fmcdaq2_board"]["dac_cs"] == 1
 
 
 def test_profile_manager_rejects_unknown_board_override_key(tmp_path):
@@ -84,6 +85,81 @@ def test_profile_manager_rejects_invalid_list_override_type(tmp_path):
 
     with pytest.raises(ProfileError, match="must be a list"):
         ProfileManager(profile_dir=profile_dir).load("bad_type")
+
+
+def test_profile_manager_accepts_extended_fmcdaq2_board_keys(tmp_path):
+    profile_dir = tmp_path / "profiles"
+    profile_dir.mkdir()
+    (profile_dir / "ok_fmcdaq2.json").write_text(
+        """
+        {
+          "name": "ok_fmcdaq2",
+          "defaults": {
+            "fmcdaq2_board": {
+              "spi_bus": "spi0",
+              "clock_cs": 0,
+              "adc_cs": 2,
+              "dac_cs": 1,
+              "adc_dma_label": "axi_ad9680_dma",
+              "dac_dma_label": "axi_ad9144_dma",
+              "adc_device_clk_idx": 13,
+              "adc_sysref_clk_idx": 5,
+              "adc_xcvr_ref_clk_idx": 4,
+              "dac_device_clk_idx": 1,
+              "dac_xcvr_ref_clk_idx": 9,
+              "adc_sampling_frequency_hz": 1000000000
+            }
+          }
+        }
+        """
+    )
+
+    loaded = ProfileManager(profile_dir=profile_dir).load("ok_fmcdaq2")
+    board = loaded["defaults"]["fmcdaq2_board"]
+    assert board["adc_dma_label"] == "axi_ad9680_dma"
+    assert board["adc_sampling_frequency_hz"] == 1000000000
+
+
+def test_profile_manager_rejects_invalid_fmcdaq2_board_int_type(tmp_path):
+    profile_dir = tmp_path / "profiles"
+    profile_dir.mkdir()
+    (profile_dir / "bad_fmcdaq2_type.json").write_text(
+        """
+        {
+          "name": "bad_fmcdaq2_type",
+          "defaults": {
+            "fmcdaq2_board": {
+              "spi_bus": "spi0",
+              "adc_cs": "2"
+            }
+          }
+        }
+        """
+    )
+
+    with pytest.raises(ProfileError, match="expected integer"):
+        ProfileManager(profile_dir=profile_dir).load("bad_fmcdaq2_type")
+
+
+def test_profile_manager_rejects_invalid_fmcdaq2_board_negative_int(tmp_path):
+    profile_dir = tmp_path / "profiles"
+    profile_dir.mkdir()
+    (profile_dir / "bad_fmcdaq2_range.json").write_text(
+        """
+        {
+          "name": "bad_fmcdaq2_range",
+          "defaults": {
+            "fmcdaq2_board": {
+              "spi_bus": "spi0",
+              "dac_cs": -1
+            }
+          }
+        }
+        """
+    )
+
+    with pytest.raises(ProfileError, match="must be >= 0"):
+        ProfileManager(profile_dir=profile_dir).load("bad_fmcdaq2_range")
 
 
 def test_merge_profile_defaults_does_not_alias_mutable_values():

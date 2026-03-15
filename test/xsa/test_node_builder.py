@@ -529,8 +529,8 @@ def test_build_fmcdaq2_zc706_nodes(cfg):
     cfg["fmcdaq2_board"] = {
         "spi_bus": "spi0",
         "clock_cs": 0,
-        "adc_cs": 1,
-        "dac_cs": 2,
+        "adc_cs": 2,
+        "dac_cs": 1,
         "clock_vcxo_hz": 125000000,
         "adc_core_label": "axi_ad9680_core",
         "dac_core_label": "axi_ad9144_core",
@@ -548,11 +548,13 @@ def test_build_fmcdaq2_zc706_nodes(cfg):
 
     assert "&spi0 {" in merged
     assert "clk0_ad9523: ad9523-1@0" in merged
-    assert "adc0_ad9680: ad9680@1" in merged
-    assert "dac0_ad9144: ad9144@2" in merged
-    assert "jesd204-link-ids = <1 0>;" in merged
+    assert "adc0_ad9680: ad9680@2" in merged
+    assert "dac0_ad9144: ad9144@1" in merged
+    assert "jesd204-link-ids = <0>;" in merged
     assert "&axi_ad9680_core {" in merged
     assert "&axi_ad9144_core {" in merged
+    assert "&axi_ad9680_jesd204_rx {" in merged
+    assert "&axi_ad9144_jesd204_tx {" in merged
     assert jesd == ""
 
 
@@ -598,8 +600,8 @@ def test_build_fmcdaq2_zcu102_nodes(cfg):
     cfg["fmcdaq2_board"] = {
         "spi_bus": "fmc_spi",
         "clock_cs": 0,
-        "adc_cs": 1,
-        "dac_cs": 2,
+        "adc_cs": 2,
+        "dac_cs": 1,
         "clock_vcxo_hz": 125000000,
         "gpio_controller": "gpio",
         "clk_sync_gpio": 116,
@@ -634,6 +636,118 @@ def test_build_fmcdaq2_zcu102_nodes(cfg):
     assert "powerdown-gpios = <&gpio 120 0>;" in merged
     assert "fastdetect-a-gpios = <&gpio 113 0>;" in merged
     assert "fastdetect-b-gpios = <&gpio 114 0>;" in merged
+    assert "adi,pll1-bypass-enable;" in merged
+    assert "adi,pll2-m1-freq = <1000000000>;" in merged
+    assert "ad9523_0_c13:channel@13" in merged
+    assert "jesd204-device;" in merged
+    assert "&axi_ad9680_jesd204_rx {" in merged
+    assert "&axi_ad9144_jesd204_tx {" in merged
+    assert "adi,sampling-frequency = /bits/ 64 <1000000000>;" in merged
+    assert "adi,input-clock-divider-ratio = <1>;" in merged
+
+
+def test_build_fmcdaq2_rejects_invalid_gpio_value(cfg):
+    topo_fmcdaq2 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9680_jesd204_rx",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=61,
+                link_clk="rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9144_jesd204_tx",
+                base_addr=0x84B90000,
+                num_lanes=4,
+                irq=62,
+                link_clk="tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x84A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    cfg["fmcdaq2_board"] = {
+        "spi_bus": "fmc_spi",
+        "clk_sync_gpio": "bad-pin",
+    }
+
+    with pytest.raises(ValueError, match="fmcdaq2_board.clk_sync_gpio"):
+        NodeBuilder().build(topo_fmcdaq2, cfg)
+
+
+def test_build_fmcdaq2_rejects_invalid_chip_select(cfg):
+    topo_fmcdaq2 = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x84A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    cfg["fmcdaq2_board"] = {
+        "spi_bus": "fmc_spi",
+        "adc_cs": "bad-cs",
+    }
+
+    with pytest.raises(ValueError, match="fmcdaq2_board.adc_cs"):
+        NodeBuilder().build(topo_fmcdaq2, cfg)
+
+
+def test_build_fmcdaq2_rejects_bool_for_numeric_field(cfg):
+    topo_fmcdaq2 = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x84A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    cfg["fmcdaq2_board"] = {
+        "spi_bus": "fmc_spi",
+        "clock_cs": True,
+    }
+
+    with pytest.raises(ValueError, match="fmcdaq2_board.clock_cs"):
+        NodeBuilder().build(topo_fmcdaq2, cfg)
 
 
 def test_build_ad9081_allows_hmc7044_channel_block_override(cfg):
@@ -801,7 +915,10 @@ def test_build_adrv9009_applies_board_overrides(cfg):
     assert "sysref-req-gpios = <&gpio 211 0>;" in merged
     assert "adi,vcxo-freq = <100000000>;" in merged
     assert "jesd204-link-ids = <9 8 7>;" in merged
-    assert "jesd204-inputs = <&axi_adrv9009_rx_xcvr 0 9>, <&axi_adrv9009_rx_os_xcvr 0 8>, <&axi_adrv9009_tx_xcvr 0 7>;" in merged
+    assert (
+        "jesd204-inputs = <&axi_adrv9009_rx_xcvr 0 9>, <&axi_adrv9009_rx_os_xcvr 0 8>, <&axi_adrv9009_tx_xcvr 0 7>;"
+        in merged
+    )
     assert "adi,octets-per-frame = <5>;" in merged
     assert "&axi_adrv9009_rx_os_jesd_rx_axi {" in merged
     assert "adi,octets-per-frame = <6>;" in merged

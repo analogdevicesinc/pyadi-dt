@@ -169,6 +169,7 @@ auto-apply board profiles based on detected converter + FPGA platform.
 - `ad9081_zcu102`
 - `adrv9009_zcu102`
 - `fmcdaq2_zc706`
+- `fmcdaq2_zcu102`
 
 ### FMCDAQ2 + ZC706 Example
 
@@ -184,6 +185,21 @@ This script:
 - resolves JESD/clock settings from `pyadi-jif`
 - runs `XsaPipeline` (SDTGen + topology parse + node build + merge)
 - writes merged DTS and HTML report artifacts
+
+### FMCDAQ2 + ZCU102 Example
+
+Use the ZCU102 variant when the design targets the ZCU102 FMCDAQ2 platform:
+
+```bash
+python examples/xsa/fmcdaq2_zcu102.py \
+  --xsa /path/to/system_top.xsa \
+  --output-dir examples/xsa/output_fmcdaq2_zcu102
+```
+
+Notes for FMCDAQ2 profiles:
+- generated defaults use `spi0` for device SPI bus
+- default chip-select mapping is `ad9523=0`, `ad9144=1`, `ad9680=2`
+- default JESD link IDs are `rx=0`, `tx=0`
 
 ### Non-Hardware Verification
 

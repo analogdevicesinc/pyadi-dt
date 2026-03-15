@@ -55,6 +55,50 @@ class XsaTopology:
     signal_connections: list[SignalConnection] = field(default_factory=list)
     fpga_part: str = ""
 
+    def _jesd_name_blob(self) -> str:
+        return " ".join(j.name.lower() for j in self.jesd204_rx + self.jesd204_tx)
+
+    def has_converter_types(self, *ip_types: str) -> bool:
+        converter_types = {c.ip_type for c in self.converters}
+        return set(ip_types).issubset(converter_types)
+
+    def is_fmcdaq2_design(self) -> bool:
+        if self.has_converter_types("axi_ad9680", "axi_ad9144"):
+            return True
+        jesd_names = self._jesd_name_blob()
+        return "ad9680" in jesd_names and "ad9144" in jesd_names
+
+    def inferred_converter_family(self) -> str:
+        if self.is_fmcdaq2_design():
+            return "fmcdaq2"
+        if self.converters:
+            known_priority = ("ad9081", "ad9084", "adrv9009", "ad9680", "ad9144")
+            converter_families = [
+                c.ip_type.removeprefix("axi_").lower() for c in self.converters
+            ]
+            for family in known_priority:
+                if family in converter_families:
+                    return family
+            return converter_families[0]
+        jesd_names = self._jesd_name_blob()
+        if "ad9084" in jesd_names:
+            return "ad9084"
+        if "mxfe" in jesd_names or "ad9081" in jesd_names:
+            return "ad9081"
+        if "adrv9009" in jesd_names:
+            return "adrv9009"
+        return "unknown"
+
+    def inferred_platform(self) -> str:
+        part = self.fpga_part.lower()
+        for prefix, platform in _PART_TO_PLATFORM.items():
+            if part.startswith(prefix):
+                return platform
+        for prefix, platform in _PART_TO_PLATFORM.items():
+            if prefix in part:
+                return platform
+        return "unknown"
+
 
 _ADI_JESD_RX_TYPES = {"axi_jesd204_rx"}
 _ADI_JESD_TX_TYPES = {"axi_jesd204_tx"}
@@ -68,6 +112,14 @@ _ADI_CONVERTER_TYPES = {
     "axi_ad9162",
     "axi_ad9144",
     "axi_adrv9009",
+}
+_PART_TO_PLATFORM = {
+    "xczu9eg": "zcu102",
+    "xczu3eg": "zcu104",
+    "xck26": "kv260",
+    "xcvp1202": "vpk180",
+    "xc7z045": "zc706",
+    "xc7z020": "zc702",
 }
 
 
@@ -195,6 +247,7 @@ class XsaParser:
         found_adi = False
         ad9081_tpl_adc_base: Optional[int] = None
         ad9081_tpl_dac_seen = False
+        ad9081_tpl_signature = False
         for mod in root.findall(".//MODULE"):
             mod_type = mod.get("MODTYPE", "").lower()
             instance = mod.get("INSTANCE", mod_type)
@@ -219,9 +272,13 @@ class XsaParser:
                 found_adi = True
                 if ad9081_tpl_adc_base is None:
                     ad9081_tpl_adc_base = base_addr
+                if "mxfe" in instance.lower() or "ad9081" in instance.lower():
+                    ad9081_tpl_signature = True
             elif mod_type in _ADI_AD9081_TPL_DAC_TYPES:
                 found_adi = True
                 ad9081_tpl_dac_seen = True
+                if "mxfe" in instance.lower() or "ad9081" in instance.lower():
+                    ad9081_tpl_signature = True
             elif mod_type in _ADI_CONVERTER_TYPES:
                 found_adi = True
                 topology.converters.append(
@@ -232,6 +289,7 @@ class XsaParser:
             not topology.converters
             and ad9081_tpl_adc_base is not None
             and ad9081_tpl_dac_seen
+            and ad9081_tpl_signature
         ):
             topology.converters.append(
                 ConverterInstance(

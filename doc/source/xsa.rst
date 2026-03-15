@@ -144,6 +144,11 @@ You can also pass ``profile="ad9081_zcu102"`` (or another built-in profile) to
 ``XsaPipeline.run()``. If no profile is passed, the pipeline will auto-select a
 matching profile when available (for example, ``ad9081_zcu102``).
 
+Auto-selection also covers FMCDAQ2 variants:
+
+- ``fmcdaq2_zcu102`` (ZynqMP/ZCU102)
+- ``fmcdaq2_zc706`` (Zynq-7000/ZC706)
+
 If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
 also writes parity artifacts:
 
@@ -223,6 +228,34 @@ the parser implementation.
   properties (raw DTS property lines)
 - ``ad9528_channel_blocks`` – optional replacement list for AD9528 channel
   subnodes (raw DTS snippet blocks)
+
+``fmcdaq2_board`` keys:
+
+- ``spi_bus`` / ``clock_cs`` / ``adc_cs`` / ``dac_cs`` – SPI bus and chip-select
+  assignments (default mapping: AD9523 on CS0, AD9144 on CS1, AD9680 on CS2)
+- ``clock_vcxo_hz`` / ``clock_spi_max_frequency`` /
+  ``adc_spi_max_frequency`` / ``dac_spi_max_frequency``
+- ``adc_dma_label`` / ``dac_dma_label``
+- ``adc_core_label`` / ``dac_core_label``
+- ``adc_xcvr_label`` / ``dac_xcvr_label``
+- ``adc_jesd_label`` / ``dac_jesd_label``
+- ``adc_jesd_link_id`` / ``dac_jesd_link_id``
+- ``adc_device_clk_idx`` / ``adc_sysref_clk_idx`` /
+  ``adc_xcvr_ref_clk_idx`` / ``dac_device_clk_idx`` /
+  ``dac_xcvr_ref_clk_idx``
+- ``adc_sampling_frequency_hz``
+- GPIO overrides: ``clk_sync_gpio``, ``clk_status0_gpio``, ``clk_status1_gpio``,
+  ``dac_txen_gpio``, ``dac_reset_gpio``, ``dac_irq_gpio``,
+  ``adc_powerdown_gpio``, ``adc_fastdetect_a_gpio``, ``adc_fastdetect_b_gpio``
+
+Hardware test note
+~~~~~~~~~~~~~~~~~~
+
+Some XSA-derived FMCDAQ2 designs expose tpl-core IIO names instead of legacy
+core names. Hardware tests therefore accept either set:
+
+- legacy: ``axi-ad9680-hpc``, ``axi-ad9144-hpc``
+- tpl-core: ``ad_ip_jesd204_tpl_adc``, ``ad_ip_jesd204_tpl_dac``
 
 Profile validation
 ~~~~~~~~~~~~~~~~~~

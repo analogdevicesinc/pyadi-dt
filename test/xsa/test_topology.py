@@ -58,6 +58,138 @@ def test_xsa_topology_defaults_to_empty():
     assert topo.fpga_part == ""
 
 
+def test_xsa_topology_detects_fmcdaq2_from_converter_types():
+    topo = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x44A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    assert topo.is_fmcdaq2_design()
+
+
+def test_xsa_topology_detects_fmcdaq2_from_jesd_names_only():
+    topo = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9680_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9144_jesd_tx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert topo.is_fmcdaq2_design()
+
+
+def test_xsa_topology_infers_converter_family_from_jesd_names():
+    topo = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=4,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert topo.inferred_converter_family() == "ad9081"
+
+
+def test_xsa_topology_infers_ad9084_family_from_jesd_names():
+    topo = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9084_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=8,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9084_tx_jesd_tx_axi",
+                base_addr=0x84B90000,
+                num_lanes=8,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert topo.inferred_converter_family() == "ad9084"
+
+
+def test_xsa_topology_prefers_known_converter_family_when_first_is_unknown():
+    topo = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_unknown_0",
+                ip_type="axi_unknown_chip",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_adrv9009_0",
+                ip_type="axi_adrv9009",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    assert topo.inferred_converter_family() == "adrv9009"
+
+
+def test_xsa_topology_infers_platform_from_part_prefix():
+    topo = XsaTopology(fpga_part="xczu9eg_ffvb1156_-2")
+    assert topo.inferred_platform() == "zcu102"
+
+
+def test_xsa_topology_infers_platform_from_part_substring():
+    topo = XsaTopology(fpga_part="xilinx,xcvp1202,revA")
+    assert topo.inferred_platform() == "vpk180"
+
+
 FIXTURE_HWH = Path(__file__).parent / "fixtures" / "ad9081_zcu102.hwh"
 
 
@@ -145,6 +277,41 @@ def test_parser_detects_ad9680_converter_type(tmp_path):
     topo = XsaParser().parse(xsa)
     assert len(topo.converters) == 1
     assert topo.converters[0].ip_type == "axi_ad9680"
+
+
+def test_parser_does_not_infer_ad9081_from_non_mxfe_tpl_blocks(tmp_path):
+    xsa = tmp_path / "daq2_tpl_only.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_adc" INSTANCE="ad9680_tpl_core_adc_tpl_core">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A10000" HIGHVALUE="0x84A11FFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="ad_ip_jesd204_tpl_dac" INSTANCE="ad9144_tpl_core_dac_tpl_core">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A20000" HIGHVALUE="0x84A21FFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_ad9680_jesd_rx_axi">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84AA0000" HIGHVALUE="0x84AA3FFF"/></MEMORYMAP>
+      <PARAMETERS><PARAMETER NAME="NUM_LANES" VALUE="4"/></PARAMETERS>
+      <PORTS><PORT NAME="core_clk" SIGNAME="rx_clk"/></PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_tx" INSTANCE="axi_ad9144_jesd_tx_axi">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A90000" HIGHVALUE="0x84A93FFF"/></MEMORYMAP>
+      <PARAMETERS><PARAMETER NAME="NUM_LANES" VALUE="4"/></PARAMETERS>
+      <PORTS><PORT NAME="core_clk" SIGNAME="tx_clk"/></PORTS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert topo.converters == []
+    assert len(topo.jesd204_rx) == 1
+    assert len(topo.jesd204_tx) == 1
 
 
 def test_parser_extracts_signal_connection_graph(tmp_path):

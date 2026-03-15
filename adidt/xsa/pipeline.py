@@ -13,15 +13,6 @@ from .reference import ReferenceManifestExtractor
 from .parity import check_manifest_against_dts, write_parity_reports
 from .exceptions import ParityError
 
-_PART_TO_PLATFORM = {
-    "xczu9eg": "zcu102",
-    "xczu3eg": "zcu104",
-    "xck26": "kv260",
-    "xcvp1202": "vpk180",
-    "xc7z045": "zc706",
-    "xc7z020": "zc702",
-}
-
 
 class XsaPipeline:
     """Orchestrates the five-stage XSA-to-DeviceTree pipeline."""
@@ -58,7 +49,9 @@ class XsaPipeline:
             cfg_merged = merge_profile_defaults(cfg, profile_data)
         nodes = NodeBuilder().build(topology, cfg_merged)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
-        HtmlVisualizer().generate(topology, cfg_merged, merged_content, output_dir, name)
+        HtmlVisualizer().generate(
+            topology, cfg_merged, merged_content, output_dir, name
+        )
 
         result = {
             "base_dir": base_dir,
@@ -97,17 +90,8 @@ class XsaPipeline:
         return result
 
     def _derive_name(self, topology: XsaTopology) -> str:
-        conv_type = "unknown"
-        converter_types = {c.ip_type for c in topology.converters}
-        if {"axi_ad9680", "axi_ad9144"}.issubset(converter_types):
-            conv_type = "fmcdaq2"
-        elif topology.converters:
-            conv_type = re.sub(r"^axi_", "", topology.converters[0].ip_type)
-        platform = "unknown"
-        for prefix, plat_name in _PART_TO_PLATFORM.items():
-            if topology.fpga_part.lower().startswith(prefix):
-                platform = plat_name
-                break
+        conv_type = topology.inferred_converter_family()
+        platform = topology.inferred_platform()
         return f"{conv_type}_{platform}"
 
     def _auto_profile_name(self, topology: XsaTopology) -> str | None:

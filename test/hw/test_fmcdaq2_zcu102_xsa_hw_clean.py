@@ -68,25 +68,33 @@ def _resolve_config_from_adijif(
     sys.converter[0].sample_clock = sample_rate_hz
     sys.converter[1].sample_clock = sample_rate_hz
 
-    rx = rx_mode[0]["settings"]
-    tx = tx_mode[0]["settings"]
+    def _jesd_mode_val(mode: dict[str, Any], key: str, default: int) -> int:
+        settings = mode.get("settings", {}) if isinstance(mode, dict) else {}
+        if key in settings:
+            return int(settings[key])
+        if key in mode:
+            return int(mode[key])
+        return default
+
+    rxm = rx_mode[0]
+    txm = tx_mode[0]
     cfg: dict[str, Any] = {
         "jesd": {
             "rx": {
-                "F": int(rx["F"]),
-                "K": int(rx["K"]),
-                "M": int(rx["M"]),
-                "L": int(rx["L"]),
-                "Np": int(rx["Np"]),
-                "S": int(rx["S"]),
+                "F": _jesd_mode_val(rxm, "F", 1),
+                "K": _jesd_mode_val(rxm, "K", 32),
+                "M": _jesd_mode_val(rxm, "M", 2),
+                "L": _jesd_mode_val(rxm, "L", 4),
+                "Np": _jesd_mode_val(rxm, "Np", 16),
+                "S": _jesd_mode_val(rxm, "S", 1),
             },
             "tx": {
-                "F": int(tx["F"]),
-                "K": int(tx["K"]),
-                "M": int(tx["M"]),
-                "L": int(tx["L"]),
-                "Np": int(tx["Np"]),
-                "S": int(tx["S"]),
+                "F": _jesd_mode_val(txm, "F", 1),
+                "K": _jesd_mode_val(txm, "K", 32),
+                "M": _jesd_mode_val(txm, "M", 2),
+                "L": _jesd_mode_val(txm, "L", 4),
+                "Np": _jesd_mode_val(txm, "Np", 16),
+                "S": _jesd_mode_val(txm, "S", 1),
             },
         },
         "clock": {
@@ -105,6 +113,13 @@ def _resolve_config_from_adijif(
         conf = sys.solve()
         summary["solver_succeeded"] = True
         summary["clock_output_clocks"] = conf.get("clock", {}).get("output_clocks")
+        rx_conf = conf.get("jesd_AD9680", {})
+        tx_conf = conf.get("jesd_AD9144", {})
+        for key in ("F", "K", "M", "L", "Np", "S"):
+            if key in rx_conf:
+                cfg["jesd"]["rx"][key] = int(rx_conf[key])
+            if key in tx_conf:
+                cfg["jesd"]["tx"][key] = int(tx_conf[key])
         cfg["fpga_adc"] = conf.get("fpga_adc", {})
         cfg["fpga_dac"] = conf.get("fpga_dac", {})
 
@@ -235,10 +250,13 @@ def test_fmcdaq2_zcu102_xsa_hw(board, built_kernel_image, tmp_path):
     ctx = iio.Context(f"ip:{ip_address}")
     assert ctx is not None, "Failed to create IIO context"
 
-    expected = ["axi-ad9680-hpc", "axi-ad9144-hpc"]
+    expected_aliases = {
+        "adc_core": ["axi-ad9680-hpc", "ad_ip_jesd204_tpl_adc"],
+        "dac_core": ["axi-ad9144-hpc", "ad_ip_jesd204_tpl_dac"],
+    }
     found = [d.name for d in ctx.devices]
-    for device_name in expected:
-        assert device_name in found, (
-            f"Expected IIO device '{device_name}' not found. "
-            f"Available devices: {found}"
+    for role, aliases in expected_aliases.items():
+        assert any(name in found for name in aliases), (
+            f"Expected IIO device for {role} not found. "
+            f"Expected one of {aliases}; available devices: {found}"
         )
