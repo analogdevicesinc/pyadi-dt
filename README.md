@@ -211,6 +211,8 @@ Primary reference:
 - `examples/xsa/adrv937x_zc706.py` (explicit ADRV937x ZC706 profile flow)
 - `examples/xsa/adrv937x_zcu102.py` (explicit ADRV937x profile flow)
 - `examples/xsa/adrv9025_zcu102.py` (Kuiper/local XSA ADRV9025 flow)
+- `examples/xsa/fmcdaq2_zcu102.py` (FMCDAQ2 ZCU102 adijif + Kuiper/local XSA flow)
+- `examples/xsa/fmcdaq2_zc706.py` (FMCDAQ2 ZC706 adijif + Kuiper/local XSA flow)
 - `examples/xsa/fmcdaq3_zcu102.py` (explicit FMCDAQ3 ZCU102 profile flow)
 - `examples/xsa/fmcdaq3_zc706.py` (explicit FMCDAQ3 ZC706 profile flow)
 
