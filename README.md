@@ -171,6 +171,26 @@ auto-apply board profiles based on detected converter + FPGA platform.
 - `fmcdaq2_zc706`
 - `fmcdaq2_zcu102`
 
+### XSA + adijif Workflow (Quick Guide)
+
+Use `adijif` (pyadi-jif) to compute JESD and clock settings, map them into
+`xsa2dt` config keys, then run the full generation pipeline:
+
+```mermaid
+flowchart LR
+    AJ["adijif quick mode / solve()"] --> MAP["cfg['jesd'] + cfg['clock']"]
+    MAP --> PIPE["adidtc xsa2dt / XsaPipeline.run()"]
+    PIPE --> DTS["merged .dts + .dtso + HTML report"]
+    DTS --> DTB["cpp + dtc -> system.dtb"]
+    DTB --> HW["boot + dmesg + jesd_status"]
+```
+
+Primary reference:
+- `examples/xsa/adrv9009_zcu102.py` (adijif-driven config derivation)
+
+Detailed API docs, parameter tables, and full adijif mapping are documented in:
+- `doc/source/xsa.rst` (section: **Python API** and **Using adijif (pyadi-jif) With the XSA Flow**)
+
 ### FMCDAQ2 + ZC706 Example
 
 Use the new example script to generate DTS output from an FMCDAQ2 ZC706 XSA:

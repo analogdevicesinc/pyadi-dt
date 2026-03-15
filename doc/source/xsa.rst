@@ -140,6 +140,124 @@ Or call the pipeline directly from Python:
    print(results["merged"])   # Path to the merged .dts
    print(results["report"])   # Path to the HTML visualization
 
+Python API
+----------
+
+Core classes and methods used in the XSA flow:
+
+.. list-table::
+   :widths: 30 70
+   :header-rows: 1
+
+   * - API
+     - Purpose
+   * - ``XsaParser.parse(xsa_path: Path) -> XsaTopology``
+     - Extracts ``.hwh`` from the XSA and returns discovered JESD, clockgen,
+       converter, connectivity, and part metadata.
+   * - ``NodeBuilder.build(topology: XsaTopology, cfg: dict) -> dict[str, list[str]]``
+     - Renders ADI DTS node blocks for converters/JESD/clocking using profile
+       defaults and runtime config.
+   * - ``DtsMerger.merge(base_dts: str, nodes: dict, output_dir: Path, name: str)``
+     - Produces ``<name>.dtso`` overlay + ``<name>.dts`` merged full tree.
+   * - ``HtmlVisualizer.generate(topology, cfg, merged_content, output_dir, name)``
+     - Writes self-contained HTML debug report with topology and clock links.
+   * - ``XsaPipeline.run(...) -> dict[str, Path]``
+     - Orchestrates all stages end-to-end and returns artifact paths.
+
+``XsaPipeline.run`` argument reference
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :widths: 25 15 60
+   :header-rows: 1
+
+   * - Argument
+     - Type
+     - Description
+   * - ``xsa_path``
+     - ``Path``
+     - Vivado hardware handoff archive (must contain one ``.hwh``).
+   * - ``cfg``
+     - ``dict``
+     - Runtime configuration (JESD, clock labels/channels, board overrides).
+   * - ``output_dir``
+     - ``Path``
+     - Output folder for base SDT, overlay/merged DTS, and report artifacts.
+   * - ``sdtgen_timeout``
+     - ``int``
+     - Timeout (seconds) for SDT generation subprocess.
+   * - ``profile``
+     - ``str | None``
+     - Optional explicit built-in/custom profile name.
+   * - ``reference_dts``
+     - ``Path | None``
+     - Optional DTS root for manifest-parity checks and coverage artifacts.
+   * - ``strict_parity``
+     - ``bool``
+     - If true, raises ``ParityError`` when required roles/links/properties
+       are missing/mismatched.
+
+Using adijif (pyadi-jif) With the XSA Flow
+------------------------------------------
+
+The intended integration is:
+
+1. Use ``adijif`` to select/solve JESD and clock settings.
+2. Translate solved values into ``cfg`` keys expected by ``XsaPipeline``.
+3. Run ``XsaPipeline`` with either explicit profile or auto-profile.
+4. Compile the generated merged DTS to DTB and deploy/test on hardware.
+
+adijif integration workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   flowchart LR
+       AJ["adijif system()<br/>converter + clock + fpga model"] --> MODE["select JESD modes<br/>M/L/F/K/Np/S"]
+       MODE --> SOLVE{"run solve()?"}
+       SOLVE -->|yes| SCFG["read solved clock/JESD outputs"]
+       SOLVE -->|no| QCFG["use quick mode settings"]
+       SCFG --> MAP["map to XsaPipeline cfg keys"]
+       QCFG --> MAP
+       MAP --> PIPE2["XsaPipeline.run()"]
+       PIPE2 --> DTS2["merged DTS + overlay + report"]
+       DTS2 --> DTB2["cpp + dtc -> system.dtb"]
+       DTB2 --> HW2["boot + dmesg + jesd_status validation"]
+
+adijif-to-config mapping
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :widths: 40 60
+   :header-rows: 1
+
+   * - adijif output
+     - ``cfg`` key in XSA flow
+   * - RX JESD ``F, K, M, L, Np, S``
+     - ``cfg["jesd"]["rx"]``
+   * - TX JESD ``F, K, M, L, Np, S``
+     - ``cfg["jesd"]["tx"]``
+   * - RX device clock source choice
+     - ``cfg["clock"]["rx_device_clk_label"]`` (for example ``clkgen``/``hmc7044``)
+   * - TX device clock source choice
+     - ``cfg["clock"]["tx_device_clk_label"]``
+   * - HMC/clock output channel for RX
+     - ``cfg["clock"]["hmc7044_rx_channel"]``
+   * - HMC/clock output channel for TX
+     - ``cfg["clock"]["hmc7044_tx_channel"]``
+   * - Board wiring specifics (SPI/CS/GPIO/link IDs)
+     - ``ad9081_board`` / ``adrv9009_board`` / ``fmcdaq2_board`` profile keys
+
+Reference implementation
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the ADRV9009 example for a complete adijif-driven flow:
+
+- ``examples/xsa/adrv9009_zcu102.py``
+
+The script demonstrates both quick-mode JESD extraction and optional
+``solve()`` usage, then feeds those values directly into ``XsaPipeline``.
+
 You can also pass ``profile="ad9081_zcu102"`` (or another built-in profile) to
 ``XsaPipeline.run()``. If no profile is passed, the pipeline will auto-select a
 matching profile when available (for example, ``ad9081_zcu102``).
