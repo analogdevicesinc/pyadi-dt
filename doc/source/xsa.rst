@@ -275,6 +275,7 @@ ADRV family profile variants include:
 
 - ``adrv9008_zcu102``
 - ``adrv9009_zcu102``
+- ``adrv937x_zcu102``
 - ``adrv9025_zcu102`` (also selected from ``adrv9026``-named JESD labels)
 
 For ADRV9008 Kuiper projects, prefer explicit profile selection:

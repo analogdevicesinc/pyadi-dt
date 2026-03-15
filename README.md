@@ -169,6 +169,7 @@ auto-apply board profiles based on detected converter + FPGA platform.
 - `ad9081_zcu102`
 - `adrv9008_zcu102`
 - `adrv9009_zcu102`
+- `adrv937x_zcu102`
 - `adrv9025_zcu102`
 - `fmcdaq2_zc706`
 - `fmcdaq2_zcu102`
@@ -190,6 +191,7 @@ flowchart LR
 Primary reference:
 - `examples/xsa/adrv9009_zcu102.py` (adijif-driven config derivation)
 - `examples/xsa/adrv9008_zcu102.py` (explicit ADRV9008 profile flow)
+- `examples/xsa/adrv937x_zcu102.py` (explicit ADRV937x profile flow)
 - `examples/xsa/adrv9025_zcu102.py` (Kuiper/local XSA ADRV9025 flow)
 
 Detailed API docs, parameter tables, and full adijif mapping are documented in:

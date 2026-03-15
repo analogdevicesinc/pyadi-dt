@@ -435,6 +435,35 @@ def test_pipeline_derive_name_uses_adrv9025_family_for_adrv9026_labels():
     assert XsaPipeline()._derive_name(topo) == "adrv9025_zcu102"
 
 
+def test_pipeline_derive_name_uses_adrv937x_family_for_ad9371_labels():
+    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+
+    topo = XsaTopology(
+        fpga_part="xczu9eg_ffvb1156_-2",
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9371_rx_jesd_rx_axi",
+                base_addr=0x84AB0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="rx_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9371_tx_jesd_tx_axi",
+                base_addr=0x84AC0000,
+                num_lanes=4,
+                irq=None,
+                link_clk="tx_clk",
+                direction="tx",
+            )
+        ],
+    )
+    assert XsaPipeline()._derive_name(topo) == "adrv937x_zcu102"
+
+
 def test_pipeline_writes_manifest_parity_reports_when_reference_dts_is_provided(
     xsa_path, cfg, tmp_path
 ):

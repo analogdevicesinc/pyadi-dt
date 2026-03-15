@@ -78,6 +78,7 @@ class XsaTopology:
                 "adrv9025",
                 "adrv9026",
                 "adrv9009",
+                "ad9371",
                 "ad9680",
                 "ad9144",
             )
@@ -88,6 +89,8 @@ class XsaTopology:
                 if family in converter_families:
                     if family == "adrv9026":
                         return "adrv9025"
+                    if family == "ad9371":
+                        return "adrv937x"
                     return family
             return converter_families[0]
         jesd_names = self._jesd_name_blob()
@@ -99,6 +102,8 @@ class XsaTopology:
             return "ad9081"
         if "adrv9009" in jesd_names:
             return "adrv9009"
+        if "ad9371" in jesd_names or "adrv937" in jesd_names:
+            return "adrv937x"
         return "unknown"
 
     def inferred_platform(self) -> str:
@@ -126,6 +131,7 @@ _ADI_CONVERTER_TYPES = {
     "axi_adrv9009",
     "axi_adrv9025",
     "axi_adrv9026",
+    "axi_ad9371",
 }
 _PART_TO_PLATFORM = {
     "xczu9eg": "zcu102",
