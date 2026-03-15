@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import sys
+import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock
+
+import pytest
 
 
 def _load_example_module(file_name: str):
@@ -186,3 +190,37 @@ def test_main_supports_download_kuiper_flow_zcu102(monkeypatch, tmp_path):
 
     module.main()
     assert runner.run.call_args.kwargs["xsa_path"] == fake_xsa
+
+
+def test_download_kuiper_xsa_reports_available_projects(monkeypatch, tmp_path):
+    module = _load_example_module("fmcdaq2_zc706.py")
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir(parents=True)
+    out_dir = tmp_path / "out"
+    out_dir.mkdir(parents=True)
+
+    tarball = cache_dir / "2023_r2_latest_boot_partition.tar.gz"
+    nested_buf = io.BytesIO()
+    with tarfile.open(fileobj=nested_buf, mode="w:gz") as inner:
+        info = tarfile.TarInfo(name="system_top.xsa")
+        payload = b"FAKE_XSA"
+        info.size = len(payload)
+        inner.addfile(info, io.BytesIO(payload))
+    nested_bytes = nested_buf.getvalue()
+    with tarfile.open(tarball, mode="w:gz") as outer:
+        member = tarfile.TarInfo(
+            name="zynqmp-zcu102-rev10-fmcdaq2/bootgen_sysfiles.tgz"
+        )
+        member.size = len(nested_bytes)
+        outer.addfile(member, io.BytesIO(nested_bytes))
+
+    with pytest.raises(RuntimeError) as ex:
+        module._download_kuiper_xsa(
+            release="2023_r2",
+            project="zynq-zc706-adv7511-fmcdaq2",
+            cache_dir=cache_dir,
+            out_dir=out_dir,
+        )
+    msg = str(ex.value)
+    assert "project not found" in msg
+    assert "zynqmp-zcu102-rev10-fmcdaq2" in msg

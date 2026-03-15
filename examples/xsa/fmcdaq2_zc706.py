@@ -139,7 +139,23 @@ def _download_kuiper_xsa(
 
     nested_member_name = f"{project}/bootgen_sysfiles.tgz"
     with tarfile.open(tarball, "r:gz") as outer_tar:
-        nested_member = outer_tar.getmember(nested_member_name)
+        try:
+            nested_member = outer_tar.getmember(nested_member_name)
+        except KeyError as ex:
+            available_projects = sorted(
+                {
+                    member.name.split("/", 1)[0]
+                    for member in outer_tar.getmembers()
+                    if member.name.endswith("/bootgen_sysfiles.tgz")
+                }
+            )
+            preview = ", ".join(available_projects[:8])
+            if len(available_projects) > 8:
+                preview += ", ..."
+            raise RuntimeError(
+                f"project not found in Kuiper boot partition archive: {project}. "
+                f"Available projects: {preview}"
+            ) from ex
         nested_f = outer_tar.extractfile(nested_member)
         if nested_f is None:
             raise RuntimeError(f"missing member data: {nested_member_name}")
