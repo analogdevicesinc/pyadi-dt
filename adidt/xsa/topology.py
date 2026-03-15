@@ -74,6 +74,7 @@ class XsaTopology:
         if self.converters:
             known_priority = (
                 "ad9081",
+                "ad9082",
                 "ad9084",
                 "adrv9025",
                 "adrv9026",
@@ -125,6 +126,7 @@ _ADI_AD9081_TPL_DAC_TYPES = {"ad_ip_jesd204_tpl_dac"}
 _ADI_CONVERTER_TYPES = {
     "axi_ad9680",
     "axi_ad9081",
+    "axi_ad9082",
     "axi_ad9084",
     "axi_ad9162",
     "axi_ad9144",

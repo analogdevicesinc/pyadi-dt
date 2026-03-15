@@ -266,6 +266,10 @@ You can also pass ``profile="ad9081_zcu102"`` (or another built-in profile) to
 ``XsaPipeline.run()``. If no profile is passed, the pipeline will auto-select a
 matching profile when available (for example, ``ad9081_zcu102``).
 
+For AD9082 Kuiper projects, prefer explicit profile selection:
+``profile="ad9082_zcu102"``. AD9081/AD9082 designs often share ``mxfe`` JESD
+instance names, so topology-only auto-inference is ambiguous.
+
 Auto-selection also covers FMCDAQ2 variants:
 
 - ``fmcdaq2_zcu102`` (ZynqMP/ZCU102)

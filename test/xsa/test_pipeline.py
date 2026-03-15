@@ -143,6 +143,28 @@ def test_pipeline_explicit_profile_controls_output_names(xsa_path, cfg, tmp_path
     assert result["report"].name == "adrv9008_zcu102_report.html"
 
 
+def test_pipeline_explicit_ad9082_profile_applies_defaults(xsa_path, cfg, tmp_path):
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa_path, cfg, tmp_path, profile="ad9082_zcu102")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["clock"]["hmc7044_rx_channel"] == 10
+    assert merged_cfg["clock"]["hmc7044_tx_channel"] == 6
+    assert merged_cfg["ad9081_board"]["clock_spi"] == "spi1"
+    assert merged_cfg["ad9081_board"]["adc_spi"] == "spi0"
+
+
 def test_pipeline_auto_selects_fmcdaq2_zc706_profile(tmp_path):
     xsa = tmp_path / "fmcdaq2_zc706.xsa"
     hwh_content = """<?xml version="1.0"?>
@@ -395,6 +417,24 @@ def test_pipeline_derive_name_ignores_unknown_converter_when_known_exists():
         ],
     )
     assert XsaPipeline()._derive_name(topo) == "adrv9009_zcu102"
+
+
+def test_pipeline_derive_name_handles_ad9082_converter_type():
+    from adidt.xsa.topology import ConverterInstance, XsaTopology
+
+    topo = XsaTopology(
+        fpga_part="xczu9eg_ffvb1156_-2",
+        converters=[
+            ConverterInstance(
+                name="axi_ad9082_0",
+                ip_type="axi_ad9082",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    assert XsaPipeline()._derive_name(topo) == "ad9082_zcu102"
 
 
 def test_pipeline_derive_name_uses_substring_platform_inference():

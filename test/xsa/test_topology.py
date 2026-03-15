@@ -158,6 +158,21 @@ def test_xsa_topology_infers_ad9084_family_from_jesd_names():
     assert topo.inferred_converter_family() == "ad9084"
 
 
+def test_xsa_topology_infers_ad9082_family_from_converter_type():
+    topo = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_ad9082_0",
+                ip_type="axi_ad9082",
+                base_addr=0x84A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ]
+    )
+    assert topo.inferred_converter_family() == "ad9082"
+
+
 def test_xsa_topology_prefers_known_converter_family_when_first_is_unknown():
     topo = XsaTopology(
         converters=[
