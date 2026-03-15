@@ -640,6 +640,24 @@ def test_pipeline_derive_name_handles_fmcdaq3_converter_types():
     assert XsaPipeline()._derive_name(topo) == "fmcdaq3_zcu102"
 
 
+def test_pipeline_derive_name_handles_adrv9002_converter_type():
+    from adidt.xsa.topology import ConverterInstance, XsaTopology
+
+    topo = XsaTopology(
+        fpga_part="xc7z045ffg900-2",
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9001_0",
+                ip_type="axi_adrv9001",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    assert XsaPipeline()._derive_name(topo) == "adrv9002_zc706"
+
+
 def test_pipeline_derive_name_handles_ad9082_converter_type():
     from adidt.xsa.topology import ConverterInstance, XsaTopology
 

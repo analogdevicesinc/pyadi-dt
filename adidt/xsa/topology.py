@@ -87,6 +87,7 @@ class XsaTopology:
                 "adrv9025",
                 "adrv9026",
                 "adrv9009",
+                "adrv9001",
                 "ad9371",
                 "ad9680",
                 "ad9152",
@@ -99,6 +100,8 @@ class XsaTopology:
                 if family in converter_families:
                     if family == "adrv9026":
                         return "adrv9025"
+                    if family == "adrv9001":
+                        return "adrv9002"
                     if family == "ad9371":
                         return "adrv937x"
                     return family
@@ -140,6 +143,7 @@ _ADI_CONVERTER_TYPES = {
     "axi_ad9162",
     "axi_ad9144",
     "axi_ad9152",
+    "axi_adrv9001",
     "axi_adrv9009",
     "axi_adrv9025",
     "axi_adrv9026",

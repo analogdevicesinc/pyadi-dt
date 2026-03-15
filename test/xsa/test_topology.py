@@ -245,6 +245,21 @@ def test_xsa_topology_prefers_known_converter_family_when_first_is_unknown():
     assert topo.inferred_converter_family() == "adrv9009"
 
 
+def test_xsa_topology_infers_adrv9002_family_from_adrv9001_converter_type():
+    topo = XsaTopology(
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9001_0",
+                ip_type="axi_adrv9001",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ]
+    )
+    assert topo.inferred_converter_family() == "adrv9002"
+
+
 def test_xsa_topology_infers_adrv9025_family_from_adrv9026_jesd_names():
     topo = XsaTopology(
         jesd204_rx=[
