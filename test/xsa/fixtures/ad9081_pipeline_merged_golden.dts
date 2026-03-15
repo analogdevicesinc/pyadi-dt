@@ -10,7 +10,6 @@
 		clock-names = "clkin1", "s_axi_aclk";
 		clock-output-names = "axi_clkgen_0_0", "axi_clkgen_0_1";
 	};
-
 	axi_jesd204_rx_0: axi-jesd204-rx@44a90000 {
 		compatible = "adi,axi-jesd204-rx-1.0";
 		reg = <0x0 0x44a90000 0x0 0x1000>;
@@ -28,7 +27,6 @@
 
 		#sound-dai-cells = <0>;
 	};
-
 	axi_jesd204_tx_0: axi-jesd204-tx@44b90000 {
 		compatible = "adi,axi-jesd204-tx-1.0";
 		reg = <0x0 0x44b90000 0x0 0x1000>;

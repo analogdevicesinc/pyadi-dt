@@ -322,6 +322,11 @@ def test_xsa_topology_infers_platform_from_part_substring():
     assert topo.inferred_platform() == "vpk180"
 
 
+def test_xsa_topology_infers_platform_without_xc_prefix():
+    topo = XsaTopology(fpga_part="7z045-ffg900-2")
+    assert topo.inferred_platform() == "zc706"
+
+
 FIXTURE_HWH = Path(__file__).parent / "fixtures" / "ad9081_zcu102.hwh"
 
 

@@ -86,6 +86,7 @@ class NodeBuilder:
         """
         env = self._make_jinja_env()
         clock_map = self._build_clock_map(topology)
+        ps_clk_label, ps_clk_index, gpio_label = self._platform_ps_labels(topology)
         result: dict[str, list[str]] = {
             "clkgens": [],
             "jesd204_rx": [],
@@ -113,7 +114,9 @@ class NodeBuilder:
         for clkgen in topology.clkgens:
             if is_adrv9009_design and self._is_adrv90xx_name(clkgen.name):
                 continue
-            result["clkgens"].append(self._render_clkgen(env, clkgen))
+            result["clkgens"].append(
+                self._render_clkgen(env, clkgen, ps_clk_label, ps_clk_index)
+            )
 
         for inst in topology.jesd204_rx:
             if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
@@ -123,7 +126,7 @@ class NodeBuilder:
             if is_fmcdaq2_design:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
-                inst, clock_map, cfg, "rx"
+                inst, clock_map, cfg, "rx", ps_clk_label, ps_clk_index
             )
             jesd_input_label, jesd_input_link_id = self._resolve_jesd_input(
                 inst, cfg, "rx", clkgen_label
@@ -138,6 +141,8 @@ class NodeBuilder:
                     device_clk_index,
                     jesd_input_label,
                     jesd_input_link_id,
+                    ps_clk_label,
+                    ps_clk_index,
                 )
             )
             rx_labels.append(inst.name.replace("-", "_"))
@@ -150,7 +155,7 @@ class NodeBuilder:
             if is_fmcdaq2_design:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
-                inst, clock_map, cfg, "tx"
+                inst, clock_map, cfg, "tx", ps_clk_label, ps_clk_index
             )
             jesd_input_label, jesd_input_link_id = self._resolve_jesd_input(
                 inst, cfg, "tx", clkgen_label
@@ -165,6 +170,8 @@ class NodeBuilder:
                     device_clk_index,
                     jesd_input_label,
                     jesd_input_link_id,
+                    ps_clk_label,
+                    ps_clk_index,
                 )
             )
             tx_labels.append(inst.name.replace("-", "_"))
@@ -180,14 +187,24 @@ class NodeBuilder:
                 self._render_converter(env, conv, rx_label, tx_label)
             )
 
-        result["converters"].extend(self._build_ad9081_nodes(topology, cfg))
+        result["converters"].extend(
+            self._build_ad9081_nodes(
+                topology, cfg, ps_clk_label, ps_clk_index, gpio_label
+            )
+        )
         result["converters"].extend(self._build_adrv9009_nodes(topology, cfg))
-        result["converters"].extend(self._build_fmcdaq2_nodes(topology, cfg))
+        result["converters"].extend(
+            self._build_fmcdaq2_nodes(topology, cfg, ps_clk_label, ps_clk_index)
+        )
 
         return result
 
     def _build_fmcdaq2_nodes(
-        self, topology: XsaTopology, cfg: dict[str, Any]
+        self,
+        topology: XsaTopology,
+        cfg: dict[str, Any],
+        ps_clk_label: str,
+        ps_clk_index: int,
     ) -> list[str]:
         if not topology.is_fmcdaq2_design():
             return []
@@ -326,7 +343,7 @@ class NodeBuilder:
             "\t};",
             f"\t&{fmc.adc_jesd_label} {{\n"
             '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
-            f"\t\tclocks = <&zynqmp_clk 71>, <&{fmc.adc_xcvr_label} 1>, <&{fmc.adc_xcvr_label} 0>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{fmc.adc_xcvr_label} 1>, <&{fmc.adc_xcvr_label} 0>;\n"
             '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
             "\t\t#clock-cells = <0>;\n"
             '\t\tclock-output-names = "jesd_adc_lane_clk";\n'
@@ -338,7 +355,7 @@ class NodeBuilder:
             "\t};",
             f"\t&{fmc.dac_jesd_label} {{\n"
             '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
-            f"\t\tclocks = <&zynqmp_clk 71>, <&{fmc.dac_xcvr_label} 1>, <&{fmc.dac_xcvr_label} 0>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{fmc.dac_xcvr_label} 1>, <&{fmc.dac_xcvr_label} 0>;\n"
             '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
             "\t\t#clock-cells = <0>;\n"
             '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
@@ -586,6 +603,8 @@ class NodeBuilder:
         clock_map: dict[str, ClkgenInstance],
         cfg: dict[str, Any],
         direction: str,
+        ps_clk_label: str,
+        ps_clk_index: int,
     ) -> tuple[str, str, int]:
         clkgen = clock_map.get(inst.link_clk)
         unresolved_clk = clkgen is None
@@ -606,7 +625,7 @@ class NodeBuilder:
             if unresolved_clk:
                 # External clock nets from HWH are not valid DTS labels.
                 # Fall back to a known PS clock phandle to keep DTS valid.
-                return (clkgen_label, "zynqmp_clk", 71)
+                return (clkgen_label, ps_clk_label, ps_clk_index)
             device_clk_label = clkgen_label
 
         if device_clk_label == "hmc7044":
@@ -656,6 +675,8 @@ class NodeBuilder:
         device_clk_index: int,
         jesd_input_label: str,
         jesd_input_link_id: int,
+        ps_clk_label: str,
+        ps_clk_index: int,
     ) -> str:
         from .exceptions import ConfigError
 
@@ -670,6 +691,8 @@ class NodeBuilder:
             device_clk_index=device_clk_index,
             jesd_input_label=jesd_input_label,
             jesd_input_link_id=jesd_input_link_id,
+            ps_clk_label=ps_clk_label,
+            ps_clk_index=ps_clk_index,
         )
 
     def _render_converter(
@@ -689,8 +712,24 @@ class NodeBuilder:
             spi_cs=conv.spi_cs if conv.spi_cs is not None else 0,
         )
 
-    def _render_clkgen(self, env: Environment, inst: ClkgenInstance) -> str:
-        return env.get_template("clkgen.tmpl").render(instance=inst)
+    def _render_clkgen(
+        self,
+        env: Environment,
+        inst: ClkgenInstance,
+        ps_clk_label: str,
+        ps_clk_index: int,
+    ) -> str:
+        return env.get_template("clkgen.tmpl").render(
+            instance=inst,
+            ps_clk_label=ps_clk_label,
+            ps_clk_index=ps_clk_index,
+        )
+
+    @staticmethod
+    def _platform_ps_labels(topology: XsaTopology) -> tuple[str, int, str]:
+        if topology.inferred_platform() == "zc706":
+            return ("clkc", 15, "gpio0")
+        return ("zynqmp_clk", 71, "gpio")
 
     @staticmethod
     def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
@@ -786,7 +825,12 @@ class NodeBuilder:
         return modes[0] if direction == "rx" else modes[1]
 
     def _build_ad9081_nodes(
-        self, topology: XsaTopology, cfg: dict[str, Any]
+        self,
+        topology: XsaTopology,
+        cfg: dict[str, Any],
+        ps_clk_label: str,
+        ps_clk_index: int,
+        gpio_label: str,
     ) -> list[str]:
         has_ad9081 = any(c.ip_type == "axi_ad9081" for c in topology.converters)
         if not has_ad9081:
@@ -1001,12 +1045,12 @@ class NodeBuilder:
             '\t\t\tcompatible = "adi,ad9081";\n'
             f"\t\t\treg = <{adc_cs}>;\n"
             "\t\t\tspi-max-frequency = <5000000>;\n"
-            f"\t\t\treset-gpios = <&gpio {reset_gpio} 0>;\n"
-            f"\t\t\tsysref-req-gpios = <&gpio {sysref_req_gpio} 0>;\n"
-            f"\t\t\trx2-enable-gpios = <&gpio {rx2_enable_gpio} 0>;\n"
-            f"\t\t\trx1-enable-gpios = <&gpio {rx1_enable_gpio} 0>;\n"
-            f"\t\t\ttx2-enable-gpios = <&gpio {tx2_enable_gpio} 0>;\n"
-            f"\t\t\ttx1-enable-gpios = <&gpio {tx1_enable_gpio} 0>;\n"
+            f"\t\t\treset-gpios = <&{gpio_label} {reset_gpio} 0>;\n"
+            f"\t\t\tsysref-req-gpios = <&{gpio_label} {sysref_req_gpio} 0>;\n"
+            f"\t\t\trx2-enable-gpios = <&{gpio_label} {rx2_enable_gpio} 0>;\n"
+            f"\t\t\trx1-enable-gpios = <&{gpio_label} {rx1_enable_gpio} 0>;\n"
+            f"\t\t\ttx2-enable-gpios = <&{gpio_label} {tx2_enable_gpio} 0>;\n"
+            f"\t\t\ttx1-enable-gpios = <&{gpio_label} {tx1_enable_gpio} 0>;\n"
             "\t\t\tclocks = <&hmc7044 2>;\n"
             '\t\t\tclock-names = "dev_clk";\n'
             "\t\t\t#clock-cells = <1>;\n"
@@ -1123,7 +1167,7 @@ class NodeBuilder:
             nodes.append(
                 f"\t&{lbl} {{\n"
                 '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
-                f"\t\tclocks = <&zynqmp_clk 71>, <&hmc7044 {rx_chan}>, <&axi_mxfe_rx_xcvr 0>;\n"
+                f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {rx_chan}>, <&axi_mxfe_rx_xcvr 0>;\n"
                 '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"
@@ -1140,7 +1184,7 @@ class NodeBuilder:
             nodes.append(
                 f"\t&{lbl} {{\n"
                 '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
-                f"\t\tclocks = <&zynqmp_clk 71>, <&hmc7044 {tx_chan}>, <&axi_mxfe_tx_xcvr 0>;\n"
+                f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {tx_chan}>, <&axi_mxfe_tx_xcvr 0>;\n"
                 '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"

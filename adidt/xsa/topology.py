@@ -156,6 +156,9 @@ _PART_TO_PLATFORM = {
     "xcvp1202": "vpk180",
     "xc7z045": "zc706",
     "xc7z020": "zc702",
+    # Some exported HWHs omit the leading "xc" (e.g. "7z045-ffg900-2").
+    "7z045": "zc706",
+    "7z020": "zc702",
 }
 
 

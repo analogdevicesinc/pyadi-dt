@@ -1,11 +1,10 @@
-{# Context vars: instance, jesd, clkgen_label, device_clk_label, device_clk_index #}
 	{{ instance.name | replace("-", "_") }}: axi-jesd204-{{ instance.direction }}@{{ "%08x" | format(instance.base_addr) }} {
 		compatible = "adi,axi-jesd204-{{ instance.direction }}-1.0";
 		reg = <0x0 0x{{ "%08x" | format(instance.base_addr) }} 0x0 0x1000>;
 {%- if instance.irq is not none %}
 		interrupts = <0 {{ instance.irq }} IRQ_TYPE_LEVEL_HIGH>;
 {%- endif %}
-		clocks = <&zynqmp_clk 71>, <&{{ device_clk_label }} {{ device_clk_index }}>, <&{{ jesd_input_label }} 0>;
+		clocks = <&{{ ps_clk_label }} {{ ps_clk_index }}>, <&{{ device_clk_label }} {{ device_clk_index }}>, <&{{ jesd_input_label }} 0>;
 		clock-names = "s_axi_aclk", "device_clk", "lane_clk";
 		#clock-cells = <0>;
 		clock-output-names = "{{ instance.name | replace('-', '_') }}_lane_clk";
