@@ -44,6 +44,8 @@ class NodeBuilder:
         ) and any(
             "mxfe" in j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
         )
+        converter_types = {c.ip_type for c in topology.converters}
+        is_fmcdaq2_design = {"axi_ad9680", "axi_ad9144"}.issubset(converter_types)
         rx_labels: list[str] = []
         tx_labels: list[str] = []
 
@@ -56,6 +58,8 @@ class NodeBuilder:
             if is_adrv9009_design and "adrv9009" in inst.name.lower():
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
+                continue
+            if is_fmcdaq2_design:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "rx"
@@ -82,6 +86,8 @@ class NodeBuilder:
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
+            if is_fmcdaq2_design:
+                continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "tx"
             )
@@ -105,6 +111,8 @@ class NodeBuilder:
         for conv in topology.converters:
             if is_ad9081_mxfe_design and conv.ip_type == "axi_ad9081":
                 continue
+            if is_fmcdaq2_design and conv.ip_type in {"axi_ad9680", "axi_ad9144"}:
+                continue
             rx_label = rx_labels[0] if rx_labels else "jesd_rx"
             tx_label = tx_labels[0] if tx_labels else "jesd_tx"
             result["converters"].append(
@@ -113,8 +121,143 @@ class NodeBuilder:
 
         result["converters"].extend(self._build_ad9081_nodes(topology, cfg))
         result["converters"].extend(self._build_adrv9009_nodes(topology, cfg))
+        result["converters"].extend(self._build_fmcdaq2_nodes(topology, cfg))
 
         return result
+
+    def _build_fmcdaq2_nodes(
+        self, topology: XsaTopology, cfg: dict[str, Any]
+    ) -> list[str]:
+        types = {c.ip_type for c in topology.converters}
+        if not {"axi_ad9680", "axi_ad9144"}.issubset(types):
+            return []
+
+        board_cfg = cfg.get("fmcdaq2_board", {})
+        spi_bus = str(board_cfg.get("spi_bus", "spi0"))
+        clock_cs = int(board_cfg.get("clock_cs", 0))
+        adc_cs = int(board_cfg.get("adc_cs", 1))
+        dac_cs = int(board_cfg.get("dac_cs", 2))
+        clock_vcxo_hz = int(board_cfg.get("clock_vcxo_hz", 125000000))
+        clock_spi_max = int(board_cfg.get("clock_spi_max_frequency", 10000000))
+        adc_spi_max = int(board_cfg.get("adc_spi_max_frequency", 10000000))
+        dac_spi_max = int(board_cfg.get("dac_spi_max_frequency", 10000000))
+        adc_core_label = str(board_cfg.get("adc_core_label", "axi_ad9680_core"))
+        dac_core_label = str(board_cfg.get("dac_core_label", "axi_ad9144_core"))
+        adc_xcvr_label = str(board_cfg.get("adc_xcvr_label", "axi_ad9680_adxcvr"))
+        dac_xcvr_label = str(board_cfg.get("dac_xcvr_label", "axi_ad9144_adxcvr"))
+        adc_jesd_label = str(board_cfg.get("adc_jesd_label", "axi_ad9680_jesd204_rx"))
+        dac_jesd_label = str(board_cfg.get("dac_jesd_label", "axi_ad9144_jesd204_tx"))
+        adc_jesd_link_id = int(board_cfg.get("adc_jesd_link_id", 1))
+        dac_jesd_link_id = int(board_cfg.get("dac_jesd_link_id", 0))
+        gpio_controller = str(board_cfg.get("gpio_controller", "gpio0"))
+        clk_sync_gpio = board_cfg.get("clk_sync_gpio")
+        clk_status0_gpio = board_cfg.get("clk_status0_gpio")
+        clk_status1_gpio = board_cfg.get("clk_status1_gpio")
+        dac_txen_gpio = board_cfg.get("dac_txen_gpio")
+        dac_reset_gpio = board_cfg.get("dac_reset_gpio")
+        dac_irq_gpio = board_cfg.get("dac_irq_gpio")
+        adc_powerdown_gpio = board_cfg.get("adc_powerdown_gpio")
+        adc_fastdetect_a_gpio = board_cfg.get("adc_fastdetect_a_gpio")
+        adc_fastdetect_b_gpio = board_cfg.get("adc_fastdetect_b_gpio")
+        jesd_cfg = cfg.get("jesd", {})
+        rx_jesd_cfg = jesd_cfg.get("rx", {})
+        tx_jesd_cfg = jesd_cfg.get("tx", {})
+        rx_l = int(rx_jesd_cfg.get("L", 4))
+        rx_m = int(rx_jesd_cfg.get("M", 2))
+        rx_s = int(rx_jesd_cfg.get("S", 1))
+        tx_l = int(tx_jesd_cfg.get("L", 4))
+        tx_m = int(tx_jesd_cfg.get("M", 2))
+        tx_s = int(tx_jesd_cfg.get("S", 1))
+        sys_clk_map = {"XCVR_CPLL": 0, "XCVR_QPLL1": 2, "XCVR_QPLL": 3, "XCVR_QPLL0": 3}
+        out_clk_map = {"XCVR_REFCLK": 4, "XCVR_REFCLK_DIV2": 4}
+        fpga_adc = cfg.get("fpga_adc", {})
+        fpga_dac = cfg.get("fpga_dac", {})
+        adc_sys_clk_select = int(
+            sys_clk_map.get(str(fpga_adc.get("sys_clk_select", "XCVR_CPLL")).upper(), 0)
+        )
+        dac_sys_clk_select = int(
+            sys_clk_map.get(str(fpga_dac.get("sys_clk_select", "XCVR_QPLL")).upper(), 3)
+        )
+        adc_out_clk_select = int(
+            out_clk_map.get(str(fpga_adc.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
+        )
+        dac_out_clk_select = int(
+            out_clk_map.get(str(fpga_dac.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
+        )
+
+        clk_gpio_lines = ""
+        if clk_sync_gpio is not None:
+            clk_gpio_lines += (
+                f"\t\t\tsync-gpios = <&{gpio_controller} {int(clk_sync_gpio)} 0>;\n"
+            )
+        if clk_status0_gpio is not None:
+            clk_gpio_lines += f"\t\t\tstatus0-gpios = <&{gpio_controller} {int(clk_status0_gpio)} 0>;\n"
+        if clk_status1_gpio is not None:
+            clk_gpio_lines += f"\t\t\tstatus1-gpios = <&{gpio_controller} {int(clk_status1_gpio)} 0>;\n"
+
+        dac_gpio_lines = ""
+        if dac_txen_gpio is not None:
+            dac_gpio_lines += f"\t\t\ttxen-gpios = <&{gpio_controller} {int(dac_txen_gpio)} 0>;\n"
+        if dac_reset_gpio is not None:
+            dac_gpio_lines += f"\t\t\treset-gpios = <&{gpio_controller} {int(dac_reset_gpio)} 0>;\n"
+        if dac_irq_gpio is not None:
+            dac_gpio_lines += f"\t\t\tirq-gpios = <&{gpio_controller} {int(dac_irq_gpio)} 0>;\n"
+
+        adc_gpio_lines = ""
+        if adc_powerdown_gpio is not None:
+            adc_gpio_lines += f"\t\t\tpowerdown-gpios = <&{gpio_controller} {int(adc_powerdown_gpio)} 0>;\n"
+        if adc_fastdetect_a_gpio is not None:
+            adc_gpio_lines += f"\t\t\tfastdetect-a-gpios = <&{gpio_controller} {int(adc_fastdetect_a_gpio)} 0>;\n"
+        if adc_fastdetect_b_gpio is not None:
+            adc_gpio_lines += f"\t\t\tfastdetect-b-gpios = <&{gpio_controller} {int(adc_fastdetect_b_gpio)} 0>;\n"
+
+        return [
+            f"\t&{spi_bus} {{\n"
+            '\t\tstatus = "okay";\n'
+            f"\t\tclk0_ad9523: ad9523-1@{clock_cs} {{\n"
+            '\t\t\tcompatible = "adi,ad9523-1";\n'
+            f"\t\t\treg = <{clock_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{clock_spi_max}>;\n"
+            "\t\t\t#clock-cells = <1>;\n"
+            f"\t\t\tadi,vcxo-freq = <{clock_vcxo_hz}>;\n"
+            f"{clk_gpio_lines}"
+            "\t\t};\n"
+            f"\t\tadc0_ad9680: ad9680@{adc_cs} {{\n"
+            '\t\t\tcompatible = "adi,ad9680";\n'
+            f"\t\t\treg = <{adc_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{adc_spi_max}>;\n"
+            "\t\t\tjesd204-link-ids = <1 0>;\n"
+            f"\t\t\tjesd204-inputs = <&{adc_jesd_label} 0 {adc_jesd_link_id}>, <&{dac_jesd_label} 0 {dac_jesd_link_id}>;\n"
+            f"{adc_gpio_lines}"
+            "\t\t};\n"
+            f"\t\tdac0_ad9144: ad9144@{dac_cs} {{\n"
+            '\t\t\tcompatible = "adi,ad9144";\n'
+            f"\t\t\treg = <{dac_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{dac_spi_max}>;\n"
+            f"{dac_gpio_lines}"
+            "\t\t};\n"
+            "\t};",
+            f"\t&{adc_core_label} {{\n"
+            "\t\tspibus-connected = <&adc0_ad9680>;\n"
+            "\t};",
+            f"\t&{dac_core_label} {{\n"
+            "\t\tspibus-connected = <&dac0_ad9144>;\n"
+            "\t};",
+            f"\t&{adc_xcvr_label} {{\n"
+            f"\t\tadi,sys-clk-select = <{adc_sys_clk_select}>;\n"
+            f"\t\tadi,out-clk-select = <{adc_out_clk_select}>;\n"
+            f"\t\tadi,jesd-l = <{rx_l}>;\n"
+            f"\t\tadi,jesd-m = <{rx_m}>;\n"
+            f"\t\tadi,jesd-s = <{rx_s}>;\n"
+            "\t};",
+            f"\t&{dac_xcvr_label} {{\n"
+            f"\t\tadi,sys-clk-select = <{dac_sys_clk_select}>;\n"
+            f"\t\tadi,out-clk-select = <{dac_out_clk_select}>;\n"
+            f"\t\tadi,jesd-l = <{tx_l}>;\n"
+            f"\t\tadi,jesd-m = <{tx_m}>;\n"
+            f"\t\tadi,jesd-s = <{tx_s}>;\n"
+            "\t};",
+        ]
 
     def _make_jinja_env(self) -> Environment:
         from .exceptions import XsaParseError

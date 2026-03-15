@@ -98,7 +98,10 @@ class XsaPipeline:
 
     def _derive_name(self, topology: XsaTopology) -> str:
         conv_type = "unknown"
-        if topology.converters:
+        converter_types = {c.ip_type for c in topology.converters}
+        if {"axi_ad9680", "axi_ad9144"}.issubset(converter_types):
+            conv_type = "fmcdaq2"
+        elif topology.converters:
             conv_type = re.sub(r"^axi_", "", topology.converters[0].ip_type)
         platform = "unknown"
         for prefix, plat_name in _PART_TO_PLATFORM.items():

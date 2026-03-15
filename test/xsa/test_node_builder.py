@@ -487,6 +487,155 @@ def test_build_ad9081_mxfe_applies_board_overrides(cfg):
     assert "tx1-enable-gpios = <&gpio 94 0>;" in merged
 
 
+def test_build_fmcdaq2_zc706_nodes(cfg):
+    topo_fmcdaq2 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9680_jesd204_rx",
+                base_addr=0x44A90000,
+                num_lanes=4,
+                irq=61,
+                link_clk="rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9144_jesd204_tx",
+                base_addr=0x44B90000,
+                num_lanes=4,
+                irq=62,
+                link_clk="tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x44A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x44A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    cfg["fmcdaq2_board"] = {
+        "spi_bus": "spi0",
+        "clock_cs": 0,
+        "adc_cs": 1,
+        "dac_cs": 2,
+        "clock_vcxo_hz": 125000000,
+        "adc_core_label": "axi_ad9680_core",
+        "dac_core_label": "axi_ad9144_core",
+        "adc_jesd_link_id": 1,
+        "dac_jesd_link_id": 0,
+    }
+    cfg["clock"]["rx_device_clk_label"] = "clk0_ad9523"
+    cfg["clock"]["tx_device_clk_label"] = "clk0_ad9523"
+    cfg["clock"]["rx_device_clk_index"] = 13
+    cfg["clock"]["tx_device_clk_index"] = 1
+
+    nodes = NodeBuilder().build(topo_fmcdaq2, cfg)
+    merged = "\n".join(nodes["converters"])
+    jesd = "\n".join(nodes["jesd204_rx"] + nodes["jesd204_tx"])
+
+    assert "&spi0 {" in merged
+    assert "clk0_ad9523: ad9523-1@0" in merged
+    assert "adc0_ad9680: ad9680@1" in merged
+    assert "dac0_ad9144: ad9144@2" in merged
+    assert "jesd204-link-ids = <1 0>;" in merged
+    assert "&axi_ad9680_core {" in merged
+    assert "&axi_ad9144_core {" in merged
+    assert jesd == ""
+
+
+def test_build_fmcdaq2_zcu102_nodes(cfg):
+    topo_fmcdaq2 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9680_jesd204_rx",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=61,
+                link_clk="rx_device_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9144_jesd204_tx",
+                base_addr=0x84B90000,
+                num_lanes=4,
+                irq=62,
+                link_clk="tx_device_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9680_0",
+                ip_type="axi_ad9680",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_ad9144_0",
+                ip_type="axi_ad9144",
+                base_addr=0x84A20000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+    )
+    cfg["fmcdaq2_board"] = {
+        "spi_bus": "fmc_spi",
+        "clock_cs": 0,
+        "adc_cs": 1,
+        "dac_cs": 2,
+        "clock_vcxo_hz": 125000000,
+        "gpio_controller": "gpio",
+        "clk_sync_gpio": 116,
+        "clk_status0_gpio": 110,
+        "clk_status1_gpio": 111,
+        "dac_txen_gpio": 119,
+        "dac_reset_gpio": 118,
+        "dac_irq_gpio": 112,
+        "adc_powerdown_gpio": 120,
+        "adc_fastdetect_a_gpio": 113,
+        "adc_fastdetect_b_gpio": 114,
+        "adc_core_label": "axi_ad9680_core",
+        "dac_core_label": "axi_ad9144_core",
+        "adc_jesd_link_id": 1,
+        "dac_jesd_link_id": 0,
+    }
+    cfg["clock"]["rx_device_clk_label"] = "clk0_ad9523"
+    cfg["clock"]["tx_device_clk_label"] = "clk0_ad9523"
+    cfg["clock"]["rx_device_clk_index"] = 13
+    cfg["clock"]["tx_device_clk_index"] = 1
+
+    nodes = NodeBuilder().build(topo_fmcdaq2, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "&fmc_spi {" in merged
+    assert "sync-gpios = <&gpio 116 0>;" in merged
+    assert "status0-gpios = <&gpio 110 0>;" in merged
+    assert "status1-gpios = <&gpio 111 0>;" in merged
+    assert "txen-gpios = <&gpio 119 0>;" in merged
+    assert "reset-gpios = <&gpio 118 0>;" in merged
+    assert "irq-gpios = <&gpio 112 0>;" in merged
+    assert "powerdown-gpios = <&gpio 120 0>;" in merged
+    assert "fastdetect-a-gpios = <&gpio 113 0>;" in merged
+    assert "fastdetect-b-gpios = <&gpio 114 0>;" in merged
+
+
 def test_build_ad9081_allows_hmc7044_channel_block_override(cfg):
     topo_ad9081 = XsaTopology(
         jesd204_rx=[

@@ -113,6 +113,82 @@ def test_pipeline_auto_selects_matching_builtin_profile(xsa_path, cfg, tmp_path)
     assert merged_cfg["ad9081_board"]["adc_spi"] == "spi0"
 
 
+def test_pipeline_auto_selects_fmcdaq2_zc706_profile(tmp_path):
+    xsa = tmp_path / "fmcdaq2_zc706.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xc7z045" Package="ffg900" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_ad9680" INSTANCE="axi_ad9680_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x44A10000" HIGHVALUE="0x44A1FFFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_ad9144" INSTANCE="axi_ad9144_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x44A20000" HIGHVALUE="0x44A2FFFF"/></MEMORYMAP>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa, cfg={}, output_dir=tmp_path / "out")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["fmcdaq2_board"]["spi_bus"] == "spi0"
+    assert merged_cfg["fmcdaq2_board"]["clock_cs"] == 0
+
+
+def test_pipeline_auto_selects_fmcdaq2_zcu102_profile(tmp_path):
+    xsa = tmp_path / "fmcdaq2_zcu102.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_ad9680" INSTANCE="axi_ad9680_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A10000" HIGHVALUE="0x84A1FFFF"/></MEMORYMAP>
+    </MODULE>
+    <MODULE MODTYPE="axi_ad9144" INSTANCE="axi_ad9144_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x84A20000" HIGHVALUE="0x84A2FFFF"/></MEMORYMAP>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa, cfg={}, output_dir=tmp_path / "out")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["fmcdaq2_board"]["spi_bus"] == "fmc_spi"
+    assert merged_cfg["fmcdaq2_board"]["clock_cs"] == 0
+
+
 def test_pipeline_writes_manifest_parity_reports_when_reference_dts_is_provided(
     xsa_path, cfg, tmp_path
 ):

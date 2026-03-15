@@ -62,6 +62,7 @@ _ADI_CLKGEN_TYPES = {"axi_clkgen"}
 _ADI_AD9081_TPL_ADC_TYPES = {"ad_ip_jesd204_tpl_adc"}
 _ADI_AD9081_TPL_DAC_TYPES = {"ad_ip_jesd204_tpl_dac"}
 _ADI_CONVERTER_TYPES = {
+    "axi_ad9680",
     "axi_ad9081",
     "axi_ad9084",
     "axi_ad9162",

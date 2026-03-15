@@ -36,6 +36,34 @@ _ADRV9009_BOARD_ALLOWED_KEYS = {
     "trx_profile_props",
     "ad9528_channel_blocks",
 }
+_FMCDAQ2_BOARD_ALLOWED_KEYS = {
+    "spi_bus",
+    "clock_cs",
+    "adc_cs",
+    "dac_cs",
+    "clock_vcxo_hz",
+    "clock_spi_max_frequency",
+    "adc_spi_max_frequency",
+    "dac_spi_max_frequency",
+    "adc_core_label",
+    "dac_core_label",
+    "adc_xcvr_label",
+    "dac_xcvr_label",
+    "adc_jesd_label",
+    "dac_jesd_label",
+    "adc_jesd_link_id",
+    "dac_jesd_link_id",
+    "gpio_controller",
+    "clk_sync_gpio",
+    "clk_status0_gpio",
+    "clk_status1_gpio",
+    "dac_txen_gpio",
+    "dac_reset_gpio",
+    "dac_irq_gpio",
+    "adc_powerdown_gpio",
+    "adc_fastdetect_a_gpio",
+    "adc_fastdetect_b_gpio",
+}
 _LIST_ONLY_KEYS = {
     "hmc7044_channel_blocks",
     "trx_profile_props",
@@ -72,6 +100,14 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
             raise ProfileError("invalid profile defaults.adrv9009_board: expected object")
         _validate_board_defaults(
             "adrv9009_board", adrv9009_board, _ADRV9009_BOARD_ALLOWED_KEYS
+        )
+
+    fmcdaq2_board = defaults.get("fmcdaq2_board")
+    if fmcdaq2_board is not None:
+        if not isinstance(fmcdaq2_board, dict):
+            raise ProfileError("invalid profile defaults.fmcdaq2_board: expected object")
+        _validate_board_defaults(
+            "fmcdaq2_board", fmcdaq2_board, _FMCDAQ2_BOARD_ALLOWED_KEYS
         )
 
 

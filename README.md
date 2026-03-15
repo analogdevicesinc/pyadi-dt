@@ -159,6 +159,42 @@ The command also fails fast when pipeline results:
 Required artifact error messages follow canonical pipeline order:
 `overlay, merged, report`.
 
+## XSA Full-Tree Generation
+
+The XSA pipeline can generate full merged DTS files from Vivado `.xsa` inputs and
+auto-apply board profiles based on detected converter + FPGA platform.
+
+### Built-in XSA Profiles
+
+- `ad9081_zcu102`
+- `adrv9009_zcu102`
+- `fmcdaq2_zc706`
+
+### FMCDAQ2 + ZC706 Example
+
+Use the new example script to generate DTS output from an FMCDAQ2 ZC706 XSA:
+
+```bash
+python examples/xsa/fmcdaq2_zc706.py \
+  --xsa /path/to/system_top.xsa \
+  --output-dir examples/xsa/output_fmcdaq2_zc706
+```
+
+This script:
+- resolves JESD/clock settings from `pyadi-jif`
+- runs `XsaPipeline` (SDTGen + topology parse + node build + merge)
+- writes merged DTS and HTML report artifacts
+
+### Non-Hardware Verification
+
+When skipping hardware runs, validate the implementation with:
+
+```bash
+venv/bin/python -m compileall -q adidt examples test
+venv/bin/pytest -q
+python3 -m pip wheel . --no-deps
+```
+
 ## Building Documentation
 
 Documentation is built using Sphinx with the ADI cosmic theme.

@@ -8,6 +8,8 @@ def test_profile_manager_lists_builtin_profiles():
     names = ProfileManager().list_profiles()
     assert "ad9081_zcu102" in names
     assert "adrv9009_zcu102" in names
+    assert "fmcdaq2_zc706" in names
+    assert "fmcdaq2_zcu102" in names
 
 
 def test_profile_manager_loads_ad9081_profile():
@@ -32,6 +34,15 @@ def test_profile_manager_loads_adrv9009_profile():
     assert profile["defaults"]["adrv9009_board"]["tx_link_id"] == 0
     assert profile["defaults"]["adrv9009_board"]["tx_octets_per_frame"] == 2
     assert profile["defaults"]["adrv9009_board"]["rx_os_octets_per_frame"] == 2
+
+
+def test_profile_manager_loads_fmcdaq2_zcu102_profile():
+    profile = ProfileManager().load("fmcdaq2_zcu102")
+    assert profile["name"] == "fmcdaq2_zcu102"
+    assert profile["defaults"]["fmcdaq2_board"]["spi_bus"] == "fmc_spi"
+    assert profile["defaults"]["fmcdaq2_board"]["clock_cs"] == 0
+    assert profile["defaults"]["fmcdaq2_board"]["adc_cs"] == 1
+    assert profile["defaults"]["fmcdaq2_board"]["dac_cs"] == 2
 
 
 def test_profile_manager_rejects_unknown_board_override_key(tmp_path):

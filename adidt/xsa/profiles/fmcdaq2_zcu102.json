@@ -1,0 +1,33 @@
+{
+  "name": "fmcdaq2_zcu102",
+  "defaults": {
+    "fmcdaq2_board": {
+      "spi_bus": "fmc_spi",
+      "clock_cs": 0,
+      "adc_cs": 1,
+      "dac_cs": 2,
+      "clock_vcxo_hz": 125000000,
+      "clock_spi_max_frequency": 10000000,
+      "adc_spi_max_frequency": 10000000,
+      "dac_spi_max_frequency": 10000000,
+      "gpio_controller": "gpio",
+      "clk_sync_gpio": 116,
+      "clk_status0_gpio": 110,
+      "clk_status1_gpio": 111,
+      "dac_txen_gpio": 119,
+      "dac_reset_gpio": 118,
+      "dac_irq_gpio": 112,
+      "adc_powerdown_gpio": 120,
+      "adc_fastdetect_a_gpio": 113,
+      "adc_fastdetect_b_gpio": 114,
+      "adc_core_label": "axi_ad9680_core",
+      "dac_core_label": "axi_ad9144_core",
+      "adc_xcvr_label": "axi_ad9680_adxcvr",
+      "dac_xcvr_label": "axi_ad9144_adxcvr",
+      "adc_jesd_label": "axi_ad9680_jesd204_rx",
+      "dac_jesd_label": "axi_ad9144_jesd204_tx",
+      "adc_jesd_link_id": 1,
+      "dac_jesd_link_id": 0
+    }
+  }
+}

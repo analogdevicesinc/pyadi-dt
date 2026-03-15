@@ -126,6 +126,27 @@ def test_parser_detects_converter(tmp_path):
     assert conv.spi_cs is None
 
 
+def test_parser_detects_ad9680_converter_type(tmp_path):
+    xsa = tmp_path / "ad9680_only.xsa"
+    hwh_content = """<?xml version="1.0"?>
+<EDKPROJECT>
+  <HEADER><DEVICE Name="xc7z045" Package="ffg900" SpeedGrade="-2"/></HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_ad9680" INSTANCE="axi_ad9680_0">
+      <MEMORYMAP><MEMRANGE BASEVALUE="0x44A10000" HIGHVALUE="0x44A1FFFF"/></MEMORYMAP>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>"""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("design.hwh", hwh_content)
+    xsa.write_bytes(buf.getvalue())
+
+    topo = XsaParser().parse(xsa)
+    assert len(topo.converters) == 1
+    assert topo.converters[0].ip_type == "axi_ad9680"
+
+
 def test_parser_extracts_signal_connection_graph(tmp_path):
     xsa = tmp_path / "design.xsa"
     xsa.write_bytes(_make_xsa_bytes(FIXTURE_HWH))
