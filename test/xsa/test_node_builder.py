@@ -967,6 +967,54 @@ def test_build_adrv9009_applies_board_overrides(cfg):
     assert "adi,octets-per-frame = <6>;" in merged
 
 
+def test_build_adrv9009_uses_zynq_ps_labels_on_zc706(cfg):
+    topo_adrv9009 = XsaTopology(
+        fpga_part="xc7z045ffg900-2",
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x44AA0000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_rx_clkgen_clk",
+                direction="rx",
+            )
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x44A90000,
+                num_lanes=4,
+                irq=105,
+                link_clk="axi_tx_clkgen_clk",
+                direction="tx",
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9009_0",
+                ip_type="axi_adrv9009",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+    )
+    nodes = NodeBuilder().build(topo_adrv9009, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert (
+        "clocks = <&clkc 15>, <&axi_adrv9009_rx_clkgen>, <&axi_adrv9009_rx_xcvr 0>;"
+        in merged
+    )
+    assert (
+        "clocks = <&clkc 15>, <&axi_adrv9009_tx_clkgen>, <&axi_adrv9009_tx_xcvr 0>;"
+        in merged
+    )
+    assert "reset-gpios = <&gpio0 130 0>;" in merged
+    assert "sysref-req-gpios = <&gpio0 136 0>;" in merged
+
+
 def test_build_adrv9009_allows_trx_profile_props_override(cfg):
     topo_adrv9009 = XsaTopology(
         jesd204_rx=[

@@ -440,12 +440,8 @@ class NodeBuilder:
             dac_dma_label=str(board_cfg.get("dac_dma_label", "axi_ad9144_dma")),
             adc_core_label=str(board_cfg.get("adc_core_label", "axi_ad9680_core")),
             dac_core_label=str(board_cfg.get("dac_core_label", "axi_ad9144_core")),
-            adc_xcvr_label=str(
-                board_cfg.get("adc_xcvr_label", "axi_ad9680_adxcvr")
-            ),
-            dac_xcvr_label=str(
-                board_cfg.get("dac_xcvr_label", "axi_ad9144_adxcvr")
-            ),
+            adc_xcvr_label=str(board_cfg.get("adc_xcvr_label", "axi_ad9680_adxcvr")),
+            dac_xcvr_label=str(board_cfg.get("dac_xcvr_label", "axi_ad9144_adxcvr")),
             adc_jesd_label=str(
                 board_cfg.get("adc_jesd_label", "axi_ad9680_jesd204_rx")
             ),
@@ -458,7 +454,9 @@ class NodeBuilder:
             adc_device_clk_idx=board_int("adc_device_clk_idx", 13),
             adc_sysref_clk_idx=board_int("adc_sysref_clk_idx", 5),
             adc_xcvr_ref_clk_idx=board_int("adc_xcvr_ref_clk_idx", 4),
-            adc_sampling_frequency_hz=board_int("adc_sampling_frequency_hz", 1000000000),
+            adc_sampling_frequency_hz=board_int(
+                "adc_sampling_frequency_hz", 1000000000
+            ),
             dac_device_clk_idx=board_int("dac_device_clk_idx", 1),
             dac_xcvr_ref_clk_idx=board_int("dac_xcvr_ref_clk_idx", 9),
             clk_sync_gpio=board_cfg.get("clk_sync_gpio"),
@@ -494,9 +492,7 @@ class NodeBuilder:
         lines = []
         for prop_name, value, cfg_key in gpio_mappings:
             if value is not None:
-                gpio_idx = self._coerce_board_int(
-                    value, f"fmcdaq2_board.{cfg_key}"
-                )
+                gpio_idx = self._coerce_board_int(value, f"fmcdaq2_board.{cfg_key}")
                 lines.append(
                     f"\t\t\t{prop_name} = <&{gpio_controller} {gpio_idx} 0>;\n"
                 )
@@ -1161,6 +1157,15 @@ class NodeBuilder:
         self, topology: XsaTopology, cfg: dict[str, Any]
     ) -> list[str]:
         board_cfg = cfg.get("adrv9009_board", {})
+        platform = topology.inferred_platform()
+        if platform == "zc706":
+            ps_clk_label = "clkc"
+            ps_clk_index = 15
+            gpio_label = "gpio0"
+        else:
+            ps_clk_label = "zynqmp_clk"
+            ps_clk_index = 71
+            gpio_label = "gpio"
         labels = {
             j.name.replace("-", "_") for j in topology.jesd204_rx + topology.jesd204_tx
         }
@@ -1342,7 +1347,7 @@ class NodeBuilder:
             "\t};",
             f"\t&{rx_jesd_label} {{\n"
             '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
-            f"\t\tclocks = <&zynqmp_clk 71>, <&{rx_clkgen_label}>, <&{rx_xcvr_label} 0>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{rx_clkgen_label}>, <&{rx_xcvr_label} 0>;\n"
             '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
             "\t\t#clock-cells = <0>;\n"
             "\t\tjesd204-device;\n"
@@ -1353,7 +1358,7 @@ class NodeBuilder:
             "\t};",
             f"\t&{tx_jesd_label} {{\n"
             '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
-            f"\t\tclocks = <&zynqmp_clk 71>, <&{tx_clkgen_label}>, <&{tx_xcvr_label} 0>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{tx_clkgen_label}>, <&{tx_xcvr_label} 0>;\n"
             '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
             "\t\t#clock-cells = <0>;\n"
             "\t\tjesd204-device;\n"
@@ -1420,7 +1425,7 @@ class NodeBuilder:
             "\t\treg = <0x0 0x84a08000 0x0 0x1000>;\n"
             "\t\tdmas = <&axi_adrv9009_rx_os_dma 0>;\n"
             '\t\tdma-names = "rx";\n'
-            "\t\tclocks = <&zynqmp_clk 71>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
             '\t\tclock-names = "sampl_clk";\n'
             "\t};",
             "\taxi_adrv9009_core_tx: axi-adrv9009-tx-hpc@84a04000 {\n"
@@ -1428,7 +1433,7 @@ class NodeBuilder:
             "\t\treg = <0x0 0x84a04000 0x0 0x2000>;\n"
             "\t\tdmas = <&axi_adrv9009_tx_dma 0>;\n"
             '\t\tdma-names = "tx";\n'
-            "\t\tclocks = <&zynqmp_clk 71>;\n"
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
             '\t\tclock-names = "sampl_clk";\n'
             "\t\tadi,axi-interpolation-core-available;\n"
             "\t};",
@@ -1467,15 +1472,15 @@ class NodeBuilder:
             f"{ad9528_channels_block}"
             "\t\t};\n"
             f"\t\t{phy_label}: {phy_node_name}@{trx_cs} {{\n"
-            f'\t\t\tcompatible = {phy_compatible};\n'
+            f"\t\t\tcompatible = {phy_compatible};\n"
             f"\t\t\treg = <{trx_cs}>;\n"
             f"\t\t\tspi-max-frequency = <{trx_spi_max_frequency}>;\n"
             f"\t\t\tclocks = {trx_clocks_value};\n"
             f"\t\t\tclock-names = {trx_clock_names_value};\n"
             "\t\t\t#clock-cells = <1>;\n"
             '\t\t\tclock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk";\n'
-            f"\t\t\treset-gpios = <&gpio {trx_reset_gpio} 0>;\n"
-            f"\t\t\tsysref-req-gpios = <&gpio {trx_sysref_req_gpio} 0>;\n"
+            f"\t\t\treset-gpios = <&{gpio_label} {trx_reset_gpio} 0>;\n"
+            f"\t\t\tsysref-req-gpios = <&{gpio_label} {trx_sysref_req_gpio} 0>;\n"
             "\t\t\tjesd204-device;\n"
             "\t\t\t#jesd204-cells = <2>;\n"
             "\t\t\tjesd204-top-device = <0>;\n"
@@ -1509,7 +1514,7 @@ class NodeBuilder:
                 3,
                 f"\t&{rx_os_jesd_label} {{\n"
                 '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
-                f"\t\tclocks = <&zynqmp_clk 71>, <&{rx_os_clkgen_label}>, <&{rx_os_xcvr_label} 0>;\n"
+                f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{rx_os_clkgen_label}>, <&{rx_os_xcvr_label} 0>;\n"
                 '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"

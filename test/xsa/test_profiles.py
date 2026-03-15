@@ -12,6 +12,7 @@ def test_profile_manager_lists_builtin_profiles():
     assert "ad9172_zcu102" in names
     assert "adrv9008_zcu102" in names
     assert "adrv9009_zcu102" in names
+    assert "adrv9009_zc706" in names
     assert "adrv937x_zcu102" in names
     assert "adrv9025_zcu102" in names
     assert "fmcdaq3_zc706" in names
@@ -68,6 +69,14 @@ def test_profile_manager_loads_adrv9009_profile():
     assert profile["defaults"]["adrv9009_board"]["tx_link_id"] == 0
     assert profile["defaults"]["adrv9009_board"]["tx_octets_per_frame"] == 2
     assert profile["defaults"]["adrv9009_board"]["rx_os_octets_per_frame"] == 2
+
+
+def test_profile_manager_loads_adrv9009_zc706_profile():
+    profile = ProfileManager().load("adrv9009_zc706")
+    assert profile["name"] == "adrv9009_zc706"
+    assert profile["defaults"]["adrv9009_board"]["spi_bus"] == "spi0"
+    assert profile["defaults"]["adrv9009_board"]["clk_cs"] == 0
+    assert profile["defaults"]["adrv9009_board"]["trx_cs"] == 1
 
 
 def test_profile_manager_loads_adrv9008_profile():
