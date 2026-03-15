@@ -273,6 +273,9 @@ instance names, so topology-only auto-inference is ambiguous.
 For AD9083 Kuiper projects, prefer explicit profile selection:
 ``profile="ad9083_zcu102"`` for the same reason (shared ``mxfe`` naming).
 
+For AD9081 ZC706 Kuiper projects, use:
+``profile="ad9081_zc706"``.
+
 For AD9172 Kuiper projects, use explicit profile selection:
 ``profile="ad9172_zcu102"``. XSA provides JESD/clock transport topology while
 SPI-attached DAC/clock chip details require board-specific overlays.

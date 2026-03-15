@@ -167,6 +167,7 @@ auto-apply board profiles based on detected converter + FPGA platform.
 ### Built-in XSA Profiles
 
 - `ad9081_zcu102`
+- `ad9081_zc706`
 - `ad9082_zcu102`
 - `ad9083_zcu102`
 - `ad9172_zcu102`
@@ -201,6 +202,7 @@ Primary reference:
 - `examples/xsa/adrv9009_zcu102.py` (adijif-driven config derivation)
 - `examples/xsa/ad9082_zcu102.py` (explicit AD9082 profile flow)
 - `examples/xsa/ad9083_zcu102.py` (explicit AD9083 profile flow)
+- `examples/xsa/ad9081_zc706.py` (explicit AD9081 ZC706 profile flow)
 - `examples/xsa/ad9172_zcu102.py` (explicit AD9172 profile flow)
 - `examples/xsa/adrv9008_zcu102.py` (explicit ADRV9008 profile flow)
 - `examples/xsa/adrv9008_zc706.py` (explicit ADRV9008 ZC706 profile flow)

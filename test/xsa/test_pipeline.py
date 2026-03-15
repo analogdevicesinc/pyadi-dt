@@ -113,6 +113,30 @@ def test_pipeline_auto_selects_matching_builtin_profile(xsa_path, cfg, tmp_path)
     assert merged_cfg["ad9081_board"]["adc_spi"] == "spi0"
 
 
+def test_pipeline_explicit_ad9081_zc706_profile_applies_defaults(
+    xsa_path, cfg, tmp_path
+):
+    captured_cfg = {}
+
+    class _FakeNodeBuilder:
+        def build(self, topology, in_cfg):
+            captured_cfg["cfg"] = in_cfg
+            return {"clkgens": [], "jesd204_rx": [], "jesd204_tx": [], "converters": []}
+
+    with (
+        patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner,
+        patch("adidt.xsa.pipeline.NodeBuilder", return_value=_FakeNodeBuilder()),
+    ):
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        XsaPipeline().run(xsa_path, cfg, tmp_path, profile="ad9081_zc706")
+
+    merged_cfg = captured_cfg["cfg"]
+    assert merged_cfg["clock"]["hmc7044_rx_channel"] == 10
+    assert merged_cfg["clock"]["hmc7044_tx_channel"] == 6
+    assert merged_cfg["ad9081_board"]["clock_spi"] == "spi1"
+    assert merged_cfg["ad9081_board"]["adc_spi"] == "spi0"
+
+
 def test_pipeline_explicit_adrv9008_profile_applies_defaults(xsa_path, cfg, tmp_path):
     captured_cfg = {}
 
