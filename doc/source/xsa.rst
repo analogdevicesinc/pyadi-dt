@@ -270,6 +270,9 @@ For AD9082 Kuiper projects, prefer explicit profile selection:
 ``profile="ad9082_zcu102"``. AD9081/AD9082 designs often share ``mxfe`` JESD
 instance names, so topology-only auto-inference is ambiguous.
 
+For AD9083 Kuiper projects, prefer explicit profile selection:
+``profile="ad9083_zcu102"`` for the same reason (shared ``mxfe`` naming).
+
 Auto-selection also covers FMCDAQ2 variants:
 
 - ``fmcdaq2_zcu102`` (ZynqMP/ZCU102)

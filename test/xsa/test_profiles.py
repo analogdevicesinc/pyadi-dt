@@ -8,6 +8,7 @@ def test_profile_manager_lists_builtin_profiles():
     names = ProfileManager().list_profiles()
     assert "ad9081_zcu102" in names
     assert "ad9082_zcu102" in names
+    assert "ad9083_zcu102" in names
     assert "adrv9008_zcu102" in names
     assert "adrv9009_zcu102" in names
     assert "adrv937x_zcu102" in names
@@ -30,6 +31,15 @@ def test_profile_manager_loads_ad9081_profile():
 def test_profile_manager_loads_ad9082_profile():
     profile = ProfileManager().load("ad9082_zcu102")
     assert profile["name"] == "ad9082_zcu102"
+    assert profile["defaults"]["clock"]["hmc7044_rx_channel"] == 10
+    assert profile["defaults"]["clock"]["hmc7044_tx_channel"] == 6
+    assert profile["defaults"]["ad9081_board"]["clock_spi"] == "spi1"
+    assert profile["defaults"]["ad9081_board"]["adc_spi"] == "spi0"
+
+
+def test_profile_manager_loads_ad9083_profile():
+    profile = ProfileManager().load("ad9083_zcu102")
+    assert profile["name"] == "ad9083_zcu102"
     assert profile["defaults"]["clock"]["hmc7044_rx_channel"] == 10
     assert profile["defaults"]["clock"]["hmc7044_tx_channel"] == 6
     assert profile["defaults"]["ad9081_board"]["clock_spi"] == "spi1"
