@@ -134,3 +134,21 @@ def test_node_name_closing_script_tag_is_safe(topo, cfg, tmp_path):
     )
     # The </script> sequence should be escaped in the JSON data
     assert "<script>alert(1)</script>" not in html_output
+
+
+def test_html_contains_xsa_match_coverage_summary(topo, cfg, merged_dts, tmp_path):
+    html = HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "test")
+    assert "XSA Match Coverage" in html
+    assert "coverage-summary" in html
+    assert "jesd204_tx_0" in html
+
+
+def test_html_contains_expandable_detail_sections(topo, cfg, merged_dts, tmp_path):
+    html = HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "test")
+    assert '<details id="detail-coverage"' in html
+    assert '<details id="detail-topology"' in html
+    assert '<details id="detail-clocks"' in html
+    assert '<details id="detail-jesd"' in html
+    assert "Parsed Topology" in html
+    assert "Clock References" in html
+    assert "JESD Paths" in html

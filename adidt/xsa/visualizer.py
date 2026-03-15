@@ -30,7 +30,10 @@ class HtmlVisualizer:
         tree_data = self._dts_to_tree(merged_dts)
         clock_data = self._build_clock_data(topology, cfg)
         jesd_data = self._build_jesd_data(topology)
-        html_content = self._render_html(tree_data, clock_data, jesd_data, name)
+        coverage_data = self._build_match_coverage(topology, merged_dts)
+        html_content = self._render_html(
+            tree_data, clock_data, jesd_data, coverage_data, name
+        )
         safe_name = re.sub(r"[^\w\-.]", "_", name)
         (output_dir / f"{safe_name}_report.html").write_text(html_content)
         return html_content
@@ -66,15 +69,48 @@ class HtmlVisualizer:
             ],
         }
 
+    def _build_match_coverage(self, topology: XsaTopology, merged_dts: str) -> dict:
+        parsed = {
+            "jesd204_rx": [i.name for i in topology.jesd204_rx],
+            "jesd204_tx": [i.name for i in topology.jesd204_tx],
+            "clkgens": [i.name for i in topology.clkgens],
+            "converters": [i.name for i in topology.converters],
+        }
+        matched = {
+            kind: [name for name in names if re.search(rf"\b{re.escape(name)}\b", merged_dts)]
+            for kind, names in parsed.items()
+        }
+        unmatched = {
+            kind: [name for name in names if name not in set(matched[kind])]
+            for kind, names in parsed.items()
+        }
+        total = sum(len(names) for names in parsed.values())
+        matched_total = sum(len(names) for names in matched.values())
+        unmatched_total = total - matched_total
+        matched_pct = round((matched_total * 100.0 / total), 1) if total else 100.0
+        unmatched_pct = round((unmatched_total * 100.0 / total), 1) if total else 0.0
+        return {
+            "total": total,
+            "matched": matched_total,
+            "unmatched": unmatched_total,
+            "matched_pct": matched_pct,
+            "unmatched_pct": unmatched_pct,
+            "by_kind_total": {kind: len(names) for kind, names in parsed.items()},
+            "by_kind_unmatched": unmatched,
+        }
+
     def _json_safe(self, data) -> str:
         """Return JSON safe for inline JavaScript — escapes </script> sequence."""
         return json.dumps(data).replace("</", "<\\/")
 
-    def _render_html(self, tree_data, clock_data, jesd_data, title: str) -> str:
+    def _render_html(
+        self, tree_data, clock_data, jesd_data, coverage_data, title: str
+    ) -> str:
         safe_title = html.escape(title)
         tree_json = self._json_safe(tree_data)
         clock_json = self._json_safe(clock_data)
         jesd_json = self._json_safe(jesd_data)
+        coverage_json = self._json_safe(coverage_data)
         return f"""<!DOCTYPE html>
 <html lang="en">
 <head><meta charset="UTF-8"><title>ADI DTS Report: {safe_title}</title>
@@ -87,11 +123,23 @@ h2{{color:#569cd6}}
 .node-list li:hover{{background:#2d2d2d}}
 #clock-svg,#jesd-svg{{width:100%;height:300px}}
 .search{{background:#252526;color:#d4d4d4;border:1px solid #555;padding:4px;width:300px}}
+details{{margin:8px 0;border:1px solid #3a3a3a;border-radius:4px;padding:6px;background:#232323}}
+summary{{cursor:pointer;color:#9cdcfe;font-weight:bold}}
+table{{width:100%;border-collapse:collapse;margin-top:8px}}
+th,td{{border:1px solid #3a3a3a;padding:4px 6px;text-align:left;font-size:12px}}
+th{{color:#dcdcaa}}
 </style></head>
 <body>
 <div class="panel"><h2>DTS Node Tree — {safe_title}</h2>
 <input class="search" type="text" id="search" placeholder="Search nodes..." oninput="filterNodes()">
 <ul class="node-list" id="node-list"></ul></div>
+<div class="panel"><h2>XSA Match Coverage</h2><div id="coverage-summary"></div></div>
+<div class="panel"><h2>Details</h2>
+  <details id="detail-coverage" open><summary>XSA Match Coverage</summary><div id="detail-coverage-body"></div></details>
+  <details id="detail-topology"><summary>Parsed Topology</summary><div id="detail-topology-body"></div></details>
+  <details id="detail-clocks"><summary>Clock References</summary><div id="detail-clocks-body"></div></details>
+  <details id="detail-jesd"><summary>JESD Paths</summary><div id="detail-jesd-body"></div></details>
+</div>
 <div class="panel"><h2>Clock Topology</h2><svg id="clock-svg"></svg></div>
 <div class="panel"><h2>JESD204 Data Path</h2><svg id="jesd-svg"></svg></div>
 <script>
@@ -101,6 +149,7 @@ h2{{color:#569cd6}}
 const treeData={tree_json};
 const clockData={clock_json};
 const jesdData={jesd_json};
+const coverageData={coverage_json};
 function renderTree(data){{
   const list=document.getElementById("node-list");
   list.innerHTML="";
@@ -116,7 +165,67 @@ function filterNodes(){{
   const q=document.getElementById("search").value.toLowerCase();
   renderTree(treeData.filter(n=>n.name.toLowerCase().includes(q)));
 }}
+
+function renderTable(headers, rows){{
+  const th=headers.map(h=>`<th>${{h}}</th>`).join("");
+  const tr=rows.map(r=>`<tr>${{r.map(c=>`<td>${{c}}</td>`).join("")}}</tr>`).join("");
+  return `<table><thead><tr>${{th}}</tr></thead><tbody>${{tr}}</tbody></table>`;
+}}
+
+function renderDetails(){{
+  const coverageBody=document.getElementById("detail-coverage-body");
+  const unmatchedList=Object.entries(coverageData.by_kind_unmatched)
+    .flatMap(([k,v])=>v.map(name=>`${{k}}: ${{name}}`));
+  coverageBody.innerHTML = `
+    <div>Matched: ${{coverageData.matched}} / ${{coverageData.total}} (${{coverageData.matched_pct}}%)</div>
+    <div>Unmatched: ${{coverageData.unmatched}} / ${{coverageData.total}} (${{coverageData.unmatched_pct}}%)</div>
+    <div style="margin-top:8px;">Unmatched entries:</div>
+    <ul>${{unmatchedList.map(v=>`<li>${{v}}</li>`).join("")}}</ul>
+  `;
+
+  const topologyRows = [
+    ["JESD RX", jesdData.rx.length],
+    ["JESD TX", jesdData.tx.length],
+    ["Converters", jesdData.converters.length],
+    ["Clockgens", (clockData.clkgens || []).length],
+  ];
+  document.getElementById("detail-topology-body").innerHTML = renderTable(
+    ["Type", "Count"], topologyRows
+  );
+
+  const clockRows = (clockData.clkgens || []).flatMap(cg =>
+    (cg.outputs || []).map(out => [cg.name, out])
+  );
+  document.getElementById("detail-clocks-body").innerHTML = clockRows.length
+    ? renderTable(["Clockgen", "Output Net"], clockRows)
+    : "<div>No clock outputs parsed.</div>";
+
+  const jesdRows = [
+    ...jesdData.rx.map(r => ["RX", r.name, r.addr || "-", r.lanes || "-"]),
+    ...jesdData.tx.map(t => ["TX", t.name, t.addr || "-", t.lanes || "-"]),
+  ];
+  document.getElementById("detail-jesd-body").innerHTML = jesdRows.length
+    ? renderTable(["Dir", "Name", "Addr", "Lanes"], jesdRows)
+    : "<div>No JESD cores parsed.</div>";
+}}
+
 renderTree(treeData);
+(function(){{
+  const root=document.getElementById("coverage-summary");
+  const rows=[
+    `Matched: ${{coverageData.matched}} / ${{coverageData.total}} (${{coverageData.matched_pct}}%)`,
+    `Unmatched: ${{coverageData.unmatched}} / ${{coverageData.total}} (${{coverageData.unmatched_pct}}%)`
+  ];
+  const unmatchedList=Object.entries(coverageData.by_kind_unmatched)
+    .flatMap(([k,v])=>v.map(name=>`${{k}}: ${{name}}`));
+  root.innerHTML = `
+    <div>${{rows[0]}}</div>
+    <div>${{rows[1]}}</div>
+    <div style="margin-top:8px;">Unmatched entries:</div>
+    <ul>${{unmatchedList.map(v=>`<li>${{v}}</li>`).join("")}}</ul>
+  `;
+}})();
+renderDetails();
 (function(){{
   const svg=d3.select("#clock-svg");
   const bW=160,bH=40,gap=20;
