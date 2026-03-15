@@ -4,6 +4,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 
 def _load_example_module(file_name: str):
@@ -115,3 +116,73 @@ def test_resolve_config_from_adijif_falls_back_when_solver_missing_zcu102(monkey
     assert cfg["jesd"]["tx"]["L"] == 4
     assert summary["solver_succeeded"] is False
     assert summary["clock_output_clocks"] is None
+
+
+def test_main_supports_download_kuiper_flow_zc706(monkeypatch, tmp_path):
+    module = _load_example_module("fmcdaq2_zc706.py")
+
+    fake_xsa = tmp_path / "downloaded_system_top.xsa"
+    fake_xsa.write_text("xsa")
+
+    monkeypatch.setattr(
+        module,
+        "_resolve_config_from_adijif",
+        lambda *_args, **_kwargs: ({}, {"clock_output_clocks": None}),
+    )
+    monkeypatch.setattr(module, "_download_kuiper_xsa", lambda **_kwargs: fake_xsa)
+
+    runner = MagicMock()
+    runner.run.return_value = {
+        "overlay": tmp_path / "o.dtso",
+        "merged": tmp_path / "m.dts",
+        "report": tmp_path / "r.html",
+    }
+    monkeypatch.setattr(module, "XsaPipeline", lambda: runner)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "fmcdaq2_zc706.py",
+            "--download-kuiper",
+            "--output-dir",
+            str(tmp_path / "out"),
+        ],
+    )
+
+    module.main()
+    assert runner.run.call_args.kwargs["xsa_path"] == fake_xsa
+
+
+def test_main_supports_download_kuiper_flow_zcu102(monkeypatch, tmp_path):
+    module = _load_example_module("fmcdaq2_zcu102.py")
+
+    fake_xsa = tmp_path / "downloaded_system_top.xsa"
+    fake_xsa.write_text("xsa")
+
+    monkeypatch.setattr(
+        module,
+        "_resolve_config_from_adijif",
+        lambda *_args, **_kwargs: ({}, {"clock_output_clocks": None}),
+    )
+    monkeypatch.setattr(module, "_download_kuiper_xsa", lambda **_kwargs: fake_xsa)
+
+    runner = MagicMock()
+    runner.run.return_value = {
+        "overlay": tmp_path / "o.dtso",
+        "merged": tmp_path / "m.dts",
+        "report": tmp_path / "r.html",
+    }
+    monkeypatch.setattr(module, "XsaPipeline", lambda: runner)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "fmcdaq2_zcu102.py",
+            "--download-kuiper",
+            "--output-dir",
+            str(tmp_path / "out"),
+        ],
+    )
+
+    module.main()
+    assert runner.run.call_args.kwargs["xsa_path"] == fake_xsa
