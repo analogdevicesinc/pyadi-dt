@@ -1,7 +1,11 @@
 from pathlib import Path
 import json
 
-from adidt.xsa.parity import ParityReport, check_manifest_against_dts, write_parity_reports
+from adidt.xsa.parity import (
+    ParityReport,
+    check_manifest_against_dts,
+    write_parity_reports,
+)
 from adidt.xsa.reference import (
     DriverManifest,
     LinkRequirement,
@@ -73,7 +77,7 @@ def test_check_manifest_against_dts_marks_missing_links(tmp_path: Path):
             )
         ]
     )
-    merged_dts = '/ { rx0: jesd@0 { jesd204-inputs = <&xcvr1 0 2>; }; };\n'
+    merged_dts = "/ { rx0: jesd@0 { jesd204-inputs = <&xcvr1 0 2>; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 
@@ -93,7 +97,7 @@ def test_check_manifest_against_dts_marks_missing_properties(tmp_path: Path):
             )
         ]
     )
-    merged_dts = '/ { rx0: jesd@0 { adi,frames-per-multiframe = <32>; }; };\n'
+    merged_dts = "/ { rx0: jesd@0 { adi,frames-per-multiframe = <32>; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 
@@ -114,10 +118,10 @@ def test_check_manifest_against_dts_scopes_link_to_source_node(tmp_path: Path):
         ]
     )
     merged_dts = (
-        '/ {\n'
-        '  rx0: jesd@0 { jesd204-inputs = <&wrong 0 1>; };\n'
-        '  other: jesd@1 { jesd204-inputs = <&xcvr0 0 1>; };\n'
-        '};\n'
+        "/ {\n"
+        "  rx0: jesd@0 { jesd204-inputs = <&wrong 0 1>; };\n"
+        "  other: jesd@1 { jesd204-inputs = <&xcvr0 0 1>; };\n"
+        "};\n"
     )
 
     report = check_manifest_against_dts(manifest, merged_dts)
@@ -138,10 +142,10 @@ def test_check_manifest_against_dts_scopes_role_to_source_label(tmp_path: Path):
         ]
     )
     merged_dts = (
-        '/ {\n'
+        "/ {\n"
         '  rx0: jesd@0 { compatible = "stub,wrong"; };\n'
         '  other: jesd@1 { compatible = "adi,axi-jesd204-rx-1.0"; };\n'
-        '};\n'
+        "};\n"
     )
 
     report = check_manifest_against_dts(manifest, merged_dts)
@@ -162,10 +166,10 @@ def test_check_manifest_against_dts_scopes_property_to_source_node(tmp_path: Pat
         ]
     )
     merged_dts = (
-        '/ {\n'
-        '  rx0: jesd@0 { adi,frames-per-multiframe = <32>; };\n'
-        '  other: jesd@1 { adi,octets-per-frame = <4>; };\n'
-        '};\n'
+        "/ {\n"
+        "  rx0: jesd@0 { adi,frames-per-multiframe = <32>; };\n"
+        "  other: jesd@1 { adi,octets-per-frame = <4>; };\n"
+        "};\n"
     )
 
     report = check_manifest_against_dts(manifest, merged_dts)
@@ -185,17 +189,21 @@ def test_check_manifest_against_dts_marks_mismatched_property_values(tmp_path: P
             )
         ]
     )
-    merged_dts = '/ { rx0: jesd@0 { adi,octets-per-frame = <8>; }; };\n'
+    merged_dts = "/ { rx0: jesd@0 { adi,octets-per-frame = <8>; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 
     assert report.total_properties == 1
     assert report.matched_properties == 0
     assert report.missing_properties == []
-    assert report.mismatched_properties == ["rx0.adi,octets-per-frame: expected <4>, got <8>"]
+    assert report.mismatched_properties == [
+        "rx0.adi,octets-per-frame: expected <4>, got <8>"
+    ]
 
 
-def test_check_manifest_against_dts_normalizes_property_value_whitespace(tmp_path: Path):
+def test_check_manifest_against_dts_normalizes_property_value_whitespace(
+    tmp_path: Path,
+):
     manifest = DriverManifest(
         properties=[
             PropertyRequirement(
@@ -206,7 +214,7 @@ def test_check_manifest_against_dts_normalizes_property_value_whitespace(tmp_pat
             )
         ]
     )
-    merged_dts = '/ { rx0: jesd@0 { adi,octets-per-frame = < 4 >; }; };\n'
+    merged_dts = "/ { rx0: jesd@0 { adi,octets-per-frame = < 4 >; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 
@@ -259,7 +267,7 @@ def test_check_manifest_against_dts_sorts_gap_lists(tmp_path: Path):
             ),
         ],
     )
-    merged_dts = '/ { rx1: jesd@1 { adi,octets-per-frame = <4>; }; };\n'
+    merged_dts = "/ { rx1: jesd@1 { adi,octets-per-frame = <4>; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 
@@ -319,7 +327,7 @@ def test_check_manifest_against_dts_deduplicates_gap_lists(tmp_path: Path):
             ),
         ],
     )
-    merged_dts = '/ { rx0: jesd@0 { adi,octets-per-frame = <4>; }; };\n'
+    merged_dts = "/ { rx0: jesd@0 { adi,octets-per-frame = <4>; }; };\n"
 
     report = check_manifest_against_dts(manifest, merged_dts)
 

@@ -77,7 +77,11 @@ class HtmlVisualizer:
             "converters": [i.name for i in topology.converters],
         }
         matched = {
-            kind: [name for name in names if re.search(rf"\b{re.escape(name)}\b", merged_dts)]
+            kind: [
+                name
+                for name in names
+                if re.search(rf"\b{re.escape(name)}\b", merged_dts)
+            ]
             for kind, names in parsed.items()
         }
         unmatched = {

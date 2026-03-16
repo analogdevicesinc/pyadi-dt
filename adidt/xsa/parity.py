@@ -7,7 +7,7 @@ from .reference import DriverManifest
 
 
 _NODE_BLOCK_RE = re.compile(
-    r'(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};', re.S
+    r"(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};", re.S
 )
 
 
@@ -66,7 +66,9 @@ class ParityReport:
     property_items: list[PropertyCoverage] = field(default_factory=list)
 
 
-def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> ParityReport:
+def check_manifest_against_dts(
+    manifest: DriverManifest, merged_dts: str
+) -> ParityReport:
     items: list[RoleCoverage] = []
     missing_roles: list[str] = []
     node_bodies = _node_bodies_by_label(merged_dts)
@@ -120,10 +122,9 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
             actual_value = None
         else:
             actual_value = match.group("value").strip()
-            found = (
-                _normalize_property_value(actual_value)
-                == _normalize_property_value(req.expected_value)
-            )
+            found = _normalize_property_value(
+                actual_value
+            ) == _normalize_property_value(req.expected_value)
         property_items.append(
             PropertyCoverage(
                 source_label=req.source_label,
@@ -165,7 +166,9 @@ def check_manifest_against_dts(manifest: DriverManifest, merged_dts: str) -> Par
     )
 
 
-def write_parity_reports(report: ParityReport, output_dir: Path, name: str) -> tuple[Path, Path]:
+def write_parity_reports(
+    report: ParityReport, output_dir: Path, name: str
+) -> tuple[Path, Path]:
     map_path = output_dir / f"{name}.map.json"
     coverage_path = output_dir / f"{name}.coverage.md"
 

@@ -68,7 +68,7 @@ def test_profile_manager_loads_ad9172_profile():
     assert profile["name"] == "ad9172_zcu102"
     assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
     assert profile["defaults"]["clock"]["tx_device_clk_index"] == 0
-    assert profile["defaults"]["jesd"]["tx"]["L"] == 8
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 4
 
 
 def test_profile_manager_loads_adrv9009_profile():
@@ -152,8 +152,8 @@ def test_profile_manager_loads_fmcdaq3_zcu102_profile():
     assert profile["name"] == "fmcdaq3_zcu102"
     assert profile["defaults"]["clock"]["rx_device_clk_label"] == "clkgen"
     assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
-    assert profile["defaults"]["jesd"]["rx"]["L"] == 2
-    assert profile["defaults"]["jesd"]["tx"]["L"] == 2
+    assert profile["defaults"]["jesd"]["rx"]["L"] == 4
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 4
 
 
 def test_profile_manager_loads_fmcdaq3_zc706_profile():
@@ -161,8 +161,8 @@ def test_profile_manager_loads_fmcdaq3_zc706_profile():
     assert profile["name"] == "fmcdaq3_zc706"
     assert profile["defaults"]["clock"]["rx_device_clk_label"] == "clkgen"
     assert profile["defaults"]["clock"]["tx_device_clk_label"] == "clkgen"
-    assert profile["defaults"]["jesd"]["rx"]["L"] == 2
-    assert profile["defaults"]["jesd"]["tx"]["L"] == 2
+    assert profile["defaults"]["jesd"]["rx"]["L"] == 4
+    assert profile["defaults"]["jesd"]["tx"]["L"] == 4
 
 
 def test_profile_manager_rejects_unknown_board_override_key(tmp_path):

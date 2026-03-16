@@ -38,16 +38,16 @@ class DriverManifest:
 class ReferenceManifestExtractor:
     _include_re = re.compile(r'^\s*(?:#include|/include/)\s+[<"]([^">]+)[">]\s*$', re.M)
     _compatible_re = re.compile(
-        r'(?P<label>[A-Za-z_][\w\-]*)?\s*:?[^{;\n]*\{[^}]*?compatible\s*=\s*(?P<value>[^;]+);',
+        r"(?P<label>[A-Za-z_][\w\-]*)?\s*:?[^{;\n]*\{[^}]*?compatible\s*=\s*(?P<value>[^;]+);",
         re.S,
     )
     _string_re = re.compile(r'"([^"]+)"')
     _node_block_re = re.compile(
-        r'(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};', re.S
+        r"(?P<label>[A-Za-z_][\w\-]*)\s*:[^{;\n]+\{(?P<body>.*?)\};", re.S
     )
-    _jesd_inputs_re = re.compile(r'jesd204-inputs\s*=\s*(?P<value>[^;]+);', re.S)
-    _phandle_re = re.compile(r'&(?P<label>[A-Za-z_][\w\-]*)')
-    _property_re = re.compile(r'(?P<name>[A-Za-z_][\w,\-]*)\s*=\s*(?P<value>[^;]+);')
+    _jesd_inputs_re = re.compile(r"jesd204-inputs\s*=\s*(?P<value>[^;]+);", re.S)
+    _phandle_re = re.compile(r"&(?P<label>[A-Za-z_][\w\-]*)")
+    _property_re = re.compile(r"(?P<name>[A-Za-z_][\w,\-]*)\s*=\s*(?P<value>[^;]+);")
 
     _ROLE_BY_PREFIX = {
         "adi,axi-jesd204-rx": "jesd_rx_link",
@@ -133,7 +133,7 @@ class ReferenceManifestExtractor:
             source_label = node_match.group("label")
             body = node_match.group("body")
 
-            compat_match = re.search(r'compatible\s*=\s*(?P<value>[^;]+);', body)
+            compat_match = re.search(r"compatible\s*=\s*(?P<value>[^;]+);", body)
             if not compat_match:
                 continue
             compatibles = self._string_re.findall(compat_match.group("value"))

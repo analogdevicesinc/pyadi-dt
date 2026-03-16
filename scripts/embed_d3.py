@@ -5,6 +5,7 @@
 Run once (or to update the pinned version):
     python scripts/embed_d3.py
 """
+
 import urllib.request
 from pathlib import Path
 

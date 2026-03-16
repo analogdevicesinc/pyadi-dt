@@ -901,7 +901,9 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
 
         def _print_unavailable_map_summary():
             click.echo("  Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a")
-            click.echo("  Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a")
+            click.echo(
+                "  Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+            )
 
         if "map" in result:
             click.echo(f"  Map:      {result['map']}")
@@ -971,9 +973,13 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 if cov_path is None:
                     pass
                 elif not cov_path.exists():
-                    click.echo(f"  Warning: parity coverage report not found: {cov_path}")
+                    click.echo(
+                        f"  Warning: parity coverage report not found: {cov_path}"
+                    )
         elif parity_requested:
-            click.echo("  Warning: parity coverage report not provided by pipeline result")
+            click.echo(
+                "  Warning: parity coverage report not provided by pipeline result"
+            )
 
     except FileNotFoundError as e:
         raise click.ClickException(str(e))

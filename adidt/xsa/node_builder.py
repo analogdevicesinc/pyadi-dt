@@ -115,6 +115,32 @@ class _FMCDAQ3Cfg:
     dac_out_clk_select: int
 
 
+@dataclass
+class _AD9172Cfg:
+    spi_bus: str
+    clock_cs: int
+    dac_cs: int
+    clock_spi_max: int
+    dac_spi_max: int
+    dac_core_label: str
+    dac_xcvr_label: str
+    dac_jesd_label: str
+    dac_jesd_link_id: int
+    hmc7044_ref_clk_hz: int
+    hmc7044_vcxo_hz: int
+    hmc7044_out_freq_hz: int
+    ad9172_dac_rate_khz: int
+    ad9172_jesd_link_mode: int
+    ad9172_dac_interpolation: int
+    ad9172_channel_interpolation: int
+    ad9172_clock_output_divider: int
+    tx_l: int
+    tx_m: int
+    tx_f: int
+    tx_k: int
+    tx_np: int
+
+
 class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
@@ -161,6 +187,7 @@ class NodeBuilder:
         )
         is_fmcdaq2_design = topology.is_fmcdaq2_design()
         is_fmcdaq3_design = topology.is_fmcdaq3_design()
+        is_ad9172_design = self._is_ad9172_design(topology) or ("ad9172_board" in cfg)
         rx_labels: list[str] = []
         tx_labels: list[str] = []
 
@@ -205,7 +232,7 @@ class NodeBuilder:
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
-            if is_fmcdaq2_design or is_fmcdaq3_design:
+            if is_fmcdaq2_design or is_fmcdaq3_design or is_ad9172_design:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "tx", ps_clk_label, ps_clk_index
@@ -236,6 +263,8 @@ class NodeBuilder:
                 continue
             if is_fmcdaq3_design and conv.ip_type in {"axi_ad9680", "axi_ad9152"}:
                 continue
+            if is_ad9172_design and conv.ip_type in {"axi_ad9162"}:
+                continue
             rx_label = rx_labels[0] if rx_labels else "jesd_rx"
             tx_label = tx_labels[0] if tx_labels else "jesd_tx"
             result["converters"].append(
@@ -254,8 +283,20 @@ class NodeBuilder:
         result["converters"].extend(
             self._build_fmcdaq3_nodes(topology, cfg, ps_clk_label, ps_clk_index)
         )
+        result["converters"].extend(
+            self._build_ad9172_nodes(topology, cfg, ps_clk_label, ps_clk_index)
+        )
 
         return result
+
+    @staticmethod
+    def _is_ad9172_design(topology: XsaTopology) -> bool:
+        if any(c.ip_type == "axi_ad9162" for c in topology.converters):
+            return True
+        names = " ".join(
+            j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
+        )
+        return "ad9172" in names or "ad9162" in names
 
     def _build_fmcdaq2_nodes(
         self,
@@ -870,6 +911,248 @@ class NodeBuilder:
             adc_out_clk_select=adc_out_clk_select,
             dac_out_clk_select=dac_out_clk_select,
         )
+
+    def _build_ad9172_nodes(
+        self,
+        topology: XsaTopology,
+        cfg: dict[str, Any],
+        ps_clk_label: str,
+        ps_clk_index: int,
+    ) -> list[str]:
+        if not (self._is_ad9172_design(topology) or ("ad9172_board" in cfg)):
+            return []
+
+        ad = self._build_ad9172_cfg(cfg, topology)
+        return [
+            f"\t&{ad.spi_bus} {{\n"
+            '\t\tstatus = "okay";\n'
+            f"\t\thmc7044: hmc7044@{ad.clock_cs} {{\n"
+            '\t\t\tcompatible = "adi,hmc7044";\n'
+            "\t\t\t#address-cells = <1>;\n"
+            "\t\t\t#size-cells = <0>;\n"
+            "\t\t\t#clock-cells = <1>;\n"
+            f"\t\t\treg = <{ad.clock_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{ad.clock_spi_max}>;\n"
+            f"\t\t\tadi,pll1-clkin-frequencies = <{ad.hmc7044_ref_clk_hz} 0 0 0>;\n"
+            "\t\t\tadi,pll1-loop-bandwidth-hz = <200>;\n"
+            f"\t\t\tadi,vcxo-frequency = <{ad.hmc7044_vcxo_hz}>;\n"
+            f"\t\t\tadi,pll2-output-frequency = <{ad.hmc7044_out_freq_hz}>;\n"
+            "\t\t\tadi,sysref-timer-divider = <1024>;\n"
+            "\t\t\tadi,pulse-generator-mode = <0>;\n"
+            "\t\t\tadi,clkin0-buffer-mode = <0x15>;\n"
+            "\t\t\tadi,oscin-buffer-mode = <0x15>;\n"
+            "\t\t\tadi,gpi-controls = <0x00 0x00 0x00 0x00>;\n"
+            "\t\t\tadi,gpo-controls = <0x1f 0x2b 0x00 0x00>;\n"
+            '\t\t\tclock-output-names = "hmc7044_out0", "hmc7044_out1", "hmc7044_out2", '
+            '"hmc7044_out3", "hmc7044_out4", "hmc7044_out5", "hmc7044_out6", '
+            '"hmc7044_out7", "hmc7044_out8", "hmc7044_out9", "hmc7044_out10", '
+            '"hmc7044_out11", "hmc7044_out12", "hmc7044_out13";\n'
+            "\t\t\tjesd204-device;\n"
+            "\t\t\t#jesd204-cells = <2>;\n"
+            "\t\t\tjesd204-sysref-provider;\n"
+            "\t\t\tadi,jesd204-max-sysref-frequency-hz = <2000000>;\n"
+            "\t\t\thmc7044_c2: channel@2 {\n"
+            "\t\t\t\treg = <2>;\n"
+            '\t\t\t\tadi,extended-name = "DAC_CLK";\n'
+            "\t\t\t\tadi,divider = <8>;\n"
+            "\t\t\t\tadi,driver-mode = <1>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c3: channel@3 {\n"
+            "\t\t\t\treg = <3>;\n"
+            '\t\t\t\tadi,extended-name = "DAC_SYSREF";\n'
+            "\t\t\t\tadi,divider = <512>;\n"
+            "\t\t\t\tadi,driver-mode = <1>;\n"
+            "\t\t\t\tadi,jesd204-sysref-chan;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c12: channel@12 {\n"
+            "\t\t\t\treg = <12>;\n"
+            '\t\t\t\tadi,extended-name = "FPGA_CLK";\n'
+            "\t\t\t\tadi,divider = <8>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t};\n"
+            "\t\t\thmc7044_c13: channel@13 {\n"
+            "\t\t\t\treg = <13>;\n"
+            '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
+            "\t\t\t\tadi,divider = <512>;\n"
+            "\t\t\t\tadi,driver-mode = <2>;\n"
+            "\t\t\t\tadi,jesd204-sysref-chan;\n"
+            "\t\t\t};\n"
+            "\t\t};\n"
+            f"\t\tdac0_ad9172: ad9172@{ad.dac_cs} {{\n"
+            '\t\t\tcompatible = "adi,ad9172";\n'
+            "\t\t\t#address-cells = <1>;\n"
+            "\t\t\t#size-cells = <0>;\n"
+            f"\t\t\treg = <{ad.dac_cs}>;\n"
+            f"\t\t\tspi-max-frequency = <{ad.dac_spi_max}>;\n"
+            "\t\t\tclocks = <&hmc7044 2>;\n"
+            '\t\t\tclock-names = "dac_clk";\n'
+            f"\t\t\tadi,dac-rate-khz = <{ad.ad9172_dac_rate_khz}>;\n"
+            f"\t\t\tadi,jesd-link-mode = <{ad.ad9172_jesd_link_mode}>;\n"
+            "\t\t\tadi,jesd-subclass = <1>;\n"
+            f"\t\t\tadi,dac-interpolation = <{ad.ad9172_dac_interpolation}>;\n"
+            f"\t\t\tadi,channel-interpolation = <{ad.ad9172_channel_interpolation}>;\n"
+            f"\t\t\tadi,clock-output-divider = <{ad.ad9172_clock_output_divider}>;\n"
+            "\t\t\tadi,syncoutb-signal-type-lvds-enable;\n"
+            "\t\t\tadi,scrambling = <1>;\n"
+            "\t\t\tadi,sysref-mode = <2>;\n"
+            "\t\t\tjesd204-device;\n"
+            "\t\t\t#jesd204-cells = <2>;\n"
+            "\t\t\tjesd204-top-device = <0>;\n"
+            "\t\t\tjesd204-link-ids = <0>;\n"
+            f"\t\t\tjesd204-inputs = <&{ad.dac_core_label} 0 {ad.dac_jesd_link_id}>;\n"
+            "\t\t};\n"
+            "\t};",
+            f"\t&{ad.dac_core_label} {{\n"
+            '\t\tcompatible = "adi,axi-ad9172-1.0";\n'
+            "\t\tspibus-connected = <&dac0_ad9172>;\n"
+            "\t\tadi,axi-pl-fifo-enable;\n"
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{ad.dac_jesd_label} 0 {ad.dac_jesd_link_id}>;\n"
+            "\t};",
+            f"\t&{ad.dac_jesd_label} {{\n"
+            '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{ad.dac_xcvr_label} 1>, <&{ad.dac_xcvr_label} 0>;\n"
+            '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
+            "\t\t#clock-cells = <0>;\n"
+            '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tadi,octets-per-frame = <{ad.tx_f}>;\n"
+            f"\t\tadi,frames-per-multiframe = <{ad.tx_k}>;\n"
+            f"\t\tadi,converters-per-device = <{ad.tx_m}>;\n"
+            f"\t\tadi,bits-per-sample = <{ad.tx_np}>;\n"
+            "\t\tadi,control-bits-per-sample = <0>;\n"
+            f"\t\tjesd204-inputs = <&{ad.dac_xcvr_label} 0 {ad.dac_jesd_link_id}>;\n"
+            "\t};",
+            f"\t&{ad.dac_xcvr_label} {{\n"
+            '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
+            "\t\tclocks = <&hmc7044 12>;\n"
+            '\t\tclock-names = "conv";\n'
+            "\t\tadi,sys-clk-select = <3>;\n"
+            "\t\tadi,out-clk-select = <4>;\n"
+            "\t\tadi,use-lpm-enable;\n"
+            "\t\t#clock-cells = <1>;\n"
+            '\t\tclock-output-names = "dac_gt_clk", "tx_out_clk";\n'
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            "\t\tjesd204-inputs = <&hmc7044 0 0>;\n"
+            "\t};",
+        ]
+
+    def _build_ad9172_cfg(
+        self, cfg: dict[str, Any], topology: XsaTopology
+    ) -> _AD9172Cfg:
+        board_cfg = cfg.get("ad9172_board", {})
+        tx_cfg = cfg.get("jesd", {}).get("tx", {})
+        tx_label = str(board_cfg.get("dac_jesd_label", "axi_ad9172_jesd_tx_axi"))
+        xcvr_label = str(board_cfg.get("dac_xcvr_label", "axi_ad9172_adxcvr"))
+        core_label = str(board_cfg.get("dac_core_label", "axi_ad9172_core"))
+        if topology.jesd204_tx:
+            inferred_tx = topology.jesd204_tx[0].name.replace("-", "_")
+            tx_label = str(board_cfg.get("dac_jesd_label", inferred_tx))
+            topology_names = self._topology_instance_names(topology)
+            inferred_xcvr = self._infer_ad9172_xcvr_label(tx_label)
+            inferred_core = self._infer_ad9172_core_label(tx_label)
+            if topology_names:
+                inferred_xcvr = self._pick_existing_ad9172_label(
+                    topology_names,
+                    inferred_xcvr,
+                    tx_label,
+                    ("xcvr",),
+                )
+                inferred_core = self._pick_existing_ad9172_label(
+                    topology_names,
+                    inferred_core,
+                    tx_label,
+                    ("transport", "tpl", "core"),
+                )
+            xcvr_label = str(board_cfg.get("dac_xcvr_label", inferred_xcvr))
+            core_label = str(board_cfg.get("dac_core_label", inferred_core))
+        return _AD9172Cfg(
+            spi_bus=str(board_cfg.get("spi_bus", "spi0")),
+            clock_cs=int(board_cfg.get("clock_cs", 0)),
+            dac_cs=int(board_cfg.get("dac_cs", 1)),
+            clock_spi_max=int(board_cfg.get("clock_spi_max_frequency", 10000000)),
+            dac_spi_max=int(board_cfg.get("dac_spi_max_frequency", 1000000)),
+            dac_core_label=core_label,
+            dac_xcvr_label=xcvr_label,
+            dac_jesd_label=tx_label,
+            dac_jesd_link_id=int(board_cfg.get("dac_jesd_link_id", 0)),
+            hmc7044_ref_clk_hz=int(board_cfg.get("hmc7044_ref_clk_hz", 122880000)),
+            hmc7044_vcxo_hz=int(board_cfg.get("hmc7044_vcxo_hz", 122880000)),
+            hmc7044_out_freq_hz=int(board_cfg.get("hmc7044_out_freq_hz", 2949120000)),
+            ad9172_dac_rate_khz=int(board_cfg.get("ad9172_dac_rate_khz", 11796480)),
+            ad9172_jesd_link_mode=int(board_cfg.get("ad9172_jesd_link_mode", 4)),
+            ad9172_dac_interpolation=int(board_cfg.get("ad9172_dac_interpolation", 8)),
+            ad9172_channel_interpolation=int(
+                board_cfg.get("ad9172_channel_interpolation", 4)
+            ),
+            ad9172_clock_output_divider=int(
+                board_cfg.get("ad9172_clock_output_divider", 4)
+            ),
+            tx_l=int(tx_cfg.get("L", 4)),
+            tx_m=int(tx_cfg.get("M", 4)),
+            tx_f=int(tx_cfg.get("F", 2)),
+            tx_k=int(tx_cfg.get("K", 32)),
+            tx_np=int(tx_cfg.get("Np", 16)),
+        )
+
+    @staticmethod
+    def _topology_instance_names(topology: XsaTopology) -> set[str]:
+        names: set[str] = set()
+        names.update(i.name.replace("-", "_") for i in topology.jesd204_tx)
+        names.update(i.name.replace("-", "_") for i in topology.jesd204_rx)
+        names.update(i.name.replace("-", "_") for i in topology.clkgens)
+        names.update(i.name.replace("-", "_") for i in topology.converters)
+        for conn in topology.signal_connections:
+            names.update(n.replace("-", "_") for n in conn.producers)
+            names.update(n.replace("-", "_") for n in conn.consumers)
+            names.update(n.replace("-", "_") for n in conn.bidirectional)
+        return names
+
+    @staticmethod
+    def _infer_ad9172_xcvr_label(tx_label: str) -> str:
+        if "_link_tx_axi" in tx_label:
+            return tx_label.replace("_link_tx_axi", "_xcvr")
+        if "_jesd_tx_axi" in tx_label:
+            return tx_label.replace("_jesd_tx_axi", "_adxcvr")
+        return tx_label.replace("_jesd", "_adxcvr")
+
+    @staticmethod
+    def _infer_ad9172_core_label(tx_label: str) -> str:
+        if "_link_tx_axi" in tx_label:
+            return tx_label.replace("_link_tx_axi", "_transport_dac_tpl_core")
+        if "_jesd_tx_axi" in tx_label:
+            return tx_label.replace("_jesd_tx_axi", "_core")
+        return tx_label.replace("_jesd_tx_axi", "_core").replace("_jesd", "_core")
+
+    @staticmethod
+    def _ad9172_prefix_from_tx_label(tx_label: str) -> str:
+        for suffix in ("_link_tx_axi", "_jesd_tx_axi", "_jesd204_tx_axi", "_jesd_tx"):
+            if tx_label.endswith(suffix):
+                return tx_label[: -len(suffix)]
+        return tx_label
+
+    def _pick_existing_ad9172_label(
+        self,
+        topology_names: set[str],
+        default: str,
+        tx_label: str,
+        required_keywords: tuple[str, ...],
+    ) -> str:
+        if default in topology_names:
+            return default
+        prefix = self._ad9172_prefix_from_tx_label(tx_label).lower()
+        candidates = sorted(
+            n
+            for n in topology_names
+            if prefix in n.lower()
+            and all(keyword in n.lower() for keyword in required_keywords)
+        )
+        if candidates:
+            return candidates[0]
+        return default
 
     def _format_optional_gpio_lines(
         self, gpio_controller: str, gpio_mappings: list[tuple[str, Any, str]]

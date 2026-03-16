@@ -24,7 +24,9 @@ def test_xsa2dt_passes_profile_to_pipeline(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -84,7 +86,9 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -101,9 +105,14 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
                         "overall_total": 12,
                     },
                     "missing_roles": ["clock_chip:clk0"],
-                    "missing_links": ["rx0.jesd204-inputs->xcvr0", "rx1.jesd204-inputs->xcvr1"],
+                    "missing_links": [
+                        "rx0.jesd204-inputs->xcvr0",
+                        "rx1.jesd204-inputs->xcvr1",
+                    ],
                     "missing_properties": [],
-                    "mismatched_properties": ["rx0.adi,octets-per-frame: expected <4>, got <8>"],
+                    "mismatched_properties": [
+                        "rx0.adi,octets-per-frame: expected <4>, got <8>"
+                    ],
                 }
             )
         )
@@ -136,7 +145,10 @@ def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):
     assert call.kwargs["reference_dts"] == ref
     assert "Map:" in result.output
     assert "Coverage:" in result.output
-    assert "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7"
+        in result.output
+    )
     assert "Overall matched items: 8/12" in result.output
     assert "Missing gaps (roles/links/properties/mismatched): 1/2/0/1" in result.output
 
@@ -148,7 +160,9 @@ def test_xsa2dt_passes_strict_parity_to_pipeline(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -187,7 +201,9 @@ def test_xsa2dt_warns_when_map_json_is_invalid(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -219,8 +235,13 @@ def test_xsa2dt_warns_when_map_json_is_invalid(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: unable to parse parity map JSON at" in result.output
     assert "bad.map.json" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_when_map_json_root_is_not_object(tmp_path):
@@ -230,7 +251,9 @@ def test_xsa2dt_warns_when_map_json_root_is_not_object(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -262,8 +285,13 @@ def test_xsa2dt_warns_when_map_json_root_is_not_object(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map JSON root is not an object" in result.output
     assert "bad-root.map.json" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
@@ -273,7 +301,9 @@ def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -312,7 +342,9 @@ def test_xsa2dt_handles_map_without_coverage_block(tmp_path):
         )
 
     assert result.exit_code == 0, result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
     assert "Missing gaps (roles/links/properties/mismatched): 1/0/0/0" in result.output
 
 
@@ -323,7 +355,9 @@ def test_xsa2dt_normalizes_non_list_gap_fields(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -379,7 +413,9 @@ def test_xsa2dt_normalizes_non_dict_coverage_field(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -419,7 +455,9 @@ def test_xsa2dt_normalizes_non_dict_coverage_field(tmp_path):
         )
 
     assert result.exit_code == 0, result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
     assert "Missing gaps (roles/links/properties/mismatched): 1/0/0/0" in result.output
     assert "Warning: unable to parse parity map JSON" not in result.output
 
@@ -431,7 +469,9 @@ def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -463,8 +503,13 @@ def test_xsa2dt_warns_when_parity_artifacts_missing(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not found" in result.output
     assert "Warning: parity coverage report not found" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_when_parity_map_key_is_missing(tmp_path):
@@ -474,7 +519,9 @@ def test_xsa2dt_warns_when_parity_map_key_is_missing(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -502,8 +549,13 @@ def test_xsa2dt_warns_when_parity_map_key_is_missing(tmp_path):
 
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not provided by pipeline result" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_when_parity_coverage_key_is_missing(tmp_path):
@@ -513,7 +565,9 @@ def test_xsa2dt_warns_when_parity_coverage_key_is_missing(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -559,7 +613,10 @@ def test_xsa2dt_warns_when_parity_coverage_key_is_missing(tmp_path):
         )
 
     assert result.exit_code == 0, result.output
-    assert "Warning: parity coverage report not provided by pipeline result" in result.output
+    assert (
+        "Warning: parity coverage report not provided by pipeline result"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_missing_coverage_key_in_strict_mode(tmp_path):
@@ -568,7 +625,9 @@ def test_xsa2dt_warns_missing_coverage_key_in_strict_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         (out / "a.map.json").parent.mkdir(parents=True, exist_ok=True)
@@ -610,7 +669,10 @@ def test_xsa2dt_warns_missing_coverage_key_in_strict_mode(tmp_path):
         )
 
     assert result.exit_code == 0, result.output
-    assert "Warning: parity coverage report not provided by pipeline result" in result.output
+    assert (
+        "Warning: parity coverage report not provided by pipeline result"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_missing_coverage_key_with_strict_and_map_present(tmp_path):
@@ -619,7 +681,9 @@ def test_xsa2dt_warns_missing_coverage_key_with_strict_and_map_present(tmp_path)
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         (out / "a.map.json").parent.mkdir(parents=True, exist_ok=True)
@@ -661,8 +725,14 @@ def test_xsa2dt_warns_missing_coverage_key_with_strict_and_map_present(tmp_path)
         )
 
     assert result.exit_code == 0, result.output
-    assert "Warning: parity coverage report not provided by pipeline result" in result.output
-    assert "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7" in result.output
+    assert (
+        "Warning: parity coverage report not provided by pipeline result"
+        in result.output
+    )
+    assert (
+        "Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7"
+        in result.output
+    )
 
 
 def test_xsa2dt_does_not_warn_missing_coverage_without_reference_dts(tmp_path):
@@ -671,7 +741,9 @@ def test_xsa2dt_does_not_warn_missing_coverage_without_reference_dts(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -695,7 +767,10 @@ def test_xsa2dt_does_not_warn_missing_coverage_without_reference_dts(tmp_path):
 
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not provided by pipeline result" not in result.output
-    assert "Warning: parity coverage report not provided by pipeline result" not in result.output
+    assert (
+        "Warning: parity coverage report not provided by pipeline result"
+        not in result.output
+    )
 
 
 def test_xsa2dt_warns_missing_parity_artifacts_in_strict_mode(tmp_path):
@@ -704,7 +779,9 @@ def test_xsa2dt_warns_missing_parity_artifacts_in_strict_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -729,9 +806,17 @@ def test_xsa2dt_warns_missing_parity_artifacts_in_strict_mode(tmp_path):
 
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not provided by pipeline result" in result.output
-    assert "Warning: parity coverage report not provided by pipeline result" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Warning: parity coverage report not provided by pipeline result"
+        in result.output
+    )
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_does_not_process_parity_artifacts_without_parity_mode(tmp_path):
@@ -740,7 +825,9 @@ def test_xsa2dt_does_not_process_parity_artifacts_without_parity_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -767,7 +854,10 @@ def test_xsa2dt_does_not_process_parity_artifacts_without_parity_mode(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map not found" not in result.output
     assert "Warning: parity coverage report not found" not in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" not in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a"
+        not in result.output
+    )
 
 
 def test_xsa2dt_does_not_parse_map_json_without_parity_mode(tmp_path):
@@ -776,7 +866,9 @@ def test_xsa2dt_does_not_parse_map_json_without_parity_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         bad_map = out / "bad.map.json"
@@ -805,7 +897,10 @@ def test_xsa2dt_does_not_parse_map_json_without_parity_mode(tmp_path):
 
     assert result.exit_code == 0, result.output
     assert "Warning: unable to parse parity map JSON" not in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" not in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a"
+        not in result.output
+    )
 
 
 def test_xsa2dt_does_not_validate_parity_paths_without_parity_mode(tmp_path):
@@ -814,7 +909,9 @@ def test_xsa2dt_does_not_validate_parity_paths_without_parity_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -851,7 +948,9 @@ def test_xsa2dt_non_parity_mode_still_prints_artifact_paths(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         map_path = out / "missing.map.json"
@@ -890,7 +989,9 @@ def test_xsa2dt_does_not_check_map_root_type_without_parity_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         bad_root_map = out / "bad-root.map.json"
@@ -919,7 +1020,10 @@ def test_xsa2dt_does_not_check_map_root_type_without_parity_mode(tmp_path):
 
     assert result.exit_code == 0, result.output
     assert "Warning: parity map JSON root is not an object" not in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" not in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a"
+        not in result.output
+    )
 
 
 def test_xsa2dt_does_not_warn_missing_map_when_non_parity_and_coverage_exists(tmp_path):
@@ -928,7 +1032,9 @@ def test_xsa2dt_does_not_warn_missing_map_when_non_parity_and_coverage_exists(tm
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         cov_path = out / "coverage.md"
@@ -955,7 +1061,10 @@ def test_xsa2dt_does_not_warn_missing_map_when_non_parity_and_coverage_exists(tm
     assert result.exit_code == 0, result.output
     assert f"Coverage: {cov_path}" in result.output
     assert "Warning: parity map not provided by pipeline result" not in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" not in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a"
+        not in result.output
+    )
 
 
 def test_xsa2dt_warns_when_optional_parity_artifacts_not_pathlike(tmp_path):
@@ -965,7 +1074,9 @@ def test_xsa2dt_warns_when_optional_parity_artifacts_not_pathlike(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -1004,7 +1115,9 @@ def test_xsa2dt_warns_non_path_parity_artifacts_in_strict_mode(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -1032,8 +1145,13 @@ def test_xsa2dt_warns_non_path_parity_artifacts_in_strict_mode(tmp_path):
     assert result.exit_code == 0, result.output
     assert "Warning: parity map path is not path-like" in result.output
     assert "Warning: parity coverage report path is not path-like" in result.output
-    assert "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
-    assert "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a" in result.output
+    assert (
+        "Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a" in result.output
+    )
+    assert (
+        "Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+        in result.output
+    )
 
 
 def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_empty(tmp_path):
@@ -1043,7 +1161,9 @@ def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_empty(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -1083,7 +1203,9 @@ def test_xsa2dt_warns_when_optional_parity_artifact_paths_are_null(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -1125,7 +1247,9 @@ def test_xsa2dt_warns_when_optional_parity_artifact_path_is_invalid(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -1164,7 +1288,9 @@ def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {"base_dir": out / "base"}
@@ -1192,7 +1318,9 @@ def test_xsa2dt_fails_when_pipeline_result_is_not_a_dict(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = ["overlay", "merged", "report"]
@@ -1219,7 +1347,9 @@ def test_xsa2dt_fails_when_required_artifact_value_is_empty(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -1252,7 +1382,9 @@ def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -1285,7 +1417,9 @@ def test_xsa2dt_fails_when_required_artifact_value_is_invalid_pathlike(tmp_path)
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.return_value = {
@@ -1320,7 +1454,9 @@ def test_xsa2dt_prints_error_when_strict_parity_fails(tmp_path):
     ref = tmp_path / "ref.dts"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
     ref.write_text('/ { n@0 { compatible = "adi,hmc7044"; }; };\n')
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
@@ -1378,7 +1514,9 @@ def test_xsa2dt_fails_when_pipeline_raises_config_error(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.side_effect = ConfigError("invalid JESD config")
@@ -1405,7 +1543,9 @@ def test_xsa2dt_fails_when_pipeline_raises_parse_error(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.side_effect = XsaParseError("missing HWH in XSA")
@@ -1432,7 +1572,9 @@ def test_xsa2dt_fails_when_pipeline_raises_sdtgen_not_found(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.side_effect = SdtgenNotFoundError(
@@ -1461,7 +1603,9 @@ def test_xsa2dt_fails_when_pipeline_raises_sdtgen_error(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.side_effect = SdtgenError(
@@ -1492,7 +1636,9 @@ def test_xsa2dt_fails_when_pipeline_raises_unexpected_exception(tmp_path):
     cfg = tmp_path / "cfg.json"
     out = tmp_path / "out"
     xsa.write_bytes(b"PK\x03\x04")
-    cfg.write_text(json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}}))
+    cfg.write_text(
+        json.dumps({"jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}}})
+    )
 
     with patch("adidt.xsa.pipeline.XsaPipeline") as MockPipeline:
         MockPipeline.return_value.run.side_effect = RuntimeError("boom")
