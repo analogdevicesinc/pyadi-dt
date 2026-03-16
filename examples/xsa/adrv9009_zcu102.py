@@ -41,13 +41,12 @@ Kuiper download via adi-labgrid-plugins:
 from __future__ import annotations
 
 import argparse
-import io
 import shutil
 import subprocess
-import tarfile
 from pathlib import Path
 from typing import Any
 
+from adidt.xsa.kuiper import download_kuiper_xsa
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.topology import XsaParser
 
@@ -247,29 +246,12 @@ def _download_kuiper_xsa(
             for chunk in response.iter_content(chunk_size=1024 * 1024):
                 if chunk:
                     fout.write(chunk)
-
-    nested_member_name = f"{project}/bootgen_sysfiles.tgz"
-    with tarfile.open(tarball, "r:gz") as outer_tar:
-        nested_member = outer_tar.getmember(nested_member_name)
-        nested_f = outer_tar.extractfile(nested_member)
-        if nested_f is None:
-            raise RuntimeError(f"missing member data: {nested_member_name}")
-        nested_bytes = nested_f.read()
-
-    with tarfile.open(fileobj=io.BytesIO(nested_bytes), mode="r:gz") as inner_tar:
-        xsa_members = [m for m in inner_tar.getmembers() if m.name.endswith(".xsa")]
-        if not xsa_members:
-            raise RuntimeError(f"no .xsa found in nested archive for project {project}")
-        selected = next(
-            (m for m in xsa_members if m.name.endswith("/system_top.xsa")),
-            xsa_members[0],
-        )
-        src = inner_tar.extractfile(selected)
-        if src is None:
-            raise RuntimeError(f"unable to read XSA member {selected.name}")
-        out_path = out_dir / Path(selected.name).name
-        out_path.write_bytes(src.read())
-        return out_path
+    return download_kuiper_xsa(
+        release=release,
+        project=project,
+        cache_dir=cache_dir,
+        out_dir=out_dir,
+    )
 
 
 def _compile_dts_to_dtb(dts_path: Path, dtb_path: Path):
