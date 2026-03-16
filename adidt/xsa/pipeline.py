@@ -48,6 +48,9 @@ class XsaPipeline:
         if selected_profile:
             profile_data = ProfileManager().load(selected_profile)
             cfg_merged = merge_profile_defaults(cfg, profile_data)
+            cfg_merged = self._apply_profile_jesd_defaults(
+                cfg, cfg_merged, selected_profile
+            )
         nodes = NodeBuilder().build(topology, cfg_merged)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
         HtmlVisualizer().generate(
@@ -94,6 +97,27 @@ class XsaPipeline:
         conv_type = topology.inferred_converter_family()
         platform = topology.inferred_platform()
         return f"{conv_type}_{platform}"
+
+    @staticmethod
+    def _apply_profile_jesd_defaults(
+        cfg_in: dict[str, Any], cfg_out: dict[str, Any], profile_name: str
+    ) -> dict[str, Any]:
+        cfg_in_jesd = cfg_in.get("jesd", {})
+        if profile_name == "ad9172_zcu102":
+            profile_tx = cfg_out.setdefault("jesd", {}).setdefault("tx", {})
+            if "L" not in cfg_in_jesd.get("tx", {}):
+                profile_tx["L"] = 8
+            return cfg_out
+
+        if profile_name in {"fmcdaq3_zcu102", "fmcdaq3_zc706"}:
+            profile_jesd = cfg_out.setdefault("jesd", {})
+            for direction in ("rx", "tx"):
+                profile_dir = profile_jesd.setdefault(direction, {})
+                if "L" not in cfg_in_jesd.get(direction, {}):
+                    profile_dir["L"] = 2
+            return cfg_out
+
+        return cfg_out
 
     def _auto_profile_name(self, topology: XsaTopology) -> str | None:
         candidate = self._derive_name(topology)

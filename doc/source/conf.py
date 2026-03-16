@@ -41,7 +41,7 @@ extensions = [
     "adi_doctools",
 ]
 
-needs_extensions = {"adi_doctools": "0.4.21"}
+needs_extensions = {"adi_doctools": "0.4.39"}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

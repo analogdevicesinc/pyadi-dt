@@ -8,6 +8,12 @@ from pathlib import Path
 _LABEL_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:\s*\w", re.MULTILINE)
 _NODE_ADDR_RE = re.compile(r"@([0-9a-fA-F]+)\s*\{")
 _NODE_LABEL_IN_SNIPPET_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:")
+_BUS_NODE_RE = re.compile(r"^\s*&(?P<name>[a-zA-Z0-9_-]+)\s*\{")
+_BUS_CHILD_HEADER_RE = re.compile(
+    r"^(?P<indent>[ \t]*)(?:(?P<label>[a-zA-Z_]\w*)\s*:\s*)?"
+    r"(?P<name>[a-zA-Z_][\w-]*?)@(?P<addr>[0-9A-Fa-fx]+)\s*\{\s*$",
+    re.MULTILINE,
+)
 _INTERRUPTS_PROP_RE = re.compile(r"^\s*interrupts\s*=\s*<[^;]+>;\s*$", re.MULTILINE)
 _INTERRUPT_PARENT_PROP_RE = re.compile(
     r"^\s*interrupt-parent\s*=\s*<[^;]+>;\s*$", re.MULTILINE
@@ -92,6 +98,14 @@ class DtsMerger:
         # Replace conflicting address stubs
         for node in all_nodes:
             if node.lstrip().startswith("&"):
+                bus_match = _BUS_NODE_RE.search(node)
+                if bus_match:
+                    bus_name = bus_match.group("name")
+                    bus_children = self._extract_direct_children(node)
+                    if bus_children:
+                        merged = self._replace_bus_children(
+                            merged, bus_name, bus_children
+                        )
                 continue
             label_match = _NODE_LABEL_IN_SNIPPET_RE.search(node)
             if label_match:
@@ -187,6 +201,129 @@ class DtsMerger:
         return self._append_top_nodes(
             merged.rstrip() + "\n\n" + nodes_block, top_nodes_block
         )
+
+    def _brace_depth(self, text: str, start: int, end: int) -> int:
+        depth = 0
+        for ch in text[start:end]:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+        return depth
+
+    def _extract_direct_children(self, node: str) -> list[tuple[str | None, str]]:
+        open_brace = node.find("{")
+        if open_brace == -1:
+            return []
+        children: list[tuple[str | None, str]] = []
+        for match in _BUS_CHILD_HEADER_RE.finditer(node):
+            if match.start() < open_brace:
+                continue
+            if self._brace_depth(node, open_brace + 1, match.start()) != 0:
+                continue
+            children.append((match.group("label"), match.group("addr").lower()))
+        return children
+
+    def _replace_bus_children(
+        self, merged: str, bus_name: str, children: list[tuple[str | None, str]]
+    ) -> str:
+        if not children:
+            return merged
+
+        # First try reference form (&spi0 { ... }), then label-definition form
+        # (spi0: spi@... { ... }) which appears in the base DTS proper.
+        bus_re = re.compile(r"(?m)^([ \t]*)&" + re.escape(bus_name) + r"\s*\{")
+        bus_match = bus_re.search(merged)
+        if not bus_match:
+            label_def_re = re.compile(
+                r"(?m)^([ \t]*)"
+                + re.escape(bus_name)
+                + r"\s*:\s*\w[\w-]*@[0-9a-fA-Fx]+\s*\{"
+            )
+            bus_match = label_def_re.search(merged)
+        if not bus_match:
+            return merged
+
+        open_idx = merged.find("{", bus_match.start())
+        if open_idx == -1:
+            return merged
+
+        depth = 0
+        close_idx = None
+        for idx in range(open_idx, len(merged)):
+            if merged[idx] == "{":
+                depth += 1
+            elif merged[idx] == "}":
+                depth -= 1
+                if depth == 0:
+                    close_idx = idx
+                    if idx + 1 < len(merged) and merged[idx + 1] == ";":
+                        close_idx = idx + 1
+                    break
+        if close_idx is None:
+            return merged
+
+        bus_block_start = bus_match.start()
+        bus_block_end = close_idx + 1
+        bus_block = merged[bus_block_start:bus_block_end]
+        open_in_block = bus_block.find("{")
+        if open_in_block == -1:
+            return merged
+
+        remove_ranges: list[tuple[int, int]] = []
+        for child_match in _BUS_CHILD_HEADER_RE.finditer(bus_block):
+            if (
+                self._brace_depth(bus_block, open_in_block + 1, child_match.start())
+                != 0
+            ):
+                continue
+            label = child_match.group("label")
+            addr = child_match.group("addr").lower()
+            should_remove = any(
+                (spec_label is not None and spec_label == label) or spec_addr == addr
+                for spec_label, spec_addr in children
+            )
+            if not should_remove:
+                continue
+
+            node_start = child_match.start()
+            depth_child = 0
+            node_end = None
+            for node_idx in range(child_match.end() - 1, len(bus_block)):
+                if bus_block[node_idx] == "{":
+                    depth_child += 1
+                elif bus_block[node_idx] == "}":
+                    depth_child -= 1
+                    if depth_child == 0:
+                        node_end = node_idx + 1
+                        if node_end < len(bus_block) and bus_block[node_end] == ";":
+                            node_end += 1
+                        break
+            if node_end is None:
+                continue
+            remove_ranges.append((node_start, node_end))
+
+        if not remove_ranges:
+            return merged
+
+        remove_ranges = sorted(set(remove_ranges), reverse=True)
+        modified_block = bus_block
+        for start, end in remove_ranges:
+            if (
+                start > 0
+                and modified_block[start - 1] == "\n"
+                and end < len(modified_block)
+                and modified_block[end] == "\n"
+            ):
+                start -= 1
+            modified_block = modified_block[:start] + modified_block[end:]
+
+        warnings.warn(
+            f"Replaced existing SPI bus child node(s) on {bus_name}",
+            UserWarning,
+            stacklevel=2,
+        )
+        return merged[:bus_block_start] + modified_block + merged[bus_block_end:]
 
     def _append_top_nodes(self, merged: str, top_nodes_block: str) -> str:
         if not top_nodes_block.strip():

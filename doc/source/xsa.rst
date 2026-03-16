@@ -40,6 +40,7 @@ Pipeline diagram
        DTC --> DTB["system.dtb"]
        NB --> REP["HTML report<br/>topology + clocks + JESD"]
 
+
 Hardware test flow with ``pyadi-build``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

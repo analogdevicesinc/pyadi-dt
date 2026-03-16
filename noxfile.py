@@ -73,6 +73,7 @@ def docs(session):
         "sphinx-click",
         "sphinxcontrib-mermaid",
         "adi-doctools",
+        "linkify-it-py",
     )
     session.install(".")
     session.run("sphinx-build", "-b", "html", "doc/source", "doc/build/html")

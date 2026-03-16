@@ -8,6 +8,7 @@ from adidt.xsa.topology import (
     ClkgenInstance,
     ConverterInstance,
     Jesd204Instance,
+    SignalConnection,
     XsaTopology,
 )
 from adidt.xsa.node_builder import NodeBuilder
@@ -1111,3 +1112,94 @@ def test_build_adrv9009_allows_ad9528_channel_block_override(cfg):
     assert "ad9528_0_c9: channel@9 {" in merged
     assert 'adi,extended-name = "CUSTOM_CLK";' in merged
     assert "ad9528_0_c13: channel@13" not in merged
+
+
+def test_build_adrv9009_fmcomms8_uses_hmc7044_and_tpl_core_labels(cfg):
+    topo_adrv9009_fmcomms8 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_fmc_obs_jesd_rx_axi",
+                base_addr=0x85A70000,
+                num_lanes=4,
+                irq=107,
+                link_clk="unused",
+                direction="rx",
+            ),
+            Jesd204Instance(
+                name="axi_adrv9009_fmc_rx_jesd_rx_axi",
+                base_addr=0x85A50000,
+                num_lanes=4,
+                irq=109,
+                link_clk="unused",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_fmc_tx_jesd_tx_axi",
+                base_addr=0x85A30000,
+                num_lanes=8,
+                irq=108,
+                link_clk="unused",
+                direction="tx",
+            )
+        ],
+        signal_connections=[
+            SignalConnection(
+                signal="rx_core",
+                producers=["rx_adrv9009_fmc_tpl_core_adc_tpl_core"],
+            ),
+            SignalConnection(
+                signal="rx_obs_core",
+                producers=["obs_adrv9009_fmc_tpl_core_adc_tpl_core"],
+            ),
+            SignalConnection(
+                signal="tx_core",
+                producers=["tx_adrv9009_fmc_tpl_core_dac_tpl_core"],
+            ),
+            SignalConnection(signal="dma", producers=["axi_adrv9009_fmc_rx_dma"]),
+            SignalConnection(signal="dma_obs", producers=["axi_adrv9009_fmc_obs_dma"]),
+            SignalConnection(signal="dma_tx", producers=["axi_adrv9009_fmc_tx_dma"]),
+            SignalConnection(signal="xcvr_rx", producers=["axi_adrv9009_fmc_rx_xcvr"]),
+            SignalConnection(
+                signal="xcvr_obs", producers=["axi_adrv9009_fmc_obs_xcvr"]
+            ),
+            SignalConnection(signal="xcvr_tx", producers=["axi_adrv9009_fmc_tx_xcvr"]),
+        ],
+    )
+
+    nodes = NodeBuilder().build(topo_adrv9009_fmcomms8, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "hmc7044_fmc: hmc7044@0" in merged
+    assert "clk0_ad9528: ad9528-1@0" not in merged
+    assert (
+        "clocks = <&zynqmp_clk 71>, <&hmc7044_fmc 9>, <&axi_adrv9009_fmc_rx_xcvr 0>;"
+        in merged
+    )
+    assert (
+        "clocks = <&zynqmp_clk 71>, <&hmc7044_fmc 8>, <&axi_adrv9009_fmc_tx_xcvr 0>;"
+        in merged
+    )
+    assert (
+        "clocks = <&hmc7044_fmc 5>, <&hmc7044_fmc 9>;" in merged
+    )  # RX XCVR: conv=ch5, div40=ch9
+    assert (
+        "clocks = <&hmc7044_fmc 4>, <&hmc7044_fmc 8>;" in merged
+    )  # TX/OBS XCVR: conv=ch4, div40=ch8
+    assert "axi_adrv9009_core_rx: axi-adrv9009-rx-hpc@84a00000" not in merged
+    assert "&rx_adrv9009_fmc_tpl_core_adc_tpl_core {" in merged
+    assert "&obs_adrv9009_fmc_tpl_core_adc_tpl_core {" in merged
+    assert "&tx_adrv9009_fmc_tpl_core_dac_tpl_core {" in merged
+    # Dual-PHY: trx0 uses adrv9009-x2 with ch0/ch1/ch6, trx1 uses adrv9009 with ch2/ch3/ch7
+    assert 'compatible = "adrv9009-x2"' in merged
+    assert "trx0_adrv9009: adrv9009-phy@1" in merged
+    assert "trx1_adrv9009: adrv9009-phy@2" in merged
+    assert (
+        "clocks = <&hmc7044_fmc 0>, <&hmc7044_fmc 5>, <&hmc7044_fmc 1>, <&hmc7044_fmc 6>;"
+        in merged
+    )  # trx0: dev=ch0, fmc=ch5, sysref_dev=ch1, sysref_fmc=ch6
+    assert (
+        "clocks = <&hmc7044_fmc 2>, <&hmc7044_fmc 5>, <&hmc7044_fmc 3>, <&hmc7044_fmc 7>;"
+        in merged
+    )  # trx1: dev=ch2, fmc=ch5, sysref_dev=ch3, sysref_fmc=ch7

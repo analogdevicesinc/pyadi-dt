@@ -205,3 +205,34 @@ def test_merge_only_top_nodes_does_not_warn_about_missing_bus(tmp_path):
         _, merged = DtsMerger().merge(base, nodes, tmp_path, "top-only")
     assert "&spi0 {" in merged
     assert not any("no amba/axi bus label found" in str(x.message).lower() for x in w)
+
+
+def test_bus_child_conflict_replaces_zero_address_spi_node(tmp_path):
+    base = """\
+/dts-v1/;
+/ {
+	spi0: spi@ff010000 {
+		status = "okay";
+		ad9528-1@0 {
+			compatible = "adi,ad9528";
+		};
+	};
+};
+"""
+    nodes = {
+        "clkgens": [],
+        "jesd204_rx": [],
+        "jesd204_tx": [],
+        "converters": [],
+    }
+    nodes["converters"].append(
+        '\t&spi0 {\n\t\tstatus = "okay";\n\t\thmc7044@0 {\n\t\t\tcompatible = "adi,hmc7044";\n\t\t};\n\t\t};'
+    )
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        _, merged = DtsMerger().merge(base, nodes, tmp_path, "spi0-zero")
+
+    assert "hmc7044@0" in merged
+    assert "ad9528-1@0" not in merged
+    assert any("replaced" in str(warn.message).lower() for warn in w)
