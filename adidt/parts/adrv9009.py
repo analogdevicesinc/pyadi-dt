@@ -7,17 +7,29 @@ import logging
 
 
 def parse_talInit(file):
+    """Parse a talise_config.c file and return the talInit configuration dict."""
     d = tes.parse_talise_config_c(file)
     return d.data["talInit"]
 
 
 def handle_ints(val):
+    """Convert a value to an unsigned 32-bit integer, correctly wrapping negatives."""
     val = int(val)
     # Handles negative numbers
     return int(hex((val + (1 << 32)) % (1 << 32)), 16)
 
 
 def handle_channel_enable(data: dict, key: str, default: int = 0):
+    """Translate a TAL_RX*/TAL_TX*/TAL_ORX* string value in data[key] to its integer code.
+
+    Args:
+        data (dict): Profile dict to update in-place.
+        key (str): Key whose value should be translated.
+        default (int): Integer value to use when key is absent.
+
+    Raises:
+        ValueError: If the key's string value is not a recognised channel-enable token.
+    """
     channel_enable_map = {
         "TAL_RXOFF": 0,
         "TAL_RX1": 1,
@@ -45,6 +57,17 @@ def handle_channel_enable(data: dict, key: str, default: int = 0):
 
 
 def parse_profile(filename):
+    """Parse an ADRV9009 Profile Configuration Wizard file into a structured dict.
+
+    Converts the ADI profile XML format to a dict with rx, tx, orx, lpbk, and
+    clocks sub-dicts ready for use in device tree template rendering.
+
+    Args:
+        filename: Path to the profile (.xml) file.
+
+    Returns:
+        dict: Parsed profile with keys 'rx', 'tx', 'orx', 'lpbk', 'clocks'.
+    """
     nsxml = profilewiz.profile_to_xml(filename)
     profile = xmltodict.parse(nsxml)["profile"]
 
@@ -113,6 +136,8 @@ def parse_profile(filename):
 
 
 class adrv9009_dt(dt):
+    """ADRV9009 device tree map class."""
+
     def _add_tx_profile_fields(self, node, dprofile: Dict):
         """Add TX profile fields to device tree"""
         ...

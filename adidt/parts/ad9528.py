@@ -3,6 +3,14 @@ from adidt.utils import profilewiz
 
 
 def parse_profile(filename):
+    """Parse an AD9528 Profile Configuration Wizard file into a structured dict.
+
+    Args:
+        filename: Path to the AD9528 profile (.txt) file.
+
+    Returns:
+        dict: Parsed profile with keys 'pll1', 'pll2', 'out', and 'sysref'.
+    """
     nsxml = profilewiz.profile_to_xml(filename)
     profile = xmltodict.parse(nsxml)["adi_ad9528_Device_t"]
 

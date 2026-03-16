@@ -12,6 +12,7 @@ class layout:
     use_plugin_mode = True  # Set to False for standalone DTS (not overlay)
 
     def gen_dt_preprocess(self, **kwargs):
+        """Pre-process template context before rendering; override to inject extra variables."""
         return kwargs
 
     def gen_dt(self, **kwargs):

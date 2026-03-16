@@ -4,6 +4,7 @@ from typing import Any
 
 
 def _default_cfg() -> dict[str, Any]:
+    """Return a hard-coded fallback JESD and clock configuration for FMCDAQ3."""
     return {
         "jesd": {
             "rx": {
@@ -33,6 +34,7 @@ def _default_cfg() -> dict[str, Any]:
 
 
 def _jesd_mode_val(mode: dict[str, Any], key: str, default: int) -> int:
+    """Extract a JESD parameter from a mode dict, checking both a nested 'settings' key and the top level."""
     settings = mode.get("settings", {}) if isinstance(mode, dict) else {}
     if key in settings:
         return int(settings[key])
@@ -44,6 +46,24 @@ def _jesd_mode_val(mode: dict[str, Any], key: str, default: int) -> int:
 def resolve_fmcdaq3_config(
     vcxo_hz: float, sample_rate_hz: float, dev_kit_name: str, solve: bool = True
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Compute JESD204B and clock configuration for the FMCDAQ3 board via adijif.
+
+    Attempts to use adijif to select JESD modes and solve clocking for the AD9680
+    (ADC) and AD9152 (DAC) at the requested sample rate.  Falls back to a static
+    default configuration when adijif is unavailable or the solver fails.
+
+    Args:
+        vcxo_hz (float): VCXO frequency in Hz for the AD9523-1 clock chip.
+        sample_rate_hz (float): Desired converter sample rate in Hz.
+        dev_kit_name (str): adijif FPGA dev-kit identifier (e.g. 'ZCU102').
+        solve (bool): Run the adijif solver; set False to skip solving and only
+            populate JESD mode fields.
+
+    Returns:
+        tuple: (cfg dict, summary dict).  cfg contains 'jesd', optionally
+            'fpga_adc'/'fpga_dac' clock keys.  summary reports solver success,
+            output clocks, and any fallback reason.
+    """
     cfg: dict[str, Any] = _default_cfg()
     summary: dict[str, Any] = {
         "solver_succeeded": False,

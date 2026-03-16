@@ -3,7 +3,10 @@ import math
 
 
 class clock_dt:
+    """Mixin with shared helpers for building clock-chip device tree nodes."""
+
     def handle_64bit(self, prop, node, num):
+        """Set a DT property to num, splitting into two 32-bit words when the value exceeds 31 bits."""
         if num > 2**31:
             h = hex(int(num))
             # Inflate
@@ -14,6 +17,7 @@ class clock_dt:
             node.set_property(prop, int(num))
 
     def set_clock_node(self, parent, clk, name, reg):
+        """Append a new channel subnode to parent with standard clock properties."""
         node = fdt.Node(f"channel@{reg}")
 
         node.append(fdt.PropWords("reg", reg))
@@ -25,6 +29,7 @@ class clock_dt:
         parent.append(node)
 
     def setter(self, node, prop_name, value):
+        """Set a property on node, appending it if it does not yet exist."""
         existing_props = [prop.name for prop in node.props]
         if prop_name not in existing_props:
             node.append(fdt.PropWords(prop_name, value))
@@ -32,6 +37,7 @@ class clock_dt:
             node.set_property(prop_name, value)
 
     def update_existing_clock_node(self, node, clk):
+        """Update the channel-divider and driver defaults on an existing clock subnode."""
         self.setter(node, "adi,channel-divider", clk["divider"])
         props_to_set = ["adi,driver-mode", "adi,divider-phase"]
         defaults_to_set = [2, 1]
@@ -39,14 +45,17 @@ class clock_dt:
             self.setter(node, pts, val)
 
     def set_vcxo(self, node, vcxo):
+        """Set the adi,vcxo-frequency property on node, raising if the value is fractional."""
         if math.trunc(vcxo) != vcxo:
             raise Exception("Floats not supported")
         node.set_property("adi,vcxo-frequency", int(vcxo))
 
     def get_prop_across_nodes(self, node, prop):
+        """Return a list of a given property's value from every direct child node."""
         return [sn.get_property(prop).value for sn in node.nodes]
 
     def get_node_by_prop(self, parent, prop, value):
+        """Return the first child node of parent whose property matches value, or False."""
         for sn in parent.nodes:
             for prop in sn.props:
                 if prop.value == value:
@@ -63,6 +72,7 @@ class clock_dt:
     """
 
     def get_used_clocks(self, node):
+        """Return the list of clock nodes referenced by the 'clocks' phandle property of node."""
         used_clocks = []
         clocks_prop = node.get_property("clocks")
         if clocks_prop is not None:

@@ -3,6 +3,7 @@ import re
 
 
 def tryint(value):
+    """Try to parse value as an integer; return the original string on failure."""
     try:
         out = int(value, 0)
     except ValueError:
@@ -11,8 +12,22 @@ def tryint(value):
 
 
 class StructTree:
+    """Recursive parser for nested C struct initializer blocks."""
+
     @staticmethod
     def get_block(data: str, startpattern: str):
+        """Extract the brace-delimited body of the first struct matching startpattern.
+
+        Args:
+            data (str): C source text to search.
+            startpattern (str): Regex pattern identifying the struct opening.
+
+        Returns:
+            str: Text between the outermost braces (exclusive).
+
+        Raises:
+            ValueError: If startpattern is not found in data.
+        """
         m = re.search(startpattern, data)
         if not m:
             raise ValueError(f"unable to find {startpattern}")
@@ -41,21 +56,30 @@ class StructTree:
         self._data = {}
 
     def __getitem__(self, key):
+        """Access a child StructTree by name."""
         return self.children[key]
 
     def __str__(self, level=0):
+        """Print the tree node hierarchy with indentation."""
         print(f"{'    ' * level} - {self.name}")
         for c in self.children.values():
             c.print(level=level + 1)
 
     def __repr__(self):
+        """Return a JSON representation of the parsed data."""
         return json.dumps(self.data)
 
     @property
     def data(self):
+        """Return the parsed data dict keyed by this node's name."""
         return {self.name: self._data}
 
     def parse(self, data: str):
+        """Parse a C struct body into self._data, recursing into child StructTree nodes.
+
+        Args:
+            data (str): C source text containing the struct to parse.
+        """
         field_expr = r"^\s*\.(?P<name>\S*)\s*=\s*(?P<value>[^,\s]*),?(?P<comment>.*)$"
         self.block = self.get_block(data, self.pattern)
 
@@ -76,6 +100,14 @@ class StructTree:
 
 
 def parse_talise_config_c(file):
+    """Parse a Talise talise_config.c file into a StructTree with the full talInit hierarchy.
+
+    Args:
+        file: Path to the talise_config.c source file.
+
+    Returns:
+        StructTree: Parsed tree with data accessible via tree.data['talInit'].
+    """
     with open(file, "r") as f:
         data = f.read()
 

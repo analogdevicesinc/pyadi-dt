@@ -56,6 +56,7 @@ class hmc7044_dt(dt, clock_dt):
     }
 
     def set_clock_node(self, parent, clk, name, reg):
+        """Append an HMC7044 channel subnode with divider and driver settings to parent."""
         node = fdt.Node(f"channel@{reg}")
 
         node.append(fdt.PropWords("reg", reg))

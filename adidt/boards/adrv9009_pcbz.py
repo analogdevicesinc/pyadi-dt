@@ -104,6 +104,11 @@ class adrv9009_pcbz(layout):
         self.clock_profile = ad9528.parse_profile(ad9528_file)
 
     def parse_talInit(self, filename: Path):
+        """Load JESD204 settings from a talise_config.c source file.
+
+        Args:
+            filename (Path): Path to the talise_config.c file, or None to keep defaults.
+        """
         if filename is None:
             logging.warning("No talise_config.c passed, using defaults")
             return
@@ -113,6 +118,7 @@ class adrv9009_pcbz(layout):
         self.jesd204 = talInit["jesd204Settings"]
 
     def gen_dt_preprocess(self):
+        """Build the Jinja2 template context from parsed clock and transceiver profiles."""
         return {
             "pll1": self.clock_profile["pll1"],
             "pll2": self.clock_profile["pll2"],

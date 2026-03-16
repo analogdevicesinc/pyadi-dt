@@ -192,12 +192,21 @@ class daq2(layout):
         return cfg
 
     def make_ints(self, cfg, keys):
+        """Convert float-valued keys that are whole numbers to int in-place."""
         for key in keys:
             if key in cfg and isinstance(cfg[key], float) and cfg[key].is_integer():
                 cfg[key] = int(cfg[key])
         return cfg
 
     def map_jesd_structs(self, cfg):
+        """Extract and annotate ADC and DAC JESD configuration dicts from the solver output.
+
+        Args:
+            cfg (dict): Solver configuration containing converter_ADC/DAC and jesd_ADC/DAC keys.
+
+        Returns:
+            tuple: (adc dict, dac dict) each with a populated 'jesd' sub-dict.
+        """
         adc = cfg["converter_ADC"]
         adc["jesd"] = cfg["jesd_ADC"]
         if "jesd_class" in adc["jesd"]:
@@ -222,6 +231,14 @@ class daq2(layout):
         return adc, dac
 
     def map_clocks_to_board_layout(self, cfg):
+        """Map JIF solver configuration to the DAQ2 board clock and JESD layout.
+
+        Args:
+            cfg (dict): JIF solver configuration.
+
+        Returns:
+            tuple: (clock_config, adc_config, dac_config, fpga_config)
+        """
         # Fix ups
         for key in ["vco", "vcxo"]:
             if (

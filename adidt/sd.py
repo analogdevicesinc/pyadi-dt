@@ -7,7 +7,10 @@ from typing import List
 
 
 class sd:
+    """SD card file utilities for local and remote boards."""
+
     def find(self, loc, ext=None):
+        """Recursively find files under loc, optionally filtered by extension."""
         if ext:
             out = self._runr_o(f"find {loc} | grep .{ext}", warn=True)
         else:
@@ -16,6 +19,7 @@ class sd:
         return list(filter(lambda c: "*" not in c and c != "", out))
 
     def list(self, loc, ext=None):
+        """List files directly inside loc, optionally filtered by extension."""
         if ext:
             out = self._runr_o(f"for i in {loc}/*.{ext}; do echo $i; done", warn=True)
         else:
@@ -26,6 +30,16 @@ class sd:
     def copy_local_files_to_remote_sd_card(
         self, files: List[str], show=False, dryrun=False
     ):
+        """Copy a list of local files to the root of the remote SD card.
+
+        Args:
+            files (List[str]): Local file paths to copy.
+            show (bool): Print each scp command before executing.
+            dryrun (bool): Skip actual file transfers when True.
+
+        Raises:
+            Exception: If any local file does not exist.
+        """
         # Check if local files exist
         for f in files:
             if not os.path.exists(f):
@@ -44,6 +58,17 @@ class sd:
             self._runr(f"rm -rf {folder}")
 
     def update_existing_boot_files(self, reference_design, show=False, dryrun=False):
+        """Copy BOOT.BIN, device tree, and kernel image from the named reference design
+        folder on the remote SD card to the card's root boot partition.
+
+        Args:
+            reference_design (str): Name of the reference design subfolder on the SD card.
+            show (bool): Print each command before executing.
+            dryrun (bool): Skip actual file operations when True.
+
+        Raises:
+            Exception: If required files (BOOT.BIN, DTB, kernel) are not found.
+        """
         # Mount remote SD
         folder = self._handle_sd_mount()
         try:
