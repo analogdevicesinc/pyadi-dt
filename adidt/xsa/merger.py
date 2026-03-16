@@ -57,9 +57,11 @@ class DtsMerger:
         return overlay, merged
 
     def _scan_labels(self, dts: str) -> set[str]:
+        """Return the set of all DTS node labels found in *dts*."""
         return set(_LABEL_RE.findall(dts))
 
     def _bus_label(self, labels: set[str]) -> str | None:
+        """Return the best-matching AXI/AMBA bus label from *labels*, or None."""
         # Prefer "amba" (standard Xilinx/ARM bus label)
         if "amba" in labels:
             return "amba"
@@ -69,6 +71,7 @@ class DtsMerger:
         return None
 
     def _build_overlay(self, base_dts: str, all_nodes: list[str]) -> str:
+        """Build a /dts-v1/ plugin overlay string wrapping *all_nodes* under the bus label."""
         bus_nodes = [n for n in all_nodes if not n.lstrip().startswith("&")]
         top_nodes = [n for n in all_nodes if n.lstrip().startswith("&")]
         bus = self._bus_label(self._scan_labels(base_dts))
@@ -83,6 +86,7 @@ class DtsMerger:
     def _build_merged(
         self, base_dts: str, all_nodes: list[str], include_dirs: list[Path]
     ) -> str:
+        """Insert *all_nodes* into *base_dts*, resolving conflicts and returning the merged DTS text."""
         merged = base_dts
         include_labels = self._scan_include_labels(base_dts, include_dirs)
         include_nodes = self._scan_include_nodes(base_dts, include_dirs)
@@ -203,6 +207,7 @@ class DtsMerger:
         )
 
     def _brace_depth(self, text: str, start: int, end: int) -> int:
+        """Return the net brace depth change in *text[start:end]*."""
         depth = 0
         for ch in text[start:end]:
             if ch == "{":
@@ -212,6 +217,7 @@ class DtsMerger:
         return depth
 
     def _extract_direct_children(self, node: str) -> list[tuple[str | None, str]]:
+        """Return ``(label, unit_address)`` pairs for each direct child node in *node*."""
         open_brace = node.find("{")
         if open_brace == -1:
             return []
@@ -227,6 +233,7 @@ class DtsMerger:
     def _replace_bus_children(
         self, merged: str, bus_name: str, children: list[tuple[str | None, str]]
     ) -> str:
+        """Remove existing child nodes of *bus_name* that match *children* by label or address."""
         if not children:
             return merged
 
@@ -326,6 +333,7 @@ class DtsMerger:
         return merged[:bus_block_start] + modified_block + merged[bus_block_end:]
 
     def _append_top_nodes(self, merged: str, top_nodes_block: str) -> str:
+        """Append top-level reference nodes (``&label { ... }``) after the main DTS body."""
         if not top_nodes_block.strip():
             return merged
         return merged.rstrip() + "\n\n" + top_nodes_block
@@ -333,6 +341,7 @@ class DtsMerger:
     def _include_conflict_delete_directives(
         self, nodes: list[str], include_labels: set[str]
     ) -> list[str]:
+        """Return ``/delete-node/`` directives for ADI nodes whose labels clash with included nodes."""
         if not include_labels:
             return []
         directives: list[str] = []
@@ -349,12 +358,14 @@ class DtsMerger:
         return directives
 
     def _insert_delete_directives(self, merged: str, directives: list[str]) -> str:
+        """Insert *directives* into *merged* after the last ``#include`` line."""
         if not directives:
             return merged
         block = "\n".join(directives) + "\n"
         return self._insert_after_includes(merged, block)
 
     def _insert_after_includes(self, merged: str, block: str) -> str:
+        """Insert *block* immediately after the last ``#include`` directive in *merged*."""
         include_line_re = re.compile(r'^\s*#include\s+"[^"]+"\s*$', re.MULTILINE)
         matches = list(include_line_re.finditer(merged))
         if matches:
@@ -368,6 +379,7 @@ class DtsMerger:
         return block + merged
 
     def _scan_include_labels(self, base_dts: str, include_dirs: list[Path]) -> set[str]:
+        """Recursively collect all node labels defined in files included by *base_dts*."""
         include_re = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
         seen: set[str] = set()
         labels: set[str] = set()
@@ -388,6 +400,7 @@ class DtsMerger:
     def _scan_include_nodes(
         self, base_dts: str, include_dirs: list[Path]
     ) -> dict[str, str]:
+        """Return a mapping of label -> node text for all labelled nodes in included files."""
         include_re = re.compile(r'^\s*#include\s+"([^"]+)"', re.MULTILINE)
         seen: set[str] = set()
         nodes: dict[str, str] = {}
@@ -415,6 +428,7 @@ class DtsMerger:
     def _augment_node_from_include(
         self, node: str, include_nodes: dict[str, str]
     ) -> str:
+        """Copy missing ``interrupts`` / ``interrupt-parent`` props from the matching include node."""
         label_match = _NODE_LABEL_IN_SNIPPET_RE.search(node)
         if not label_match:
             return node
@@ -440,6 +454,7 @@ class DtsMerger:
     def _read_include_file(
         self, include_name: str, include_dirs: list[Path]
     ) -> str | None:
+        """Search *include_dirs* for *include_name* and return its text, or None if not found."""
         for base in include_dirs:
             path = base / include_name
             if path.exists():
@@ -447,6 +462,7 @@ class DtsMerger:
         return None
 
     def _try_compile_dtb(self, dts_path: Path) -> None:
+        """Attempt to compile *dts_path* to a DTB via ``dtc``; logs a warning on failure."""
         dtb_path = dts_path.with_suffix(".dtb")
         try:
             compile_input = dts_path
@@ -504,6 +520,7 @@ class DtsMerger:
             _log.info("dtc not found on PATH; skipping DTB compilation")
 
     def _find_tool(self, name: str) -> str | None:
+        """Return the full path of *name* on PATH, or None if not found."""
         from shutil import which
 
         return which(name)

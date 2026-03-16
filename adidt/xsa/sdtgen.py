@@ -130,10 +130,12 @@ class SdtgenRunner:
         raise SdtgenError("sdtgen produced no .dts output")
 
     def _detect_eval_mode(self, help_text: str) -> bool:
+        """Return True if the sdtgen binary uses ``-eval`` mode rather than ``-s/-d`` flags."""
         text = help_text.lower()
         return "-eval" in text and "-s <xsa>" not in text
 
     def _build_cmd(self, xsa_path: Path, output_dir: Path, use_eval: bool) -> list[str]:
+        """Return the sdtgen command list for either legacy ``-s/-d`` or modern ``-eval`` mode."""
         if not use_eval:
             return [self.binary, "-s", str(xsa_path), "-d", str(output_dir)]
         eval_script = (
@@ -143,6 +145,7 @@ class SdtgenRunner:
         return [self.binary, "-eval", eval_script]
 
     def _postprocess_generated_tree(self, output_dir: Path) -> None:
+        """Apply all normalization patches to every DTS/DTSI file in *output_dir*."""
         for path in sorted(output_dir.glob("*.dts")) + sorted(
             output_dir.glob("*.dtsi")
         ):
@@ -152,6 +155,7 @@ class SdtgenRunner:
                 self._write_text_allow_readonly(path, updated)
 
     def _normalize_cpu_and_interrupt_nodes(self, text: str) -> str:
+        """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup."""
         normalized = self._CPU_CLUSTER_RE.sub(r"\1cpus\2", text)
         normalized = normalized.replace("<&imux>", "<&gic_a53>")
         normalized = self._IPI_STATUS_RE.sub(r"\1disabled\3", normalized)
@@ -165,6 +169,7 @@ class SdtgenRunner:
         return normalized
 
     def _ensure_sdhci1_props(self, match: re.Match[str]) -> str:
+        """Regex substitution callback that injects missing iommus and no-1-8-v into sdhci1."""
         head, body, tail = match.groups()
         updated = body
         if "iommus =" not in updated:
@@ -174,6 +179,7 @@ class SdtgenRunner:
         return f"{head}{updated}{tail}"
 
     def _ensure_gem3_props(self, match: re.Match[str]) -> str:
+        """Regex substitution callback that injects a missing iommus property into gem3."""
         head, body, tail = match.groups()
         updated = body
         if "iommus =" not in updated:
@@ -181,6 +187,7 @@ class SdtgenRunner:
         return f"{head}{updated}{tail}"
 
     def _filter_memory_node(self, match: re.Match[str]) -> str:
+        """Remove ``device_type = "memory"`` from non-DDR memory nodes to avoid boot conflicts."""
         node = match.group(1)
         if "xlnx,psu-ddr-1.0" in node:
             return node
@@ -189,6 +196,7 @@ class SdtgenRunner:
         )
 
     def _write_text_allow_readonly(self, path: Path, content: str) -> None:
+        """Write *content* to *path*, temporarily lifting read-only permissions if needed."""
         try:
             path.write_text(content)
             return

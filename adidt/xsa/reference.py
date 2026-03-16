@@ -60,6 +60,7 @@ class ReferenceManifestExtractor:
     }
 
     def extract(self, root_dts: Path) -> DriverManifest:
+        """Walk *root_dts* and all its includes, building a DriverManifest of roles, links, and properties."""
         root_dts = root_dts.resolve()
         if not root_dts.exists():
             raise FileNotFoundError(root_dts)
@@ -71,6 +72,7 @@ class ReferenceManifestExtractor:
         return manifest
 
     def _dedupe_requirements(self, manifest: DriverManifest) -> None:
+        """Remove duplicate role, link, and property requirements from *manifest* in place."""
         role_seen: set[tuple[str, str, str | None]] = set()
         roles: list[RoleRequirement] = []
         for req in manifest.roles:
@@ -102,6 +104,7 @@ class ReferenceManifestExtractor:
         manifest.properties = properties
 
     def _walk(self, path: Path, seen: set[Path], manifest: DriverManifest) -> None:
+        """Recursively parse *path* and its includes, appending requirements to *manifest*."""
         path = path.resolve()
         if path in seen:
             return
@@ -167,6 +170,7 @@ class ReferenceManifestExtractor:
                     )
 
     def _resolve_role(self, compatibles: list[str]) -> tuple[str | None, str | None]:
+        """Map the first matching compatible string to a role name; return (role, compatible) or (None, None)."""
         for compatible in compatibles:
             for prefix, role in self._ROLE_BY_PREFIX.items():
                 if compatible.startswith(prefix):

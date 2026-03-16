@@ -94,6 +94,7 @@ class XsaPipeline:
         return result
 
     def _derive_name(self, topology: XsaTopology) -> str:
+        """Return a ``"<converter_family>_<platform>"`` name string inferred from the topology."""
         conv_type = topology.inferred_converter_family()
         platform = topology.inferred_platform()
         return f"{conv_type}_{platform}"
@@ -102,6 +103,12 @@ class XsaPipeline:
     def _apply_profile_jesd_defaults(
         cfg_in: dict[str, Any], cfg_out: dict[str, Any], profile_name: str
     ) -> dict[str, Any]:
+        """Inject well-known JESD lane-count defaults for profiles that require them.
+
+        Only fills in ``jesd.<direction>.L`` when the caller did not supply it
+        and the active profile (e.g. ``ad9172_zcu102``, ``fmcdaq3_*``) has a
+        hard-coded default.  All other keys are left unchanged.
+        """
         cfg_in_jesd = cfg_in.get("jesd", {})
         if profile_name == "ad9172_zcu102":
             profile_tx = cfg_out.setdefault("jesd", {}).setdefault("tx", {})
@@ -120,6 +127,7 @@ class XsaPipeline:
         return cfg_out
 
     def _auto_profile_name(self, topology: XsaTopology) -> str | None:
+        """Return the inferred profile name if a matching built-in profile exists, else None."""
         candidate = self._derive_name(topology)
         if candidate in ProfileManager().list_profiles():
             return candidate

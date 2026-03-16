@@ -12,14 +12,17 @@ _NODE_BLOCK_RE = re.compile(
 
 
 def _node_bodies_by_label(dts: str) -> dict[str, str]:
+    """Return a mapping of node label -> node body text for every labelled node in *dts*."""
     return {m.group("label"): m.group("body") for m in _NODE_BLOCK_RE.finditer(dts)}
 
 
 def _normalize_property_value(value: str) -> str:
+    """Strip all whitespace from *value* for whitespace-insensitive property comparison."""
     return re.sub(r"\s+", "", value)
 
 
 def _pct(matched: int, total: int) -> float:
+    """Return the percentage of *matched* out of *total*, or 100.0 if *total* is zero."""
     if total <= 0:
         return 100.0
     return round((matched / total) * 100.0, 1)
@@ -69,6 +72,7 @@ class ParityReport:
 def check_manifest_against_dts(
     manifest: DriverManifest, merged_dts: str
 ) -> ParityReport:
+    """Check every requirement in *manifest* against *merged_dts* and return a ParityReport."""
     items: list[RoleCoverage] = []
     missing_roles: list[str] = []
     node_bodies = _node_bodies_by_label(merged_dts)
@@ -169,6 +173,7 @@ def check_manifest_against_dts(
 def write_parity_reports(
     report: ParityReport, output_dir: Path, name: str
 ) -> tuple[Path, Path]:
+    """Write JSON map and Markdown coverage files for *report*; return ``(map_path, coverage_path)``."""
     map_path = output_dir / f"{name}.map.json"
     coverage_path = output_dir / f"{name}.coverage.md"
 

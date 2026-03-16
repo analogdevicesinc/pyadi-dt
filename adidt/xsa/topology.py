@@ -56,25 +56,30 @@ class XsaTopology:
     fpga_part: str = ""
 
     def _jesd_name_blob(self) -> str:
+        """Return a space-joined string of all JESD instance names in lower case."""
         return " ".join(j.name.lower() for j in self.jesd204_rx + self.jesd204_tx)
 
     def has_converter_types(self, *ip_types: str) -> bool:
+        """Return True if every requested *ip_types* is present among the topology's converters."""
         converter_types = {c.ip_type for c in self.converters}
         return set(ip_types).issubset(converter_types)
 
     def is_fmcdaq2_design(self) -> bool:
+        """Return True if the topology matches an FMCDAQ2 design (AD9680 + AD9144)."""
         if self.has_converter_types("axi_ad9680", "axi_ad9144"):
             return True
         jesd_names = self._jesd_name_blob()
         return "ad9680" in jesd_names and "ad9144" in jesd_names
 
     def is_fmcdaq3_design(self) -> bool:
+        """Return True if the topology matches an FMCDAQ3 design (AD9680 + AD9152)."""
         if self.has_converter_types("axi_ad9680", "axi_ad9152"):
             return True
         jesd_names = self._jesd_name_blob()
         return "ad9680" in jesd_names and "ad9152" in jesd_names
 
     def inferred_converter_family(self) -> str:
+        """Infer a short converter-family string (e.g. ``"ad9081"``, ``"adrv9009"``) from the topology."""
         if self.is_fmcdaq2_design():
             return "fmcdaq2"
         if self.is_fmcdaq3_design():
@@ -120,6 +125,7 @@ class XsaTopology:
         return "unknown"
 
     def inferred_platform(self) -> str:
+        """Infer the target platform name (e.g. ``"zcu102"``) from the FPGA part string."""
         part = self.fpga_part.lower()
         for prefix, platform in _PART_TO_PLATFORM.items():
             if part.startswith(prefix):
@@ -166,6 +172,7 @@ class XsaParser:
     """Parses a Vivado .xsa file and returns an XsaTopology."""
 
     def parse_hwh_map(self, hwh_content: str) -> dict:
+        """Parse a HWH XML string into an IP-instance map and write debug diagram files."""
         root = ET.fromstring(hwh_content)
 
         # Build map of IP instances
@@ -265,6 +272,7 @@ class XsaParser:
         return ip_map
 
     def parse(self, xsa_path: Path) -> XsaTopology:
+        """Extract the hardware topology from an XSA archive and return an XsaTopology."""
         hwh_content = self._extract_hwh(xsa_path)
         # with open("hwh_content.xml", "w") as f:
         #     f.write(hwh_content)
@@ -405,6 +413,7 @@ class XsaParser:
         return addr_map
 
     def _extract_hwh(self, xsa_path: Path) -> str:
+        """Read and return the first ``.hwh`` file text from the XSA zip archive."""
         try:
             with zipfile.ZipFile(xsa_path) as zf:
                 hwh_names = [n for n in zf.namelist() if n.endswith(".hwh")]
@@ -472,6 +481,7 @@ class XsaParser:
     def _parse_jesd(
         self, mod: ET.Element, name: str, base_addr: int, direction: str
     ) -> Jesd204Instance:
+        """Build a Jesd204Instance from a HWH MODULE element."""
         num_lanes_str = self._get_param(mod, "C_NUM_LANES", "")
         if not num_lanes_str:
             num_lanes_str = self._get_param(mod, "NUM_LANES", "")
@@ -497,6 +507,7 @@ class XsaParser:
     def _parse_clkgen(
         self, mod: ET.Element, name: str, base_addr: int
     ) -> ClkgenInstance:
+        """Build a ClkgenInstance from a HWH MODULE element, collecting output clock port names."""
         output_clks = [
             port.get("SIGNAME", "")
             for port in mod.findall(".//PORT")
@@ -509,6 +520,7 @@ class XsaParser:
     def _parse_converter(
         self, mod: ET.Element, name: str, ip_type: str, base_addr: int
     ) -> ConverterInstance:
+        """Build a ConverterInstance from a HWH MODULE element."""
         return ConverterInstance(
             name=name,
             ip_type=ip_type,
@@ -518,18 +530,21 @@ class XsaParser:
         )
 
     def _get_param(self, mod: ET.Element, name: str, default: str = "") -> str:
+        """Return the VALUE of the first PARAMETER named *name* under *mod*, or *default*."""
         for param in mod.findall(".//PARAMETER"):
             if param.get("NAME") == name:
                 return param.get("VALUE", default)
         return default
 
     def _get_port_signame(self, mod: ET.Element, port_name: str) -> str:
+        """Return the SIGNAME of the port named *port_name* under *mod*, or empty string."""
         for port in mod.findall(".//PORT"):
             if port.get("NAME") == port_name:
                 return port.get("SIGNAME", "")
         return ""
 
     def _parse_irq(self, mod: ET.Element) -> Optional[int]:
+        """Extract the IRQ number from a MODULE element's interrupt port or parameter, or None."""
         for port in mod.findall(".//PORT"):
             if port.get("NAME") in ("interrupt", "irq"):
                 m = re.search(r"(\d+)$", port.get("SIGNAME", ""))

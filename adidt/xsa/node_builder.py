@@ -153,6 +153,7 @@ class NodeBuilder:
 
     @classmethod
     def _is_adrv90xx_name(cls, value: str) -> bool:
+        """Return True if *value* contains an ADRV9009/9025/9026 keyword."""
         lower = value.lower()
         return any(key in lower for key in cls._ADRV90XX_KEYWORDS)
 
@@ -291,6 +292,7 @@ class NodeBuilder:
 
     @staticmethod
     def _is_ad9172_design(topology: XsaTopology) -> bool:
+        """Return True if the topology contains an AD9172/AD9162 DAC design."""
         if any(c.ip_type == "axi_ad9162" for c in topology.converters):
             return True
         names = " ".join(
@@ -305,6 +307,10 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> list[str]:
+        """Build DTS node strings for an FMCDAQ2 (AD9523 + AD9680 + AD9144) design.
+
+        Returns an empty list if the topology is not an FMCDAQ2 design.
+        """
         if not topology.is_fmcdaq2_design():
             return []
 
@@ -501,6 +507,7 @@ class NodeBuilder:
         ]
 
     def _build_fmcdaq2_cfg(self, cfg: dict[str, Any]) -> _FMCDAQ2Cfg:
+        """Extract and coerce all FMCDAQ2 board parameters from *cfg* into an _FMCDAQ2Cfg."""
         board_cfg = cfg.get("fmcdaq2_board", {})
 
         def board_int(key: str, default: Any) -> int:
@@ -609,6 +616,10 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> list[str]:
+        """Build DTS node strings for an FMCDAQ3 (AD9528 + AD9680 + AD9152) design.
+
+        Returns an empty list if the topology is not an FMCDAQ3 design.
+        """
         if not topology.is_fmcdaq3_design():
             return []
 
@@ -809,6 +820,7 @@ class NodeBuilder:
         ]
 
     def _build_fmcdaq3_cfg(self, cfg: dict[str, Any]) -> _FMCDAQ3Cfg:
+        """Extract and coerce all FMCDAQ3 board parameters from *cfg* into an _FMCDAQ3Cfg."""
         board_cfg = cfg.get("fmcdaq3_board", {})
 
         def board_int(key: str, default: Any) -> int:
@@ -919,6 +931,10 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> list[str]:
+        """Build DTS node strings for an AD9172 DAC design with HMC7044 clock chip.
+
+        Returns an empty list if neither the topology nor *cfg* indicate an AD9172 design.
+        """
         if not (self._is_ad9172_design(topology) or ("ad9172_board" in cfg)):
             return []
 
@@ -1043,6 +1059,7 @@ class NodeBuilder:
     def _build_ad9172_cfg(
         self, cfg: dict[str, Any], topology: XsaTopology
     ) -> _AD9172Cfg:
+        """Derive label names and extract AD9172 board parameters from *cfg* and *topology*."""
         board_cfg = cfg.get("ad9172_board", {})
         tx_cfg = cfg.get("jesd", {}).get("tx", {})
         tx_label = str(board_cfg.get("dac_jesd_label", "axi_ad9172_jesd_tx_axi"))
@@ -1100,6 +1117,10 @@ class NodeBuilder:
 
     @staticmethod
     def _topology_instance_names(topology: XsaTopology) -> set[str]:
+        """Return the union of all IP instance and signal-connection participant names from the topology.
+
+        All names have hyphens replaced with underscores to match DTS label conventions.
+        """
         names: set[str] = set()
         names.update(i.name.replace("-", "_") for i in topology.jesd204_tx)
         names.update(i.name.replace("-", "_") for i in topology.jesd204_rx)
@@ -1113,6 +1134,7 @@ class NodeBuilder:
 
     @staticmethod
     def _infer_ad9172_xcvr_label(tx_label: str) -> str:
+        """Derive the XCVR label from the TX JESD label using AD9172 naming conventions."""
         if "_link_tx_axi" in tx_label:
             return tx_label.replace("_link_tx_axi", "_xcvr")
         if "_jesd_tx_axi" in tx_label:
@@ -1121,6 +1143,7 @@ class NodeBuilder:
 
     @staticmethod
     def _infer_ad9172_core_label(tx_label: str) -> str:
+        """Derive the DAC TPL core label from the TX JESD label using AD9172 naming conventions."""
         if "_link_tx_axi" in tx_label:
             return tx_label.replace("_link_tx_axi", "_transport_dac_tpl_core")
         if "_jesd_tx_axi" in tx_label:
@@ -1129,6 +1152,7 @@ class NodeBuilder:
 
     @staticmethod
     def _ad9172_prefix_from_tx_label(tx_label: str) -> str:
+        """Strip known AD9172 TX-JESD suffixes from *tx_label* and return the common IP prefix."""
         for suffix in ("_link_tx_axi", "_jesd_tx_axi", "_jesd204_tx_axi", "_jesd_tx"):
             if tx_label.endswith(suffix):
                 return tx_label[: -len(suffix)]
@@ -1141,6 +1165,10 @@ class NodeBuilder:
         tx_label: str,
         required_keywords: tuple[str, ...],
     ) -> str:
+        """Return the best topology name that shares the TX label's prefix and has all *required_keywords*.
+
+        Falls back to *default* when no candidate is found or *default* is already present.
+        """
         if default in topology_names:
             return default
         prefix = self._ad9172_prefix_from_tx_label(tx_label).lower()
@@ -1157,6 +1185,7 @@ class NodeBuilder:
     def _format_optional_gpio_lines(
         self, gpio_controller: str, gpio_mappings: list[tuple[str, Any, str]]
     ) -> str:
+        """Render ``prop-name = <&gpio_controller idx 0>;`` lines for each non-None GPIO mapping."""
         lines = []
         for prop_name, value, cfg_key in gpio_mappings:
             if value is not None:
@@ -1170,6 +1199,10 @@ class NodeBuilder:
     def _pick_matching_label(
         topology_names: set[str], default: str, required_tokens: tuple[str, ...]
     ) -> str:
+        """Return the first topology name containing all *required_tokens*, or *default* if none match.
+
+        When *default* itself is already in *topology_names*, it is returned immediately.
+        """
         if default in topology_names:
             return default
         candidates = sorted(
@@ -1181,6 +1214,10 @@ class NodeBuilder:
 
     @staticmethod
     def _is_fmcomms8_layout(topology_names: set[str]) -> bool:
+        """Return True if *topology_names* indicate a dual-chip FMComms8 ADRV9009 layout.
+
+        Detected by the presence of per-direction ADRV9009 TPL core instances (rx/tx/obs).
+        """
         return any(
             "tpl_core" in name.lower()
             and "adrv9009" in name.lower()
@@ -1195,6 +1232,7 @@ class NodeBuilder:
 
     @staticmethod
     def _coerce_board_int(value: Any, key_path: str) -> int:
+        """Convert *value* to int; raise ValueError with *key_path* context on failure."""
         if isinstance(value, bool):
             raise ValueError(f"{key_path} must be an integer, got {value!r}")
         try:
@@ -1203,6 +1241,7 @@ class NodeBuilder:
             raise ValueError(f"{key_path} must be an integer, got {value!r}") from exc
 
     def _fmcdaq2_ad9523_channels_block(self) -> str:
+        """Return the DTS channel sub-nodes string for the FMCDAQ2 AD9523-1 clock chip."""
         return (
             "\t\t\tad9523_0_c1:channel@1 {\n"
             "\t\t\t\treg = <1>;\n"
@@ -1263,6 +1302,7 @@ class NodeBuilder:
         )
 
     def _fmcdaq3_ad9528_channels_block(self) -> str:
+        """Return the DTS channel sub-nodes string for the FMCDAQ3 AD9528 clock chip."""
         return (
             "\t\t\tad9528_0_c2: channel@2 {\n"
             "\t\t\t\treg = <2>;\n"
@@ -1335,6 +1375,7 @@ class NodeBuilder:
         )
 
     def _make_jinja_env(self) -> Environment:
+        """Create and return a Jinja2 Environment pointed at the XSA template directory."""
         from .exceptions import XsaParseError
 
         loc = os.path.join(
@@ -1345,6 +1386,7 @@ class NodeBuilder:
         return Environment(loader=FileSystemLoader(loc))
 
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
+        """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}
 
     def _resolve_clock(
@@ -1356,6 +1398,11 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> tuple[str, str, int]:
+        """Resolve the clkgen label, device-clock label, and device-clock index for a JESD instance.
+
+        Returns:
+            ``(clkgen_label, device_clk_label, device_clk_index)``
+        """
         clkgen = clock_map.get(inst.link_clk)
         unresolved_clk = clkgen is None
         if unresolved_clk:
@@ -1392,6 +1439,11 @@ class NodeBuilder:
         direction: str,
         clkgen_label: str,
     ) -> tuple[str, int]:
+        """Resolve the ``jesd204-inputs`` phandle label and link-id for a JESD instance.
+
+        Returns:
+            ``(jesd_input_label, link_id)``
+        """
         clock_cfg = cfg.get("clock", {})
         override_label = clock_cfg.get(f"{direction}_jesd_input_label")
         if override_label:
@@ -1428,6 +1480,7 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> str:
+        """Render the ``jesd204_fsm.tmpl`` template for *inst* and return the DTS node string."""
         from .exceptions import ConfigError
 
         for key in ("F", "K"):
@@ -1448,6 +1501,7 @@ class NodeBuilder:
     def _render_converter(
         self, env: Environment, conv: ConverterInstance, rx_label: str, tx_label: str
     ) -> str:
+        """Render a per-IP-type Jinja2 template for *conv*; returns a comment stub if no template exists."""
         from jinja2 import TemplateNotFound
 
         try:
@@ -1469,6 +1523,7 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> str:
+        """Render the ``clkgen.tmpl`` template for *inst* and return the DTS node string."""
         return env.get_template("clkgen.tmpl").render(
             instance=inst,
             ps_clk_label=ps_clk_label,
@@ -1477,12 +1532,14 @@ class NodeBuilder:
 
     @staticmethod
     def _platform_ps_labels(topology: XsaTopology) -> tuple[str, int, str]:
+        """Return ``(ps_clk_label, ps_clk_index, gpio_label)`` appropriate for the topology's platform."""
         if topology.inferred_platform() == "zc706":
             return ("clkc", 15, "gpio0")
         return ("zynqmp_clk", 71, "gpio")
 
     @staticmethod
     def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
+        """Re-indent each line of *block* with *prefix* and return the result."""
         lines = block.strip("\n").splitlines()
         if not lines:
             return ""
@@ -1490,6 +1547,7 @@ class NodeBuilder:
 
     @staticmethod
     def _ad9081_converter_select(rx_m: int, rx_link_mode: int) -> str:
+        """Return the ``adi,converter-select`` phandle list string for the AD9081 RX path."""
         # M4/L8 (mode 18) follows the upstream ADI mapping used by the
         # zynqmp-zcu102-rev10-ad9081 reference design.
         if rx_link_mode == 18 and rx_m == 4:
@@ -1512,6 +1570,7 @@ class NodeBuilder:
 
     @staticmethod
     def _ad9081_tx_converter_select(tx_m: int, tx_link_mode: int) -> str:
+        """Return the ``adi,converter-select`` phandle list string for the AD9081 TX path."""
         # M4/L8 (mode 17) follows the upstream ADI mapping used by the
         # zynqmp-zcu102-rev10-ad9081 reference design.
         if tx_link_mode == 17 and tx_m == 4:
@@ -1532,12 +1591,17 @@ class NodeBuilder:
 
     @staticmethod
     def _ad9081_lane_map(lanes: int) -> str:
+        """Return a space-separated 8-element lane-mapping string padded with 7 for unused lanes."""
         lane_count = max(1, min(lanes, 8))
         values = list(range(lane_count)) + [7] * (8 - lane_count)
         return " ".join(str(v) for v in values)
 
     @staticmethod
     def _ad9081_lane_map_for_mode(direction: str, lanes: int, link_mode: int) -> str:
+        """Return the board-specific ``adi,logical-lane-mapping`` string for the given AD9081 link mode.
+
+        Falls back to the generic sequential lane map when no known-good mapping exists.
+        """
         # Board-specific known-good mappings from upstream ADI DTS.
         if direction == "tx" and link_mode == 17 and lanes == 8:
             return "0 2 7 6 1 5 4 3"
@@ -1555,6 +1619,10 @@ class NodeBuilder:
         jesd_cfg: dict[str, Any],
         direction: str,
     ) -> int:
+        """Determine the AD9081 link mode for *direction* from config or by inferring from M and L values.
+
+        Raises ConfigError if the mode cannot be determined.
+        """
         from .exceptions import ConfigError
 
         explicit = ad9081_cfg.get(f"{direction}_link_mode")
@@ -1582,6 +1650,11 @@ class NodeBuilder:
         ps_clk_index: int,
         gpio_label: str,
     ) -> list[str]:
+        """Build DTS node strings for an AD9081 MxFE design with HMC7044 clock chip.
+
+        Returns an empty list if the topology does not contain an ``axi_ad9081`` converter
+        with MXFE JESD instances.
+        """
         has_ad9081 = any(c.ip_type == "axi_ad9081" for c in topology.converters)
         if not has_ad9081:
             return []
@@ -1948,6 +2021,11 @@ class NodeBuilder:
     def _build_adrv9009_nodes(
         self, topology: XsaTopology, cfg: dict[str, Any]
     ) -> list[str]:
+        """Build DTS node strings for an ADRV9009/9025 transceiver design.
+
+        Handles both standard single-chip and dual-chip FMComms8 layouts.
+        Returns an empty list if no ADRV90xx instances are found in the topology.
+        """
         board_cfg = cfg.get("adrv9009_board", {})
         platform = topology.inferred_platform()
         if platform == "zc706":

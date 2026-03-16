@@ -22,6 +22,7 @@ class HtmlVisualizer:
         output_dir: Path,
         name: str,
     ) -> str:
+        """Render and write a self-contained HTML report; returns the HTML string."""
         if not _D3_BUNDLE:
             raise RuntimeError(
                 "D3 bundle missing — run scripts/embed_d3.py to generate "
@@ -39,12 +40,14 @@ class HtmlVisualizer:
         return html_content
 
     def _dts_to_tree(self, dts: str) -> list[dict]:
+        """Return a list of ``{"name": ..., "addr": ...}`` dicts for every ``name@addr`` node in *dts*."""
         return [
             {"name": f"{m.group(1)}@{m.group(2)}", "addr": m.group(2)}
             for m in re.finditer(r"(\w[\w-]*)@([0-9a-fA-F]+)\s*\{", dts)
         ]
 
     def _build_clock_data(self, topology: XsaTopology, cfg: dict) -> dict:
+        """Assemble clock-topology data for the HTML report's D3 clock diagram."""
         clock_cfg = cfg.get("clock", {})
         return {
             "clkgens": [
@@ -55,6 +58,7 @@ class HtmlVisualizer:
         }
 
     def _build_jesd_data(self, topology: XsaTopology) -> dict:
+        """Assemble JESD204 path data for the HTML report's D3 JESD diagram."""
         return {
             "rx": [
                 {"name": i.name, "addr": hex(i.base_addr), "lanes": i.num_lanes}
@@ -70,6 +74,7 @@ class HtmlVisualizer:
         }
 
     def _build_match_coverage(self, topology: XsaTopology, merged_dts: str) -> dict:
+        """Compute how many parsed topology IPs appear by name in the merged DTS."""
         parsed = {
             "jesd204_rx": [i.name for i in topology.jesd204_rx],
             "jesd204_tx": [i.name for i in topology.jesd204_tx],
@@ -110,6 +115,7 @@ class HtmlVisualizer:
     def _render_html(
         self, tree_data, clock_data, jesd_data, coverage_data, title: str
     ) -> str:
+        """Build the full HTML string from pre-computed data sections."""
         safe_title = html.escape(title)
         tree_json = self._json_safe(tree_data)
         clock_json = self._json_safe(clock_data)

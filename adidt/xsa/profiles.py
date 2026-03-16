@@ -145,6 +145,7 @@ _FMCDAQ2_BOARD_STR_KEYS = {
 
 
 def _is_valid_int(value: Any) -> bool:
+    """Return True if *value* is a plain integer (not a bool)."""
     return isinstance(value, int) and not isinstance(value, bool)
 
 
@@ -154,6 +155,7 @@ def _validate_typed_keys(
     int_keys: set[str],
     str_keys: set[str],
 ) -> None:
+    """Raise ProfileError if any key in *values* has the wrong type for its category."""
     for key in int_keys.intersection(values):
         value = values[key]
         if not _is_valid_int(value):
@@ -175,6 +177,7 @@ def _validate_typed_keys(
 def _validate_board_defaults(
     board_name: str, values: dict[str, Any], allowed: set[str]
 ) -> None:
+    """Raise ProfileError if *values* contains unknown keys or list-only keys with wrong types."""
     unknown_keys = sorted(set(values) - allowed)
     if unknown_keys:
         unknown = ", ".join(unknown_keys)
@@ -189,6 +192,7 @@ def _validate_board_defaults(
 
 
 def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
+    """Validate all recognised board-defaults sections in *defaults*, raising ProfileError on violations."""
     ad9081_board = defaults.get("ad9081_board")
     if ad9081_board is not None:
         if not isinstance(ad9081_board, dict):
@@ -243,11 +247,13 @@ class ProfileManager:
         self.profile_dir = profile_dir or (Path(__file__).parent / "profiles")
 
     def list_profiles(self) -> list[str]:
+        """Return sorted names of all available profile JSON files."""
         if not self.profile_dir.exists():
             return []
         return sorted(p.stem for p in self.profile_dir.glob("*.json"))
 
     def load(self, name: str) -> dict[str, Any]:
+        """Load, validate, and return the profile dict for *name*; raises ProfileError on failure."""
         path = self.profile_dir / f"{name}.json"
         if not path.exists():
             raise ProfileError(f"profile not found: {name}")
