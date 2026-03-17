@@ -24,6 +24,10 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
     If the DTS contains ``#include`` directives the file is first preprocessed
     with ``cpp``.  The resulting DTB is written to *dtb_path*.
 
+    Args:
+        dts_path: Path to the source ``.dts`` file.
+        dtb_path: Destination path for the compiled ``.dtb`` output.
+
     Raises:
         RuntimeError: if ``cpp`` or ``dtc`` exits with a non-zero return code.
     """
@@ -77,7 +81,16 @@ def require_hw_prereqs() -> None:
 
 
 def shell_out(shell, cmd: str) -> str:
-    """Run *cmd* via an ``ADIShellDriver`` and return the output as a string."""
+    """Run *cmd* via an ``ADIShellDriver`` and return the output as a string.
+
+    Args:
+        shell: An ``ADIShellDriver`` instance whose ``run`` method executes
+            shell commands on the target board.
+        cmd: Shell command string to execute.
+
+    Returns:
+        Command output as a single newline-joined string.
+    """
     res = shell.run(cmd)
     out = res[0] if isinstance(res, tuple) else res
     if isinstance(out, list):

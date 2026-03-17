@@ -1,3 +1,4 @@
+"""Reference manifest data model and extractor for DTS parity checking."""
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -5,6 +6,8 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class RoleRequirement:
+    """A required IIO device role declared in a reference DTS."""
+
     role: str
     compatible: str
     label: str | None
@@ -13,6 +16,8 @@ class RoleRequirement:
 
 @dataclass(frozen=True)
 class LinkRequirement:
+    """A required inter-node phandle link declared in a reference DTS."""
+
     source_label: str
     property_name: str
     target_label: str
@@ -21,6 +26,8 @@ class LinkRequirement:
 
 @dataclass(frozen=True)
 class PropertyRequirement:
+    """A required node-property value declared in a reference DTS."""
+
     source_label: str
     property_name: str
     expected_value: str
@@ -29,6 +36,8 @@ class PropertyRequirement:
 
 @dataclass
 class DriverManifest:
+    """Aggregated requirements extracted from one or more reference DTS files."""
+
     roles: list[RoleRequirement] = field(default_factory=list)
     links: list[LinkRequirement] = field(default_factory=list)
     properties: list[PropertyRequirement] = field(default_factory=list)
@@ -36,6 +45,8 @@ class DriverManifest:
 
 
 class ReferenceManifestExtractor:
+    """Parses a reference DTS file (and its includes) into a :class:`DriverManifest`."""
+
     _include_re = re.compile(r'^\s*(?:#include|/include/)\s+[<"]([^">]+)[">]\s*$', re.M)
     _compatible_re = re.compile(
         r"(?P<label>[A-Za-z_][\w\-]*)?\s*:?[^{;\n]*\{[^}]*?compatible\s*=\s*(?P<value>[^;]+);",

@@ -1,3 +1,4 @@
+"""Built-in board profiles and profile merging utilities."""
 import json
 from copy import deepcopy
 from pathlib import Path
@@ -244,6 +245,7 @@ class ProfileManager:
     """Loads built-in XSA board profiles."""
 
     def __init__(self, profile_dir: Path | None = None):
+        """Initialize the manager, defaulting to the built-in ``profiles/`` directory."""
         self.profile_dir = profile_dir or (Path(__file__).parent / "profiles")
 
     def list_profiles(self) -> list[str]:

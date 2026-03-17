@@ -1,3 +1,5 @@
+"""Utilities for downloading and extracting XSA files from ADI Kuiper releases."""
+
 from __future__ import annotations
 
 import io

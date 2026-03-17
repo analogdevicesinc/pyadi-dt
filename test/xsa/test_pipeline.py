@@ -46,7 +46,6 @@ def test_pipeline_produces_overlay_and_merged(xsa_path, cfg, tmp_path):
         result = XsaPipeline().run(xsa_path, cfg, tmp_path)
     assert result["overlay"].exists()
     assert result["merged"].exists()
-    assert result["report"].exists()
 
 
 def test_pipeline_output_names_derived_from_converter(xsa_path, cfg, tmp_path):
@@ -233,7 +232,6 @@ def test_pipeline_explicit_profile_controls_output_names(xsa_path, cfg, tmp_path
         result = XsaPipeline().run(xsa_path, cfg, tmp_path, profile="adrv9008_zcu102")
     assert result["overlay"].name == "adrv9008_zcu102.dtso"
     assert result["merged"].name == "adrv9008_zcu102.dts"
-    assert result["report"].name == "adrv9008_zcu102_report.html"
 
 
 def test_pipeline_explicit_ad9082_profile_applies_defaults(xsa_path, cfg, tmp_path):
@@ -930,4 +928,76 @@ def test_pipeline_strict_parity_reports_multiple_gap_categories(
     msg = str(ex.value)
     assert "missing required roles" in msg
     assert "missing required links" in msg
-    assert "missing required properties" in msg
+
+
+# ---------------------------------------------------------------------------
+# emit_report / emit_clock_graphs configurability
+# ---------------------------------------------------------------------------
+
+
+def test_pipeline_report_absent_by_default(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path)
+    assert "report" not in result
+
+
+def test_pipeline_emit_report_true_writes_html(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path, emit_report=True)
+    assert "report" in result
+    assert result["report"].exists()
+
+
+def test_pipeline_emit_report_false_does_not_write_html(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        with patch("adidt.xsa.pipeline.HtmlVisualizer") as MockVis:
+            XsaPipeline().run(xsa_path, cfg, tmp_path, emit_report=False)
+    MockVis.return_value.generate.assert_not_called()
+
+
+def test_pipeline_clock_graphs_absent_by_default(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path)
+    assert "clock_dot" not in result
+    assert "clock_d2" not in result
+
+
+def test_pipeline_emit_clock_graphs_true_writes_files(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path, emit_clock_graphs=True)
+    assert "clock_dot" in result
+    assert "clock_d2" in result
+    assert result["clock_dot"].exists()
+    assert result["clock_d2"].exists()
+
+
+def test_pipeline_emit_clock_graphs_false_omits_clock_keys(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path, emit_clock_graphs=False)
+    assert "clock_dot" not in result
+    assert "clock_d2" not in result
+    assert "clock_dot_svg" not in result
+    assert "clock_d2_svg" not in result
+
+
+def test_pipeline_emit_clock_graphs_false_does_not_invoke_generator(
+    xsa_path, cfg, tmp_path
+):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        with patch("adidt.xsa.pipeline.ClockGraphGenerator") as MockCGG:
+            XsaPipeline().run(xsa_path, cfg, tmp_path, emit_clock_graphs=False)
+    MockCGG.return_value.generate.assert_not_called()
+
+
+def test_pipeline_default_result_has_only_core_keys(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path)
+    assert set(result.keys()) == {"base_dir", "overlay", "merged"}

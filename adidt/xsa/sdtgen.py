@@ -1,3 +1,4 @@
+"""Wrapper for invoking the sdtgen tool to generate a base SDT/DTS from an XSA."""
 import subprocess
 from pathlib import Path
 import re
@@ -29,6 +30,7 @@ class SdtgenRunner:
     )
 
     def __init__(self, binary: str = "sdtgen"):
+        """Initialize the runner with the sdtgen *binary* name or path."""
         self.binary = binary
         # Instance-level cache avoids cross-test interference
         self._checked: bool = False

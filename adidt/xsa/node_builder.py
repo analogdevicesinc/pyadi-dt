@@ -1,4 +1,5 @@
 # adidt/xsa/node_builder.py
+"""Build ADI device-driver DTS overlay nodes from an XSA topology and config."""
 import os
 import warnings
 from dataclasses import dataclass
@@ -389,7 +390,9 @@ class NodeBuilder:
             f"\t\t\tjesd204-inputs = <&{fmc.adc_core_label} 0 {fmc.adc_jesd_link_id}>;\n"
             f"\t\t\tadi,converters-per-device = <{fmc.rx_m}>;\n"
             f"\t\t\tadi,lanes-per-device = <{fmc.rx_l}>;\n"
+            "\t\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
+            "\t\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
             "\t\t\tadi,converter-resolution = <14>;\n"
             f"\t\t\tadi,bits-per-sample = <{fmc.rx_np}>;\n"
@@ -454,7 +457,9 @@ class NodeBuilder:
             '\t\tclock-output-names = "jesd_adc_lane_clk";\n'
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
             f"\t\tjesd204-inputs = <&{fmc.adc_xcvr_label} 0 {fmc.adc_jesd_link_id}>;\n"
             "\t};",
@@ -466,7 +471,9 @@ class NodeBuilder:
             '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{fmc.tx_f}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{fmc.tx_k}>;\n"
             "\t\tadi,converter-resolution = <14>;\n"
             f"\t\tadi,bits-per-sample = <{fmc.tx_np}>;\n"
@@ -720,7 +727,9 @@ class NodeBuilder:
             f"\t\t\tjesd204-inputs = <&{fmc.adc_core_label} 0 {fmc.adc_jesd_link_id}>;\n"
             f"\t\t\tadi,converters-per-device = <{fmc.rx_m}>;\n"
             f"\t\t\tadi,lanes-per-device = <{fmc.rx_l}>;\n"
+            "\t\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
+            "\t\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
             "\t\t\tadi,converter-resolution = <14>;\n"
             f"\t\t\tadi,bits-per-sample = <{fmc.rx_np}>;\n"
@@ -773,7 +782,9 @@ class NodeBuilder:
             '\t\tclock-output-names = "jesd_adc_lane_clk";\n'
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
             f"\t\tjesd204-inputs = <&{fmc.adc_xcvr_label} 0 {fmc.adc_jesd_link_id}>;\n"
             "\t};",
@@ -970,26 +981,26 @@ class NodeBuilder:
             "\t\t\thmc7044_c2: channel@2 {\n"
             "\t\t\t\treg = <2>;\n"
             '\t\t\t\tadi,extended-name = "DAC_CLK";\n'
-            "\t\t\t\tadi,divider = <8>;\n"
+            f"\t\t\t\tadi,divider = <8>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 8)}\n"
             "\t\t\t\tadi,driver-mode = <1>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c3: channel@3 {\n"
             "\t\t\t\treg = <3>;\n"
             '\t\t\t\tadi,extended-name = "DAC_SYSREF";\n'
-            "\t\t\t\tadi,divider = <512>;\n"
+            f"\t\t\t\tadi,divider = <512>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 512)}\n"
             "\t\t\t\tadi,driver-mode = <1>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c12: channel@12 {\n"
             "\t\t\t\treg = <12>;\n"
             '\t\t\t\tadi,extended-name = "FPGA_CLK";\n'
-            "\t\t\t\tadi,divider = <8>;\n"
+            f"\t\t\t\tadi,divider = <8>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 8)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c13: channel@13 {\n"
             "\t\t\t\treg = <13>;\n"
             '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
-            "\t\t\t\tadi,divider = <512>;\n"
+            f"\t\t\t\tadi,divider = <512>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 512)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
             "\t\t\t};\n"
@@ -1034,7 +1045,9 @@ class NodeBuilder:
             '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{ad.tx_f}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{ad.tx_k}>;\n"
             f"\t\tadi,converters-per-device = <{ad.tx_m}>;\n"
             f"\t\tadi,bits-per-sample = <{ad.tx_np}>;\n"
@@ -1240,76 +1253,94 @@ class NodeBuilder:
         except (TypeError, ValueError) as exc:
             raise ValueError(f"{key_path} must be an integer, got {value!r}") from exc
 
+    @staticmethod
+    def _fmt_hz(hz: int) -> str:
+        """Format *hz* as a human-readable frequency string (e.g. '245.76 MHz', '768 kHz')."""
+        if hz >= 1_000_000_000:
+            s = f"{hz / 1_000_000_000:.6f}".rstrip("0").rstrip(".")
+            return f"{s} GHz"
+        if hz >= 1_000_000:
+            s = f"{hz / 1_000_000:.6f}".rstrip("0").rstrip(".")
+            return f"{s} MHz"
+        if hz >= 1_000:
+            s = f"{hz / 1_000:.3f}".rstrip("0").rstrip(".")
+            return f"{s} kHz"
+        return f"{hz} Hz"
+
     def _fmcdaq2_ad9523_channels_block(self) -> str:
         """Return the DTS channel sub-nodes string for the FMCDAQ2 AD9523-1 clock chip."""
+        # PLL2 M1 distribution frequency: adi,pll2-m1-freq = <1000000000>
+        _m1 = 1_000_000_000
         return (
             "\t\t\tad9523_0_c1:channel@1 {\n"
             "\t\t\t\treg = <1>;\n"
             '\t\t\t\tadi,extended-name = "DAC_CLK";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <1>;\n"
+            f"\t\t\t\tadi,channel-divider = <1>; // {self._fmt_hz(_m1 // 1)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c4:channel@4 {\n"
             "\t\t\t\treg = <4>;\n"
             '\t\t\t\tadi,extended-name = "ADC_CLK_FMC";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <2>;\n"
+            f"\t\t\t\tadi,channel-divider = <2>; // {self._fmt_hz(_m1 // 2)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c5:channel@5 {\n"
             "\t\t\t\treg = <5>;\n"
             '\t\t\t\tadi,extended-name = "ADC_SYSREF";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <128>;\n"
+            f"\t\t\t\tadi,channel-divider = <128>; // {self._fmt_hz(_m1 // 128)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c6:channel@6 {\n"
             "\t\t\t\treg = <6>;\n"
             '\t\t\t\tadi,extended-name = "CLKD_ADC_SYSREF";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <128>;\n"
+            f"\t\t\t\tadi,channel-divider = <128>; // {self._fmt_hz(_m1 // 128)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c7:channel@7 {\n"
             "\t\t\t\treg = <7>;\n"
             '\t\t\t\tadi,extended-name = "CLKD_DAC_SYSREF";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <128>;\n"
+            f"\t\t\t\tadi,channel-divider = <128>; // {self._fmt_hz(_m1 // 128)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c8:channel@8 {\n"
             "\t\t\t\treg = <8>;\n"
             '\t\t\t\tadi,extended-name = "DAC_SYSREF";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <128>;\n"
+            f"\t\t\t\tadi,channel-divider = <128>; // {self._fmt_hz(_m1 // 128)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c9:channel@9 {\n"
             "\t\t\t\treg = <9>;\n"
             '\t\t\t\tadi,extended-name = "FMC_DAC_REF_CLK";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <2>;\n"
+            f"\t\t\t\tadi,channel-divider = <2>; // {self._fmt_hz(_m1 // 2)}\n"
             "\t\t\t};\n"
             "\t\t\tad9523_0_c13:channel@13 {\n"
             "\t\t\t\treg = <13>;\n"
             '\t\t\t\tadi,extended-name = "ADC_CLK";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <1>;\n"
-            "\t\t\t\tadi,channel-divider = <1>;\n"
+            f"\t\t\t\tadi,channel-divider = <1>; // {self._fmt_hz(_m1 // 1)}\n"
             "\t\t\t};\n"
         )
 
     def _fmcdaq3_ad9528_channels_block(self) -> str:
         """Return the DTS channel sub-nodes string for the FMCDAQ3 AD9528 clock chip."""
+        # PLL2 M1 distribution frequency: adi,pll2-m1-frequency = <1233333333>
+        _m1 = 1_233_333_333
         return (
             "\t\t\tad9528_0_c2: channel@2 {\n"
             "\t\t\t\treg = <2>;\n"
             '\t\t\t\tadi,extended-name = "DAC_CLK";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <1>;\n"
+            f"\t\t\t\tadi,channel-divider = <1>; // {self._fmt_hz(_m1 // 1)}\n"
             "\t\t\t\tadi,signal-source = <0>;\n"
             "\t\t\t};\n"
             "\t\t\tad9528_0_c4: channel@4 {\n"
@@ -1317,7 +1348,7 @@ class NodeBuilder:
             '\t\t\t\tadi,extended-name = "DAC_CLK_FMC";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <2>;\n"
+            f"\t\t\t\tadi,channel-divider = <2>; // {self._fmt_hz(_m1 // 2)}\n"
             "\t\t\t\tadi,signal-source = <0>;\n"
             "\t\t\t};\n"
             "\t\t\tad9528_0_c5: channel@5 {\n"
@@ -1361,7 +1392,7 @@ class NodeBuilder:
             '\t\t\t\tadi,extended-name = "ADC_CLK_FMC";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <2>;\n"
+            f"\t\t\t\tadi,channel-divider = <2>; // {self._fmt_hz(_m1 // 2)}\n"
             "\t\t\t\tadi,signal-source = <0>;\n"
             "\t\t\t};\n"
             "\t\t\tad9528_0_c13: channel@13 {\n"
@@ -1369,7 +1400,7 @@ class NodeBuilder:
             '\t\t\t\tadi,extended-name = "ADC_CLK";\n'
             "\t\t\t\tadi,driver-mode = <3>;\n"
             "\t\t\t\tadi,divider-phase = <0>;\n"
-            "\t\t\t\tadi,channel-divider = <1>;\n"
+            f"\t\t\t\tadi,channel-divider = <1>; // {self._fmt_hz(_m1 // 1)}\n"
             "\t\t\t\tadi,signal-source = <0>;\n"
             "\t\t\t};\n"
         )
@@ -1709,54 +1740,56 @@ class NodeBuilder:
         rx1_enable_gpio = int(ad9081_board_cfg.get("rx1_enable_gpio", 134))
         tx2_enable_gpio = int(ad9081_board_cfg.get("tx2_enable_gpio", 137))
         tx1_enable_gpio = int(ad9081_board_cfg.get("tx1_enable_gpio", 136))
+        # PLL2 output frequency: adi,pll2-output-frequency = <3000000000>
+        _pll2 = 3_000_000_000
         default_hmc7044_channels_block = (
             "\t\t\thmc7044_c0: channel@0 {\n"
             "\t\t\t\treg = <0>;\n"
             '\t\t\t\tadi,extended-name = "CORE_CLK_RX";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
+            f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(_pll2 // 12)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c2: channel@2 {\n"
             "\t\t\t\treg = <2>;\n"
             '\t\t\t\tadi,extended-name = "DEV_REFCLK";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
+            f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(_pll2 // 12)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c3: channel@3 {\n"
             "\t\t\t\treg = <3>;\n"
             '\t\t\t\tadi,extended-name = "DEV_SYSREF";\n'
-            "\t\t\t\tadi,divider = <1536>;\n"
+            f"\t\t\t\tadi,divider = <1536>; // {self._fmt_hz(_pll2 // 1536)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c6: channel@6 {\n"
             "\t\t\t\treg = <6>;\n"
             '\t\t\t\tadi,extended-name = "CORE_CLK_TX";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
+            f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(_pll2 // 12)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c8: channel@8 {\n"
             "\t\t\t\treg = <8>;\n"
             '\t\t\t\tadi,extended-name = "FPGA_REFCLK1";\n'
-            "\t\t\t\tadi,divider = <6>;\n"
+            f"\t\t\t\tadi,divider = <6>; // {self._fmt_hz(_pll2 // 6)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c10: channel@10 {\n"
             "\t\t\t\treg = <10>;\n"
             '\t\t\t\tadi,extended-name = "CORE_CLK_RX_ALT";\n'
-            "\t\t\t\tadi,divider = <12>;\n"
+            f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(_pll2 // 12)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c12: channel@12 {\n"
             "\t\t\t\treg = <12>;\n"
             '\t\t\t\tadi,extended-name = "FPGA_REFCLK2";\n'
-            "\t\t\t\tadi,divider = <6>;\n"
+            f"\t\t\t\tadi,divider = <6>; // {self._fmt_hz(_pll2 // 6)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t};\n"
             "\t\t\thmc7044_c13: channel@13 {\n"
             "\t\t\t\treg = <13>;\n"
             '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
-            "\t\t\t\tadi,divider = <1536>;\n"
+            f"\t\t\t\tadi,divider = <1536>; // {self._fmt_hz(_pll2 // 1536)}\n"
             "\t\t\t\tadi,driver-mode = <2>;\n"
             "\t\t\t\tadi,jesd204-sysref-chan;\n"
             "\t\t\t};\n"
@@ -1919,7 +1952,9 @@ class NodeBuilder:
             "\t\t\t\t\t\tadi,version = <1>;\n"
             "\t\t\t\t\t\tadi,dual-link = <0>;\n"
             f"\t\t\t\t\t\tadi,converters-per-device = <{tx_m}>;\n"
+            "\t\t\t\t\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\t\t\t\t\tadi,octets-per-frame = <{tx_f}>;\n"
+            "\t\t\t\t\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\t\t\t\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
             "\t\t\t\t\t\tadi,converter-resolution = <16>;\n"
             "\t\t\t\t\t\tadi,bits-per-sample = <16>;\n"
@@ -1966,7 +2001,9 @@ class NodeBuilder:
             "\t\t\t\t\t\tadi,version = <1>;\n"
             "\t\t\t\t\t\tadi,dual-link = <0>;\n"
             f"\t\t\t\t\t\tadi,converters-per-device = <{rx_m}>;\n"
+            "\t\t\t\t\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\t\t\t\t\tadi,octets-per-frame = <{rx_f}>;\n"
+            "\t\t\t\t\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\t\t\t\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
             "\t\t\t\t\t\tadi,converter-resolution = <16>;\n"
             "\t\t\t\t\t\tadi,bits-per-sample = <16>;\n"
@@ -1993,7 +2030,9 @@ class NodeBuilder:
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"
                 "\t\t#jesd204-cells = <2>;\n"
+                "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
                 f"\t\tadi,octets-per-frame = <{rx_f}>;\n"
+                "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
                 f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
                 f"\t\tjesd204-inputs = <&axi_mxfe_rx_xcvr 0 {rx_link_id}>;\n"
                 "\t};"
@@ -2010,7 +2049,9 @@ class NodeBuilder:
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"
                 "\t\t#jesd204-cells = <2>;\n"
+                "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
                 f"\t\tadi,octets-per-frame = <{tx_f}>;\n"
+                "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
                 f"\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
                 f"\t\tjesd204-inputs = <&axi_mxfe_tx_xcvr 0 {tx_link_id}>;\n"
                 "\t};"
@@ -2197,14 +2238,14 @@ class NodeBuilder:
                 "\t\t\thmc7044_fmc_c0: channel@0 {\n"
                 "\t\t\t\treg = <0>;\n"
                 '\t\t\t\tadi,extended-name = "DEV_REFCLK_C";\n'
-                "\t\t\t\tadi,divider = <12>;\n"
+                f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(hmc7044_pll2_out_freq // 12)}\n"
                 "\t\t\t\tadi,driver-mode = <1>;\n"
                 "\t\t\t\tadi,coarse-digital-delay = <15>;\n"
                 "\t\t\t};\n"
                 "\t\t\thmc7044_fmc_c1: channel@1 {\n"
                 "\t\t\t\treg = <1>;\n"
                 '\t\t\t\tadi,extended-name = "DEV_SYSREF_C";\n'
-                "\t\t\t\tadi,divider = <3840>;\n"
+                f"\t\t\t\tadi,divider = <3840>; // {self._fmt_hz(hmc7044_pll2_out_freq // 3840)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t\tadi,startup-mode-dynamic-enable;\n"
                 "\t\t\t\tadi,high-performance-mode-disable;\n"
@@ -2212,14 +2253,14 @@ class NodeBuilder:
                 "\t\t\thmc7044_fmc_c2: channel@2 {\n"
                 "\t\t\t\treg = <2>;\n"
                 '\t\t\t\tadi,extended-name = "DEV_REFCLK_D";\n'
-                "\t\t\t\tadi,divider = <12>;\n"
+                f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(hmc7044_pll2_out_freq // 12)}\n"
                 "\t\t\t\tadi,driver-mode = <1>;\n"
                 "\t\t\t\tadi,coarse-digital-delay = <15>;\n"
                 "\t\t\t};\n"
                 "\t\t\thmc7044_fmc_c3: channel@3 {\n"
                 "\t\t\t\treg = <3>;\n"
                 '\t\t\t\tadi,extended-name = "DEV_SYSREF_D";\n'
-                "\t\t\t\tadi,divider = <3840>;\n"
+                f"\t\t\t\tadi,divider = <3840>; // {self._fmt_hz(hmc7044_pll2_out_freq // 3840)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t\tadi,startup-mode-dynamic-enable;\n"
                 "\t\t\t\tadi,high-performance-mode-disable;\n"
@@ -2227,19 +2268,19 @@ class NodeBuilder:
                 "\t\t\thmc7044_fmc_c4: channel@4 {\n"
                 "\t\t\t\treg = <4>;\n"
                 '\t\t\t\tadi,extended-name = "JESD_REFCLK_TX_OBS_CD";\n'
-                "\t\t\t\tadi,divider = <12>;\n"
+                f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(hmc7044_pll2_out_freq // 12)}\n"
                 "\t\t\t\tadi,driver-mode = <1>;\n"
                 "\t\t\t};\n"
                 "\t\t\thmc7044_fmc_c5: channel@5 {\n"
                 "\t\t\t\treg = <5>;\n"
                 '\t\t\t\tadi,extended-name = "JESD_REFCLK_RX_CD";\n'
-                "\t\t\t\tadi,divider = <12>;\n"
+                f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(hmc7044_pll2_out_freq // 12)}\n"
                 "\t\t\t\tadi,driver-mode = <1>;\n"
                 "\t\t\t};\n"
                 "\t\t\thmc7044_fmc_c6: channel@6 {\n"
                 "\t\t\t\treg = <6>;\n"
                 '\t\t\t\tadi,extended-name = "FPGA_SYSREF_TX_OBS_CD";\n'
-                "\t\t\t\tadi,divider = <3840>;\n"
+                f"\t\t\t\tadi,divider = <3840>; // {self._fmt_hz(hmc7044_pll2_out_freq // 3840)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t\tadi,startup-mode-dynamic-enable;\n"
                 "\t\t\t\tadi,high-performance-mode-disable;\n"
@@ -2247,7 +2288,7 @@ class NodeBuilder:
                 "\t\t\thmc7044_fmc_c7: channel@7 {\n"
                 "\t\t\t\treg = <7>;\n"
                 '\t\t\t\tadi,extended-name = "FPGA_SYSREF_RX_CD";\n'
-                "\t\t\t\tadi,divider = <3840>;\n"
+                f"\t\t\t\tadi,divider = <3840>; // {self._fmt_hz(hmc7044_pll2_out_freq // 3840)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t\tadi,startup-mode-dynamic-enable;\n"
                 "\t\t\t\tadi,high-performance-mode-disable;\n"
@@ -2255,13 +2296,13 @@ class NodeBuilder:
                 "\t\t\thmc7044_fmc_c8: channel@8 {\n"
                 "\t\t\t\treg = <8>;\n"
                 '\t\t\t\tadi,extended-name = "CORE_CLK_TX_OBS_CD";\n'
-                "\t\t\t\tadi,divider = <24>;\n"
+                f"\t\t\t\tadi,divider = <24>; // {self._fmt_hz(hmc7044_pll2_out_freq // 24)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t};\n"
                 "\t\t\thmc7044_fmc_c9: channel@9 {\n"
                 "\t\t\t\treg = <9>;\n"
                 '\t\t\t\tadi,extended-name = "CORE_CLK_RX_CD";\n'
-                "\t\t\t\tadi,divider = <12>;\n"
+                f"\t\t\t\tadi,divider = <12>; // {self._fmt_hz(hmc7044_pll2_out_freq // 12)}\n"
                 "\t\t\t\tadi,driver-mode = <2>;\n"
                 "\t\t\t};\n"
             )
@@ -2341,13 +2382,16 @@ class NodeBuilder:
                 "<&clk0_ad9528 12>",
                 "<&clk0_ad9528 3>",
             ]
+            ad9528_vcxo_freq = int(board_cfg.get("ad9528_vcxo_freq", 122880000))
+            # PLL2 output: vcxo * pll2-n2-div(10) / pll2-r1-div(1), channel-divider=5
+            _ad9528_ch_freq = ad9528_vcxo_freq * 10 // 5
             default_clock_chip_channels_block = (
                 "\t\t\tad9528_0_c13: channel@13 {\n"
                 "\t\t\t\treg = <13>;\n"
                 '\t\t\t\tadi,extended-name = "DEV_CLK";\n'
                 "\t\t\t\tadi,driver-mode = <0>;\n"
                 "\t\t\t\tadi,divider-phase = <0>;\n"
-                "\t\t\t\tadi,channel-divider = <5>;\n"
+                f"\t\t\t\tadi,channel-divider = <5>; // {self._fmt_hz(_ad9528_ch_freq)}\n"
                 "\t\t\t\tadi,signal-source = <0>;\n"
                 "\t\t\t};\n"
                 "\t\t\tad9528_0_c1: channel@1 {\n"
@@ -2355,7 +2399,7 @@ class NodeBuilder:
                 '\t\t\t\tadi,extended-name = "FMC_CLK";\n'
                 "\t\t\t\tadi,driver-mode = <0>;\n"
                 "\t\t\t\tadi,divider-phase = <0>;\n"
-                "\t\t\t\tadi,channel-divider = <5>;\n"
+                f"\t\t\t\tadi,channel-divider = <5>; // {self._fmt_hz(_ad9528_ch_freq)}\n"
                 "\t\t\t\tadi,signal-source = <0>;\n"
                 "\t\t\t};\n"
                 "\t\t\tad9528_0_c12: channel@12 {\n"
@@ -2383,7 +2427,6 @@ class NodeBuilder:
                 '"ad9528-1_out12", "ad9528-1_out13";'
             )
             custom_clock_chip_blocks = board_cfg.get("ad9528_channel_blocks")
-            ad9528_vcxo_freq = int(board_cfg.get("ad9528_vcxo_freq", 122880000))
             clock_chip_node_prefix = f"\t\t{clock_chip_label}: ad9528-1@{clk_cs} {{\n"
             clock_chip_node_props = (
                 '	\t\tcompatible = "adi,ad9528";\n'
@@ -2540,7 +2583,9 @@ class NodeBuilder:
             "\t\t#clock-cells = <0>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{rx_f}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
             f"\t\tjesd204-inputs = <&{rx_xcvr_label} 0 {rx_link_id}>;\n"
             "\t};",
@@ -2551,7 +2596,9 @@ class NodeBuilder:
             "\t\t#clock-cells = <0>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
             f"\t\tadi,octets-per-frame = <{tx_octets_per_frame}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
             f"\t\tadi,frames-per-multiframe = <{tx_k}>;\n"
             "\t\tadi,converter-resolution = <14>;\n"
             "\t\tadi,bits-per-sample = <16>;\n"
@@ -2714,7 +2761,9 @@ class NodeBuilder:
                 "\t\t#clock-cells = <0>;\n"
                 "\t\tjesd204-device;\n"
                 "\t\t#jesd204-cells = <2>;\n"
+                "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
                 f"\t\tadi,octets-per-frame = <{rx_os_octets_per_frame}>;\n"
+                "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
                 f"\t\tadi,frames-per-multiframe = <{rx_k}>;\n"
                 f"\t\tjesd204-inputs = <&{rx_os_xcvr_label} 0 {rx_os_link_id}>;\n"
                 "\t};",

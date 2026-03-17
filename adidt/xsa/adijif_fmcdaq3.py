@@ -1,3 +1,5 @@
+"""JESD204 configuration helpers for FMC-DAQ3 boards using adijif."""
+
 from __future__ import annotations
 
 from typing import Any

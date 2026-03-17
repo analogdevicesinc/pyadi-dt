@@ -1,3 +1,4 @@
+"""Check a generated DTS against a reference manifest for parity."""
 import json
 import re
 from dataclasses import asdict, dataclass, field
@@ -30,6 +31,8 @@ def _pct(matched: int, total: int) -> float:
 
 @dataclass
 class RoleCoverage:
+    """Coverage result for a single driver role requirement."""
+
     role: str
     compatible: str
     found: bool
@@ -38,6 +41,8 @@ class RoleCoverage:
 
 @dataclass
 class LinkCoverage:
+    """Coverage result for a single inter-node link requirement."""
+
     source_label: str
     property_name: str
     target_label: str
@@ -46,6 +51,8 @@ class LinkCoverage:
 
 @dataclass
 class PropertyCoverage:
+    """Coverage result for a single node-property requirement."""
+
     source_label: str
     property_name: str
     expected_value: str
@@ -54,6 +61,8 @@ class PropertyCoverage:
 
 @dataclass
 class ParityReport:
+    """Aggregated parity-check results for roles, links, and properties."""
+
     total_roles: int
     matched_roles: int
     total_links: int = 0

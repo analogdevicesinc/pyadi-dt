@@ -36,12 +36,9 @@ def tests_remote(session):
 
 @nox.session(python="3.11")
 def lint(session):
-    """Run linting checks with ruff (if available)."""
-    try:
-        session.install("ruff")
-        session.run("ruff", "check", "adidt", "test")
-    except Exception:
-        session.warn("Ruff not available or linting failed")
+    """Run linting checks with ruff."""
+    session.install("ruff")
+    session.run("ruff", "check", "adidt", "test")
 
 
 @nox.session(python="3.11")
@@ -76,7 +73,7 @@ def docs(session):
         "linkify-it-py",
     )
     session.install(".")
-    session.run("sphinx-build", "-b", "html", "doc/source", "doc/build/html")
+    session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
 
 
 @nox.session(python="3.11")

@@ -1,4 +1,5 @@
 # adidt/xsa/topology.py
+"""Data model and parser for extracting IP topology from a Vivado XSA archive."""
 import re
 import warnings
 import zipfile
@@ -12,6 +13,8 @@ from .exceptions import XsaParseError
 
 @dataclass
 class Jesd204Instance:
+    """One JESD204 TX or RX IP core instance found in the HWH netlist."""
+
     name: str
     base_addr: int
     num_lanes: int
@@ -22,6 +25,8 @@ class Jesd204Instance:
 
 @dataclass
 class ClkgenInstance:
+    """One AXI clock-generator IP core instance found in the HWH netlist."""
+
     name: str
     base_addr: int
     output_clks: list[str] = field(default_factory=list)
@@ -29,6 +34,8 @@ class ClkgenInstance:
 
 @dataclass
 class ConverterInstance:
+    """One ADC/DAC/transceiver IP core instance found in the HWH netlist."""
+
     name: str
     ip_type: str
     base_addr: int
@@ -48,6 +55,8 @@ class SignalConnection:
 
 @dataclass
 class XsaTopology:
+    """Full topology extracted from a single Vivado XSA archive."""
+
     jesd204_rx: list[Jesd204Instance] = field(default_factory=list)
     jesd204_tx: list[Jesd204Instance] = field(default_factory=list)
     clkgens: list[ClkgenInstance] = field(default_factory=list)
@@ -229,10 +238,6 @@ class XsaParser:
                     connections[sig_name] = {"input": None, "output": component}
                 elif direction == "inout":
                     connections[sig_name] = {"inout": component}
-        from pprint import pprint
-
-        print("connections")
-        pprint(connections)
 
         # Create dot diagram
         dot = "digraph G {\n"

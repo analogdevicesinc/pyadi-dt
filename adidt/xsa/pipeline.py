@@ -1,4 +1,5 @@
 # adidt/xsa/pipeline.py
+"""Orchestrate the full XSA-to-DeviceTree pipeline from archive to merged DTS."""
 import re
 from pathlib import Path
 from typing import Any
@@ -27,11 +28,46 @@ class XsaPipeline:
         profile: str | None = None,
         reference_dts: Path | None = None,
         strict_parity: bool = False,
+        emit_report: bool = False,
+        emit_clock_graphs: bool = False,
     ) -> dict[str, Path]:
         """Run the full pipeline.
 
+        Args:
+            xsa_path: Path to the Vivado ``.xsa`` archive.
+            cfg: User-supplied configuration dictionary passed to
+                :class:`~adidt.xsa.node_builder.NodeBuilder`.
+            output_dir: Directory where all output files are written.
+                Created automatically if it does not exist.
+            sdtgen_timeout: Maximum seconds to wait for ``sdtgen`` to finish
+                generating the base DTS.  Defaults to ``120``.
+            profile: Name of a built-in profile to load (e.g.
+                ``"adrv9009_zcu102"``).  When ``None`` the pipeline attempts
+                to auto-detect a matching profile from the XSA topology.
+            reference_dts: Optional path to a reference DTS used for parity
+                checking.  When provided, ``"map"`` and ``"coverage"`` keys
+                are added to the result.
+            strict_parity: When ``True`` and *reference_dts* is provided,
+                raise :class:`~adidt.xsa.exceptions.ParityError` if the
+                merged DTS is missing required roles, links, or properties.
+            emit_report: When ``True`` (default) the HTML topology report is
+                generated and ``"report"`` is included in the result dict.
+                Pass ``False`` to skip report generation.
+            emit_clock_graphs: When ``True`` (default) DOT and D2 clock-tree
+                diagrams are generated and their paths included in the result
+                dict.  Pass ``False`` to skip clock-graph generation.
+
         Returns:
-            Dict with keys: "base_dir", "overlay", "merged", "report"
+            Dict always containing ``"base_dir"``, ``"overlay"``, and
+            ``"merged"``.  ``"report"`` is present when *emit_report* is
+            ``True``.  ``"clock_dot"`` and ``"clock_d2"`` (plus optionally
+            ``"clock_dot_svg"`` / ``"clock_d2_svg"``) are present when
+            *emit_clock_graphs* is ``True``.  ``"map"`` and ``"coverage"``
+            are present when *reference_dts* is provided.
+
+        Raises:
+            ParityError: When *strict_parity* is ``True`` and the merged DTS
+                fails the parity check against *reference_dts*.
         """
         output_dir.mkdir(parents=True, exist_ok=True)
         base_dir = output_dir / "base"
@@ -54,20 +90,24 @@ class XsaPipeline:
             )
         nodes = NodeBuilder().build(topology, cfg_merged)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
-        HtmlVisualizer().generate(
-            topology, cfg_merged, merged_content, output_dir, name
-        )
-        clock_graph_result = ClockGraphGenerator().generate(
-            merged_content, output_dir, name
-        )
 
-        result = {
+        result: dict[str, Path] = {
             "base_dir": base_dir,
             "overlay": output_dir / f"{name}.dtso",
             "merged": output_dir / f"{name}.dts",
-            "report": output_dir / f"{safe_name}_report.html",
-            **clock_graph_result,
         }
+
+        if emit_report:
+            HtmlVisualizer().generate(
+                topology, cfg_merged, merged_content, output_dir, name
+            )
+            result["report"] = output_dir / f"{safe_name}_report.html"
+
+        if emit_clock_graphs:
+            result.update(
+                ClockGraphGenerator().generate(merged_content, output_dir, name)
+            )
+
         if reference_dts is not None:
             manifest = ReferenceManifestExtractor().extract(reference_dts)
             parity = check_manifest_against_dts(manifest, merged_content)
@@ -99,7 +139,14 @@ class XsaPipeline:
         return result
 
     def _derive_name(self, topology: XsaTopology) -> str:
-        """Return a ``"<converter_family>_<platform>"`` name string inferred from the topology."""
+        """Return a ``"<converter_family>_<platform>"`` name string inferred from the topology.
+
+        Args:
+            topology: Parsed XSA topology object.
+
+        Returns:
+            A snake-case string such as ``"adrv9009_zcu102"``.
+        """
         conv_type = topology.inferred_converter_family()
         platform = topology.inferred_platform()
         return f"{conv_type}_{platform}"
@@ -113,6 +160,17 @@ class XsaPipeline:
         Only fills in ``jesd.<direction>.L`` when the caller did not supply it
         and the active profile (e.g. ``ad9172_zcu102``, ``fmcdaq3_*``) has a
         hard-coded default.  All other keys are left unchanged.
+
+        Args:
+            cfg_in: The original caller-supplied configuration dict, used to
+                check which keys were explicitly set.
+            cfg_out: The merged configuration dict (profile defaults already
+                applied) that will be mutated and returned.
+            profile_name: The active profile name used to select which
+                defaults to inject.
+
+        Returns:
+            The (possibly mutated) *cfg_out* dict.
         """
         cfg_in_jesd = cfg_in.get("jesd", {})
         if profile_name == "ad9172_zcu102":
@@ -132,7 +190,15 @@ class XsaPipeline:
         return cfg_out
 
     def _auto_profile_name(self, topology: XsaTopology) -> str | None:
-        """Return the inferred profile name if a matching built-in profile exists, else None."""
+        """Return the inferred profile name if a matching built-in profile exists, else None.
+
+        Args:
+            topology: Parsed XSA topology object.
+
+        Returns:
+            The candidate profile name (e.g. ``"adrv9009_zcu102"``) when a
+            matching built-in profile is available, otherwise ``None``.
+        """
         candidate = self._derive_name(topology)
         if candidate in ProfileManager().list_profiles():
             return candidate

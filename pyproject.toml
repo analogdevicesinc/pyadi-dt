@@ -61,6 +61,18 @@ include = ["adidt*"]
 [tool.setuptools.package-data]
 adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js"]
 
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Enforce full Google-style docstrings only in the XSA subpackage.
+# All other paths are excluded from docstring rules.
+"adidt/xsa/**" = []
+"**" = ["D"]
+
 [tool.pytest.ini_options]
 testpaths = ["test"]
 norecursedirs = [

@@ -12,7 +12,9 @@
 		#jesd204-cells = <2>;
 		jesd204-inputs = <&{{ jesd_input_label }} 0 {{ jesd_input_link_id }}>;
 
+		/* JESD204 framing: F = octets per frame per lane */
 		adi,octets-per-frame = <{{ jesd.F }}>;
+		/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
 		adi,frames-per-multiframe = <{{ jesd.K }}>;
 
 		#sound-dai-cells = <0>;

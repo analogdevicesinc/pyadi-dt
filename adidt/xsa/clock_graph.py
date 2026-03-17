@@ -87,7 +87,16 @@ _CLOCK_NAME_EDGE_STYLE: dict[str, str] = {
 
 
 def _categorise(label: str) -> str:
-    """Return the category string for *label* using simple substring heuristics."""
+    """Return the category string for *label* using simple substring heuristics.
+
+    Args:
+        label: DTS node label (e.g. ``"hmc7044_fmc"``, ``"axi_jesd_rx"``).
+
+    Returns:
+        One of the category keys defined in :data:`_CATEGORY_STYLE`
+        (``"ps_clock"``, ``"clock_chip"``, ``"xcvr"``, ``"jesd"``,
+        ``"clkgen"``, ``"converter"``, ``"dma"``, or ``"other"``).
+    """
     low = label.lower()
     for cat, keywords in _CATEGORY_TESTS:
         if any(kw in low for kw in keywords):
@@ -96,19 +105,49 @@ def _categorise(label: str) -> str:
 
 
 def _node_style(label: str) -> str:
-    """Return a Graphviz attribute string for the node identified by *label*."""
+    """Return a Graphviz attribute string for the node identified by *label*.
+
+    Args:
+        label: DTS node label used to look up the visual category.
+
+    Returns:
+        A space-separated string of ``key="value"`` Graphviz node attributes
+        (e.g. ``'fillcolor="#1a3d5c" shape="box"'``).
+    """
     style = _CATEGORY_STYLE.get(_categorise(label), _CATEGORY_STYLE["other"])
     parts = [f'{k}="{v}"' for k, v in style.items()]
     return " ".join(parts)
 
 
 def _edge_style(clock_name: str) -> str:
-    """Return Graphviz edge attributes for an edge labelled *clock_name*."""
+    """Return Graphviz edge attributes for an edge labelled *clock_name*.
+
+    Args:
+        clock_name: Value from the DTS ``clock-names`` property
+            (e.g. ``"device_clk"``, ``"s_axi_aclk"``).
+
+    Returns:
+        A space-separated Graphviz edge attribute string.  Unknown names
+        fall back to a neutral grey colour.
+    """
     return _CLOCK_NAME_EDGE_STYLE.get(clock_name, 'color="#888888" fontcolor="#888888"')
 
 
 def _short_label(label: str, node_name: str) -> str:
-    """Return a concise display name combining *label* and a shortened *node_name*."""
+    r"""Return a concise display name combining *label* and a shortened *node_name*.
+
+    The ``@address`` suffix is stripped from *node_name* for readability.
+    When *label* and the stripped *node_name* are identical the label alone
+    is returned; otherwise both are combined with a ``\n`` separator.
+
+    Args:
+        label: DTS node label (e.g. ``"axi_clkgen_0"``).
+        node_name: DTS node name, possibly with an ``@addr`` suffix
+            (e.g. ``"axi-clkgen@44a10000"``).
+
+    Returns:
+        A display string suitable for use in a Graphviz ``label`` attribute.
+    """
     # Drop @address suffix for readability
     base = re.sub(r"@[\da-fA-F]+$", "", node_name)
     if base == label:
@@ -141,7 +180,18 @@ class _DtsParser:
     _REF_HEADER = re.compile(r"&(\w+)\s*\{", re.MULTILINE)
 
     def parse(self, dts: str) -> list[_DtsClockNode]:
-        """Return a list of :class:`_DtsClockNode` objects parsed from *dts*."""
+        """Return a list of :class:`_DtsClockNode` objects parsed from *dts*.
+
+        Both standard labeled-node declarations and DTS overlay reference
+        blocks are handled.  When the same label appears in both forms the
+        clock information is merged into a single entry.
+
+        Args:
+            dts: Full DTS source text to parse.
+
+        Returns:
+            List of clock-related nodes, deduplicated by label.
+        """
         seen: set[str] = set()
         nodes: list[_DtsClockNode] = []
 
@@ -178,7 +228,19 @@ class _DtsParser:
     def _make_node(
         self, dts: str, block_start: int, label: str, node_name: str
     ) -> "_DtsClockNode | None":
-        """Extract the block at *block_start* and return a node if it has clock data."""
+        """Extract the block at *block_start* and return a node if it has clock data.
+
+        Args:
+            dts: Full DTS source text.
+            block_start: Character offset immediately after the opening ``{``
+                of the node block.
+            label: DTS label for the node.
+            node_name: DTS node name (may equal *label* for overlay blocks).
+
+        Returns:
+            A populated :class:`_DtsClockNode`, or ``None`` if the block
+            contains neither ``clocks`` nor ``clock-output-names``.
+        """
         full_content = self._extract_block(dts, block_start)
         # Only inspect top-level properties — nested sub-nodes are parsed separately.
         top = self._top_level_content(full_content)
@@ -200,6 +262,12 @@ class _DtsParser:
         Only top-level property lines (outside ``{ }`` sub-blocks) are kept,
         preventing child-node clock properties from being attributed to the
         parent node.
+
+        Args:
+            content: Raw text of a DTS node block (excluding the outer braces).
+
+        Returns:
+            A string containing only the characters at brace depth 0.
         """
         result: list[str] = []
         depth = 0
@@ -213,7 +281,18 @@ class _DtsParser:
         return "".join(result)
 
     def _extract_block(self, dts: str, start: int) -> str:
-        """Return the text of the brace block that starts at *start* (after ``{``)."""
+        """Return the text of the brace block that starts at *start* (after ``{``).
+
+        Tracks brace nesting so that inner ``{ }`` pairs are included verbatim
+        in the returned slice.
+
+        Args:
+            dts: Full DTS source text.
+            start: Character offset immediately after the opening ``{``.
+
+        Returns:
+            The block contents up to (but not including) the matching ``}``.
+        """
         depth = 1
         pos = start
         while pos < len(dts) and depth > 0:
@@ -226,7 +305,20 @@ class _DtsParser:
         return dts[start : pos - 1]
 
     def _parse_clocks(self, content: str) -> tuple[list[tuple[str, int]], list[str]]:
-        """Parse the ``clocks`` and ``clock-names`` properties from *content*."""
+        """Parse the ``clocks`` and ``clock-names`` properties from *content*.
+
+        Args:
+            content: Top-level text of a DTS node block (nested sub-blocks
+                already stripped by :meth:`_top_level_content`).
+
+        Returns:
+            A two-tuple of:
+
+            * ``clocks`` — list of ``(provider_label, clock_index)`` pairs
+              extracted from the ``clocks`` property.
+            * ``clock_names`` — list of name strings from the
+              ``clock-names`` property (may be empty).
+        """
         clocks: list[tuple[str, int]] = []
         clk_m = re.search(r"\bclocks\s*=\s*([^;]+);", content)
         if clk_m:
@@ -244,7 +336,15 @@ class _DtsParser:
         return clocks, names
 
     def _parse_output_names(self, content: str) -> list[str]:
-        """Parse the ``clock-output-names`` property from *content*."""
+        """Parse the ``clock-output-names`` property from *content*.
+
+        Args:
+            content: Top-level text of a DTS node block.
+
+        Returns:
+            Ordered list of output clock name strings, or an empty list when
+            the property is absent.
+        """
         m = re.search(r"\bclock-output-names\s*=\s*([^;]+);", content)
         if not m:
             return []
@@ -260,7 +360,17 @@ class _DotRenderer:
     """Converts a list of :class:`_DtsClockNode` objects into a DOT graph string."""
 
     def render(self, nodes: list[_DtsClockNode], title: str) -> str:
-        """Return a Graphviz DOT string for the clock topology of *nodes*."""
+        """Return a Graphviz DOT string for the clock topology of *nodes*.
+
+        Args:
+            nodes: Parsed clock nodes from :class:`_DtsParser`.
+            title: Human-readable title embedded in the graph label.
+
+        Returns:
+            A complete ``digraph clock_topology { ... }`` DOT source string
+            with dark-themed node fill colours, per-category shapes, and
+            per-clock-name edge colours.
+        """
         # Collect all labels that are referenced as providers or are defined
         defined_labels = {n.label for n in nodes}
         provider_labels: set[str] = set()
@@ -341,7 +451,16 @@ class _D2Renderer:
     """Converts a list of :class:`_DtsClockNode` objects into a D2 diagram string."""
 
     def render(self, nodes: list[_DtsClockNode], title: str) -> str:
-        """Return a D2 diagram string for the clock topology of *nodes*."""
+        """Return a D2 diagram string for the clock topology of *nodes*.
+
+        Args:
+            nodes: Parsed clock nodes from :class:`_DtsParser`.
+            title: Unused in the D2 output (reserved for future use).
+
+        Returns:
+            A D2 source string with ELK layout engine, ``direction: right``,
+            per-node style blocks, and per-clock-name edge stroke colours.
+        """
         defined_labels = {n.label for n in nodes}
         provider_labels: set[str] = set()
         for n in nodes:
@@ -350,6 +469,11 @@ class _D2Renderer:
         all_labels = defined_labels | provider_labels
 
         lines: list[str] = []
+        lines.append("vars: {")
+        lines.append("  d2-config: {")
+        lines.append("    layout-engine: elk")
+        lines.append("  }")
+        lines.append("}")
         lines.append("direction: right")
         lines.append("")
 
@@ -384,7 +508,16 @@ class _D2Renderer:
 
 
 def _d2_label(label: str, node_name: str) -> str:
-    """Return a D2 display label (uses ``\\n`` as a line separator)."""
+    r"""Return a D2 display label (uses ``\n`` as a line separator).
+
+    Args:
+        label: DTS node label.
+        node_name: DTS node name, possibly with an ``@addr`` suffix.
+
+    Returns:
+        A display string for the D2 node ``label:`` field.  When *label*
+        and the stripped *node_name* differ both are combined with ``\n``.
+    """
     base = re.sub(r"@[\da-fA-F]+$", "", node_name)
     if base == label:
         return label
@@ -439,7 +572,18 @@ class ClockGraphGenerator:
         return result
 
     def _run_tool(self, cmd: list[str], tool: str) -> bool:
-        """Run *cmd* if *tool* is on PATH; return ``True`` on success."""
+        """Run *cmd* if *tool* is on PATH; return ``True`` on success.
+
+        Args:
+            cmd: Full command and arguments to execute (passed directly to
+                :func:`subprocess.run`).
+            tool: Executable name used to probe ``PATH`` via
+                :func:`shutil.which` before attempting the run.
+
+        Returns:
+            ``True`` when *tool* is found and the process exits with return
+            code 0; ``False`` otherwise.
+        """
         if shutil.which(tool) is None:
             return False
         res = subprocess.run(cmd, capture_output=True, text=True, check=False)
