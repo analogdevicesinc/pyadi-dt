@@ -8,6 +8,7 @@ from .topology import XsaParser, XsaTopology
 from .node_builder import NodeBuilder
 from .merger import DtsMerger
 from .visualizer import HtmlVisualizer
+from .clock_graph import ClockGraphGenerator
 from .profiles import ProfileManager, merge_profile_defaults
 from .reference import ReferenceManifestExtractor
 from .parity import check_manifest_against_dts, write_parity_reports
@@ -56,12 +57,16 @@ class XsaPipeline:
         HtmlVisualizer().generate(
             topology, cfg_merged, merged_content, output_dir, name
         )
+        clock_graph_result = ClockGraphGenerator().generate(
+            merged_content, output_dir, name
+        )
 
         result = {
             "base_dir": base_dir,
             "overlay": output_dir / f"{name}.dtso",
             "merged": output_dir / f"{name}.dts",
             "report": output_dir / f"{safe_name}_report.html",
+            **clock_graph_result,
         }
         if reference_dts is not None:
             manifest = ReferenceManifestExtractor().extract(reference_dts)
