@@ -21,6 +21,10 @@ The pipeline performs five stages:
    both a standalone overlay (``.dtso``) and a fully merged (``.dts``).
 5. **HTML visualization** – generates a self-contained interactive report
    with D3.js topology, clock tree, and JESD204 parameter panels.
+6. **Clock graph** – parses ``clocks`` / ``clock-names`` / ``clock-output-names``
+   properties from the merged DTS and writes directed clock-distribution graphs
+   in Graphviz DOT and D2 formats (SVG rendered automatically when ``dot`` /
+   ``d2`` are available on PATH).
 
 Pipeline diagram
 ~~~~~~~~~~~~~~~~
@@ -39,6 +43,9 @@ Pipeline diagram
        DTS --> DTC["dtc/cpp"]
        DTC --> DTB["system.dtb"]
        NB --> REP["HTML report<br/>topology + clocks + JESD"]
+       DTS --> CG["ClockGraphGenerator<br/>clock-tree diagrams"]
+       CG --> DOTF[".dot + .dot.svg"]
+       CG --> D2F[".d2 + .d2.svg"]
 
 
 Hardware test flow with ``pyadi-build``
@@ -138,8 +145,12 @@ Or call the pipeline directly from Python:
        cfg=cfg,
        output_dir=Path("out/"),
    )
-   print(results["merged"])   # Path to the merged .dts
-   print(results["report"])   # Path to the HTML visualization
+   print(results["merged"])       # Path to the merged .dts
+   print(results["report"])       # Path to the HTML visualization
+   print(results["clock_dot"])    # Path to the Graphviz clock-tree .dot
+   print(results["clock_d2"])     # Path to the D2 clock-tree .d2
+   # SVG paths are present only when the rendering tool is installed:
+   # results["clock_dot_svg"], results["clock_d2_svg"]
 
 Python API
 ----------
@@ -162,6 +173,9 @@ Core classes and methods used in the XSA flow:
      - Produces ``<name>.dtso`` overlay + ``<name>.dts`` merged full tree.
    * - ``HtmlVisualizer.generate(topology, cfg, merged_content, output_dir, name)``
      - Writes self-contained HTML debug report with topology and clock links.
+   * - ``ClockGraphGenerator.generate(merged_dts, output_dir, name) -> dict[str, Path]``
+     - Parses clock properties from the merged DTS and writes ``.dot`` and
+       ``.d2`` clock-tree diagrams; renders SVG when ``dot`` / ``d2`` are on PATH.
    * - ``XsaPipeline.run(...) -> dict[str, Path]``
      - Orchestrates all stages end-to-end and returns artifact paths.
 
@@ -304,6 +318,18 @@ ADRV family profile variants include:
 - ``adrv937x_zc706``
 - ``adrv937x_zcu102``
 - ``adrv9025_zcu102`` (also selected from ``adrv9026``-named JESD labels)
+
+The ``adrv9009_zcu102`` profile also supports the **AD-FMCOMMS8-EBZ**
+(FMComms8) dual-chip design.  When the XSA topology is detected as
+FMComms8 layout (two ADRV9009 transceivers sharing one SPI bus), the
+pipeline generates a second PHY node (``trx1_adrv9009``) with independent
+HMC7044 channel assignments per chip:
+
+- trx0 (``adrv9009-x2``): uses HMC7044 channels 0/1 (dev/sysref) and 6 (FPGA sysref)
+- trx1 (``adrv9009``): uses HMC7044 channels 2/3 (dev/sysref) and 7 (FPGA sysref)
+
+Hardware tests verify that both ``adrv9009-phy`` IIO devices appear in
+the IIO context.
 
 For ADRV9008 Kuiper projects, prefer explicit profile selection:
 ``profile="adrv9008_zcu102"``. Many ADRV9008 XSAs use ADRV9009-style JESD/IP
@@ -463,16 +489,87 @@ Outputs
 
 ``XsaPipeline.run()`` returns a dict with the following keys:
 
-============  ============================================
-Key           Description
-============  ============================================
-``base_dir``  Directory containing the sdtgen output
-``overlay``   ``.dtso`` overlay (ADI nodes only)
-``merged``    ``.dts`` with base SDT + ADI nodes merged
-``report``    Self-contained HTML visualisation report
-``map``       (Optional) manifest parity JSON report
-``coverage``  (Optional) manifest parity Markdown summary
-============  ============================================
+=================  ============================================
+Key                Description
+=================  ============================================
+``base_dir``       Directory containing the sdtgen output
+``overlay``        ``.dtso`` overlay (ADI nodes only)
+``merged``         ``.dts`` with base SDT + ADI nodes merged
+``report``         Self-contained HTML visualisation report
+``clock_dot``      Graphviz DOT clock-tree diagram (always)
+``clock_d2``       D2 clock-tree diagram (always)
+``clock_dot_svg``  SVG rendered from DOT (when ``dot`` is on PATH)
+``clock_d2_svg``   SVG rendered from D2 (when ``d2`` is on PATH)
+``map``            (Optional) manifest parity JSON report
+``coverage``       (Optional) manifest parity Markdown summary
+=================  ============================================
+
+Clock Topology Graphs
+---------------------
+
+``XsaPipeline.run()`` automatically produces clock-tree diagrams derived
+from the merged DTS.  Both output formats are written unconditionally; SVG
+renderings are produced alongside each when the corresponding tool is on
+PATH.
+
+.. list-table::
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - File
+     - Tool for SVG
+     - Notes
+   * - ``<name>_clocks.dot``
+     - ``dot`` (Graphviz)
+     - Graphviz directed graph; render manually with
+       ``dot -Tsvg -o clocks.svg <name>_clocks.dot``
+   * - ``<name>_clocks.d2``
+     - ``d2``
+     - D2lang diagram; render manually with
+       ``d2 <name>_clocks.d2 clocks.svg``
+
+Both formats use the same colour scheme:
+
+.. list-table::
+   :widths: 25 75
+   :header-rows: 1
+
+   * - Node type
+     - Colour / shape
+   * - PS clocks (``zynqmp_clk``, ``ps7_clkc``)
+     - Orange, oval
+   * - Clock chips (``hmc7044``, ``ad9528``, ``ad9523``)
+     - Dark blue, rectangle
+   * - GT transceivers (``*xcvr*``)
+     - Purple, rectangle
+   * - JESD204 controllers (``*jesd*``)
+     - Dark green, rectangle
+   * - PL clock generators (``*clkgen*``)
+     - Teal, rectangle
+   * - Converters / PHY (``trx*``, ``ad9*``, ``adrv*``)
+     - Dark red, rectangle
+
+Edges are labelled with the ``clock-names`` value and the provider channel
+index (e.g. ``device_clk[9]``).  Edge styles distinguish signal-domain
+clocks from AXI bus clocks:
+
+- **Solid coloured** – ``device_clk`` (blue), ``lane_clk`` (green),
+  ``conv`` (gold), ``sampl_clk`` (purple)
+- **Dashed** – ``s_axi_aclk`` (grey), ``div40`` (gold dashed)
+
+The graphs can also be generated standalone without running the full
+pipeline:
+
+.. code-block:: python
+
+   from pathlib import Path
+   from adidt.xsa.clock_graph import ClockGraphGenerator
+
+   merged_dts = Path("out/adrv9009_zcu102.dts").read_text()
+   result = ClockGraphGenerator().generate(merged_dts, Path("out/"), "adrv9009_zcu102")
+   print(result["clock_dot"])    # always present
+   print(result["clock_d2"])     # always present
+   # result["clock_dot_svg"] and result["clock_d2_svg"] when tools are available
 
 Exceptions
 ----------
