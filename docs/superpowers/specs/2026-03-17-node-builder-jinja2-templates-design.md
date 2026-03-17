@@ -30,6 +30,10 @@ their associated channel-block helper methods.
 The `build()` dispatch method, all cfg dataclasses, all non-string logic, and
 the public API of `NodeBuilder` are unchanged.
 
+DMA nodes (`&axi_*_dma { compatible = "adi,axi-dmac-1.00.a"; ... }`) are four
+lines each with no variable content beyond the label. They remain as Python
+f-strings — a template adds no value.
+
 ## Approach
 
 One Jinja2 template per chip/peripheral type. Each template renders all DTS
@@ -66,16 +70,16 @@ All templates live in `adidt/templates/xsa/`.
 
 | File | Renders | Used by |
 |------|---------|---------|
-| `adxcvr.tmpl` | `&axi_*_adxcvr { ... }` overlay | fmcdaq2, fmcdaq3, AD9172 |
-| `jesd204_overlay.tmpl` | Board-specific JESD204 overlay (extended properties) | fmcdaq2, fmcdaq3 |
-| `tpl_core.tmpl` | `&*_tpl_core { ... }` DMA/JESD overlay | fmcdaq2, fmcdaq3 |
+| `adxcvr.tmpl` | `&axi_*_adxcvr { ... }` overlay | fmcdaq2, fmcdaq3, AD9172, AD9081, ADRV9009 |
+| `jesd204_overlay.tmpl` | Board-specific JESD204 overlay (extended properties) | fmcdaq2, fmcdaq3, AD9172, AD9081, ADRV9009 |
+| `tpl_core.tmpl` | `&*_tpl_core { ... }` DMA/JESD overlay | fmcdaq2, fmcdaq3, AD9172, AD9081 |
 
 **Total: 13 new template files.**
 
 Note: `jesd204_overlay.tmpl` is distinct from `jesd204_fsm.tmpl`. The FSM
 template renders bus-instantiated JESD nodes (new nodes in the bus). The
 overlay template renders `&label { ... }` overlays that patch existing nodes
-with board-specific clock references and properties, as used by fmcdaq2/3.
+with board-specific clock references and properties.
 
 ## Context Contracts
 
@@ -107,7 +111,8 @@ with board-specific clock references and properties, as used by fmcdaq2/3.
     "gpo_controls": list[int],
     "sync_pin_mode": int | None,
     "high_perf_mode_dist_enable": bool,
-    "channels": [
+    # Exactly one of channels/raw_channels is non-None at any call site:
+    "channels": [                    # Normal path: Python-built list rendered via {% for %}
         {
             "id": int,
             "name": str,
@@ -120,9 +125,21 @@ with board-specific clock references and properties, as used by fmcdaq2/3.
             "is_sysref": bool,           # emits adi,jesd204-sysref-chan
         },
         ...
-    ],
+    ] | None,
+    "raw_channels": str | None,      # Override path: pre-rendered DTS channel block string
+                                     # (from hmc7044_channel_blocks config key via _format_nested_block).
+                                     # Template: {% if channels %}...{% for %}...{% else %}{{ raw_channels }}{% endif %}
 }
 ```
+
+**`custom_hmc7044_blocks` override:** The AD9081 and ADRV9009 builders support
+a `hmc7044_channel_blocks` config key that injects raw pre-formatted DTS
+channel blocks. When this key is present, Python builds the channel block
+string using `_format_nested_block` (unchanged) and bypasses `hmc7044.tmpl`.
+The SPI wrapper and HMC7044 chip-level properties are still rendered via the
+template; only the channel sub-nodes section is overridden. The context dict
+passes `channels: None` in this case, and the template emits `{{ raw_channels }}`
+(a pre-rendered string) instead of iterating `{% for ch in channels %}`.
 
 ### Clock chip templates (`ad9523_1.tmpl`, `ad9528.tmpl`, `ad9528_1.tmpl`)
 
@@ -137,7 +154,14 @@ channels receive an empty `freq_str` and the template omits the comment.
     "spi_max_hz": int,
     "vcxo_hz": int,
     "clock_output_names": list[str],
-    # chip-specific PLL config fields (vary per chip)
+    # chip-specific PLL config fields (vary per chip):
+    #   ad9523_1: "pll1_charge_pump_current", "pll2_charge_pump_current",
+    #             "pll2_ndiv_a_cnt", "pll2_ndiv_b_cnt", "pll2_r2_div",
+    #             "pll2_vco_diff_m1", "pll2_vco_diff_m2"
+    #   ad9528: "pll1_feedback_div_ratio", "pll2_vco_output_div",
+    #           "pll2_charge_pump_current_ua"
+    #   ad9528_1: same shape as ad9528; written as a separate template
+    #             to allow per-chip property differences without conditionals
     "channels": [
         {
             "id": int,
@@ -154,7 +178,31 @@ channels receive an empty `freq_str` and the template omits the comment.
 }
 ```
 
+**AD9528 vs AD9528-1 distinction:** `ad9528.tmpl` (fmcdaq3) and
+`ad9528_1.tmpl` (ADRV9009) use identical context schema but different
+chip-level property names. Having two templates avoids in-template conditionals
+for structural differences while sharing the same Python context builder
+signature.
+
 ### `adxcvr.tmpl`
+
+The adxcvr node has two hardware variants; a single template handles both via
+conditionals:
+
+- **2-clock variant** (fmcdaq2 only): `clocks = <&clk N>, <&clk N>;
+  clock-names = "conv", "div40";` plus `adi,jesd-l/m/s` JESD parameters;
+  no `jesd204-inputs`; `use_lpm_enable=True`.
+- **1-clock variant** (fmcdaq3, AD9172, AD9081, ADRV9009): `clocks = <&clk N>;
+  clock-names = "conv";` no JESD L/M/S parameters.
+  `use_lpm_enable=True` for fmcdaq3 and AD9172; `False` for AD9081 only.
+
+`jesd204_inputs` for the 1-clock variant:
+- fmcdaq3 **RX** adxcvr: literal constant `"&clk0_ad9528 0 0"` (hardcoded)
+- fmcdaq3 **TX** adxcvr: `None` — this node does **not** emit `jesd204-inputs` at all (see builder lines 819–830)
+- AD9172: literal constant `"&hmc7044 0 0"` (hardcoded)
+- AD9081: `f"&hmc7044 0 {rx_link_id}"` or `f"&hmc7044 0 0"` (dynamic link_id from cfg)
+
+The template must guard `jesd204-inputs` with `{% if jesd204_inputs %}` even in the 1-clock code path.
 
 ```python
 {
@@ -162,34 +210,132 @@ channels receive an empty `freq_str` and the template omits the comment.
     "sys_clk_select": int,
     "out_clk_select": int,
     "clk_ref": str,                  # e.g. "&clk0_ad9523 4"
-    "div40_clk_ref": str,
-    "num_lanes": int,
+    "use_div40": bool,               # True for fmcdaq2; adds div40 clock entry
+    "div40_clk_ref": str | None,     # populated when use_div40=True
+    "clock_output_names": list[str], # e.g. ["adc_gt_clk", "rx_out_clk"]
+    "use_lpm_enable": bool,          # True for fmcdaq2, fmcdaq3, and AD9172; False for AD9081 only
+    # JESD L/M/S — only emitted when use_div40=True (fmcdaq2)
+    "jesd_l": int | None,
+    "jesd_m": int | None,
+    "jesd_s": int | None,
+    # jesd204-inputs — only emitted when use_div40=False
+    "jesd204_inputs": str | None,    # e.g. "&hmc7044 0 2"
     "is_rx": bool,
 }
 ```
 
 ### `jesd204_overlay.tmpl`
 
+The overlay renders `&label { ... }` patches for JESD204 TX and RX AXI
+instances. TX nodes carry additional framing metadata fields; all are optional
+to allow the same template to serve both directions.
+
 ```python
 {
     "label": str,                    # e.g. "axi_ad9680_jesd204_rx"
     "direction": str,                # "rx" or "tx"
-    "clocks": list[str],             # e.g. ["&zynqmp_clk 71", "&clk0_ad9523 13"]
-    "clock_names": list[str],
-    "xcvr_label": str,
-    "link_id": int,
+    "clocks": list[str],             # e.g. ["&zynqmp_clk 71", "&clk0_ad9523 13", "&axi_ad9680_adxcvr 0"]
+    "clock_names": list[str],        # e.g. ["s_axi_aclk", "device_clk", "lane_clk"]
+    "clock_output_name": str | None,  # e.g. "jesd_adc_lane_clk"; None for AD9081 RX/TX and ADRV9009 RX/TX.
+                                     # #clock-cells = <0> is ALWAYS emitted unconditionally (present in all boards
+                                     # including AD9081). Only clock-output-names is guarded by
+                                     # {% if clock_output_name %} — do NOT put #clock-cells inside that guard.
+    "f": int,                        # adi,octets-per-frame
+    "k": int,                        # adi,frames-per-multiframe
+    "jesd204_inputs": str,           # e.g. "&axi_ad9680_adxcvr 0 0"; always populated — never None
+                                     # (unlike adxcvr.tmpl where this field is nullable)
+    # TX-only optional fields — omitted for RX
+    # converters_per_device, bits_per_sample, control_bits_per_sample: populated by ALL TX callers
+    # (fmcdaq2 TX, fmcdaq3 TX, AD9172 TX, AD9081 TX); pass None only for RX direction.
+    "converter_resolution": int | None,      # present for fmcdaq2 TX (value 14) and ADRV9009 TX (hardcoded 14); None for fmcdaq3 TX, AD9172 TX, AD9081 TX
+    "converters_per_device": int | None,     # populated by all TX callers; None for RX
+    "bits_per_sample": int | None,           # populated by all TX callers; None for RX
+    "control_bits_per_sample": int | None,   # populated by all TX callers; None for RX
 }
 ```
 
 ### `tpl_core.tmpl`
 
+Renders the TPL core overlay node. DMA-related fields are absent for AD9172,
+which has no dedicated DMA node attached to its TPL core.
+
 ```python
 {
     "label": str,                    # e.g. "axi_ad9680_core"
-    "direction": str,
-    "dma_label": str,
+    "compatible": str,               # e.g. "adi,axi-ad9680-1.0"
+    "direction": str,                # "rx" or "tx"
+    "dma_label": str | None,         # None for AD9172 (no DMA); when None, both dmas and dma-names lines are suppressed
+    "spibus_label": str,             # device label for spibus-connected, e.g. "adc0_ad9680"
     "jesd_label": str,
-    "compatible": str,
+    "jesd_link_offset": int,         # first arg of jesd204-inputs phandle: 0 for RX; 1 for TX on fmcdaq2/fmcdaq3; 0 for TX on AD9172 and AD9081
+    "link_id": int,                  # second arg of jesd204-inputs phandle (e.g. adc_jesd_link_id)
+                                     # renders as: jesd204-inputs = <&{jesd_label} {jesd_link_offset} {link_id}>
+    "pl_fifo_enable": bool,          # False for all RX cores and for AD9081 TX; True for fmcdaq2 TX, fmcdaq3 TX, and AD9172 TX only
+    # AD9081 TX only — clocks from sampl_clk output
+    "sampl_clk_ref": str | None,     # e.g. "trx0_ad9081 1"; None for all other cores.
+                                     # The "1" is the fixed port index of tx_sampl_clk in
+                                     # ad9081_mxfe's hardcoded clock-output-names array; not a config variable.
+    "sampl_clk_name": str | None,    # e.g. "sampl_clk"; None for all other cores
+}
+```
+
+### `ad9081_mxfe.tmpl`
+
+Renders the `trx0_ad9081` device node with its complete `adi,tx-dacs` and
+`adi,rx-adcs` sub-trees. The node appears inside an SPI bus overlay handled by
+`_wrap_spi_bus`.
+
+```python
+{
+    "label": str,               # "trx0_ad9081"
+    "cs": int,
+    "spi_max_hz": int,          # 5000000
+    "gpio_label": str,          # e.g. "gpio"
+    "reset_gpio": int,
+    "sysref_req_gpio": int,
+    "rx2_enable_gpio": int,
+    "rx1_enable_gpio": int,
+    "tx2_enable_gpio": int,
+    "tx1_enable_gpio": int,
+    "dev_clk_ref": str,         # e.g. "hmc7044 2"
+    # Template constants (not parameterised, but must appear in template):
+    #   #clock-cells = <1>;
+    #   clock-output-names = "rx_sampl_clk", "tx_sampl_clk";
+    #   In jesd204-inputs: <&{rx_core_label} 0 {rx_link_id}>, <&{tx_core_label} 0 {tx_link_id}>
+    #     — the port index 0 for both RX-core and TX-core is a fixed constant, not a context variable.
+    #   In JESD link sub-nodes (both tx-dacs and rx-adcs):
+    #     adi,converter-resolution = <16>;
+    #     adi,bits-per-sample = <16>;
+    #     adi,control-bits-per-sample = <0>;
+    #     — these are hardcoded constants, not parameterised.
+    "rx_core_label": str,
+    "tx_core_label": str,
+    "rx_link_id": int,
+    "tx_link_id": int,
+    # tx-dacs sub-tree
+    "dac_frequency_hz": int,
+    "tx_cduc_interpolation": int,
+    "tx_fduc_interpolation": int,
+    "tx_converter_select": str,  # pre-formatted, e.g. "<0x00> <0xFF> ..."
+    "tx_lane_map": str,          # pre-formatted byte sequence
+    "tx_link_mode": int,
+    "tx_m": int,
+    "tx_f": int,
+    "tx_k": int,
+    "tx_l": int,
+    "tx_s": int,
+    # rx-adcs sub-tree
+    "adc_frequency_hz": int,
+    "rx_cddc_decimation": int,
+    "rx_fddc_decimation": int,
+    "rx_converter_select": str,
+    "rx_lane_map": str,
+    "rx_link_mode": int,
+    "rx_m": int,
+    "rx_f": int,
+    "rx_k": int,
+    "rx_l": int,
+    "rx_s": int,
 }
 ```
 
@@ -258,20 +404,40 @@ def _build_fmcdaq2_nodes(self, topology, cfg, ps_clk_label, ps_clk_index):
         self._render("jesd204_overlay.tmpl", self._build_jesd204_overlay_ctx(fmc, "tx")),
         self._render("tpl_core.tmpl",        self._build_tpl_core_ctx(fmc, "rx")),
         self._render("tpl_core.tmpl",        self._build_tpl_core_ctx(fmc, "tx")),
+        f"\t&{fmc.adc_dma_label} {{\n\t\tcompatible = \"adi,axi-dmac-1.00.a\";\n\t\t#dma-cells = <1>;\n\t\t#clock-cells = <0>;\n\t}};",
+        f"\t&{fmc.dac_dma_label} {{\n\t\tcompatible = \"adi,axi-dmac-1.00.a\";\n\t\t#dma-cells = <1>;\n\t\t#clock-cells = <0>;\n\t}};",
     ]
 ```
+
+DMA nodes remain as Python f-strings in the builder — they are four lines with
+no variable content beyond the label.
 
 ### New utility methods
 
 ```python
 def _render(self, template_name: str, ctx: dict) -> str:
     """Render a Jinja2 template from adidt/templates/xsa/ with the given context."""
+    return self._env.get_template(template_name).render(ctx)
 
 def _wrap_spi_bus(self, label: str, children: str) -> str:
-    """Wrap pre-rendered child node strings in a &label { status = "okay"; ... } overlay."""
+    """Wrap pre-rendered child node strings in a &label { status = "okay"; ... } overlay.
+
+    Produces:
+        \t&label {
+        \t\tstatus = "okay";
+        <children>
+        \t};
+    """
 ```
 
-`_make_jinja_env` is refactored into a cached `_env` property used by `_render`.
+### `_env` property and existing render methods
+
+`_make_jinja_env` is refactored into a cached `_env` property used by both
+`_render` and the existing `_render_clkgen`, `_render_jesd`, and
+`_render_converter` methods. Those three methods are **not changed** — they
+continue to call `self._env.get_template(...)` internally. The `_env` property
+replaces the `_make_jinja_env()` call at the point those methods previously
+invoked it.
 
 ### What is removed
 
@@ -312,18 +478,39 @@ and asserts that key DTS properties appear in the output:
 
 ```python
 def test_hmc7044_template_renders_channel_with_freq_comment():
+    # All required fields must be provided; abbreviated here for illustration.
     ctx = {
         "label": "hmc7044", "cs": 0, "spi_max_hz": 1000000,
+        "pll1_clkin_frequencies": [122880000, 0, 0, 0],
+        "vcxo_hz": 122880000,
         "pll2_output_hz": 3_000_000_000,
+        "clock_output_names": [f"hmc7044_out{i}" for i in range(14)],
+        "jesd204_sysref_provider": True,
+        "jesd204_max_sysref_hz": 2000000,
+        # optional fields — pass None to suppress
+        "pll1_loop_bandwidth_hz": None, "pll1_ref_prio_ctrl": None,
+        "pll1_ref_autorevert": False, "pll1_charge_pump_ua": None,
+        "pfd1_max_freq_hz": None, "sysref_timer_divider": None,
+        "pulse_generator_mode": None, "clkin0_buffer_mode": None,
+        "clkin1_buffer_mode": None, "oscin_buffer_mode": None,
+        "gpi_controls": [], "gpo_controls": [],
+        "sync_pin_mode": None, "high_perf_mode_dist_enable": False,
         "channels": [{"id": 2, "name": "DEV_REFCLK", "divider": 12,
                       "freq_str": "250 MHz", "driver_mode": 2,
-                      "is_sysref": False, ...}],
-        ...
+                      "coarse_digital_delay": None, "startup_mode_dynamic": False,
+                      "high_perf_mode_disable": False, "is_sysref": False}],
+        "raw_channels": None,
     }
     out = NodeBuilder()._render("hmc7044.tmpl", ctx)
     assert 'adi,divider = <12>; // 250 MHz' in out
     assert 'adi,extended-name = "DEV_REFCLK"' in out
 ```
+
+`test/xsa/test_node_builder_context_builders.py` — unit tests for each
+context-builder method. Each test calls `_build_<chip>_ctx(...)` with a
+minimal cfg/dataclass and asserts that the returned dict has the expected
+keys and values. These tests are independent of template rendering and run
+without filesystem I/O.
 
 Tests are fast (no filesystem I/O beyond template loading) and isolated.
 
@@ -331,7 +518,7 @@ Tests are fast (no filesystem I/O beyond template loading) and isolated.
 
 Migrate one board builder at a time, running the full test suite after each:
 
-1. `_build_ad9172_nodes` — smallest builder, simplest HMC7044 usage; establishes `hmc7044.tmpl` and `ad9172.tmpl`
+1. `_build_ad9172_nodes` — smallest builder, simplest HMC7044 usage; establishes `hmc7044.tmpl` and `ad9172.tmpl`. Note: AD9172 uses a static 4-channel HMC7044 block with no cfg-driven optional fields (`pll1_ref_prio_ctrl`, `clkin1_buffer_mode`, etc. all `None`). The full optional-field coverage of `hmc7044.tmpl` is exercised in step 4 (AD9081) and step 5 (ADRV9009). Write template conditionals for those optional fields in step 1, even though they are not exercised until later steps.
 2. `_build_fmcdaq2_nodes` — establishes `ad9523_1.tmpl`, `ad9680.tmpl`, `ad9144.tmpl`, `adxcvr.tmpl`, `jesd204_overlay.tmpl`, `tpl_core.tmpl`
 3. `_build_fmcdaq3_nodes` — reuses most templates from step 2; adds `ad9528.tmpl`, `ad9152.tmpl`
 4. `_build_ad9081_nodes` — reuses `hmc7044.tmpl`; adds `ad9081_mxfe.tmpl`
