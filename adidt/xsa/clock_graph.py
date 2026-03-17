@@ -1,10 +1,14 @@
 # adidt/xsa/clock_graph.py
-"""Generate Graphviz clock-tree diagrams from merged DTS files.
+"""Generate clock-tree diagrams from merged DTS files.
 
 Parses ``clocks``, ``clock-names``, and ``clock-output-names`` properties out
-of a merged DTS string and produces a directed DOT graph showing the clock
-distribution path from provider to consumer.  An SVG is rendered alongside
-the DOT file when the ``dot`` system tool is available.
+of a merged DTS string and produces directed graphs showing the clock
+distribution path from provider to consumer.
+
+Two output formats are supported:
+
+* **Graphviz DOT** — always written; an SVG is rendered when ``dot`` is on PATH.
+* **D2** — always written; an SVG is rendered when ``d2`` is on PATH.
 """
 
 import re
@@ -307,19 +311,101 @@ class _DotRenderer:
 
 
 # ---------------------------------------------------------------------------
+# D2 renderer
+# ---------------------------------------------------------------------------
+
+_D2_CATEGORY_STYLE: dict[str, dict[str, str]] = {
+    "ps_clock": {"shape": "oval", "fill": "#7a3800"},
+    "clock_chip": {"shape": "rectangle", "fill": "#1a3d5c"},
+    "xcvr": {"shape": "rectangle", "fill": "#4a1a5c"},
+    "jesd": {"shape": "rectangle", "fill": "#1a4a20"},
+    "clkgen": {"shape": "rectangle", "fill": "#1a4a4a"},
+    "converter": {"shape": "rectangle", "fill": "#5c1a1a"},
+    "dma": {"shape": "rectangle", "fill": "#3a3a3a"},
+    "other": {"shape": "rectangle", "fill": "#2a2a2a"},
+}
+
+# clock_name → (stroke_color, stroke_dash)   dash=0 means solid
+_D2_EDGE_STYLE: dict[str, tuple[str, int]] = {
+    "s_axi_aclk": ("#555555", 5),
+    "device_clk": ("#4a9eff", 0),
+    "lane_clk": ("#44cc44", 0),
+    "conv": ("#cc9944", 0),
+    "div40": ("#cc9944", 5),
+    "sampl_clk": ("#cc44cc", 0),
+}
+_D2_EDGE_DEFAULT = ("#888888", 0)
+
+
+class _D2Renderer:
+    """Converts a list of :class:`_DtsClockNode` objects into a D2 diagram string."""
+
+    def render(self, nodes: list[_DtsClockNode], title: str) -> str:
+        """Return a D2 diagram string for the clock topology of *nodes*."""
+        defined_labels = {n.label for n in nodes}
+        provider_labels: set[str] = set()
+        for n in nodes:
+            for prov, _ in n.clocks:
+                provider_labels.add(prov)
+        all_labels = defined_labels | provider_labels
+
+        lines: list[str] = []
+        lines.append("direction: right")
+        lines.append("")
+
+        label_to_node = {n.label: n for n in nodes}
+        for lbl in sorted(all_labels):
+            node = label_to_node.get(lbl)
+            node_name = node.node_name if node else lbl
+            display = _d2_label(lbl, node_name)
+            cat = _categorise(lbl)
+            s = _D2_CATEGORY_STYLE.get(cat, _D2_CATEGORY_STYLE["other"])
+            lines.append(f"{lbl}: {{")
+            lines.append(f'  label: "{display}"')
+            lines.append(f"  shape: {s['shape']}")
+            lines.append(f'  style.fill: "{s["fill"]}"')
+            lines.append("  style.font-color: white")
+            lines.append("}")
+
+        lines.append("")
+
+        for n in nodes:
+            for i, (prov, idx) in enumerate(n.clocks):
+                clk_name = n.clock_names[i] if i < len(n.clock_names) else ""
+                edge_lbl = f"{clk_name}[{idx}]" if clk_name else f"[{idx}]"
+                stroke, dash = _D2_EDGE_STYLE.get(clk_name, _D2_EDGE_DEFAULT)
+                lines.append(f'{prov} -> {n.label}: "{edge_lbl}" {{')
+                lines.append(f'  style.stroke: "{stroke}"')
+                if dash:
+                    lines.append(f"  style.stroke-dash: {dash}")
+                lines.append("}")
+
+        return "\n".join(lines)
+
+
+def _d2_label(label: str, node_name: str) -> str:
+    """Return a D2 display label (uses ``\\n`` as a line separator)."""
+    base = re.sub(r"@[\da-fA-F]+$", "", node_name)
+    if base == label:
+        return label
+    return f"{label}\\n({base})"
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 
 class ClockGraphGenerator:
-    """Parse a merged DTS and write a Graphviz clock-tree diagram.
+    """Parse a merged DTS and write clock-tree diagrams in DOT and D2 formats.
 
-    Produces a ``.dot`` file unconditionally.  If the ``dot`` system tool
-    (Graphviz) is available an ``.svg`` is rendered alongside it.
+    Both a ``.dot`` and a ``.d2`` file are written unconditionally.  SVG
+    renderings are produced alongside each when the corresponding tool
+    (``dot`` for Graphviz, ``d2`` for D2) is available on PATH.
     """
 
     def generate(self, merged_dts: str, output_dir: Path, name: str) -> dict[str, Path]:
-        """Parse *merged_dts*, write DOT (and optionally SVG) under *output_dir*.
+        """Parse *merged_dts* and write diagram files under *output_dir*.
 
         Args:
             merged_dts: Full text of the merged DTS file.
@@ -327,32 +413,34 @@ class ClockGraphGenerator:
             name: Base name used for output file stems.
 
         Returns:
-            Dict with keys ``"clock_dot"`` (always present) and
-            ``"clock_svg"`` (present only when Graphviz ``dot`` is available).
+            Dict that always contains ``"clock_dot"`` and ``"clock_d2"``, plus
+            ``"clock_dot_svg"`` and/or ``"clock_d2_svg"`` when the respective
+            rendering tool is available.
         """
         nodes = _DtsParser().parse(merged_dts)
-        dot_text = _DotRenderer().render(nodes, name)
-
         safe_name = re.sub(r"[^\w\-.]", "_", name)
+
+        # --- Graphviz DOT ---
         dot_path = output_dir / f"{safe_name}_clocks.dot"
-        dot_path.write_text(dot_text)
-
+        dot_path.write_text(_DotRenderer().render(nodes, name))
         result: dict[str, Path] = {"clock_dot": dot_path}
+        dot_svg = output_dir / f"{safe_name}_clocks.dot.svg"
+        if self._run_tool(["dot", "-Tsvg", "-o", str(dot_svg), str(dot_path)], "dot"):
+            result["clock_dot_svg"] = dot_svg
 
-        svg_path = output_dir / f"{safe_name}_clocks.svg"
-        if self._render_svg(dot_path, svg_path):
-            result["clock_svg"] = svg_path
+        # --- D2 ---
+        d2_path = output_dir / f"{safe_name}_clocks.d2"
+        d2_path.write_text(_D2Renderer().render(nodes, name))
+        result["clock_d2"] = d2_path
+        d2_svg = output_dir / f"{safe_name}_clocks.d2.svg"
+        if self._run_tool(["d2", str(d2_path), str(d2_svg)], "d2"):
+            result["clock_d2_svg"] = d2_svg
 
         return result
 
-    def _render_svg(self, dot_path: Path, svg_path: Path) -> bool:
-        """Run ``dot -Tsvg`` to produce *svg_path*; return ``True`` on success."""
-        if shutil.which("dot") is None:
+    def _run_tool(self, cmd: list[str], tool: str) -> bool:
+        """Run *cmd* if *tool* is on PATH; return ``True`` on success."""
+        if shutil.which(tool) is None:
             return False
-        res = subprocess.run(
-            ["dot", "-Tsvg", "-o", str(svg_path), str(dot_path)],
-            capture_output=True,
-            text=True,
-            check=False,
-        )
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
         return res.returncode == 0

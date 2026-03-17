@@ -1,10 +1,16 @@
 # test/xsa/test_clock_graph.py
 """Tests for the ClockGraphGenerator / DTS clock-tree diagram module."""
 
+import shutil
 
 import pytest
 
-from adidt.xsa.clock_graph import ClockGraphGenerator, _DotRenderer, _DtsParser
+from adidt.xsa.clock_graph import (
+    ClockGraphGenerator,
+    _D2Renderer,
+    _DotRenderer,
+    _DtsParser,
+)
 
 # ---------------------------------------------------------------------------
 # Sample DTS fragments used across tests
@@ -146,8 +152,62 @@ def test_dot_renderer_labels_edges_with_clock_name():
 def test_dot_renderer_uses_dashed_style_for_s_axi_aclk():
     nodes = _DtsParser().parse(_SIMPLE_DTS)
     dot = _DotRenderer().render(nodes, "test")
-    # The s_axi_aclk edge should use dashed style
     assert "style=dashed" in dot
+
+
+# ---------------------------------------------------------------------------
+# _D2Renderer tests
+# ---------------------------------------------------------------------------
+
+
+def test_d2_renderer_has_direction():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "direction: right" in d2
+
+
+def test_d2_renderer_declares_all_nodes():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "zynqmp_clk" in d2
+    assert "axi_clkgen_0" in d2
+    assert "axi_jesd_rx" in d2
+
+
+def test_d2_renderer_emits_clock_edges():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "zynqmp_clk -> axi_jesd_rx" in d2
+    assert "axi_clkgen_0 -> axi_jesd_rx" in d2
+
+
+def test_d2_renderer_labels_edges_with_clock_name():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "device_clk" in d2
+    assert "lane_clk" in d2
+    assert "s_axi_aclk" in d2
+
+
+def test_d2_renderer_uses_stroke_dash_for_s_axi_aclk():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "stroke-dash" in d2
+
+
+def test_d2_renderer_ps_clock_has_oval_shape():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    # zynqmp_clk is PS clock → oval
+    idx = d2.index("zynqmp_clk")
+    block = d2[idx : idx + 200]
+    assert "oval" in block
+
+
+def test_d2_renderer_uses_style_fill():
+    nodes = _DtsParser().parse(_SIMPLE_DTS)
+    d2 = _D2Renderer().render(nodes, "test")
+    assert "style.fill" in d2
 
 
 # ---------------------------------------------------------------------------
@@ -162,9 +222,21 @@ def test_generator_writes_dot_file(tmp_path):
     assert result["clock_dot"].suffix == ".dot"
 
 
+def test_generator_writes_d2_file(tmp_path):
+    result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "testboard")
+    assert "clock_d2" in result
+    assert result["clock_d2"].exists()
+    assert result["clock_d2"].suffix == ".d2"
+
+
 def test_generator_dot_file_has_correct_name(tmp_path):
     result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "my_board")
     assert result["clock_dot"].name == "my_board_clocks.dot"
+
+
+def test_generator_d2_file_has_correct_name(tmp_path):
+    result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "my_board")
+    assert result["clock_d2"].name == "my_board_clocks.d2"
 
 
 def test_generator_dot_content_is_valid(tmp_path):
@@ -176,26 +248,45 @@ def test_generator_dot_content_is_valid(tmp_path):
     assert "axi_jesd_rx" in dot_text
 
 
+def test_generator_d2_content_is_valid(tmp_path):
+    result = ClockGraphGenerator().generate(_HMC7044_DTS, tmp_path, "hmc_test")
+    d2_text = result["clock_d2"].read_text()
+    assert "direction: right" in d2_text
+    assert "hmc7044_fmc" in d2_text
+    assert "axi_xcvr_rx" in d2_text
+    assert "axi_jesd_rx" in d2_text
+
+
 def test_generator_sanitises_name_with_special_chars(tmp_path):
     result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "board/v1.2")
-    # safe_name replaces /. with _
     assert result["clock_dot"].exists()
+    assert result["clock_d2"].exists()
     assert "/" not in result["clock_dot"].name
+    assert "/" not in result["clock_d2"].name
 
 
-def test_generator_returns_svg_path_when_dot_available(tmp_path):
-    import shutil
-
+def test_generator_returns_dot_svg_when_dot_available(tmp_path):
     if shutil.which("dot") is None:
         pytest.skip("Graphviz 'dot' not available")
     result = ClockGraphGenerator().generate(_HMC7044_DTS, tmp_path, "svg_test")
-    assert "clock_svg" in result
-    assert result["clock_svg"].exists()
-    assert result["clock_svg"].suffix == ".svg"
+    assert "clock_dot_svg" in result
+    assert result["clock_dot_svg"].exists()
+    assert result["clock_dot_svg"].name.endswith(".dot.svg")
 
 
-def test_generator_no_svg_key_when_dot_unavailable(tmp_path, monkeypatch):
+def test_generator_returns_d2_svg_when_d2_available(tmp_path):
+    if shutil.which("d2") is None:
+        pytest.skip("d2 not available")
+    result = ClockGraphGenerator().generate(_HMC7044_DTS, tmp_path, "d2_svg_test")
+    assert "clock_d2_svg" in result
+    assert result["clock_d2_svg"].exists()
+    assert result["clock_d2_svg"].name.endswith(".d2.svg")
+
+
+def test_generator_no_svg_keys_when_tools_unavailable(tmp_path, monkeypatch):
     monkeypatch.setattr("adidt.xsa.clock_graph.shutil.which", lambda _: None)
-    result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "nodot")
-    assert "clock_svg" not in result
+    result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "notools")
+    assert "clock_dot_svg" not in result
+    assert "clock_d2_svg" not in result
     assert "clock_dot" in result
+    assert "clock_d2" in result
