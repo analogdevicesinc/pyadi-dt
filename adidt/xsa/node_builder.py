@@ -1510,6 +1510,22 @@ class NodeBuilder:
             "raw_channels": raw_channels,
         }
 
+    def _build_ad9172_device_ctx(self, ad: "_AD9172Cfg") -> dict:
+        """Build context dict for ad9172.tmpl."""
+        return {
+            "label": "dac0_ad9172",
+            "cs": ad.dac_cs,
+            "spi_max_hz": ad.dac_spi_max,
+            "clk_ref": "hmc7044 2",
+            "dac_rate_khz": ad.ad9172_dac_rate_khz,
+            "jesd_link_mode": ad.ad9172_jesd_link_mode,
+            "dac_interpolation": ad.ad9172_dac_interpolation,
+            "channel_interpolation": ad.ad9172_channel_interpolation,
+            "clock_output_divider": ad.ad9172_clock_output_divider,
+            "jesd_link_ids": [0],
+            "jesd204_inputs": f"{ad.dac_core_label} 0 {ad.dac_jesd_link_id}",
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}

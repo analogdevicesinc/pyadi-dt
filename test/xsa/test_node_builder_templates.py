@@ -124,3 +124,24 @@ def test_hmc7044_template_sysref_channel_emits_sysref_flag():
     assert "adi,high-performance-mode-disable;" in out
     assert "adi,pll1-ref-prio-ctrl = <0xE1>;" in out
     assert "adi,pll1-ref-autorevert-enable;" in out
+
+
+def test_ad9172_template_renders_device_node():
+    ctx = {
+        "label": "dac0_ad9172",
+        "cs": 1,
+        "spi_max_hz": 1000000,
+        "clk_ref": "hmc7044 2",
+        "dac_rate_khz": 6000000,
+        "jesd_link_mode": 9,
+        "dac_interpolation": 1,
+        "channel_interpolation": 1,
+        "clock_output_divider": 1,
+        "jesd_link_ids": [0],
+        "jesd204_inputs": "axi_ad9172_core 0 0",
+    }
+    out = NodeBuilder()._render("ad9172.tmpl", ctx)
+    assert 'compatible = "adi,ad9172"' in out
+    assert "dac0_ad9172: ad9172@1" in out
+    assert "adi,dac-rate-khz = <6000000>;" in out
+    assert "jesd204-link-ids = <0>;" in out
