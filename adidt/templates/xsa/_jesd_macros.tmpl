@@ -1,12 +1,12 @@
 {#- Shared JESD204 DTS node macros imported by converter device templates. -#}
-{%- macro jesd_top_device_props(top_device, link_ids, inputs_str) -%}
-		jesd204-device;
-		#jesd204-cells = <2>;
-		jesd204-top-device = <{{ top_device }}>;
-		jesd204-link-ids = <{{ link_ids | join(' ') }}>;
-		jesd204-inputs = <&{{ inputs_str }}>;
+{%- macro jesd_top_device_props(top_device, link_ids, inputs_str) %}
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <{{ top_device }}>;
+			jesd204-link-ids = <{{ link_ids | join(' ') }}>;
+			jesd204-inputs = <&{{ inputs_str }}>;
 {%- endmacro %}
-{%- macro mxfe_jesd_link(converter_select, lane_map, link_mode, m, f, k, l, s) -%}
+{%- macro mxfe_jesd_link(converter_select, lane_map, link_mode, m, f, k, l, s) %}
 				adi,jesd-links {
 					#size-cells = <0>;
 					#address-cells = <1>;

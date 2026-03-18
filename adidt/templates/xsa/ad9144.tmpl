@@ -7,7 +7,7 @@
 			spi-max-frequency = <{{ spi_max_hz }}>;
 			clocks = <&{{ clk_ref }}>;
 			clock-names = "dac_clk";
-{{ jesd_top_device_props(jesd204_top_device, jesd204_link_ids, jesd204_inputs) }}
+{{- jesd_top_device_props(jesd204_top_device, jesd204_link_ids, jesd204_inputs) }}
 			adi,subclass = <1>;
 			adi,interpolation = <1>;
 {%- for g in gpio_lines %}

@@ -13,7 +13,7 @@
 			adi,jesd-link-mode = <{{ jesd_link_mode }}>;
 			adi,subclass = <1>;
 			adi,interpolation = <1>;
-{{ jesd_top_device_props(jesd204_top_device, jesd204_link_ids, jesd204_inputs) }}
+{{- jesd_top_device_props(jesd204_top_device, jesd204_link_ids, jesd204_inputs) }}
 {%- for g in gpio_lines %}
 			{{ g.prop }} = <&{{ g.controller }} {{ g.index }} 0>;
 {%- endfor %}

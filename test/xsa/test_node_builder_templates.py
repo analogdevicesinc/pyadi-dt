@@ -801,3 +801,99 @@ def test_build_adrv9009_nodes_fmcomms8_no_clkgen():
     result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
     text = "\n".join(result)
     assert "adi,axi-clkgen-2.00.a" not in text
+
+
+def test_jesd_top_device_props_indentation_ad9680():
+    ctx = {
+        "label": "adc0_ad9680",
+        "cs": 2,
+        "spi_max_hz": 1000000,
+        "use_spi_3wire": False,
+        "clks_str": "<&clk 1>",
+        "clk_names_str": '"adc_clk"',
+        "jesd204_top_device": 0,
+        "jesd204_link_ids": [0],
+        "jesd204_inputs": "jesd_rx 0 0",
+        "m": 2, "l": 4, "f": 4, "k": 32, "np": 16,
+        "sampling_frequency_hz": 0,
+        "gpio_lines": [],
+    }
+    out = NodeBuilder()._render("ad9680.tmpl", ctx)
+    lines = out.splitlines()
+    jesd_line = next(l for l in lines if "jesd204-device;" in l)
+    assert jesd_line == "\t\t\tjesd204-device;", f"Wrong indentation: {repr(jesd_line)}"
+
+
+def test_jesd_top_device_props_indentation_ad9144():
+    ctx = {
+        "label": "dac0_ad9144",
+        "cs": 1,
+        "spi_max_hz": 1000000,
+        "clk_ref": "clk0_ad9523 1",
+        "jesd204_top_device": 1,
+        "jesd204_link_ids": [0],
+        "jesd204_inputs": "axi_ad9144_core 1 0",
+        "gpio_lines": [],
+    }
+    out = NodeBuilder()._render("ad9144.tmpl", ctx)
+    lines = out.splitlines()
+    jesd_line = next(l for l in lines if "jesd204-device;" in l)
+    assert jesd_line == "\t\t\tjesd204-device;", f"Wrong indentation: {repr(jesd_line)}"
+
+
+def test_jesd_top_device_props_indentation_ad9152():
+    ctx = {
+        "label": "dac0_ad9152",
+        "cs": 1,
+        "spi_max_hz": 1000000,
+        "clk_ref": "clk0_ad9528 9",
+        "jesd_link_mode": 9,
+        "jesd204_top_device": 1,
+        "jesd204_link_ids": [0],
+        "jesd204_inputs": "axi_ad9152_core 1 0",
+        "gpio_lines": [],
+    }
+    out = NodeBuilder()._render("ad9152.tmpl", ctx)
+    lines = out.splitlines()
+    jesd_line = next(l for l in lines if "jesd204-device;" in l)
+    assert jesd_line == "\t\t\tjesd204-device;", f"Wrong indentation: {repr(jesd_line)}"
+
+
+def test_mxfe_jesd_link_indentation_ad9081_mxfe():
+    ctx = {
+        "label": "trx0_ad9081",
+        "cs": 0,
+        "spi_max_hz": 5000000,
+        "gpio_label": "gpio",
+        "reset_gpio": 133,
+        "sysref_req_gpio": 121,
+        "rx2_enable_gpio": 135,
+        "rx1_enable_gpio": 134,
+        "tx2_enable_gpio": 137,
+        "tx1_enable_gpio": 136,
+        "dev_clk_ref": "hmc7044 2",
+        "rx_core_label": "rx_mxfe_tpl_core_adc_tpl_core",
+        "tx_core_label": "tx_mxfe_tpl_core_dac_tpl_core",
+        "rx_link_id": 2,
+        "tx_link_id": 0,
+        "dac_frequency_hz": 12_000_000_000,
+        "tx_cduc_interpolation": 8,
+        "tx_fduc_interpolation": 6,
+        "tx_converter_select": "<0x00> <0xFF>",
+        "tx_lane_map": "0 1 2 3 4 5 6 7",
+        "tx_link_mode": 9,
+        "tx_m": 8, "tx_f": 4, "tx_k": 32, "tx_l": 4, "tx_s": 1,
+        "adc_frequency_hz": 4_000_000_000,
+        "rx_cddc_decimation": 4,
+        "rx_fddc_decimation": 4,
+        "rx_converter_select": "<0x00> <0xFF>",
+        "rx_lane_map": "0 1 2 3 4 5 6 7",
+        "rx_link_mode": 9,
+        "rx_m": 8, "rx_f": 4, "rx_k": 32, "rx_l": 4, "rx_s": 1,
+    }
+    out = NodeBuilder()._render("ad9081_mxfe.tmpl", ctx)
+    lines = out.splitlines()
+    jesd_links_lines = [l for l in lines if "adi,jesd-links {" in l]
+    assert len(jesd_links_lines) == 2, f"Expected 2 adi,jesd-links lines, got: {jesd_links_lines}"
+    for line in jesd_links_lines:
+        assert line == "\t\t\t\tadi,jesd-links {", f"Wrong indentation: {repr(line)}"
