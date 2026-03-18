@@ -164,7 +164,6 @@ class NodeBuilder:
         Returns:
             Dict with keys "jesd204_rx", "jesd204_tx", "converters".
         """
-        env = self._make_jinja_env()
         clock_map = self._build_clock_map(topology)
         ps_clk_label, ps_clk_index, gpio_label = self._platform_ps_labels(topology)
         result: dict[str, list[str]] = {
@@ -197,7 +196,7 @@ class NodeBuilder:
             if is_adrv9009_design and self._is_adrv90xx_name(clkgen.name):
                 continue
             result["clkgens"].append(
-                self._render_clkgen(env, clkgen, ps_clk_label, ps_clk_index)
+                self._render_clkgen(clkgen, ps_clk_label, ps_clk_index)
             )
 
         for inst in topology.jesd204_rx:
@@ -215,7 +214,6 @@ class NodeBuilder:
             )
             result["jesd204_rx"].append(
                 self._render_jesd(
-                    env,
                     inst,
                     cfg.get("jesd", {}).get("rx", {}),
                     clkgen_label,
@@ -244,7 +242,6 @@ class NodeBuilder:
             )
             result["jesd204_tx"].append(
                 self._render_jesd(
-                    env,
                     inst,
                     cfg.get("jesd", {}).get("tx", {}),
                     clkgen_label,
@@ -270,7 +267,7 @@ class NodeBuilder:
             rx_label = rx_labels[0] if rx_labels else "jesd_rx"
             tx_label = tx_labels[0] if tx_labels else "jesd_tx"
             result["converters"].append(
-                self._render_converter(env, conv, rx_label, tx_label)
+                self._render_converter(conv, rx_label, tx_label)
             )
 
         result["converters"].extend(
@@ -1416,6 +1413,26 @@ class NodeBuilder:
             raise XsaParseError(f"template directory not found: {loc}")
         return Environment(loader=FileSystemLoader(loc))
 
+    @property
+    def _env(self) -> "Environment":
+        """Cached Jinja2 environment for the XSA template directory."""
+        if not hasattr(self, "_env_cache"):
+            self._env_cache = self._make_jinja_env()
+        return self._env_cache
+
+    def _render(self, template_name: str, ctx: dict) -> str:
+        """Render a Jinja2 template from adidt/templates/xsa/ with the given context."""
+        return self._env.get_template(template_name).render(ctx)
+
+    def _wrap_spi_bus(self, label: str, children: str) -> str:
+        """Wrap pre-rendered child node strings in an &label { status = "okay"; ... } overlay."""
+        return (
+            f"\t&{label} {{\n"
+            '\t\tstatus = "okay";\n'
+            f"{children}"
+            "\t};"
+        )
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}
@@ -1500,7 +1517,6 @@ class NodeBuilder:
 
     def _render_jesd(
         self,
-        env: Environment,
         inst: Jesd204Instance,
         jesd_params: dict[str, Any],
         clkgen_label: str,
@@ -1517,7 +1533,7 @@ class NodeBuilder:
         for key in ("F", "K"):
             if key not in jesd_params:
                 raise ConfigError(f"jesd.{inst.direction}.{key}")
-        return env.get_template("jesd204_fsm.tmpl").render(
+        return self._env.get_template("jesd204_fsm.tmpl").render(
             instance=inst,
             jesd=jesd_params,
             clkgen_label=clkgen_label,
@@ -1530,13 +1546,13 @@ class NodeBuilder:
         )
 
     def _render_converter(
-        self, env: Environment, conv: ConverterInstance, rx_label: str, tx_label: str
+        self, conv: ConverterInstance, rx_label: str, tx_label: str
     ) -> str:
         """Render a per-IP-type Jinja2 template for *conv*; returns a comment stub if no template exists."""
         from jinja2 import TemplateNotFound
 
         try:
-            tmpl = env.get_template(f"{conv.ip_type}.tmpl")
+            tmpl = self._env.get_template(f"{conv.ip_type}.tmpl")
         except TemplateNotFound:
             return f"\t/* {conv.name}: no template for {conv.ip_type} */"
         return tmpl.render(
@@ -1549,13 +1565,12 @@ class NodeBuilder:
 
     def _render_clkgen(
         self,
-        env: Environment,
         inst: ClkgenInstance,
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> str:
         """Render the ``clkgen.tmpl`` template for *inst* and return the DTS node string."""
-        return env.get_template("clkgen.tmpl").render(
+        return self._env.get_template("clkgen.tmpl").render(
             instance=inst,
             ps_clk_label=ps_clk_label,
             ps_clk_index=ps_clk_index,
