@@ -1422,6 +1422,28 @@ class NodeBuilder:
             "gpio_lines": gpio_lines,
         }
 
+    def _build_ad9152_ctx(self, fmc: "_FMCDAQ3Cfg") -> dict:
+        """Build context dict for ad9152.tmpl (fmcdaq3)."""
+        gpio_lines = []
+        for prop, attr in [
+            ("txen-gpios", "dac_txen_gpio"),
+            ("irq-gpios", "dac_irq_gpio"),
+        ]:
+            val = getattr(fmc, attr, None)
+            if val is not None:
+                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+        return {
+            "label": "dac0_ad9152",
+            "cs": fmc.dac_cs,
+            "spi_max_hz": fmc.dac_spi_max,
+            "clk_ref": f"clk0_ad9528 {fmc.dac_device_clk_idx}",
+            "jesd_link_mode": fmc.ad9152_jesd_link_mode,
+            "jesd204_top_device": 1,
+            "jesd204_link_ids": [fmc.dac_jesd_link_id],
+            "jesd204_inputs": f"{fmc.dac_core_label} 1 {fmc.dac_jesd_link_id}",
+            "gpio_lines": gpio_lines,
+        }
+
     def _build_adxcvr_ctx(self, fmc: "_FMCDAQ2Cfg", direction: str) -> dict:
         """Build context dict for adxcvr.tmpl from an _FMCDAQ2Cfg (fmcdaq2 — 2-clock variant)."""
         is_rx = direction == "rx"

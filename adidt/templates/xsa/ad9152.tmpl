@@ -1,0 +1,23 @@
+		{{ label }}: ad9152@{{ cs }} {
+			compatible = "adi,ad9152";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <{{ cs }}>;
+			spi-cpol;
+			spi-cpha;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+			adi,spi-3wire-enable;
+			clocks = <&{{ clk_ref }}>;
+			clock-names = "dac_clk";
+			adi,jesd-link-mode = <{{ jesd_link_mode }}>;
+			adi,subclass = <1>;
+			adi,interpolation = <1>;
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <{{ jesd204_top_device }}>;
+			jesd204-link-ids = <{{ jesd204_link_ids | join(' ') }}>;
+			jesd204-inputs = <&{{ jesd204_inputs }}>;
+{%- for g in gpio_lines %}
+			{{ g.prop }} = <&{{ g.controller }} {{ g.index }} 0>;
+{%- endfor %}
+		};

@@ -455,3 +455,25 @@ def test_ad9528_template_renders_pll_channel():
     assert "adi,vcxo-freq" in out
     assert "ad9528_0_c1" in out
     assert "adi,pll2-m1-frequency" in out
+
+
+def test_ad9152_template_renders_device_node():
+    ctx = {
+        "label": "dac0_ad9152",
+        "cs": 1,
+        "spi_max_hz": 1000000,
+        "clk_ref": "clk0_ad9528 9",
+        "jesd_link_mode": 9,
+        "jesd204_top_device": 1,
+        "jesd204_link_ids": [0],
+        "jesd204_inputs": "axi_ad9152_core 1 0",
+        "gpio_lines": [],
+    }
+    out = NodeBuilder()._render("ad9152.tmpl", ctx)
+    assert 'compatible = "adi,ad9152"' in out
+    assert "dac0_ad9152: ad9152@1" in out
+    assert "spi-cpol;" in out
+    assert "adi,spi-3wire-enable;" in out
+    assert "adi,jesd-link-mode = <9>;" in out
+    assert "jesd204-top-device = <1>;" in out
+    assert "jesd204-inputs = <&axi_ad9152_core 1 0>;" in out
