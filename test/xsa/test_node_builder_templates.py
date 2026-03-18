@@ -181,3 +181,55 @@ def test_ad9523_1_template_renders_sysref_channel():
     assert "ad9523_0_c5" in out
     # no signal_source property in this template
     assert "adi,signal-source" not in out
+
+
+def _make_ad9680_ctx():
+    # fmcdaq2-style: 3 clocks (jesd_label, device_clk, sysref_clk), no spi-cpol/cpha
+    return {
+        "label": "adc0_ad9680",
+        "cs": 2,
+        "spi_max_hz": 1000000,
+        "use_spi_3wire": False,  # fmcdaq2: no spi-cpol/cpha/spi-3wire
+        "clks_str": "<&axi_ad9680_jesd204_rx>, <&clk0_ad9523 13>, <&clk0_ad9523 5>",
+        "clk_names_str": '"jesd_adc_clk", "adc_clk", "adc_sysref"',
+        "sampling_frequency_hz": 1000000000,
+        "m": 2, "l": 4, "f": 1, "k": 32, "np": 16,
+        "jesd204_top_device": 0,
+        "jesd204_link_ids": [0],
+        "jesd204_inputs": "axi_ad9680_core 0 0",
+        "gpio_lines": [],
+    }
+
+
+def test_ad9680_template_renders_device_node():
+    out = NodeBuilder()._render("ad9680.tmpl", _make_ad9680_ctx())
+    assert 'compatible = "adi,ad9680"' in out
+    assert "adc0_ad9680: ad9680@2" in out
+    assert "adi,octets-per-frame = <1>;" in out
+    assert "jesd204-top-device = <0>;" in out
+    assert 'clock-names = "jesd_adc_clk", "adc_clk", "adc_sysref";' in out
+    assert "spi-cpol" not in out  # fmcdaq2 has no spi-cpol
+
+
+def _make_ad9144_ctx():
+    return {
+        "label": "dac0_ad9144",
+        "cs": 1,
+        "spi_max_hz": 1000000,
+        "clk_ref": "clk0_ad9523 1",
+        "jesd204_top_device": 1,
+        "jesd204_link_ids": [0],
+        # offset 1: AD9144 device node references the TPL core at link offset 1
+        "jesd204_inputs": "axi_ad9144_core 1 0",
+        "gpio_lines": [],
+    }
+
+
+def test_ad9144_template_renders_device_node():
+    out = NodeBuilder()._render("ad9144.tmpl", _make_ad9144_ctx())
+    assert 'compatible = "adi,ad9144"' in out
+    assert "dac0_ad9144: ad9144@1" in out
+    assert "jesd204-top-device = <1>;" in out
+    assert "jesd204-inputs = <&axi_ad9144_core 1 0>;" in out
+    assert "spi-cpol" not in out  # no spi-cpol in fmcdaq2 ad9144
+    assert "adi,jesd-link-mode" not in out  # not present in fmcdaq2 ad9144

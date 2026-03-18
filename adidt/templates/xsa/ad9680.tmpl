@@ -1,0 +1,43 @@
+		{{ label }}: ad9680@{{ cs }} {
+			compatible = "adi,ad9680";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <{{ cs }}>;
+{%- if use_spi_3wire %}
+			spi-cpol;
+			spi-cpha;
+{%- endif %}
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if use_spi_3wire %}
+			adi,spi-3wire-enable;
+{%- endif %}
+			clocks = {{ clks_str }};
+			clock-names = {{ clk_names_str }};
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <{{ jesd204_top_device }}>;
+			jesd204-link-ids = <{{ jesd204_link_ids | join(' ') }}>;
+			jesd204-inputs = <&{{ jesd204_inputs }}>;
+			adi,converters-per-device = <{{ m }}>;
+			adi,lanes-per-device = <{{ l }}>;
+			/* JESD204 framing: F = octets per frame per lane */
+			adi,octets-per-frame = <{{ f }}>;
+			/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
+			adi,frames-per-multiframe = <{{ k }}>;
+			adi,converter-resolution = <14>;
+			adi,bits-per-sample = <{{ np }}>;
+			adi,control-bits-per-sample = <2>;
+			adi,subclass = <1>;
+			adi,sampling-frequency = /bits/ 64 <{{ sampling_frequency_hz }}>;
+			adi,input-clock-divider-ratio = <1>;
+{%- if not use_spi_3wire %}
+			adi,sysref-lmfc-offset = <0>;
+			adi,sysref-pos-window-skew = <0>;
+			adi,sysref-neg-window-skew = <0>;
+			adi,sysref-mode = <1>;
+			adi,sysref-nshot-ignore-count = <0>;
+{%- endif %}
+{%- for g in gpio_lines %}
+			{{ g.prop }} = <&{{ g.controller }} {{ g.index }} 0>;
+{%- endfor %}
+		};

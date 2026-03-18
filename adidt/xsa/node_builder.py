@@ -1548,6 +1548,61 @@ class NodeBuilder:
             "channels": channels,
         }
 
+    def _build_ad9680_ctx(self, fmc: "_FMCDAQ2Cfg") -> dict:
+        """Build context dict for ad9680.tmpl (fmcdaq2 — 3 clocks, no spi-3wire)."""
+        gpio_lines = []
+        for prop, attr in [
+            ("powerdown-gpios", "adc_powerdown_gpio"),
+            ("fastdetect-a-gpios", "adc_fastdetect_a_gpio"),
+            ("fastdetect-b-gpios", "adc_fastdetect_b_gpio"),
+        ]:
+            val = getattr(fmc, attr, None)
+            if val is not None:
+                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+        clks_str = (
+            f"<&{fmc.adc_jesd_label}>, "
+            f"<&clk0_ad9523 {fmc.adc_device_clk_idx}>, "
+            f"<&clk0_ad9523 {fmc.adc_sysref_clk_idx}>"
+        )
+        return {
+            "label": "adc0_ad9680",
+            "cs": fmc.adc_cs,
+            "spi_max_hz": fmc.adc_spi_max,
+            "use_spi_3wire": False,
+            "clks_str": clks_str,
+            "clk_names_str": '"jesd_adc_clk", "adc_clk", "adc_sysref"',
+            "sampling_frequency_hz": fmc.adc_sampling_frequency_hz,
+            "m": fmc.rx_m, "l": fmc.rx_l, "f": fmc.rx_f, "k": fmc.rx_k,
+            "np": fmc.rx_np,
+            "jesd204_top_device": 0,
+            "jesd204_link_ids": [fmc.adc_jesd_link_id],
+            "jesd204_inputs": f"{fmc.adc_core_label} 0 {fmc.adc_jesd_link_id}",
+            "gpio_lines": gpio_lines,
+        }
+
+    def _build_ad9144_ctx(self, fmc: "_FMCDAQ2Cfg") -> dict:
+        """Build context dict for ad9144.tmpl (fmcdaq2)."""
+        gpio_lines = []
+        for prop, attr in [
+            ("txen-gpios", "dac_txen_gpio"),
+            ("reset-gpios", "dac_reset_gpio"),
+            ("irq-gpios", "dac_irq_gpio"),
+        ]:
+            val = getattr(fmc, attr, None)
+            if val is not None:
+                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+        return {
+            "label": "dac0_ad9144",
+            "cs": fmc.dac_cs,
+            "spi_max_hz": fmc.dac_spi_max,
+            "clk_ref": f"clk0_ad9523 {fmc.dac_device_clk_idx}",
+            "jesd204_top_device": 1,
+            "jesd204_link_ids": [fmc.dac_jesd_link_id],
+            # offset 1: fmcdaq2 ad9144 device references TPL core at offset 1 (line 415)
+            "jesd204_inputs": f"{fmc.dac_core_label} 1 {fmc.dac_jesd_link_id}",
+            "gpio_lines": gpio_lines,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}
