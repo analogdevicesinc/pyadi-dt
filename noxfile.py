@@ -12,12 +12,14 @@ PYTHON_VERSIONS = ["3.10"]
 
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session):
-    """Run the test suite with pytest."""
-    # Install the package with dev dependencies
-    session.install(".[dev]")
+    """Run the test suite with pytest.
 
-    # Run pytest with verbose output
-    session.run("pytest", "-vs", "test/", *session.posargs)
+    Pass additional args after '--' to override the default test path:
+        nox -s tests -- test/xsa/ -v -k "ad9081"
+    """
+    session.install(".[dev]")
+    args = session.posargs if session.posargs else ["test/"]
+    session.run("pytest", "-vs", *args)
 
 
 @nox.session(python=PYTHON_VERSIONS)
@@ -120,20 +122,6 @@ def build(session):
     """Build distribution packages."""
     session.install("build")
     session.run("python", "-m", "build")
-
-
-@nox.session(python="3.11")
-def test_quick(session):
-    """Run quick validation tests."""
-    session.install(".[dev]")
-    session.run("pytest", "-vs", "test_quick.py", *session.posargs)
-
-
-@nox.session(python="3.11")
-def test_validation(session):
-    """Run validation tests."""
-    session.install(".[dev]")
-    session.run("pytest", "-vs", "test_validation.py", *session.posargs)
 
 
 @nox.session(python="3.11")
