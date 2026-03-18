@@ -25,3 +25,102 @@ def test_wrap_spi_bus_produces_overlay():
     assert 'status = "okay";' in result
     assert "\t\tchild_node;" in result
     assert "\t};" in result
+
+
+def test_hmc7044_template_renders_channel_with_freq_comment():
+    ctx = {
+        "label": "hmc7044",
+        "cs": 0,
+        "spi_max_hz": 1000000,
+        "pll1_clkin_frequencies": [122880000, 0, 0, 0],
+        "vcxo_hz": 122880000,
+        "pll2_output_hz": 3_000_000_000,
+        "clock_output_names_str": ", ".join(
+            f'"hmc7044_out{i}"' for i in range(14)
+        ),
+        "jesd204_sysref_provider": True,
+        "jesd204_max_sysref_hz": 2000000,
+        "pll1_loop_bandwidth_hz": None,
+        "pll1_ref_prio_ctrl": None,
+        "pll1_ref_autorevert": False,
+        "pll1_charge_pump_ua": None,
+        "pfd1_max_freq_hz": None,
+        "sysref_timer_divider": None,
+        "pulse_generator_mode": None,
+        "clkin0_buffer_mode": None,
+        "clkin1_buffer_mode": None,
+        "oscin_buffer_mode": None,
+        "gpi_controls_str": "",
+        "gpo_controls_str": "",
+        "sync_pin_mode": None,
+        "high_perf_mode_dist_enable": False,
+        "channels": [
+            {
+                "id": 2,
+                "name": "DEV_REFCLK",
+                "divider": 12,
+                "freq_str": "250 MHz",
+                "driver_mode": 2,
+                "coarse_digital_delay": None,
+                "startup_mode_dynamic": False,
+                "high_perf_mode_disable": False,
+                "is_sysref": False,
+            }
+        ],
+        "raw_channels": None,
+    }
+    out = NodeBuilder()._render("hmc7044.tmpl", ctx)
+    assert "adi,divider = <12>; // 250 MHz" in out
+    assert 'adi,extended-name = "DEV_REFCLK"' in out
+    assert "hmc7044_c2: channel@2" in out
+    assert "jesd204-sysref-provider;" in out
+
+
+def test_hmc7044_template_sysref_channel_emits_sysref_flag():
+    ctx = {
+        "label": "hmc7044",
+        "cs": 0,
+        "spi_max_hz": 1000000,
+        "pll1_clkin_frequencies": [122880000, 0, 0, 0],
+        "vcxo_hz": 122880000,
+        "pll2_output_hz": 3_000_000_000,
+        "clock_output_names_str": ", ".join(
+            f'"hmc7044_out{i}"' for i in range(14)
+        ),
+        "jesd204_sysref_provider": True,
+        "jesd204_max_sysref_hz": 2000000,
+        "pll1_loop_bandwidth_hz": 200,
+        "pll1_ref_prio_ctrl": "0xE1",
+        "pll1_ref_autorevert": True,
+        "pll1_charge_pump_ua": 720,
+        "pfd1_max_freq_hz": 1000000,
+        "sysref_timer_divider": 1024,
+        "pulse_generator_mode": 0,
+        "clkin0_buffer_mode": "0x07",
+        "clkin1_buffer_mode": "0x07",
+        "oscin_buffer_mode": "0x15",
+        "gpi_controls_str": "0x00 0x00 0x00 0x11",
+        "gpo_controls_str": "0x1F 0x2B 0x00 0x00",
+        "sync_pin_mode": None,
+        "high_perf_mode_dist_enable": False,
+        "channels": [
+            {
+                "id": 3,
+                "name": "DEV_SYSREF",
+                "divider": 3840,
+                "freq_str": "781.25 kHz",
+                "driver_mode": 2,
+                "coarse_digital_delay": None,
+                "startup_mode_dynamic": True,
+                "high_perf_mode_disable": True,
+                "is_sysref": True,
+            }
+        ],
+        "raw_channels": None,
+    }
+    out = NodeBuilder()._render("hmc7044.tmpl", ctx)
+    assert "adi,jesd204-sysref-chan;" in out
+    assert "adi,startup-mode-dynamic-enable;" in out
+    assert "adi,high-performance-mode-disable;" in out
+    assert "adi,pll1-ref-prio-ctrl = <0xE1>;" in out
+    assert "adi,pll1-ref-autorevert-enable;" in out

@@ -1432,6 +1432,84 @@ class NodeBuilder:
             "\t};"
         )
 
+    @staticmethod
+    def _fmt_gpi_gpo(controls: list) -> str:
+        """Format a list of int/hex values as a space-separated hex string for DTS."""
+        return " ".join(f"0x{int(v):02X}" for v in controls)
+
+    def _build_hmc7044_channel_ctx(self, pll2_hz: int, channels_spec: list) -> list:
+        """Pre-compute freq_str for each HMC7044 channel using _fmt_hz."""
+        result = []
+        for ch in channels_spec:
+            d = dict(ch)
+            if "freq_str" not in d:
+                d["freq_str"] = self._fmt_hz(pll2_hz // d["divider"])
+            d.setdefault("coarse_digital_delay", None)
+            d.setdefault("startup_mode_dynamic", False)
+            d.setdefault("high_perf_mode_disable", False)
+            d.setdefault("is_sysref", False)
+            result.append(d)
+        return result
+
+    def _build_hmc7044_ctx(
+        self,
+        label: str,
+        cs: int,
+        spi_max_hz: int,
+        pll1_clkin_frequencies: list,
+        vcxo_hz: int,
+        pll2_output_hz: int,
+        clock_output_names: list,
+        channels,
+        raw_channels=None,
+        *,
+        jesd204_sysref_provider: bool = True,
+        jesd204_max_sysref_hz: int = 2000000,
+        pll1_loop_bandwidth_hz=None,
+        pll1_ref_prio_ctrl=None,
+        pll1_ref_autorevert: bool = False,
+        pll1_charge_pump_ua=None,
+        pfd1_max_freq_hz=None,
+        sysref_timer_divider=None,
+        pulse_generator_mode=None,
+        clkin0_buffer_mode=None,
+        clkin1_buffer_mode=None,
+        oscin_buffer_mode=None,
+        gpi_controls=None,
+        gpo_controls=None,
+        sync_pin_mode=None,
+        high_perf_mode_dist_enable: bool = False,
+    ) -> dict:
+        """Build the context dict for hmc7044.tmpl."""
+        clock_output_names_str = ", ".join(f'"{n}"' for n in clock_output_names)
+        return {
+            "label": label,
+            "cs": cs,
+            "spi_max_hz": spi_max_hz,
+            "pll1_clkin_frequencies": pll1_clkin_frequencies,
+            "vcxo_hz": vcxo_hz,
+            "pll2_output_hz": pll2_output_hz,
+            "clock_output_names_str": clock_output_names_str,
+            "jesd204_sysref_provider": jesd204_sysref_provider,
+            "jesd204_max_sysref_hz": jesd204_max_sysref_hz,
+            "pll1_loop_bandwidth_hz": pll1_loop_bandwidth_hz,
+            "pll1_ref_prio_ctrl": pll1_ref_prio_ctrl,
+            "pll1_ref_autorevert": pll1_ref_autorevert,
+            "pll1_charge_pump_ua": pll1_charge_pump_ua,
+            "pfd1_max_freq_hz": pfd1_max_freq_hz,
+            "sysref_timer_divider": sysref_timer_divider,
+            "pulse_generator_mode": pulse_generator_mode,
+            "clkin0_buffer_mode": clkin0_buffer_mode,
+            "clkin1_buffer_mode": clkin1_buffer_mode,
+            "oscin_buffer_mode": oscin_buffer_mode,
+            "gpi_controls_str": self._fmt_gpi_gpo(gpi_controls) if gpi_controls else "",
+            "gpo_controls_str": self._fmt_gpi_gpo(gpo_controls) if gpo_controls else "",
+            "sync_pin_mode": sync_pin_mode,
+            "high_perf_mode_dist_enable": high_perf_mode_dist_enable,
+            "channels": channels,
+            "raw_channels": raw_channels,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}
