@@ -314,201 +314,35 @@ class NodeBuilder:
             return []
 
         fmc = self._build_fmcdaq2_cfg(cfg)
-        clk_gpio_lines = self._format_optional_gpio_lines(
-            fmc.gpio_controller,
-            [
-                ("sync-gpios", fmc.clk_sync_gpio, "clk_sync_gpio"),
-                ("status0-gpios", fmc.clk_status0_gpio, "clk_status0_gpio"),
-                ("status1-gpios", fmc.clk_status1_gpio, "clk_status1_gpio"),
-            ],
+        spi_children = (
+            self._render("ad9523_1.tmpl", self._build_ad9523_1_ctx(fmc))
+            + self._render("ad9680.tmpl", self._build_ad9680_ctx(fmc))
+            + self._render("ad9144.tmpl", self._build_ad9144_ctx(fmc))
         )
-        dac_gpio_lines = self._format_optional_gpio_lines(
-            fmc.gpio_controller,
-            [
-                ("txen-gpios", fmc.dac_txen_gpio, "dac_txen_gpio"),
-                ("reset-gpios", fmc.dac_reset_gpio, "dac_reset_gpio"),
-                ("irq-gpios", fmc.dac_irq_gpio, "dac_irq_gpio"),
-            ],
-        )
-        adc_gpio_lines = self._format_optional_gpio_lines(
-            fmc.gpio_controller,
-            [
-                ("powerdown-gpios", fmc.adc_powerdown_gpio, "adc_powerdown_gpio"),
-                (
-                    "fastdetect-a-gpios",
-                    fmc.adc_fastdetect_a_gpio,
-                    "adc_fastdetect_a_gpio",
-                ),
-                (
-                    "fastdetect-b-gpios",
-                    fmc.adc_fastdetect_b_gpio,
-                    "adc_fastdetect_b_gpio",
-                ),
-            ],
-        )
-
-        return [
-            f"\t&{fmc.spi_bus} {{\n"
-            '\t\tstatus = "okay";\n'
-            f"\t\tclk0_ad9523: ad9523-1@{fmc.clock_cs} {{\n"
-            '\t\t\tcompatible = "adi,ad9523-1";\n'
-            "\t\t\t#address-cells = <1>;\n"
-            "\t\t\t#size-cells = <0>;\n"
-            f"\t\t\treg = <{fmc.clock_cs}>;\n"
-            f"\t\t\tspi-max-frequency = <{fmc.clock_spi_max}>;\n"
-            '\t\t\tclock-output-names = "ad9523-1_out0", "ad9523-1_out1", "ad9523-1_out2", '
-            '"ad9523-1_out3", "ad9523-1_out4", "ad9523-1_out5", "ad9523-1_out6", '
-            '"ad9523-1_out7", "ad9523-1_out8", "ad9523-1_out9", "ad9523-1_out10", '
-            '"ad9523-1_out11", "ad9523-1_out12", "ad9523-1_out13";\n'
-            "\t\t\t#clock-cells = <1>;\n"
-            f"\t\t\tadi,vcxo-freq = <{fmc.clock_vcxo_hz}>;\n"
-            "\t\t\tadi,spi-3wire-enable;\n"
-            "\t\t\tadi,pll1-bypass-enable;\n"
-            "\t\t\tadi,osc-in-diff-enable;\n"
-            "\t\t\tadi,pll2-charge-pump-current-nA = <413000>;\n"
-            "\t\t\tadi,pll2-m1-freq = <1000000000>;\n"
-            "\t\t\tadi,rpole2 = <0>;\n"
-            "\t\t\tadi,rzero = <7>;\n"
-            "\t\t\tadi,cpole1 = <2>;\n"
-            f"{clk_gpio_lines}"
-            f"{self._fmcdaq2_ad9523_channels_block()}"
-            "\t\t};\n"
-            f"\t\tadc0_ad9680: ad9680@{fmc.adc_cs} {{\n"
-            '\t\t\tcompatible = "adi,ad9680";\n'
-            "\t\t\t#address-cells = <1>;\n"
-            "\t\t\t#size-cells = <0>;\n"
-            f"\t\t\treg = <{fmc.adc_cs}>;\n"
-            f"\t\t\tspi-max-frequency = <{fmc.adc_spi_max}>;\n"
-            f"\t\t\tclocks = <&{fmc.adc_jesd_label}>, <&clk0_ad9523 {fmc.adc_device_clk_idx}>, <&clk0_ad9523 {fmc.adc_sysref_clk_idx}>;\n"
-            '\t\t\tclock-names = "jesd_adc_clk", "adc_clk", "adc_sysref";\n'
-            "\t\t\tjesd204-device;\n"
-            "\t\t\t#jesd204-cells = <2>;\n"
-            "\t\t\tjesd204-top-device = <0>;\n"
-            "\t\t\tjesd204-link-ids = <0>;\n"
-            f"\t\t\tjesd204-inputs = <&{fmc.adc_core_label} 0 {fmc.adc_jesd_link_id}>;\n"
-            f"\t\t\tadi,converters-per-device = <{fmc.rx_m}>;\n"
-            f"\t\t\tadi,lanes-per-device = <{fmc.rx_l}>;\n"
-            "\t\t\t/* JESD204 framing: F = octets per frame per lane */\n"
-            f"\t\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
-            "\t\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
-            f"\t\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
-            "\t\t\tadi,converter-resolution = <14>;\n"
-            f"\t\t\tadi,bits-per-sample = <{fmc.rx_np}>;\n"
-            "\t\t\tadi,control-bits-per-sample = <2>;\n"
-            "\t\t\tadi,subclass = <1>;\n"
-            f"\t\t\tadi,sampling-frequency = /bits/ 64 <{fmc.adc_sampling_frequency_hz}>;\n"
-            "\t\t\tadi,input-clock-divider-ratio = <1>;\n"
-            f"{adc_gpio_lines}"
-            "\t\t};\n"
-            f"\t\tdac0_ad9144: ad9144@{fmc.dac_cs} {{\n"
-            '\t\t\tcompatible = "adi,ad9144";\n'
-            "\t\t\t#address-cells = <1>;\n"
-            "\t\t\t#size-cells = <0>;\n"
-            f"\t\t\treg = <{fmc.dac_cs}>;\n"
-            f"\t\t\tspi-max-frequency = <{fmc.dac_spi_max}>;\n"
-            f"\t\t\tclocks = <&clk0_ad9523 {fmc.dac_device_clk_idx}>;\n"
-            '\t\t\tclock-names = "dac_clk";\n'
-            "\t\t\tjesd204-device;\n"
-            "\t\t\t#jesd204-cells = <2>;\n"
-            "\t\t\tjesd204-top-device = <1>;\n"
-            "\t\t\tjesd204-link-ids = <0>;\n"
-            f"\t\t\tjesd204-inputs = <&{fmc.dac_core_label} 1 {fmc.dac_jesd_link_id}>;\n"
-            "\t\t\tadi,subclass = <1>;\n"
-            "\t\t\tadi,interpolation = <1>;\n"
-            f"{dac_gpio_lines}"
-            "\t\t};\n"
-            "\t};",
+        dma_rx = (
             f"\t&{fmc.adc_dma_label} {{\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
-            "\t};",
+            "\t};"
+        )
+        dma_tx = (
             f"\t&{fmc.dac_dma_label} {{\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
-            "\t};",
-            f"\t&{fmc.adc_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-ad9680-1.0";\n'
-            f"\t\tdmas = <&{fmc.adc_dma_label} 0>;\n"
-            '\t\tdma-names = "rx";\n'
-            "\t\tspibus-connected = <&adc0_ad9680>;\n"
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            f"\t\tjesd204-inputs = <&{fmc.adc_jesd_label} 0 {fmc.adc_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{fmc.dac_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-ad9144-1.0";\n'
-            f"\t\tdmas = <&{fmc.dac_dma_label} 0>;\n"
-            '\t\tdma-names = "tx";\n'
-            "\t\tspibus-connected = <&dac0_ad9144>;\n"
-            "\t\tadi,axi-pl-fifo-enable;\n"
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            f"\t\tjesd204-inputs = <&{fmc.dac_jesd_label} 1 {fmc.dac_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{fmc.adc_jesd_label} {{\n"
-            '\t\tcompatible = "adi,axi-jesd204-rx-1.0";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{fmc.adc_xcvr_label} 1>, <&{fmc.adc_xcvr_label} 0>;\n"
-            '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
-            "\t\t#clock-cells = <0>;\n"
-            '\t\tclock-output-names = "jesd_adc_lane_clk";\n'
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
-            f"\t\tadi,octets-per-frame = <{fmc.rx_f}>;\n"
-            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
-            f"\t\tadi,frames-per-multiframe = <{fmc.rx_k}>;\n"
-            f"\t\tjesd204-inputs = <&{fmc.adc_xcvr_label} 0 {fmc.adc_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{fmc.dac_jesd_label} {{\n"
-            '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{fmc.dac_xcvr_label} 1>, <&{fmc.dac_xcvr_label} 0>;\n"
-            '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
-            "\t\t#clock-cells = <0>;\n"
-            '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
-            f"\t\tadi,octets-per-frame = <{fmc.tx_f}>;\n"
-            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
-            f"\t\tadi,frames-per-multiframe = <{fmc.tx_k}>;\n"
-            "\t\tadi,converter-resolution = <14>;\n"
-            f"\t\tadi,bits-per-sample = <{fmc.tx_np}>;\n"
-            f"\t\tadi,converters-per-device = <{fmc.tx_m}>;\n"
-            "\t\tadi,control-bits-per-sample = <2>;\n"
-            f"\t\tjesd204-inputs = <&{fmc.dac_xcvr_label} 1 {fmc.dac_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{fmc.adc_xcvr_label} {{\n"
-            '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = <&clk0_ad9523 {fmc.adc_xcvr_ref_clk_idx}>, <&clk0_ad9523 {fmc.adc_xcvr_ref_clk_idx}>;\n"
-            '\t\tclock-names = "conv", "div40";\n'
-            "\t\t#clock-cells = <1>;\n"
-            '\t\tclock-output-names = "adc_gt_clk", "rx_out_clk";\n'
-            f"\t\tadi,sys-clk-select = <{fmc.adc_sys_clk_select}>;\n"
-            f"\t\tadi,out-clk-select = <{fmc.adc_out_clk_select}>;\n"
-            f"\t\tadi,jesd-l = <{fmc.rx_l}>;\n"
-            f"\t\tadi,jesd-m = <{fmc.rx_m}>;\n"
-            f"\t\tadi,jesd-s = <{fmc.rx_s}>;\n"
-            "\t\tadi,use-lpm-enable;\n"
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t};",
-            f"\t&{fmc.dac_xcvr_label} {{\n"
-            '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = <&clk0_ad9523 {fmc.dac_xcvr_ref_clk_idx}>, <&clk0_ad9523 {fmc.dac_xcvr_ref_clk_idx}>;\n"
-            '\t\tclock-names = "conv", "div40";\n'
-            "\t\t#clock-cells = <1>;\n"
-            '\t\tclock-output-names = "dac_gt_clk", "tx_out_clk";\n'
-            f"\t\tadi,sys-clk-select = <{fmc.dac_sys_clk_select}>;\n"
-            f"\t\tadi,out-clk-select = <{fmc.dac_out_clk_select}>;\n"
-            f"\t\tadi,jesd-l = <{fmc.tx_l}>;\n"
-            f"\t\tadi,jesd-m = <{fmc.tx_m}>;\n"
-            f"\t\tadi,jesd-s = <{fmc.tx_s}>;\n"
-            "\t\tadi,use-lpm-enable;\n"
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t};",
+            "\t};"
+        )
+        return [
+            self._wrap_spi_bus(fmc.spi_bus, spi_children),
+            dma_rx,
+            dma_tx,
+            self._render("tpl_core.tmpl", self._build_tpl_core_ctx(fmc, "rx")),
+            self._render("tpl_core.tmpl", self._build_tpl_core_ctx(fmc, "tx")),
+            self._render("jesd204_overlay.tmpl", self._build_jesd204_overlay_ctx(fmc, "rx", ps_clk_label, ps_clk_index)),
+            self._render("jesd204_overlay.tmpl", self._build_jesd204_overlay_ctx(fmc, "tx", ps_clk_label, ps_clk_index)),
+            self._render("adxcvr.tmpl", self._build_adxcvr_ctx(fmc, "rx")),
+            self._render("adxcvr.tmpl", self._build_adxcvr_ctx(fmc, "tx")),
         ]
 
     def _build_fmcdaq2_cfg(self, cfg: dict[str, Any]) -> _FMCDAQ2Cfg:
@@ -948,123 +782,76 @@ class NodeBuilder:
             return []
 
         ad = self._build_ad9172_cfg(cfg, topology)
+        _pll2 = ad.hmc7044_out_freq_hz
+        channels = self._build_hmc7044_channel_ctx(_pll2, [
+            {"id": 2,  "name": "DAC_CLK",    "divider": 8,   "driver_mode": 1, "is_sysref": False},
+            {"id": 3,  "name": "DAC_SYSREF", "divider": 512, "driver_mode": 1, "is_sysref": True},
+            {"id": 12, "name": "FPGA_CLK",   "divider": 8,   "driver_mode": 2, "is_sysref": False},
+            {"id": 13, "name": "FPGA_SYSREF", "divider": 512, "driver_mode": 2, "is_sysref": True},
+        ])
+        hmc7044_ctx = self._build_hmc7044_ctx(
+            label="hmc7044", cs=ad.clock_cs, spi_max_hz=ad.clock_spi_max,
+            pll1_clkin_frequencies=[ad.hmc7044_ref_clk_hz, 0, 0, 0],
+            vcxo_hz=ad.hmc7044_vcxo_hz,
+            pll2_output_hz=ad.hmc7044_out_freq_hz,
+            clock_output_names=[f"hmc7044_out{i}" for i in range(14)],
+            channels=channels,
+            pll1_loop_bandwidth_hz=200,
+            sysref_timer_divider=1024,
+            pulse_generator_mode=0,
+            clkin0_buffer_mode="0x15",
+            oscin_buffer_mode="0x15",
+            gpi_controls=[0x00, 0x00, 0x00, 0x00],
+            gpo_controls=[0x1F, 0x2B, 0x00, 0x00],
+        )
+        spi_children = (
+            self._render("hmc7044.tmpl", hmc7044_ctx)
+            + self._render("ad9172.tmpl", self._build_ad9172_device_ctx(ad))
+        )
+        tpl_ctx = {
+            "label": ad.dac_core_label,
+            "compatible": "adi,axi-ad9172-1.0",
+            "direction": "tx",
+            "dma_label": None,
+            "spibus_label": "dac0_ad9172",
+            "jesd_label": ad.dac_jesd_label,
+            "jesd_link_offset": 0,
+            "link_id": ad.dac_jesd_link_id,
+            "pl_fifo_enable": True,
+            "sampl_clk_ref": None,
+            "sampl_clk_name": None,
+        }
+        jesd_overlay_ctx = {
+            "label": ad.dac_jesd_label,
+            "direction": "tx",
+            "clocks_str": f"<&{ps_clk_label} {ps_clk_index}>, <&{ad.dac_xcvr_label} 1>, <&{ad.dac_xcvr_label} 0>",
+            "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
+            "clock_output_name": "jesd_dac_lane_clk",
+            "f": ad.tx_f, "k": ad.tx_k,
+            "jesd204_inputs": f"{ad.dac_xcvr_label} 0 {ad.dac_jesd_link_id}",
+            "converter_resolution": None,
+            "converters_per_device": ad.tx_m,
+            "bits_per_sample": ad.tx_np,
+            "control_bits_per_sample": 0,
+        }
+        adxcvr_ctx = {
+            "label": ad.dac_xcvr_label,
+            "sys_clk_select": 3,
+            "out_clk_select": 4,
+            "clk_ref": "hmc7044 12",
+            "use_div40": False,
+            "div40_clk_ref": None,
+            "clock_output_names_str": '"dac_gt_clk", "tx_out_clk"',
+            "use_lpm_enable": True,
+            "jesd_l": None, "jesd_m": None, "jesd_s": None,
+            "jesd204_inputs": "hmc7044 0 0",
+            "is_rx": False,
+        }
         return [
-            f"\t&{ad.spi_bus} {{\n"
-            '\t\tstatus = "okay";\n'
-            f"\t\thmc7044: hmc7044@{ad.clock_cs} {{\n"
-            '\t\t\tcompatible = "adi,hmc7044";\n'
-            "\t\t\t#address-cells = <1>;\n"
-            "\t\t\t#size-cells = <0>;\n"
-            "\t\t\t#clock-cells = <1>;\n"
-            f"\t\t\treg = <{ad.clock_cs}>;\n"
-            f"\t\t\tspi-max-frequency = <{ad.clock_spi_max}>;\n"
-            f"\t\t\tadi,pll1-clkin-frequencies = <{ad.hmc7044_ref_clk_hz} 0 0 0>;\n"
-            "\t\t\tadi,pll1-loop-bandwidth-hz = <200>;\n"
-            f"\t\t\tadi,vcxo-frequency = <{ad.hmc7044_vcxo_hz}>;\n"
-            f"\t\t\tadi,pll2-output-frequency = <{ad.hmc7044_out_freq_hz}>;\n"
-            "\t\t\tadi,sysref-timer-divider = <1024>;\n"
-            "\t\t\tadi,pulse-generator-mode = <0>;\n"
-            "\t\t\tadi,clkin0-buffer-mode = <0x15>;\n"
-            "\t\t\tadi,oscin-buffer-mode = <0x15>;\n"
-            "\t\t\tadi,gpi-controls = <0x00 0x00 0x00 0x00>;\n"
-            "\t\t\tadi,gpo-controls = <0x1f 0x2b 0x00 0x00>;\n"
-            '\t\t\tclock-output-names = "hmc7044_out0", "hmc7044_out1", "hmc7044_out2", '
-            '"hmc7044_out3", "hmc7044_out4", "hmc7044_out5", "hmc7044_out6", '
-            '"hmc7044_out7", "hmc7044_out8", "hmc7044_out9", "hmc7044_out10", '
-            '"hmc7044_out11", "hmc7044_out12", "hmc7044_out13";\n'
-            "\t\t\tjesd204-device;\n"
-            "\t\t\t#jesd204-cells = <2>;\n"
-            "\t\t\tjesd204-sysref-provider;\n"
-            "\t\t\tadi,jesd204-max-sysref-frequency-hz = <2000000>;\n"
-            "\t\t\thmc7044_c2: channel@2 {\n"
-            "\t\t\t\treg = <2>;\n"
-            '\t\t\t\tadi,extended-name = "DAC_CLK";\n'
-            f"\t\t\t\tadi,divider = <8>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 8)}\n"
-            "\t\t\t\tadi,driver-mode = <1>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c3: channel@3 {\n"
-            "\t\t\t\treg = <3>;\n"
-            '\t\t\t\tadi,extended-name = "DAC_SYSREF";\n'
-            f"\t\t\t\tadi,divider = <512>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 512)}\n"
-            "\t\t\t\tadi,driver-mode = <1>;\n"
-            "\t\t\t\tadi,jesd204-sysref-chan;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c12: channel@12 {\n"
-            "\t\t\t\treg = <12>;\n"
-            '\t\t\t\tadi,extended-name = "FPGA_CLK";\n'
-            f"\t\t\t\tadi,divider = <8>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 8)}\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t};\n"
-            "\t\t\thmc7044_c13: channel@13 {\n"
-            "\t\t\t\treg = <13>;\n"
-            '\t\t\t\tadi,extended-name = "FPGA_SYSREF";\n'
-            f"\t\t\t\tadi,divider = <512>; // {self._fmt_hz(ad.hmc7044_out_freq_hz // 512)}\n"
-            "\t\t\t\tadi,driver-mode = <2>;\n"
-            "\t\t\t\tadi,jesd204-sysref-chan;\n"
-            "\t\t\t};\n"
-            "\t\t};\n"
-            f"\t\tdac0_ad9172: ad9172@{ad.dac_cs} {{\n"
-            '\t\t\tcompatible = "adi,ad9172";\n'
-            "\t\t\t#address-cells = <1>;\n"
-            "\t\t\t#size-cells = <0>;\n"
-            f"\t\t\treg = <{ad.dac_cs}>;\n"
-            f"\t\t\tspi-max-frequency = <{ad.dac_spi_max}>;\n"
-            "\t\t\tclocks = <&hmc7044 2>;\n"
-            '\t\t\tclock-names = "dac_clk";\n'
-            f"\t\t\tadi,dac-rate-khz = <{ad.ad9172_dac_rate_khz}>;\n"
-            f"\t\t\tadi,jesd-link-mode = <{ad.ad9172_jesd_link_mode}>;\n"
-            "\t\t\tadi,jesd-subclass = <1>;\n"
-            f"\t\t\tadi,dac-interpolation = <{ad.ad9172_dac_interpolation}>;\n"
-            f"\t\t\tadi,channel-interpolation = <{ad.ad9172_channel_interpolation}>;\n"
-            f"\t\t\tadi,clock-output-divider = <{ad.ad9172_clock_output_divider}>;\n"
-            "\t\t\tadi,syncoutb-signal-type-lvds-enable;\n"
-            "\t\t\tadi,scrambling = <1>;\n"
-            "\t\t\tadi,sysref-mode = <2>;\n"
-            "\t\t\tjesd204-device;\n"
-            "\t\t\t#jesd204-cells = <2>;\n"
-            "\t\t\tjesd204-top-device = <0>;\n"
-            "\t\t\tjesd204-link-ids = <0>;\n"
-            f"\t\t\tjesd204-inputs = <&{ad.dac_core_label} 0 {ad.dac_jesd_link_id}>;\n"
-            "\t\t};\n"
-            "\t};",
-            f"\t&{ad.dac_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-ad9172-1.0";\n'
-            "\t\tspibus-connected = <&dac0_ad9172>;\n"
-            "\t\tadi,axi-pl-fifo-enable;\n"
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            f"\t\tjesd204-inputs = <&{ad.dac_jesd_label} 0 {ad.dac_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{ad.dac_jesd_label} {{\n"
-            '\t\tcompatible = "adi,axi-jesd204-tx-1.0";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>, <&{ad.dac_xcvr_label} 1>, <&{ad.dac_xcvr_label} 0>;\n"
-            '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
-            "\t\t#clock-cells = <0>;\n"
-            '\t\tclock-output-names = "jesd_dac_lane_clk";\n'
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
-            f"\t\tadi,octets-per-frame = <{ad.tx_f}>;\n"
-            "\t\t/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */\n"
-            f"\t\tadi,frames-per-multiframe = <{ad.tx_k}>;\n"
-            f"\t\tadi,converters-per-device = <{ad.tx_m}>;\n"
-            f"\t\tadi,bits-per-sample = <{ad.tx_np}>;\n"
-            "\t\tadi,control-bits-per-sample = <0>;\n"
-            f"\t\tjesd204-inputs = <&{ad.dac_xcvr_label} 0 {ad.dac_jesd_link_id}>;\n"
-            "\t};",
-            f"\t&{ad.dac_xcvr_label} {{\n"
-            '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            "\t\tclocks = <&hmc7044 12>;\n"
-            '\t\tclock-names = "conv";\n'
-            "\t\tadi,sys-clk-select = <3>;\n"
-            "\t\tadi,out-clk-select = <4>;\n"
-            "\t\tadi,use-lpm-enable;\n"
-            "\t\t#clock-cells = <1>;\n"
-            '\t\tclock-output-names = "dac_gt_clk", "tx_out_clk";\n'
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t\tjesd204-inputs = <&hmc7044 0 0>;\n"
-            "\t};",
+            self._wrap_spi_bus(ad.spi_bus, spi_children),
+            self._render("tpl_core.tmpl", tpl_ctx),
+            self._render("jesd204_overlay.tmpl", jesd_overlay_ctx),
+            self._render("adxcvr.tmpl", adxcvr_ctx),
         ]
 
     def _build_ad9172_cfg(
@@ -1435,7 +1222,7 @@ class NodeBuilder:
     @staticmethod
     def _fmt_gpi_gpo(controls: list) -> str:
         """Format a list of int/hex values as a space-separated hex string for DTS."""
-        return " ".join(f"0x{int(v):02X}" for v in controls)
+        return " ".join(f"0x{int(v):02x}" for v in controls)
 
     def _build_hmc7044_channel_ctx(self, pll2_hz: int, channels_spec: list) -> list:
         """Pre-compute freq_str for each HMC7044 channel using _fmt_hz."""
@@ -1539,12 +1326,22 @@ class NodeBuilder:
             {"id": 9,  "name": "FMC_DAC_REF_CLK",     "divider": 2,   "freq_str": self._fmt_hz(_m1 // 2)},
             {"id": 13, "name": "ADC_CLK",              "divider": 1,   "freq_str": self._fmt_hz(_m1 // 1)},
         ]
+        gpio_lines = []
+        for prop, attr, cfg_key in [
+            ("sync-gpios", "clk_sync_gpio", "clk_sync_gpio"),
+            ("status0-gpios", "clk_status0_gpio", "clk_status0_gpio"),
+            ("status1-gpios", "clk_status1_gpio", "clk_status1_gpio"),
+        ]:
+            val = getattr(fmc, attr, None)
+            if val is not None:
+                gpio_idx = self._coerce_board_int(val, f"fmcdaq2_board.{cfg_key}")
+                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": gpio_idx})
         return {
             "label": "clk0_ad9523",
             "cs": fmc.clock_cs,
             "spi_max_hz": fmc.clock_spi_max,
             "vcxo_hz": fmc.clock_vcxo_hz,
-            "gpio_lines": [],
+            "gpio_lines": gpio_lines,
             "channels": channels,
         }
 
