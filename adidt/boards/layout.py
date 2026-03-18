@@ -33,7 +33,7 @@ class layout:
 
         # Import template
         loc = os.path.dirname(__file__)
-        loc = os.path.join(loc, "..", "templates")
+        loc = os.path.join(loc, "..", "templates", "boards")
         file_loader = FileSystemLoader(loc)
         env = Environment(loader=file_loader)
 
