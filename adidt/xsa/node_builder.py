@@ -1526,6 +1526,28 @@ class NodeBuilder:
             "jesd204_inputs": f"{ad.dac_core_label} 0 {ad.dac_jesd_link_id}",
         }
 
+    def _build_ad9523_1_ctx(self, fmc: "_FMCDAQ2Cfg") -> dict:
+        """Build context dict for ad9523_1.tmpl from an _FMCDAQ2Cfg."""
+        _m1 = 1_000_000_000  # adi,pll2-m1-freq distribution frequency
+        channels = [
+            {"id": 1,  "name": "DAC_CLK",           "divider": 1,   "freq_str": self._fmt_hz(_m1 // 1)},
+            {"id": 4,  "name": "ADC_CLK_FMC",        "divider": 2,   "freq_str": self._fmt_hz(_m1 // 2)},
+            {"id": 5,  "name": "ADC_SYSREF",          "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
+            {"id": 6,  "name": "CLKD_ADC_SYSREF",     "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
+            {"id": 7,  "name": "CLKD_DAC_SYSREF",     "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
+            {"id": 8,  "name": "DAC_SYSREF",           "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
+            {"id": 9,  "name": "FMC_DAC_REF_CLK",     "divider": 2,   "freq_str": self._fmt_hz(_m1 // 2)},
+            {"id": 13, "name": "ADC_CLK",              "divider": 1,   "freq_str": self._fmt_hz(_m1 // 1)},
+        ]
+        return {
+            "label": "clk0_ad9523",
+            "cs": fmc.clock_cs,
+            "spi_max_hz": fmc.clock_spi_max,
+            "vcxo_hz": fmc.clock_vcxo_hz,
+            "gpio_lines": [],
+            "channels": channels,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}

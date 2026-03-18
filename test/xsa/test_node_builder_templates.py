@@ -145,3 +145,39 @@ def test_ad9172_template_renders_device_node():
     assert "dac0_ad9172: ad9172@1" in out
     assert "adi,dac-rate-khz = <6000000>;" in out
     assert "jesd204-link-ids = <0>;" in out
+
+
+def test_ad9523_1_template_renders_channel():
+    ctx = {
+        "label": "clk0_ad9523",
+        "cs": 0,
+        "spi_max_hz": 10000000,
+        "vcxo_hz": 125000000,
+        "gpio_lines": [],
+        "channels": [
+            {"id": 4, "name": "ADC_CLK_FMC", "divider": 2, "freq_str": "500 MHz"},
+        ],
+    }
+    out = NodeBuilder()._render("ad9523_1.tmpl", ctx)
+    assert "clk0_ad9523" in out
+    assert 'compatible = "adi,ad9523-1"' in out
+    assert "adi,channel-divider = <2>; // 500 MHz" in out
+    assert "adi,vcxo-freq" in out
+    assert "ad9523_0_c4" in out  # label uses cs (0) in prefix
+
+
+def test_ad9523_1_template_renders_sysref_channel():
+    ctx = {
+        "label": "clk0_ad9523",
+        "cs": 0,
+        "spi_max_hz": 10000000,
+        "vcxo_hz": 125000000,
+        "gpio_lines": [],
+        "channels": [
+            {"id": 5, "name": "ADC_SYSREF", "divider": 128, "freq_str": "7.8125 MHz"},
+        ],
+    }
+    out = NodeBuilder()._render("ad9523_1.tmpl", ctx)
+    assert "ad9523_0_c5" in out
+    # no signal_source property in this template
+    assert "adi,signal-source" not in out
