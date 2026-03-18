@@ -1443,7 +1443,7 @@ class NodeBuilder:
         for ch in channels_spec:
             d = dict(ch)
             if "freq_str" not in d:
-                d["freq_str"] = self._fmt_hz(pll2_hz // d["divider"])
+                d["freq_str"] = self._fmt_hz(pll2_hz / d["divider"])
             d.setdefault("coarse_digital_delay", None)
             d.setdefault("startup_mode_dynamic", False)
             d.setdefault("high_perf_mode_disable", False)
@@ -1460,8 +1460,8 @@ class NodeBuilder:
         vcxo_hz: int,
         pll2_output_hz: int,
         clock_output_names: list,
-        channels,
-        raw_channels=None,
+        channels: list[dict] | None,
+        raw_channels: str | None = None,
         *,
         jesd204_sysref_provider: bool = True,
         jesd204_max_sysref_hz: int = 2000000,
