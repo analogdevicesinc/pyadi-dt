@@ -1241,7 +1241,6 @@ class NodeBuilder:
         trx2_cs: "int | None" = None,
         trx2_reset_gpio: "int | None" = None,
         trx1_clocks_value: "str | None" = None,
-        trx1_inputs_value: "str | None" = None,
     ) -> dict:
         """Build context dict for adrv9009.tmpl.
 
@@ -1260,13 +1259,14 @@ class NodeBuilder:
             trx_clocks_value (str): Rendered ``clocks = ...`` value for primary PHY.
             trx_clock_names_value (str): Rendered ``clock-names = ...`` value.
             trx_link_ids_value (str): Space-separated link IDs for ``jesd204-link-ids``.
-            trx_inputs_value (str): Rendered ``jesd204-inputs = ...`` value.
+            trx_inputs_value (str): Rendered ``jesd204-inputs = ...`` value (shared by both PHYs).
             trx_profile_props_block (str): Pre-indented profile property lines block.
             is_fmcomms8 (bool): True for dual-chip FMComms8 layout.
+            trx1_phy_compatible (str | None): Bare family name for second PHY compatible string
+                (FMComms8 only), e.g. ``"adrv9009"``.
             trx2_cs (int | None): SPI chip-select for second PHY (FMComms8 only).
             trx2_reset_gpio (int | None): Reset GPIO for second PHY (FMComms8 only).
             trx1_clocks_value (str | None): ``clocks`` value for second PHY (FMComms8 only).
-            trx1_inputs_value (str | None): ``jesd204-inputs`` value for second PHY (FMComms8 only).
         """
         phy_label = f"trx0_{phy_family}"
         phy_node_name = f"{phy_family}-phy"
@@ -1287,10 +1287,10 @@ class NodeBuilder:
             "trx_profile_props_block": trx_profile_props_block,
             "is_fmcomms8": is_fmcomms8,
             "trx1_phy_label": trx1_phy_label,
+            "trx1_phy_compatible": phy_family,
             "trx2_cs": trx2_cs,
             "trx2_reset_gpio": trx2_reset_gpio,
             "trx1_clocks_value": trx1_clocks_value,
-            "trx1_inputs_value": trx1_inputs_value,
         }
 
     def _make_jinja_env(self) -> Environment:

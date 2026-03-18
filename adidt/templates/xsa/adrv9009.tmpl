@@ -18,7 +18,7 @@
 		};
 {% if is_fmcomms8 %}
 		{{ trx1_phy_label }}: {{ phy_node_name }}@{{ trx2_cs }} {
-			compatible = {{ phy_compatible }};
+			compatible = "{{ trx1_phy_compatible }}";
 			reg = <{{ trx2_cs }}>;
 			spi-max-frequency = <{{ spi_max_hz }}>;
 			clocks = {{ trx1_clocks_value }};
@@ -30,7 +30,7 @@
 			#jesd204-cells = <2>;
 			jesd204-top-device = <0>;
 			jesd204-link-ids = <{{ trx_link_ids_value }}>;
-			jesd204-inputs = {{ trx1_inputs_value }};
+			jesd204-inputs = {{ trx_inputs_value }};
 {{ trx_profile_props_block -}}
 		};
 {% endif %}
