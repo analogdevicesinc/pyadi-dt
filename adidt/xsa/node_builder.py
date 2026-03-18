@@ -1686,6 +1686,37 @@ class NodeBuilder:
             "control_bits_per_sample": control_bits_per_sample,
         }
 
+    def _build_tpl_core_ctx(self, fmc: "_FMCDAQ2Cfg", direction: str) -> dict:
+        """Build context dict for tpl_core.tmpl from an _FMCDAQ2Cfg."""
+        is_rx = direction == "rx"
+        if is_rx:
+            return {
+                "label": fmc.adc_core_label,
+                "compatible": "adi,axi-ad9680-1.0",
+                "direction": "rx",
+                "dma_label": fmc.adc_dma_label,
+                "spibus_label": "adc0_ad9680",
+                "jesd_label": fmc.adc_jesd_label,
+                "jesd_link_offset": 0,
+                "link_id": fmc.adc_jesd_link_id,
+                "pl_fifo_enable": False,
+                "sampl_clk_ref": None,
+                "sampl_clk_name": None,
+            }
+        return {
+            "label": fmc.dac_core_label,
+            "compatible": "adi,axi-ad9144-1.0",
+            "direction": "tx",
+            "dma_label": fmc.dac_dma_label,
+            "spibus_label": "dac0_ad9144",
+            "jesd_label": fmc.dac_jesd_label,
+            "jesd_link_offset": 1,
+            "link_id": fmc.dac_jesd_link_id,
+            "pl_fifo_enable": True,
+            "sampl_clk_ref": None,
+            "sampl_clk_name": None,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}

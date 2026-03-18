@@ -366,3 +366,65 @@ def test_jesd204_overlay_ad9081_omits_clock_output_names():
     out = NodeBuilder()._render("jesd204_overlay.tmpl", ctx)
     assert "#clock-cells = <0>;" in out
     assert "clock-output-names" not in out
+
+
+def test_tpl_core_rx_template():
+    ctx = {
+        "label": "axi_ad9680_core",
+        "compatible": "adi,axi-ad9680-1.0",
+        "direction": "rx",
+        "dma_label": "axi_ad9680_dma",
+        "spibus_label": "adc0_ad9680",
+        "jesd_label": "axi_ad9680_jesd204_rx",
+        "jesd_link_offset": 0,
+        "link_id": 0,
+        "pl_fifo_enable": False,
+        "sampl_clk_ref": None,
+        "sampl_clk_name": None,
+    }
+    out = NodeBuilder()._render("tpl_core.tmpl", ctx)
+    assert "&axi_ad9680_core {" in out
+    assert 'dma-names = "rx";' in out
+    assert "spibus-connected = <&adc0_ad9680>;" in out
+    assert "adi,axi-pl-fifo-enable" not in out
+    assert "jesd204-inputs = <&axi_ad9680_jesd204_rx 0 0>;" in out
+
+
+def test_tpl_core_tx_has_fifo_enable():
+    ctx = {
+        "label": "axi_ad9144_core",
+        "compatible": "adi,axi-ad9144-1.0",
+        "direction": "tx",
+        "dma_label": "axi_ad9144_dma",
+        "spibus_label": "dac0_ad9144",
+        "jesd_label": "axi_ad9144_jesd204_tx",
+        "jesd_link_offset": 1,
+        "link_id": 0,
+        "pl_fifo_enable": True,
+        "sampl_clk_ref": None,
+        "sampl_clk_name": None,
+    }
+    out = NodeBuilder()._render("tpl_core.tmpl", ctx)
+    assert 'dma-names = "tx";' in out
+    assert "adi,axi-pl-fifo-enable;" in out
+    assert "jesd204-inputs = <&axi_ad9144_jesd204_tx 1 0>;" in out
+
+
+def test_tpl_core_ad9172_no_dma():
+    ctx = {
+        "label": "axi_ad9172_core",
+        "compatible": "adi,axi-ad9172-1.0",
+        "direction": "tx",
+        "dma_label": None,
+        "spibus_label": "dac0_ad9172",
+        "jesd_label": "axi_ad9172_jesd_tx_axi",
+        "jesd_link_offset": 0,
+        "link_id": 0,
+        "pl_fifo_enable": True,
+        "sampl_clk_ref": None,
+        "sampl_clk_name": None,
+    }
+    out = NodeBuilder()._render("tpl_core.tmpl", ctx)
+    assert "dmas" not in out
+    assert "dma-names" not in out
+    assert "adi,axi-pl-fifo-enable;" in out
