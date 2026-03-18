@@ -302,3 +302,67 @@ def test_adxcvr_template_1clk_no_jesd204_inputs():
     }
     out = NodeBuilder()._render("adxcvr.tmpl", ctx)
     assert "jesd204-inputs" not in out
+
+
+def _make_jesd_overlay_ctx_rx():
+    return {
+        "label": "axi_ad9680_jesd204_rx",
+        "direction": "rx",
+        "clocks_str": "<&zynqmp_clk 71>, <&axi_ad9680_adxcvr 1>, <&axi_ad9680_adxcvr 0>",
+        "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
+        "clock_output_name": "jesd_adc_lane_clk",
+        "f": 1, "k": 32,
+        "jesd204_inputs": "axi_ad9680_adxcvr 0 0",
+        "converter_resolution": None,
+        "converters_per_device": None,
+        "bits_per_sample": None,
+        "control_bits_per_sample": None,
+    }
+
+
+def test_jesd204_overlay_rx_does_not_emit_tx_fields():
+    out = NodeBuilder()._render("jesd204_overlay.tmpl", _make_jesd_overlay_ctx_rx())
+    assert "&axi_ad9680_jesd204_rx {" in out
+    assert "#clock-cells = <0>;" in out
+    assert "clock-output-names" in out
+    assert "converter-resolution" not in out
+    assert "adi,octets-per-frame = <1>;" in out
+
+
+def test_jesd204_overlay_tx_emits_tx_fields():
+    ctx = {
+        "label": "axi_ad9144_jesd204_tx",
+        "direction": "tx",
+        "clocks_str": "<&zynqmp_clk 71>, <&axi_ad9144_adxcvr 1>, <&axi_ad9144_adxcvr 0>",
+        "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
+        "clock_output_name": "jesd_dac_lane_clk",
+        "f": 1, "k": 32,
+        "jesd204_inputs": "axi_ad9144_adxcvr 1 0",
+        "converter_resolution": 14,
+        "converters_per_device": 2,
+        "bits_per_sample": 16,
+        "control_bits_per_sample": 2,
+    }
+    out = NodeBuilder()._render("jesd204_overlay.tmpl", ctx)
+    assert "adi,converter-resolution = <14>;" in out
+    assert "adi,converters-per-device = <2>;" in out
+    assert "adi,control-bits-per-sample = <2>;" in out
+
+
+def test_jesd204_overlay_ad9081_omits_clock_output_names():
+    ctx = {
+        "label": "axi_mxfe_rx_jesd_rx_axi",
+        "direction": "rx",
+        "clocks_str": "<&zynqmp_clk 71>, <&hmc7044 10>, <&axi_mxfe_rx_xcvr 0>",
+        "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
+        "clock_output_name": None,
+        "f": 4, "k": 32,
+        "jesd204_inputs": "axi_mxfe_rx_xcvr 0 2",
+        "converter_resolution": None,
+        "converters_per_device": None,
+        "bits_per_sample": None,
+        "control_bits_per_sample": None,
+    }
+    out = NodeBuilder()._render("jesd204_overlay.tmpl", ctx)
+    assert "#clock-cells = <0>;" in out
+    assert "clock-output-names" not in out

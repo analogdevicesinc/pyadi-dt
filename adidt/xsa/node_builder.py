@@ -1638,6 +1638,54 @@ class NodeBuilder:
             "is_rx": False,
         }
 
+    def _build_jesd204_overlay_ctx(
+        self,
+        fmc: "_FMCDAQ2Cfg",
+        direction: str,
+        ps_clk_label: str,
+        ps_clk_index: int,
+    ) -> dict:
+        """Build context dict for jesd204_overlay.tmpl from an _FMCDAQ2Cfg."""
+        is_rx = direction == "rx"
+        if is_rx:
+            xcvr = fmc.adc_xcvr_label
+            jesd = fmc.adc_jesd_label
+            link_id = fmc.adc_jesd_link_id
+            f, k = fmc.rx_f, fmc.rx_k
+            converter_resolution = None
+            converters_per_device = None
+            bits_per_sample = None
+            control_bits_per_sample = None
+            clock_output_name = "jesd_adc_lane_clk"
+            jesd204_inputs = f"{xcvr} 0 {link_id}"
+        else:
+            xcvr = fmc.dac_xcvr_label
+            jesd = fmc.dac_jesd_label
+            link_id = fmc.dac_jesd_link_id
+            f, k = fmc.tx_f, fmc.tx_k
+            converter_resolution = 14
+            converters_per_device = fmc.tx_m
+            bits_per_sample = fmc.tx_np
+            control_bits_per_sample = 2
+            clock_output_name = "jesd_dac_lane_clk"
+            jesd204_inputs = f"{xcvr} 1 {link_id}"
+        clocks_str = f"<&{ps_clk_label} {ps_clk_index}>, <&{xcvr} 1>, <&{xcvr} 0>"
+        clock_names_str = '"s_axi_aclk", "device_clk", "lane_clk"'
+        return {
+            "label": jesd,
+            "direction": direction,
+            "clocks_str": clocks_str,
+            "clock_names_str": clock_names_str,
+            "clock_output_name": clock_output_name,
+            "f": f,
+            "k": k,
+            "jesd204_inputs": jesd204_inputs,
+            "converter_resolution": converter_resolution,
+            "converters_per_device": converters_per_device,
+            "bits_per_sample": bits_per_sample,
+            "control_bits_per_sample": control_bits_per_sample,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}
