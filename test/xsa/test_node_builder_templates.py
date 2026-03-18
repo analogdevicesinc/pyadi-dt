@@ -549,3 +549,35 @@ def test_ad9528_1_template_renders_channel():
     assert "adi,refa-enable" in out
     assert "adi,pll2-n2-div" in out
     assert '"ad9528-1_out0"' in out
+
+
+def test_adrv9009_template_renders_device_node():
+    ctx = {
+        "phy_label": "trx0_adrv9009",
+        "phy_node_name": "adrv9009-phy",
+        "phy_compatible": '"adi,adrv9009", "adrv9009"',
+        "trx_cs": 1,
+        "spi_max_hz": 25000000,
+        "gpio_label": "gpio",
+        "trx_reset_gpio": 130,
+        "trx_sysref_req_gpio": 136,
+        "trx_clocks_value": "<&clk0_ad9528 13>, <&clk0_ad9528 1>, <&clk0_ad9528 12>, <&clk0_ad9528 3>",
+        "trx_clock_names_value": '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"',
+        "trx_link_ids_value": "1 0",
+        "trx_inputs_value": "<&axi_adrv9009_rx_xcvr 0 1>, <&axi_adrv9009_tx_xcvr 0 0>",
+        "trx_profile_props_block": "\t\t\tadi,rx-profile-rx-fir-num-fir-coefs = <48>;\n",
+        "is_fmcomms8": False,
+        "trx2_cs": None,
+        "trx1_phy_label": None,
+        "trx2_reset_gpio": None,
+        "trx1_clocks_value": None,
+        "trx1_inputs_value": None,
+    }
+    out = NodeBuilder()._render("adrv9009.tmpl", ctx)
+    assert 'compatible = "adi,adrv9009", "adrv9009"' in out
+    assert "trx0_adrv9009" in out
+    assert "adrv9009-phy@1" in out
+    assert 'clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk"' in out
+    assert "jesd204-top-device = <0>;" in out
+    assert "jesd204-link-ids = <1 0>;" in out
+    assert "adi,rx-profile-rx-fir-num-fir-coefs = <48>;" in out

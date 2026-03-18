@@ -1223,6 +1223,76 @@ class NodeBuilder:
             "channels": channels,
         }
 
+    def _build_adrv9009_device_ctx(
+        self,
+        phy_family: str,
+        phy_compatible: str,
+        trx_cs: int,
+        trx_spi_max_frequency: int,
+        gpio_label: str,
+        trx_reset_gpio: int,
+        trx_sysref_req_gpio: int,
+        trx_clocks_value: str,
+        trx_clock_names_value: str,
+        trx_link_ids_value: str,
+        trx_inputs_value: str,
+        trx_profile_props_block: str,
+        is_fmcomms8: bool,
+        trx2_cs: "int | None" = None,
+        trx2_reset_gpio: "int | None" = None,
+        trx1_clocks_value: "str | None" = None,
+        trx1_inputs_value: "str | None" = None,
+    ) -> dict:
+        """Build context dict for adrv9009.tmpl.
+
+        Covers both standard single-chip and dual-chip FMComms8 ADRV9009/9025 designs.
+
+        Context schema:
+            phy_label (str): DTS label for the primary PHY, e.g. ``"trx0_adrv9009"``.
+            phy_node_name (str): DTS node name, e.g. ``"adrv9009-phy"``.
+            phy_compatible (str): DTS compatible string, e.g.
+                ``'"adi,adrv9009", "adrv9009"'`` or ``'"adrv9009-x2"'``.
+            trx_cs (int): SPI chip-select for primary PHY.
+            spi_max_hz (int): Maximum SPI frequency in Hz.
+            gpio_label (str): GPIO controller label, e.g. ``"gpio"`` or ``"gpio0"``.
+            trx_reset_gpio (int): Reset GPIO line index for primary PHY.
+            trx_sysref_req_gpio (int): SYSREF request GPIO line index.
+            trx_clocks_value (str): Rendered ``clocks = ...`` value for primary PHY.
+            trx_clock_names_value (str): Rendered ``clock-names = ...`` value.
+            trx_link_ids_value (str): Space-separated link IDs for ``jesd204-link-ids``.
+            trx_inputs_value (str): Rendered ``jesd204-inputs = ...`` value.
+            trx_profile_props_block (str): Pre-indented profile property lines block.
+            is_fmcomms8 (bool): True for dual-chip FMComms8 layout.
+            trx2_cs (int | None): SPI chip-select for second PHY (FMComms8 only).
+            trx2_reset_gpio (int | None): Reset GPIO for second PHY (FMComms8 only).
+            trx1_clocks_value (str | None): ``clocks`` value for second PHY (FMComms8 only).
+            trx1_inputs_value (str | None): ``jesd204-inputs`` value for second PHY (FMComms8 only).
+        """
+        phy_label = f"trx0_{phy_family}"
+        phy_node_name = f"{phy_family}-phy"
+        trx1_phy_label = f"trx1_{phy_family}" if is_fmcomms8 else None
+        return {
+            "phy_label": phy_label,
+            "phy_node_name": phy_node_name,
+            "phy_compatible": phy_compatible,
+            "trx_cs": trx_cs,
+            "spi_max_hz": trx_spi_max_frequency,
+            "gpio_label": gpio_label,
+            "trx_reset_gpio": trx_reset_gpio,
+            "trx_sysref_req_gpio": trx_sysref_req_gpio,
+            "trx_clocks_value": trx_clocks_value,
+            "trx_clock_names_value": trx_clock_names_value,
+            "trx_link_ids_value": trx_link_ids_value,
+            "trx_inputs_value": trx_inputs_value,
+            "trx_profile_props_block": trx_profile_props_block,
+            "is_fmcomms8": is_fmcomms8,
+            "trx1_phy_label": trx1_phy_label,
+            "trx2_cs": trx2_cs,
+            "trx2_reset_gpio": trx2_reset_gpio,
+            "trx1_clocks_value": trx1_clocks_value,
+            "trx1_inputs_value": trx1_inputs_value,
+        }
+
     def _make_jinja_env(self) -> Environment:
         """Create and return a Jinja2 Environment pointed at the XSA template directory."""
         from .exceptions import XsaParseError
