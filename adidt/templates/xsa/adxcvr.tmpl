@@ -1,0 +1,27 @@
+	&{{ label }} {
+		compatible = "adi,axi-adxcvr-1.0";
+{%- if use_div40 %}
+		clocks = <&{{ clk_ref }}>, <&{{ div40_clk_ref }}>;
+		clock-names = "conv", "div40";
+{%- else %}
+		clocks = <&{{ clk_ref }}>;
+		clock-names = "conv";
+{%- endif %}
+		#clock-cells = <1>;
+		clock-output-names = {{ clock_output_names_str }};
+		adi,sys-clk-select = <{{ sys_clk_select }}>;
+		adi,out-clk-select = <{{ out_clk_select }}>;
+{%- if use_div40 and jesd_l is not none %}
+		adi,jesd-l = <{{ jesd_l }}>;
+		adi,jesd-m = <{{ jesd_m }}>;
+		adi,jesd-s = <{{ jesd_s }}>;
+{%- endif %}
+{%- if use_lpm_enable %}
+		adi,use-lpm-enable;
+{%- endif %}
+		jesd204-device;
+		#jesd204-cells = <2>;
+{%- if jesd204_inputs %}
+		jesd204-inputs = <&{{ jesd204_inputs }}>;
+{%- endif %}
+	};

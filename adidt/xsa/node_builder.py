@@ -1603,6 +1603,41 @@ class NodeBuilder:
             "gpio_lines": gpio_lines,
         }
 
+    def _build_adxcvr_ctx(self, fmc: "_FMCDAQ2Cfg", direction: str) -> dict:
+        """Build context dict for adxcvr.tmpl from an _FMCDAQ2Cfg (fmcdaq2 — 2-clock variant)."""
+        is_rx = direction == "rx"
+        if is_rx:
+            return {
+                "label": fmc.adc_xcvr_label,
+                "sys_clk_select": fmc.adc_sys_clk_select,
+                "out_clk_select": fmc.adc_out_clk_select,
+                "clk_ref": f"clk0_ad9523 {fmc.adc_xcvr_ref_clk_idx}",
+                "use_div40": True,
+                "div40_clk_ref": f"clk0_ad9523 {fmc.adc_xcvr_ref_clk_idx}",
+                "clock_output_names_str": '"adc_gt_clk", "rx_out_clk"',
+                "use_lpm_enable": True,
+                "jesd_l": fmc.rx_l,
+                "jesd_m": fmc.rx_m,
+                "jesd_s": fmc.rx_s,
+                "jesd204_inputs": None,
+                "is_rx": True,
+            }
+        return {
+            "label": fmc.dac_xcvr_label,
+            "sys_clk_select": fmc.dac_sys_clk_select,
+            "out_clk_select": fmc.dac_out_clk_select,
+            "clk_ref": f"clk0_ad9523 {fmc.dac_xcvr_ref_clk_idx}",
+            "use_div40": True,
+            "div40_clk_ref": f"clk0_ad9523 {fmc.dac_xcvr_ref_clk_idx}",
+            "clock_output_names_str": '"dac_gt_clk", "tx_out_clk"',
+            "use_lpm_enable": True,
+            "jesd_l": fmc.tx_l,
+            "jesd_m": fmc.tx_m,
+            "jesd_s": fmc.tx_s,
+            "jesd204_inputs": None,
+            "is_rx": False,
+        }
+
     def _build_clock_map(self, topology: XsaTopology) -> dict[str, ClkgenInstance]:
         """Return a mapping of output clock net name -> ClkgenInstance for fast clock resolution."""
         return {net: cg for cg in topology.clkgens for net in cg.output_clks}

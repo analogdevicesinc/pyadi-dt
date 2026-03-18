@@ -233,3 +233,72 @@ def test_ad9144_template_renders_device_node():
     assert "jesd204-inputs = <&axi_ad9144_core 1 0>;" in out
     assert "spi-cpol" not in out  # no spi-cpol in fmcdaq2 ad9144
     assert "adi,jesd-link-mode" not in out  # not present in fmcdaq2 ad9144
+
+
+def test_adxcvr_template_2clk_variant():
+    """fmcdaq2-style: 2 clocks, jesd L/M/S, no jesd204-inputs."""
+    ctx = {
+        "label": "axi_ad9680_adxcvr",
+        "sys_clk_select": 0,
+        "out_clk_select": 4,
+        "clk_ref": "clk0_ad9523 4",
+        "use_div40": True,
+        "div40_clk_ref": "clk0_ad9523 4",
+        "clock_output_names_str": '"adc_gt_clk", "rx_out_clk"',
+        "use_lpm_enable": True,
+        "jesd_l": 4,
+        "jesd_m": 2,
+        "jesd_s": 1,
+        "jesd204_inputs": None,
+        "is_rx": True,
+    }
+    out = NodeBuilder()._render("adxcvr.tmpl", ctx)
+    assert 'clock-names = "conv", "div40"' in out
+    assert "adi,jesd-l = <4>;" in out
+    assert "adi,use-lpm-enable;" in out
+    assert "jesd204-inputs" not in out
+
+
+def test_adxcvr_template_1clk_variant_with_jesd204_inputs():
+    """fmcdaq3-style: 1 clock, jesd204-inputs present."""
+    ctx = {
+        "label": "axi_ad9680_xcvr",
+        "sys_clk_select": 0,
+        "out_clk_select": 8,
+        "clk_ref": "clk0_ad9528 4",
+        "use_div40": False,
+        "div40_clk_ref": None,
+        "clock_output_names_str": '"adc_gt_clk", "rx_out_clk"',
+        "use_lpm_enable": True,
+        "jesd_l": None,
+        "jesd_m": None,
+        "jesd_s": None,
+        "jesd204_inputs": "clk0_ad9528 0 0",
+        "is_rx": True,
+    }
+    out = NodeBuilder()._render("adxcvr.tmpl", ctx)
+    assert 'clock-names = "conv"' in out
+    assert "jesd204-inputs = <&clk0_ad9528 0 0>;" in out
+    assert "adi,jesd-l" not in out
+    assert "adi,use-lpm-enable;" in out
+
+
+def test_adxcvr_template_1clk_no_jesd204_inputs():
+    """fmcdaq3 TX: 1 clock, no jesd204-inputs."""
+    ctx = {
+        "label": "axi_ad9152_xcvr",
+        "sys_clk_select": 3,
+        "out_clk_select": 8,
+        "clk_ref": "clk0_ad9528 9",
+        "use_div40": False,
+        "div40_clk_ref": None,
+        "clock_output_names_str": '"dac_gt_clk", "tx_out_clk"',
+        "use_lpm_enable": True,
+        "jesd_l": None,
+        "jesd_m": None,
+        "jesd_s": None,
+        "jesd204_inputs": None,
+        "is_rx": False,
+    }
+    out = NodeBuilder()._render("adxcvr.tmpl", ctx)
+    assert "jesd204-inputs" not in out
