@@ -477,3 +477,45 @@ def test_ad9152_template_renders_device_node():
     assert "adi,jesd-link-mode = <9>;" in out
     assert "jesd204-top-device = <1>;" in out
     assert "jesd204-inputs = <&axi_ad9152_core 1 0>;" in out
+
+
+def test_ad9081_mxfe_template_renders_device_node():
+    ctx = {
+        "label": "trx0_ad9081",
+        "cs": 0,
+        "spi_max_hz": 5000000,
+        "gpio_label": "gpio",
+        "reset_gpio": 133,
+        "sysref_req_gpio": 121,
+        "rx2_enable_gpio": 135,
+        "rx1_enable_gpio": 134,
+        "tx2_enable_gpio": 137,
+        "tx1_enable_gpio": 136,
+        "dev_clk_ref": "hmc7044 2",
+        "rx_core_label": "rx_mxfe_tpl_core_adc_tpl_core",
+        "tx_core_label": "tx_mxfe_tpl_core_dac_tpl_core",
+        "rx_link_id": 2,
+        "tx_link_id": 0,
+        "dac_frequency_hz": 12_000_000_000,
+        "tx_cduc_interpolation": 8,
+        "tx_fduc_interpolation": 6,
+        "tx_converter_select": "<0x00> <0xFF>",
+        "tx_lane_map": "0 1 2 3 4 5 6 7",
+        "tx_link_mode": 9,
+        "tx_m": 8, "tx_f": 4, "tx_k": 32, "tx_l": 4, "tx_s": 1,
+        "adc_frequency_hz": 4_000_000_000,
+        "rx_cddc_decimation": 4,
+        "rx_fddc_decimation": 4,
+        "rx_converter_select": "<0x00> <0xFF>",
+        "rx_lane_map": "0 1 2 3 4 5 6 7",
+        "rx_link_mode": 9,
+        "rx_m": 8, "rx_f": 4, "rx_k": 32, "rx_l": 4, "rx_s": 1,
+    }
+    out = NodeBuilder()._render("ad9081_mxfe.tmpl", ctx)
+    assert 'compatible = "adi,ad9081"' in out
+    assert "trx0_ad9081: ad9081@0" in out
+    assert "adi,tx-dacs" in out
+    assert "adi,rx-adcs" in out
+    assert "adi,dac-frequency-hz = /bits/ 64 <12000000000>;" in out
+    assert "adi,adc-frequency-hz = /bits/ 64 <4000000000>;" in out
+    assert "jesd204-link-ids = <2 0>;" in out
