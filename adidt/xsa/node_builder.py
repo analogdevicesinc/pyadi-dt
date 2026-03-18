@@ -3,6 +3,7 @@
 import os
 import warnings
 from dataclasses import dataclass
+from functools import cached_property
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
@@ -1413,12 +1414,10 @@ class NodeBuilder:
             raise XsaParseError(f"template directory not found: {loc}")
         return Environment(loader=FileSystemLoader(loc))
 
-    @property
+    @cached_property
     def _env(self) -> "Environment":
         """Cached Jinja2 environment for the XSA template directory."""
-        if not hasattr(self, "_env_cache"):
-            self._env_cache = self._make_jinja_env()
-        return self._env_cache
+        return self._make_jinja_env()
 
     def _render(self, template_name: str, ctx: dict) -> str:
         """Render a Jinja2 template from adidt/templates/xsa/ with the given context."""
@@ -1533,16 +1532,19 @@ class NodeBuilder:
         for key in ("F", "K"):
             if key not in jesd_params:
                 raise ConfigError(f"jesd.{inst.direction}.{key}")
-        return self._env.get_template("jesd204_fsm.tmpl").render(
-            instance=inst,
-            jesd=jesd_params,
-            clkgen_label=clkgen_label,
-            device_clk_label=device_clk_label,
-            device_clk_index=device_clk_index,
-            jesd_input_label=jesd_input_label,
-            jesd_input_link_id=jesd_input_link_id,
-            ps_clk_label=ps_clk_label,
-            ps_clk_index=ps_clk_index,
+        return self._render(
+            "jesd204_fsm.tmpl",
+            {
+                "instance": inst,
+                "jesd": jesd_params,
+                "clkgen_label": clkgen_label,
+                "device_clk_label": device_clk_label,
+                "device_clk_index": device_clk_index,
+                "jesd_input_label": jesd_input_label,
+                "jesd_input_link_id": jesd_input_link_id,
+                "ps_clk_label": ps_clk_label,
+                "ps_clk_index": ps_clk_index,
+            },
         )
 
     def _render_converter(
@@ -1552,15 +1554,18 @@ class NodeBuilder:
         from jinja2 import TemplateNotFound
 
         try:
-            tmpl = self._env.get_template(f"{conv.ip_type}.tmpl")
+            self._env.get_template(f"{conv.ip_type}.tmpl")
         except TemplateNotFound:
             return f"\t/* {conv.name}: no template for {conv.ip_type} */"
-        return tmpl.render(
-            instance=conv,
-            rx_jesd_label=rx_label,
-            tx_jesd_label=tx_label,
-            spi_label="spi0",
-            spi_cs=conv.spi_cs if conv.spi_cs is not None else 0,
+        return self._render(
+            f"{conv.ip_type}.tmpl",
+            {
+                "instance": conv,
+                "rx_jesd_label": rx_label,
+                "tx_jesd_label": tx_label,
+                "spi_label": "spi0",
+                "spi_cs": conv.spi_cs if conv.spi_cs is not None else 0,
+            },
         )
 
     def _render_clkgen(
@@ -1570,10 +1575,13 @@ class NodeBuilder:
         ps_clk_index: int,
     ) -> str:
         """Render the ``clkgen.tmpl`` template for *inst* and return the DTS node string."""
-        return self._env.get_template("clkgen.tmpl").render(
-            instance=inst,
-            ps_clk_label=ps_clk_label,
-            ps_clk_index=ps_clk_index,
+        return self._render(
+            "clkgen.tmpl",
+            {
+                "instance": inst,
+                "ps_clk_label": ps_clk_label,
+                "ps_clk_index": ps_clk_index,
+            },
         )
 
     @staticmethod
