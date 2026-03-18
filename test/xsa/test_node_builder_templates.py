@@ -2,6 +2,7 @@
 from types import SimpleNamespace
 
 from adidt.xsa.node_builder import NodeBuilder
+from adidt.xsa.topology import ConverterInstance, Jesd204Instance, XsaTopology
 
 
 def test_render_existing_template_returns_string():
@@ -581,3 +582,222 @@ def test_adrv9009_template_renders_device_node():
     assert "jesd204-top-device = <0>;" in out
     assert "jesd204-link-ids = <1 0>;" in out
     assert "adi,rx-profile-rx-fir-num-fir-coefs = <48>;" in out
+
+
+def _make_standard_adrv9009_topology():
+    """Return a minimal XsaTopology for a standard (non-FMComms8) ADRV9009 design."""
+    return XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=107,
+                link_clk="axi_adrv9009_rx_clkgen",
+                direction="rx",
+            ),
+            Jesd204Instance(
+                name="axi_adrv9009_rx_os_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=2,
+                irq=108,
+                link_clk="axi_adrv9009_rx_os_clkgen",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x84A80000,
+                num_lanes=4,
+                irq=106,
+                link_clk="axi_adrv9009_tx_clkgen",
+                direction="tx",
+            ),
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_adrv9009_core_rx",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_adrv9009_core_tx",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A04000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="axi_adrv9009_core_rx_obs",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A14000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+        fpga_part="xczu9eg",
+    )
+
+
+def _make_standard_adrv9009_cfg():
+    """Return a minimal cfg dict for a standard ADRV9009 design."""
+    return {
+        "adrv9009_board": {},
+        "jesd": {
+            "rx": {"F": 4, "K": 32},
+            "tx": {"F": 2, "K": 32, "M": 4},
+        },
+    }
+
+
+def test_build_adrv9009_nodes_standard_returns_nonempty():
+    topology = _make_standard_adrv9009_topology()
+    cfg = _make_standard_adrv9009_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    assert len(result) > 0
+
+
+def test_build_adrv9009_nodes_standard_has_ad9528_clock_chip():
+    topology = _make_standard_adrv9009_topology()
+    cfg = _make_standard_adrv9009_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "clk0_ad9528: ad9528-1@0" in text
+
+
+def test_build_adrv9009_nodes_standard_has_tx_jesd_converter_resolution():
+    topology = _make_standard_adrv9009_topology()
+    cfg = _make_standard_adrv9009_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "adi,octets-per-frame" in text
+    assert "adi,converter-resolution = <14>" in text
+
+
+def test_build_adrv9009_nodes_standard_has_phy_node():
+    topology = _make_standard_adrv9009_topology()
+    cfg = _make_standard_adrv9009_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "trx0_adrv9009: adrv9009-phy@1" in text
+
+
+def test_build_adrv9009_nodes_standard_has_clkgen_nodes():
+    topology = _make_standard_adrv9009_topology()
+    cfg = _make_standard_adrv9009_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "adi,axi-clkgen-2.00.a" in text
+
+
+def _make_fmcomms8_topology():
+    """Return a minimal XsaTopology for an FMComms8 dual-chip ADRV9009 design.
+
+    FMComms8 is detected by TPL core instances with 'adrv9009' and 'tpl_core' in the name.
+    """
+    return XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_adrv9009_rx_jesd_rx_axi",
+                base_addr=0x84A90000,
+                num_lanes=4,
+                irq=107,
+                link_clk="hmc7044_fmc_9",
+                direction="rx",
+            ),
+            Jesd204Instance(
+                name="axi_adrv9009_rx_os_jesd_rx_axi",
+                base_addr=0x84AA0000,
+                num_lanes=2,
+                irq=108,
+                link_clk="hmc7044_fmc_8",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_adrv9009_tx_jesd_tx_axi",
+                base_addr=0x84A80000,
+                num_lanes=4,
+                irq=106,
+                link_clk="hmc7044_fmc_8",
+                direction="tx",
+            ),
+        ],
+        converters=[
+            ConverterInstance(
+                name="adrv9009_tpl_core_rx_adc_tpl_core",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A10000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="adrv9009_tpl_core_tx_dac_tpl_core",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A04000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+            ConverterInstance(
+                name="adrv9009_tpl_core_obs_adc_tpl_core",
+                ip_type="axi_adrv9009",
+                base_addr=0x84A14000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+        fpga_part="xczu9eg",
+    )
+
+
+def _make_fmcomms8_cfg():
+    return {
+        "adrv9009_board": {},
+        "jesd": {
+            "rx": {"F": 4, "K": 32},
+            "tx": {"F": 2, "K": 32, "M": 4},
+        },
+    }
+
+
+def test_build_adrv9009_nodes_fmcomms8_returns_nonempty():
+    topology = _make_fmcomms8_topology()
+    cfg = _make_fmcomms8_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    assert len(result) > 0
+
+
+def test_build_adrv9009_nodes_fmcomms8_has_hmc7044_clock_chip():
+    topology = _make_fmcomms8_topology()
+    cfg = _make_fmcomms8_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "hmc7044_fmc: hmc7044@0" in text
+
+
+def test_build_adrv9009_nodes_fmcomms8_has_primary_phy():
+    topology = _make_fmcomms8_topology()
+    cfg = _make_fmcomms8_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "trx0_adrv9009: adrv9009-phy@1" in text
+
+
+def test_build_adrv9009_nodes_fmcomms8_has_second_phy():
+    topology = _make_fmcomms8_topology()
+    cfg = _make_fmcomms8_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "trx1_adrv9009" in text
+
+
+def test_build_adrv9009_nodes_fmcomms8_no_clkgen():
+    topology = _make_fmcomms8_topology()
+    cfg = _make_fmcomms8_cfg()
+    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    text = "\n".join(result)
+    assert "adi,axi-clkgen-2.00.a" not in text
