@@ -1190,6 +1190,28 @@ class NodeBuilder:
             "\t\t\t};\n"
         )
 
+    def _build_ad9528_ctx(self, fmc: "_FMCDAQ3Cfg") -> dict:
+        """Build context dict for ad9528.tmpl from an _FMCDAQ3Cfg."""
+        _m1 = 1_233_333_333  # adi,pll2-m1-frequency
+        channels = [
+            {"id": 2,  "name": "DAC_CLK",        "divider": 1, "freq_str": self._fmt_hz(_m1 // 1), "signal_source": 0, "is_sysref": False},
+            {"id": 4,  "name": "DAC_CLK_FMC",    "divider": 2, "freq_str": self._fmt_hz(_m1 // 2), "signal_source": 0, "is_sysref": False},
+            {"id": 5,  "name": "DAC_SYSREF",      "divider": 1, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
+            {"id": 6,  "name": "CLKD_DAC_SYSREF", "divider": 2, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
+            {"id": 7,  "name": "CLKD_ADC_SYSREF", "divider": 2, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
+            {"id": 8,  "name": "ADC_SYSREF",      "divider": 1, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
+            {"id": 9,  "name": "ADC_CLK_FMC",     "divider": 2, "freq_str": self._fmt_hz(_m1 // 2), "signal_source": 0, "is_sysref": False},
+            {"id": 13, "name": "ADC_CLK",         "divider": 1, "freq_str": self._fmt_hz(_m1 // 1), "signal_source": 0, "is_sysref": False},
+        ]
+        return {
+            "label": "clk0_ad9528",
+            "cs": fmc.clock_cs,
+            "spi_max_hz": fmc.clock_spi_max,
+            "vcxo_hz": fmc.clock_vcxo_hz,
+            "gpio_lines": [],
+            "channels": channels,
+        }
+
     def _make_jinja_env(self) -> Environment:
         """Create and return a Jinja2 Environment pointed at the XSA template directory."""
         from .exceptions import XsaParseError

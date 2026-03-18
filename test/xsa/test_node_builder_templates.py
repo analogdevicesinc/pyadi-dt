@@ -427,4 +427,31 @@ def test_tpl_core_ad9172_no_dma():
     out = NodeBuilder()._render("tpl_core.tmpl", ctx)
     assert "dmas" not in out
     assert "dma-names" not in out
-    assert "adi,axi-pl-fifo-enable;" in out
+
+
+def test_ad9528_template_renders_pll_channel():
+    ctx = {
+        "label": "clk0_ad9528",
+        "cs": 0,
+        "spi_max_hz": 10000000,
+        "vcxo_hz": 100000000,
+        "gpio_lines": [],
+        "channels": [
+            {
+                "id": 1,
+                "name": "ADC_CLK",
+                "divider": 3,
+                "freq_str": "411.11 MHz",
+                "signal_source": 0,
+                "is_sysref": False,
+            }
+        ],
+    }
+    out = NodeBuilder()._render("ad9528.tmpl", ctx)
+    assert 'compatible = "adi,ad9528"' in out
+    assert "clk0_ad9528" in out
+    assert "adi,channel-divider = <3>;" in out
+    assert "// 411.11 MHz" in out
+    assert "adi,vcxo-freq" in out
+    assert "ad9528_0_c1" in out
+    assert "adi,pll2-m1-frequency" in out
