@@ -35,6 +35,12 @@
 {%- if clkin1_buffer_mode is not none %}
 			adi,clkin1-buffer-mode = <{{ clkin1_buffer_mode }}>;
 {%- endif %}
+{%- if clkin2_buffer_mode is not none %}
+			adi,clkin2-buffer-mode = <{{ clkin2_buffer_mode }}>;
+{%- endif %}
+{%- if clkin3_buffer_mode is not none %}
+			adi,clkin3-buffer-mode = <{{ clkin3_buffer_mode }}>;
+{%- endif %}
 {%- if oscin_buffer_mode is not none %}
 			adi,oscin-buffer-mode = <{{ oscin_buffer_mode }}>;
 {%- endif %}

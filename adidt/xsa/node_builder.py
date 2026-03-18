@@ -1364,6 +1364,8 @@ class NodeBuilder:
         pulse_generator_mode=None,
         clkin0_buffer_mode=None,
         clkin1_buffer_mode=None,
+        clkin2_buffer_mode: "str | None" = None,
+        clkin3_buffer_mode: "str | None" = None,
         oscin_buffer_mode=None,
         gpi_controls=None,
         gpo_controls=None,
@@ -1391,6 +1393,8 @@ class NodeBuilder:
             "pulse_generator_mode": pulse_generator_mode,
             "clkin0_buffer_mode": clkin0_buffer_mode,
             "clkin1_buffer_mode": clkin1_buffer_mode,
+            "clkin2_buffer_mode": clkin2_buffer_mode,
+            "clkin3_buffer_mode": clkin3_buffer_mode,
             "oscin_buffer_mode": oscin_buffer_mode,
             "gpi_controls_str": self._fmt_gpi_gpo(gpi_controls) if gpi_controls else "",
             "gpo_controls_str": self._fmt_gpi_gpo(gpo_controls) if gpo_controls else "",
@@ -2710,6 +2714,8 @@ class NodeBuilder:
                 pll1_ref_prio_ctrl="0x1E",
                 clkin0_buffer_mode="0x07",
                 clkin1_buffer_mode="0x09",
+                clkin2_buffer_mode="0x05",
+                clkin3_buffer_mode="0x11",
                 oscin_buffer_mode="0x15",
                 pll1_loop_bandwidth_hz=200,
                 sync_pin_mode=1,
@@ -2905,7 +2911,7 @@ class NodeBuilder:
         rx_core_second = (
             f"\t&{rx_core_label} {{\n"
             f"\t\tspibus-connected = <&{phy_label}>;\n"
-            "\t}};"
+            "\t};"
         )
         rx_os_core_second = (
             f"\t&{rx_os_core_label} {{\n"
