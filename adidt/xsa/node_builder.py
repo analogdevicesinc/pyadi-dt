@@ -1159,6 +1159,70 @@ class NodeBuilder:
             "channels": channels,
         }
 
+    def _build_ad9528_1_ctx(self, board_cfg: dict) -> dict:
+        """Build context dict for ad9528_1.tmpl from an ADRV9009 non-FMComms8 board config.
+
+        The ad9528-1 variant is used by standard (non-FMComms8) ADRV9009 designs.
+        It shares the same ``"adi,ad9528"`` compatible string but uses ADRV9009-specific
+        PLL and sysref properties, and names its clock outputs ``ad9528-1_out{n}``.
+
+        Context schema:
+            label (str): DTS node label, always ``"clk0_ad9528"``.
+            cs (int): SPI chip-select index.
+            spi_max_hz (int): Maximum SPI bus frequency in Hz.
+            vcxo_hz (int): VCXO frequency in Hz.
+            gpio_lines (list[dict]): GPIO property dicts (empty for standard designs).
+            channels (list[dict]): Per-channel dicts with keys:
+                id (int), name (str), divider (int), freq_str (str),
+                signal_source (int), is_sysref (bool).
+        """
+        clk_cs = int(board_cfg.get("clk_cs", 0))
+        vcxo_hz = int(board_cfg.get("ad9528_vcxo_freq", 122880000))
+        # PLL2 output: vcxo * pll2-n2-div(10) / pll2-r1-div(1), channel-divider=5
+        ch_freq = vcxo_hz * 10 // 5
+        channels = [
+            {
+                "id": 13,
+                "name": "DEV_CLK",
+                "divider": 5,
+                "freq_str": self._fmt_hz(ch_freq),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
+            {
+                "id": 1,
+                "name": "FMC_CLK",
+                "divider": 5,
+                "freq_str": self._fmt_hz(ch_freq),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
+            {
+                "id": 12,
+                "name": "DEV_SYSREF",
+                "divider": 5,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": False,
+            },
+            {
+                "id": 3,
+                "name": "FMC_SYSREF",
+                "divider": 5,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": False,
+            },
+        ]
+        return {
+            "label": "clk0_ad9528",
+            "cs": clk_cs,
+            "spi_max_hz": 10000000,
+            "vcxo_hz": vcxo_hz,
+            "gpio_lines": [],
+            "channels": channels,
+        }
+
     def _make_jinja_env(self) -> Environment:
         """Create and return a Jinja2 Environment pointed at the XSA template directory."""
         from .exceptions import XsaParseError

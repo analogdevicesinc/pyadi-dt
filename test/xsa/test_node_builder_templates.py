@@ -519,3 +519,33 @@ def test_ad9081_mxfe_template_renders_device_node():
     assert "adi,dac-frequency-hz = /bits/ 64 <12000000000>;" in out
     assert "adi,adc-frequency-hz = /bits/ 64 <4000000000>;" in out
     assert "jesd204-link-ids = <2 0>;" in out
+
+
+def test_ad9528_1_template_renders_channel():
+    ctx = {
+        "label": "clk0_ad9528",
+        "cs": 0,
+        "spi_max_hz": 10000000,
+        "vcxo_hz": 122880000,
+        "gpio_lines": [],
+        "channels": [
+            {
+                "id": 13,
+                "name": "DEV_CLK",
+                "divider": 5,
+                "freq_str": "245.76 MHz",
+                "signal_source": 0,
+                "is_sysref": False,
+            }
+        ],
+    }
+    out = NodeBuilder()._render("ad9528_1.tmpl", ctx)
+    assert 'compatible = "adi,ad9528"' in out
+    assert "clk0_ad9528: ad9528-1@0" in out
+    assert "adi,channel-divider = <5>;" in out
+    assert "// 245.76 MHz" in out
+    assert "adi,vcxo-freq = <122880000>;" in out
+    assert "ad9528_0_c13" in out
+    assert "adi,refa-enable" in out
+    assert "adi,pll2-n2-div" in out
+    assert '"ad9528-1_out0"' in out
