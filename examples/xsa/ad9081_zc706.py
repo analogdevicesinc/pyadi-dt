@@ -75,6 +75,8 @@ def main() -> None:
         cfg=_default_config(),
         output_dir=out_dir,
         profile="ad9081_zc706",
+        emit_clock_graphs=True,
+        emit_report=True,
     )
     print("Generated artifacts (explicit profile=ad9081_zc706):")
     for key, value in result.items():

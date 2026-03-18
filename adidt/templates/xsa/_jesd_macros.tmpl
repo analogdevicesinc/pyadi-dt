@@ -14,21 +14,19 @@
 						reg = <0>;
 						adi,converter-select = {{ converter_select }};
 						adi,logical-lane-mapping = /bits/ 8 <{{ lane_map }}>;
-						adi,link-mode = <{{ link_mode }}>;
-						adi,subclass = <1>;
+						adi,link-mode = <{{ link_mode }}>; // 0 = JESD204A, 1 = JESD204B, 2 = JESD204C
+						adi,subclass = <1>; // 0 = no subclass, 1 = subclass 1 (deterministic latency), 2 = subclass 2 (synchronous startup)
 						adi,version = <1>;
-						adi,dual-link = <0>;
-						adi,converters-per-device = <{{ m }}>;
-						/* JESD204 framing: F = octets per frame per lane */
-						adi,octets-per-frame = <{{ f }}>;
-						/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
-						adi,frames-per-multiframe = <{{ k }}>;
-						adi,converter-resolution = <16>;
-						adi,bits-per-sample = <16>;
-						adi,control-bits-per-sample = <0>;
-						adi,lanes-per-device = <{{ l }}>;
-						adi,samples-per-converter-per-frame = <{{ s }}>;
-						adi,high-density = <0>;
+						adi,dual-link = <0>; // DL = dual link (DL = 1 if dual link, else DL = 0)
+						adi,converters-per-device = <{{ m }}>; // M
+						adi,octets-per-frame = <{{ f }}>; // F = octets per frame per lane
+						adi,frames-per-multiframe = <{{ k }}>; // K = frames per multiframe
+						adi,converter-resolution = <16>; // Np = converter resolution (bits per sample per converter)
+						adi,bits-per-sample = <16>; // N = bits per sample (per converter)
+						adi,control-bits-per-sample = <0>; // CS = control bits per sample (per converter)
+						adi,lanes-per-device = <{{ l }}>; // L = lanes per device (L = M/F, must be integer)
+						adi,samples-per-converter-per-frame = <{{ s }}>; // S = samples per converter per frame (S = F/L, must be integer)
+						adi,high-density = <0>; // HD = high density JESD204 (HD = 1 if S > 1, else HD = 0)
 					};
 				};
 {%- endmacro %}

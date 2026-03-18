@@ -35,6 +35,12 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 2
+   :caption: Developer Guide
+
+   xsa_developer
+
+.. toctree::
+   :maxdepth: 2
    :caption: Reference
 
    cli
