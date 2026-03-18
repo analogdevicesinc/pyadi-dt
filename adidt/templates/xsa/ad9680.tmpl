@@ -1,3 +1,4 @@
+{% from "_jesd_macros.tmpl" import jesd_top_device_props %}
 		{{ label }}: ad9680@{{ cs }} {
 			compatible = "adi,ad9680";
 			#address-cells = <1>;
@@ -13,11 +14,7 @@
 {%- endif %}
 			clocks = {{ clks_str }};
 			clock-names = {{ clk_names_str }};
-			jesd204-device;
-			#jesd204-cells = <2>;
-			jesd204-top-device = <{{ jesd204_top_device }}>;
-			jesd204-link-ids = <{{ jesd204_link_ids | join(' ') }}>;
-			jesd204-inputs = <&{{ jesd204_inputs }}>;
+{{ jesd_top_device_props(jesd204_top_device, jesd204_link_ids, jesd204_inputs) }}
 			adi,converters-per-device = <{{ m }}>;
 			adi,lanes-per-device = <{{ l }}>;
 			/* JESD204 framing: F = octets per frame per lane */

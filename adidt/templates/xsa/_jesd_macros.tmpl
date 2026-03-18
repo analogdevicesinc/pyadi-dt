@@ -1,0 +1,34 @@
+{#- Shared JESD204 DTS node macros imported by converter device templates. -#}
+{%- macro jesd_top_device_props(top_device, link_ids, inputs_str) -%}
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-top-device = <{{ top_device }}>;
+		jesd204-link-ids = <{{ link_ids | join(' ') }}>;
+		jesd204-inputs = <&{{ inputs_str }}>;
+{%- endmacro %}
+{%- macro mxfe_jesd_link(converter_select, lane_map, link_mode, m, f, k, l, s) -%}
+				adi,jesd-links {
+					#size-cells = <0>;
+					#address-cells = <1>;
+					link@0 {
+						reg = <0>;
+						adi,converter-select = {{ converter_select }};
+						adi,logical-lane-mapping = /bits/ 8 <{{ lane_map }}>;
+						adi,link-mode = <{{ link_mode }}>;
+						adi,subclass = <1>;
+						adi,version = <1>;
+						adi,dual-link = <0>;
+						adi,converters-per-device = <{{ m }}>;
+						/* JESD204 framing: F = octets per frame per lane */
+						adi,octets-per-frame = <{{ f }}>;
+						/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
+						adi,frames-per-multiframe = <{{ k }}>;
+						adi,converter-resolution = <16>;
+						adi,bits-per-sample = <16>;
+						adi,control-bits-per-sample = <0>;
+						adi,lanes-per-device = <{{ l }}>;
+						adi,samples-per-converter-per-frame = <{{ s }}>;
+						adi,high-density = <0>;
+					};
+				};
+{%- endmacro %}

@@ -1,4 +1,5 @@
 {# AD9081 MxFE device node (SPI child node, wrapped in &adc_spi { ... }) #}
+{% from "_jesd_macros.tmpl" import mxfe_jesd_link %}
 		{{ label }}: ad9081@{{ cs }} {
 			compatible = "adi,ad9081";
 			reg = <{{ cs }}>;
@@ -44,30 +45,7 @@
 					ad9081_tx_fddc_chan6: channel@6 { reg = <6>; };
 					ad9081_tx_fddc_chan7: channel@7 { reg = <7>; };
 				};
-				adi,jesd-links {
-					#size-cells = <0>;
-					#address-cells = <1>;
-					link@0 {
-						reg = <0>;
-						adi,converter-select = {{ tx_converter_select }};
-						adi,logical-lane-mapping = /bits/ 8 <{{ tx_lane_map }}>;
-						adi,link-mode = <{{ tx_link_mode }}>;
-						adi,subclass = <1>;
-						adi,version = <1>;
-						adi,dual-link = <0>;
-						adi,converters-per-device = <{{ tx_m }}>;
-						/* JESD204 framing: F = octets per frame per lane */
-						adi,octets-per-frame = <{{ tx_f }}>;
-						/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
-						adi,frames-per-multiframe = <{{ tx_k }}>;
-						adi,converter-resolution = <16>;
-						adi,bits-per-sample = <16>;
-						adi,control-bits-per-sample = <0>;
-						adi,lanes-per-device = <{{ tx_l }}>;
-						adi,samples-per-converter-per-frame = <{{ tx_s }}>;
-						adi,high-density = <0>;
-					};
-				};
+	{{ mxfe_jesd_link(tx_converter_select, tx_lane_map, tx_link_mode, tx_m, tx_f, tx_k, tx_l, tx_s) }}
 			};
 			adi,rx-adcs {
 				#size-cells = <0>;
@@ -93,29 +71,6 @@
 					ad9081_rx_fddc_chan6: channel@6 { reg = <6>; adi,decimation = <{{ rx_fddc_decimation }}>; };
 					ad9081_rx_fddc_chan7: channel@7 { reg = <7>; adi,decimation = <{{ rx_fddc_decimation }}>; };
 				};
-				adi,jesd-links {
-					#size-cells = <0>;
-					#address-cells = <1>;
-					link@0 {
-						reg = <0>;
-						adi,converter-select = {{ rx_converter_select }};
-						adi,logical-lane-mapping = /bits/ 8 <{{ rx_lane_map }}>;
-						adi,link-mode = <{{ rx_link_mode }}>;
-						adi,subclass = <1>;
-						adi,version = <1>;
-						adi,dual-link = <0>;
-						adi,converters-per-device = <{{ rx_m }}>;
-						/* JESD204 framing: F = octets per frame per lane */
-						adi,octets-per-frame = <{{ rx_f }}>;
-						/* JESD204 framing: K = frames per multiframe (subclass 1: 17–256, must be multiple of 4) */
-						adi,frames-per-multiframe = <{{ rx_k }}>;
-						adi,converter-resolution = <16>;
-						adi,bits-per-sample = <16>;
-						adi,control-bits-per-sample = <0>;
-						adi,lanes-per-device = <{{ rx_l }}>;
-						adi,samples-per-converter-per-frame = <{{ rx_s }}>;
-						adi,high-density = <0>;
-					};
-				};
+	{{ mxfe_jesd_link(rx_converter_select, rx_lane_map, rx_link_mode, rx_m, rx_f, rx_k, rx_l, rx_s) }}
 			};
 		};
