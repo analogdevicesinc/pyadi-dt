@@ -36,9 +36,7 @@ def test_hmc7044_template_renders_channel_with_freq_comment():
         "pll1_clkin_frequencies": [122880000, 0, 0, 0],
         "vcxo_hz": 122880000,
         "pll2_output_hz": 3_000_000_000,
-        "clock_output_names_str": ", ".join(
-            f'"hmc7044_out{i}"' for i in range(14)
-        ),
+        "clock_output_names_str": ", ".join(f'"hmc7044_out{i}"' for i in range(14)),
         "jesd204_sysref_provider": True,
         "jesd204_max_sysref_hz": 2000000,
         "pll1_loop_bandwidth_hz": None,
@@ -85,9 +83,7 @@ def test_hmc7044_template_sysref_channel_emits_sysref_flag():
         "pll1_clkin_frequencies": [122880000, 0, 0, 0],
         "vcxo_hz": 122880000,
         "pll2_output_hz": 3_000_000_000,
-        "clock_output_names_str": ", ".join(
-            f'"hmc7044_out{i}"' for i in range(14)
-        ),
+        "clock_output_names_str": ", ".join(f'"hmc7044_out{i}"' for i in range(14)),
         "jesd204_sysref_provider": True,
         "jesd204_max_sysref_hz": 2000000,
         "pll1_loop_bandwidth_hz": 200,
@@ -194,7 +190,11 @@ def _make_ad9680_ctx():
         "clks_str": "<&axi_ad9680_jesd204_rx>, <&clk0_ad9523 13>, <&clk0_ad9523 5>",
         "clk_names_str": '"jesd_adc_clk", "adc_clk", "adc_sysref"',
         "sampling_frequency_hz": 1000000000,
-        "m": 2, "l": 4, "f": 1, "k": 32, "np": 16,
+        "m": 2,
+        "l": 4,
+        "f": 1,
+        "k": 32,
+        "np": 16,
         "jesd204_top_device": 0,
         "jesd204_link_ids": [0],
         "jesd204_inputs": "axi_ad9680_core 0 0",
@@ -312,7 +312,8 @@ def _make_jesd_overlay_ctx_rx():
         "clocks_str": "<&zynqmp_clk 71>, <&axi_ad9680_adxcvr 1>, <&axi_ad9680_adxcvr 0>",
         "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
         "clock_output_name": "jesd_adc_lane_clk",
-        "f": 1, "k": 32,
+        "f": 1,
+        "k": 32,
         "jesd204_inputs": "axi_ad9680_adxcvr 0 0",
         "converter_resolution": None,
         "converters_per_device": None,
@@ -337,7 +338,8 @@ def test_jesd204_overlay_tx_emits_tx_fields():
         "clocks_str": "<&zynqmp_clk 71>, <&axi_ad9144_adxcvr 1>, <&axi_ad9144_adxcvr 0>",
         "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
         "clock_output_name": "jesd_dac_lane_clk",
-        "f": 1, "k": 32,
+        "f": 1,
+        "k": 32,
         "jesd204_inputs": "axi_ad9144_adxcvr 1 0",
         "converter_resolution": 14,
         "converters_per_device": 2,
@@ -357,7 +359,8 @@ def test_jesd204_overlay_ad9081_omits_clock_output_names():
         "clocks_str": "<&zynqmp_clk 71>, <&hmc7044 10>, <&axi_mxfe_rx_xcvr 0>",
         "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
         "clock_output_name": None,
-        "f": 4, "k": 32,
+        "f": 4,
+        "k": 32,
         "jesd204_inputs": "axi_mxfe_rx_xcvr 0 2",
         "converter_resolution": None,
         "converters_per_device": None,
@@ -503,14 +506,22 @@ def test_ad9081_mxfe_template_renders_device_node():
         "tx_converter_select": "<0x00> <0xFF>",
         "tx_lane_map": "0 1 2 3 4 5 6 7",
         "tx_link_mode": 9,
-        "tx_m": 8, "tx_f": 4, "tx_k": 32, "tx_l": 4, "tx_s": 1,
+        "tx_m": 8,
+        "tx_f": 4,
+        "tx_k": 32,
+        "tx_l": 4,
+        "tx_s": 1,
         "adc_frequency_hz": 4_000_000_000,
         "rx_cddc_decimation": 4,
         "rx_fddc_decimation": 4,
         "rx_converter_select": "<0x00> <0xFF>",
         "rx_lane_map": "0 1 2 3 4 5 6 7",
         "rx_link_mode": 9,
-        "rx_m": 8, "rx_f": 4, "rx_k": 32, "rx_l": 4, "rx_s": 1,
+        "rx_m": 8,
+        "rx_f": 4,
+        "rx_k": 32,
+        "rx_l": 4,
+        "rx_s": 1,
     }
     out = NodeBuilder()._render("ad9081_mxfe.tmpl", ctx)
     assert 'compatible = "adi,ad9081"' in out
@@ -578,7 +589,9 @@ def test_adrv9009_template_renders_device_node():
     assert 'compatible = "adi,adrv9009", "adrv9009"' in out
     assert "trx0_adrv9009" in out
     assert "adrv9009-phy@1" in out
-    assert 'clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk"' in out
+    assert (
+        'clock-output-names = "rx_sampl_clk", "rx_os_sampl_clk", "tx_sampl_clk"' in out
+    )
     assert "jesd204-top-device = <0>;" in out
     assert "jesd204-link-ids = <1 0>;" in out
     assert "adi,rx-profile-rx-fir-num-fir-coefs = <48>;" in out
@@ -814,7 +827,11 @@ def test_jesd_top_device_props_indentation_ad9680():
         "jesd204_top_device": 0,
         "jesd204_link_ids": [0],
         "jesd204_inputs": "jesd_rx 0 0",
-        "m": 2, "l": 4, "f": 4, "k": 32, "np": 16,
+        "m": 2,
+        "l": 4,
+        "f": 4,
+        "k": 32,
+        "np": 16,
         "sampling_frequency_hz": 0,
         "gpio_lines": [],
     }
@@ -882,18 +899,28 @@ def test_mxfe_jesd_link_indentation_ad9081_mxfe():
         "tx_converter_select": "<0x00> <0xFF>",
         "tx_lane_map": "0 1 2 3 4 5 6 7",
         "tx_link_mode": 9,
-        "tx_m": 8, "tx_f": 4, "tx_k": 32, "tx_l": 4, "tx_s": 1,
+        "tx_m": 8,
+        "tx_f": 4,
+        "tx_k": 32,
+        "tx_l": 4,
+        "tx_s": 1,
         "adc_frequency_hz": 4_000_000_000,
         "rx_cddc_decimation": 4,
         "rx_fddc_decimation": 4,
         "rx_converter_select": "<0x00> <0xFF>",
         "rx_lane_map": "0 1 2 3 4 5 6 7",
         "rx_link_mode": 9,
-        "rx_m": 8, "rx_f": 4, "rx_k": 32, "rx_l": 4, "rx_s": 1,
+        "rx_m": 8,
+        "rx_f": 4,
+        "rx_k": 32,
+        "rx_l": 4,
+        "rx_s": 1,
     }
     out = NodeBuilder()._render("ad9081_mxfe.tmpl", ctx)
     lines = out.splitlines()
     jesd_links_lines = [l for l in lines if "adi,jesd-links {" in l]
-    assert len(jesd_links_lines) == 2, f"Expected 2 adi,jesd-links lines, got: {jesd_links_lines}"
+    assert len(jesd_links_lines) == 2, (
+        f"Expected 2 adi,jesd-links lines, got: {jesd_links_lines}"
+    )
     for line in jesd_links_lines:
         assert line == "\t\t\t\tadi,jesd-links {", f"Wrong indentation: {repr(line)}"

@@ -1,4 +1,5 @@
 """Reference manifest data model and extractor for DTS parity checking."""
+
 import re
 from dataclasses import dataclass, field
 from pathlib import Path

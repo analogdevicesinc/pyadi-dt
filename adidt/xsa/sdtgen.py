@@ -1,4 +1,5 @@
 """Wrapper for invoking the sdtgen tool to generate a base SDT/DTS from an XSA."""
+
 import subprocess
 from pathlib import Path
 import re
@@ -159,9 +160,7 @@ class SdtgenRunner:
             if updated != text:
                 self._write_text_allow_readonly(path, updated)
 
-    _CHOSEN_RE = re.compile(
-        r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL
-    )
+    _CHOSEN_RE = re.compile(r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL)
 
     def _normalize_cpu_and_interrupt_nodes(self, text: str) -> str:
         """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup."""

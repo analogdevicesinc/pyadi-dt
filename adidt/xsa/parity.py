@@ -1,4 +1,5 @@
 """Check a generated DTS against a reference manifest for parity."""
+
 import json
 import re
 from dataclasses import asdict, dataclass, field

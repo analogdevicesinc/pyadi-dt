@@ -1,5 +1,6 @@
 # adidt/xsa/pipeline.py
 """Orchestrate the full XSA-to-DeviceTree pipeline from archive to merged DTS."""
+
 import re
 from pathlib import Path
 from typing import Any

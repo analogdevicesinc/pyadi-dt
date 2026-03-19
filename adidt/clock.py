@@ -4,6 +4,7 @@ import adidt.parts as parts  # noqa: F401 - Used in eval()
 
 class clock(dt):
     """Device tree interface with clock-chip configuration support."""
+
     supported_parts = ["HMC7044", "AD9523-1", "AD9545"]
 
     def _to_class_naming(self, name):

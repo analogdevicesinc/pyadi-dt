@@ -1,5 +1,6 @@
 # adidt/xsa/visualizer.py
 """Generate an interactive HTML report visualising XSA topology and DTS output."""
+
 import html
 import json
 import re

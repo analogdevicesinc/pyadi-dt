@@ -75,7 +75,12 @@ def _build_xsa_pipeline_cfg() -> dict:
             "converter_cs": 0,
             "clock_spi": "axi_spi",
             "hmc7044_cs": 1,
-            "pll1_clkin_frequencies": [125_000_000, 125_000_000, 125_000_000, 125_000_000],
+            "pll1_clkin_frequencies": [
+                125_000_000,
+                125_000_000,
+                125_000_000,
+                125_000_000,
+            ],
             # HMC7044 clock configuration
             "vcxo_hz": 125_000_000,
             "pll2_output_hz": 2_500_000_000,
@@ -93,10 +98,10 @@ def _build_xsa_pipeline_cfg() -> dict:
             "rx_out_clk_select": 4,
             "tx_out_clk_select": 4,
             # JESD204 link IDs (from dt-bindings/iio/adc/adi,ad9088.h)
-            "rx_a_link_id": 4,   # FRAMER_LINK_A0_RX
-            "rx_b_link_id": 6,   # FRAMER_LINK_B0_RX
-            "tx_a_link_id": 0,   # DEFRAMER_LINK_A0_TX
-            "tx_b_link_id": 2,   # DEFRAMER_LINK_B0_TX
+            "rx_a_link_id": 4,  # FRAMER_LINK_A0_RX
+            "rx_b_link_id": 6,  # FRAMER_LINK_B0_RX
+            "tx_a_link_id": 0,  # DEFRAMER_LINK_A0_TX
+            "tx_b_link_id": 2,  # DEFRAMER_LINK_B0_TX
             # Device profile firmware loaded by the ad9088 driver
             "firmware_name": "204C_M4_L8_NP16_1p25_4x4.bin",
             # Hardware reset GPIO (active high) on VCU118 axi_gpio
@@ -118,13 +123,19 @@ def _build_xsa_pipeline_cfg() -> dict:
             "hsci_auto_linkup": True,
             # Override HMC7044 channel config
             "hmc7044_channels": [
-                {"id": 1,  "name": "ADF4030_REFIN",   "divider": 20,  "driver_mode": 2},
-                {"id": 3,  "name": "ADF4030_BSYNC0",  "divider": 512, "driver_mode": 1, "is_sysref": True},
-                {"id": 8,  "name": "CORE_CLK_TX",     "divider": 8,   "driver_mode": 2},
-                {"id": 9,  "name": "CORE_CLK_RX",     "divider": 8,   "driver_mode": 2},
-                {"id": 10, "name": "FPGA_REFCLK",     "divider": 8,   "driver_mode": 2},
-                {"id": 11, "name": "CORE_CLK_RX_B",   "divider": 8,   "driver_mode": 2},
-                {"id": 12, "name": "CORE_CLK_TX_B",   "divider": 8,   "driver_mode": 2},
+                {"id": 1, "name": "ADF4030_REFIN", "divider": 20, "driver_mode": 2},
+                {
+                    "id": 3,
+                    "name": "ADF4030_BSYNC0",
+                    "divider": 512,
+                    "driver_mode": 1,
+                    "is_sysref": True,
+                },
+                {"id": 8, "name": "CORE_CLK_TX", "divider": 8, "driver_mode": 2},
+                {"id": 9, "name": "CORE_CLK_RX", "divider": 8, "driver_mode": 2},
+                {"id": 10, "name": "FPGA_REFCLK", "divider": 8, "driver_mode": 2},
+                {"id": 11, "name": "CORE_CLK_RX_B", "divider": 8, "driver_mode": 2},
+                {"id": 12, "name": "CORE_CLK_TX_B", "divider": 8, "driver_mode": 2},
             ],
         },
     }
@@ -246,7 +257,6 @@ def test_ad9084_vcu118_xsa(target):
     )
 
     assert ad9084_search, (
-        f"No AD9084-related IIO devices found. "
-        f"IIO devices present: {iio_names}"
+        f"No AD9084-related IIO devices found. IIO devices present: {iio_names}"
     )
     print(f"Found AD9084 RX device: {ad9084_search[0].strip()}")

@@ -1,4 +1,5 @@
 """Built-in board profiles and profile merging utilities."""
+
 import json
 from copy import deepcopy
 from pathlib import Path

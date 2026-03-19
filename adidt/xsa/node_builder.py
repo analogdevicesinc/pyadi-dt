@@ -1,5 +1,6 @@
 # adidt/xsa/node_builder.py
 """Build ADI device-driver DTS overlay nodes from an XSA topology and config."""
+
 import os
 import warnings
 from dataclasses import dataclass
@@ -195,9 +196,7 @@ class NodeBuilder:
         ) and any(
             "mxfe" in j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
         )
-        is_ad9084_design = any(
-            c.ip_type == "axi_ad9084" for c in topology.converters
-        )
+        is_ad9084_design = any(c.ip_type == "axi_ad9084" for c in topology.converters)
         is_fmcdaq2_design = topology.is_fmcdaq2_design()
         is_fmcdaq3_design = topology.is_fmcdaq3_design()
         is_ad9172_design = self._is_ad9172_design(topology) or ("ad9172_board" in cfg)
@@ -361,8 +360,14 @@ class NodeBuilder:
             dma_tx,
             self._render("tpl_core.tmpl", self._build_tpl_core_ctx(fmc, "rx")),
             self._render("tpl_core.tmpl", self._build_tpl_core_ctx(fmc, "tx")),
-            self._render("jesd204_overlay.tmpl", self._build_jesd204_overlay_ctx(fmc, "rx", ps_clk_label, ps_clk_index)),
-            self._render("jesd204_overlay.tmpl", self._build_jesd204_overlay_ctx(fmc, "tx", ps_clk_label, ps_clk_index)),
+            self._render(
+                "jesd204_overlay.tmpl",
+                self._build_jesd204_overlay_ctx(fmc, "rx", ps_clk_label, ps_clk_index),
+            ),
+            self._render(
+                "jesd204_overlay.tmpl",
+                self._build_jesd204_overlay_ctx(fmc, "tx", ps_clk_label, ps_clk_index),
+            ),
             self._render("adxcvr.tmpl", self._build_adxcvr_ctx(fmc, "rx")),
             self._render("adxcvr.tmpl", self._build_adxcvr_ctx(fmc, "tx")),
         ]
@@ -495,7 +500,9 @@ class NodeBuilder:
         ]:
             val = getattr(fmc, attr, None)
             if val is not None:
-                adc_gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+                adc_gpio_lines.append(
+                    {"prop": prop, "controller": fmc.gpio_controller, "index": int(val)}
+                )
         ad9680_ctx = {
             "label": "adc0_ad9680",
             "cs": fmc.adc_cs,
@@ -504,7 +511,10 @@ class NodeBuilder:
             "clks_str": f"<&clk0_ad9528 {fmc.adc_device_clk_idx}>",
             "clk_names_str": '"adc_clk"',
             "sampling_frequency_hz": fmc.adc_sampling_frequency_hz,
-            "m": fmc.rx_m, "l": fmc.rx_l, "f": fmc.rx_f, "k": fmc.rx_k,
+            "m": fmc.rx_m,
+            "l": fmc.rx_l,
+            "f": fmc.rx_f,
+            "k": fmc.rx_k,
             "np": fmc.rx_np,
             "jesd204_top_device": 0,
             "jesd204_link_ids": [fmc.adc_jesd_link_id],
@@ -570,7 +580,8 @@ class NodeBuilder:
             "clocks_str": f"<&{ps_clk_label} {ps_clk_index}>, <&{fmc.adc_xcvr_label} 1>, <&{fmc.adc_xcvr_label} 0>",
             "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
             "clock_output_name": "jesd_adc_lane_clk",
-            "f": fmc.rx_f, "k": fmc.rx_k,
+            "f": fmc.rx_f,
+            "k": fmc.rx_k,
             "jesd204_inputs": f"{fmc.adc_xcvr_label} 0 {fmc.adc_jesd_link_id}",
             "converter_resolution": None,
             "converters_per_device": None,
@@ -583,7 +594,8 @@ class NodeBuilder:
             "clocks_str": f"<&{ps_clk_label} {ps_clk_index}>, <&{fmc.dac_xcvr_label} 1>, <&{fmc.dac_xcvr_label} 0>",
             "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
             "clock_output_name": "jesd_dac_lane_clk",
-            "f": fmc.tx_f, "k": fmc.tx_k,
+            "f": fmc.tx_f,
+            "k": fmc.tx_k,
             "jesd204_inputs": f"{fmc.dac_xcvr_label} 1 {fmc.dac_jesd_link_id}",
             "converter_resolution": None,
             "converters_per_device": fmc.tx_m,
@@ -601,7 +613,9 @@ class NodeBuilder:
             "div40_clk_ref": None,
             "clock_output_names_str": '"adc_gt_clk", "rx_out_clk"',
             "use_lpm_enable": True,
-            "jesd_l": None, "jesd_m": None, "jesd_s": None,
+            "jesd_l": None,
+            "jesd_m": None,
+            "jesd_s": None,
             "jesd204_inputs": "clk0_ad9528 0 0",
             "is_rx": True,
         }
@@ -614,7 +628,9 @@ class NodeBuilder:
             "div40_clk_ref": None,
             "clock_output_names_str": '"dac_gt_clk", "tx_out_clk"',
             "use_lpm_enable": True,
-            "jesd_l": None, "jesd_m": None, "jesd_s": None,
+            "jesd_l": None,
+            "jesd_m": None,
+            "jesd_s": None,
             "jesd204_inputs": None,
             "is_rx": False,
         }
@@ -752,14 +768,43 @@ class NodeBuilder:
 
         ad = self._build_ad9172_cfg(cfg, topology)
         _pll2 = ad.hmc7044_out_freq_hz
-        channels = self._build_hmc7044_channel_ctx(_pll2, [
-            {"id": 2,  "name": "DAC_CLK",    "divider": 8,   "driver_mode": 1, "is_sysref": False},
-            {"id": 3,  "name": "DAC_SYSREF", "divider": 512, "driver_mode": 1, "is_sysref": True},
-            {"id": 12, "name": "FPGA_CLK",   "divider": 8,   "driver_mode": 2, "is_sysref": False},
-            {"id": 13, "name": "FPGA_SYSREF", "divider": 512, "driver_mode": 2, "is_sysref": True},
-        ])
+        channels = self._build_hmc7044_channel_ctx(
+            _pll2,
+            [
+                {
+                    "id": 2,
+                    "name": "DAC_CLK",
+                    "divider": 8,
+                    "driver_mode": 1,
+                    "is_sysref": False,
+                },
+                {
+                    "id": 3,
+                    "name": "DAC_SYSREF",
+                    "divider": 512,
+                    "driver_mode": 1,
+                    "is_sysref": True,
+                },
+                {
+                    "id": 12,
+                    "name": "FPGA_CLK",
+                    "divider": 8,
+                    "driver_mode": 2,
+                    "is_sysref": False,
+                },
+                {
+                    "id": 13,
+                    "name": "FPGA_SYSREF",
+                    "divider": 512,
+                    "driver_mode": 2,
+                    "is_sysref": True,
+                },
+            ],
+        )
         hmc7044_ctx = self._build_hmc7044_ctx(
-            label="hmc7044", cs=ad.clock_cs, spi_max_hz=ad.clock_spi_max,
+            label="hmc7044",
+            cs=ad.clock_cs,
+            spi_max_hz=ad.clock_spi_max,
             pll1_clkin_frequencies=[ad.hmc7044_ref_clk_hz, 0, 0, 0],
             vcxo_hz=ad.hmc7044_vcxo_hz,
             pll2_output_hz=ad.hmc7044_out_freq_hz,
@@ -773,9 +818,8 @@ class NodeBuilder:
             gpi_controls=[0x00, 0x00, 0x00, 0x00],
             gpo_controls=[0x1F, 0x2B, 0x00, 0x00],
         )
-        spi_children = (
-            self._render("hmc7044.tmpl", hmc7044_ctx)
-            + self._render("ad9172.tmpl", self._build_ad9172_device_ctx(ad))
+        spi_children = self._render("hmc7044.tmpl", hmc7044_ctx) + self._render(
+            "ad9172.tmpl", self._build_ad9172_device_ctx(ad)
         )
         tpl_ctx = {
             "label": ad.dac_core_label,
@@ -796,7 +840,8 @@ class NodeBuilder:
             "clocks_str": f"<&{ps_clk_label} {ps_clk_index}>, <&{ad.dac_xcvr_label} 1>, <&{ad.dac_xcvr_label} 0>",
             "clock_names_str": '"s_axi_aclk", "device_clk", "lane_clk"',
             "clock_output_name": "jesd_dac_lane_clk",
-            "f": ad.tx_f, "k": ad.tx_k,
+            "f": ad.tx_f,
+            "k": ad.tx_k,
             "jesd204_inputs": f"{ad.dac_xcvr_label} 0 {ad.dac_jesd_link_id}",
             "converter_resolution": None,
             "converters_per_device": ad.tx_m,
@@ -812,7 +857,9 @@ class NodeBuilder:
             "div40_clk_ref": None,
             "clock_output_names_str": '"dac_gt_clk", "tx_out_clk"',
             "use_lpm_enable": True,
-            "jesd_l": None, "jesd_m": None, "jesd_s": None,
+            "jesd_l": None,
+            "jesd_m": None,
+            "jesd_s": None,
             "jesd204_inputs": "hmc7044 0 0",
             "is_rx": False,
         }
@@ -1021,20 +1068,74 @@ class NodeBuilder:
             return f"{s} kHz"
         return f"{hz} Hz"
 
-
-
     def _build_ad9528_ctx(self, fmc: "_FMCDAQ3Cfg") -> dict:
         """Build context dict for ad9528.tmpl from an _FMCDAQ3Cfg."""
         _m1 = 1_233_333_333  # adi,pll2-m1-frequency
         channels = [
-            {"id": 2,  "name": "DAC_CLK",        "divider": 1, "freq_str": self._fmt_hz(_m1 // 1), "signal_source": 0, "is_sysref": False},
-            {"id": 4,  "name": "DAC_CLK_FMC",    "divider": 2, "freq_str": self._fmt_hz(_m1 // 2), "signal_source": 0, "is_sysref": False},
-            {"id": 5,  "name": "DAC_SYSREF",      "divider": 1, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
-            {"id": 6,  "name": "CLKD_DAC_SYSREF", "divider": 2, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
-            {"id": 7,  "name": "CLKD_ADC_SYSREF", "divider": 2, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
-            {"id": 8,  "name": "ADC_SYSREF",      "divider": 1, "freq_str": "",                     "signal_source": 2, "is_sysref": True},
-            {"id": 9,  "name": "ADC_CLK_FMC",     "divider": 2, "freq_str": self._fmt_hz(_m1 // 2), "signal_source": 0, "is_sysref": False},
-            {"id": 13, "name": "ADC_CLK",         "divider": 1, "freq_str": self._fmt_hz(_m1 // 1), "signal_source": 0, "is_sysref": False},
+            {
+                "id": 2,
+                "name": "DAC_CLK",
+                "divider": 1,
+                "freq_str": self._fmt_hz(_m1 // 1),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
+            {
+                "id": 4,
+                "name": "DAC_CLK_FMC",
+                "divider": 2,
+                "freq_str": self._fmt_hz(_m1 // 2),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
+            {
+                "id": 5,
+                "name": "DAC_SYSREF",
+                "divider": 1,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": True,
+            },
+            {
+                "id": 6,
+                "name": "CLKD_DAC_SYSREF",
+                "divider": 2,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": True,
+            },
+            {
+                "id": 7,
+                "name": "CLKD_ADC_SYSREF",
+                "divider": 2,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": True,
+            },
+            {
+                "id": 8,
+                "name": "ADC_SYSREF",
+                "divider": 1,
+                "freq_str": "",
+                "signal_source": 2,
+                "is_sysref": True,
+            },
+            {
+                "id": 9,
+                "name": "ADC_CLK_FMC",
+                "divider": 2,
+                "freq_str": self._fmt_hz(_m1 // 2),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
+            {
+                "id": 13,
+                "name": "ADC_CLK",
+                "divider": 1,
+                "freq_str": self._fmt_hz(_m1 // 1),
+                "signal_source": 0,
+                "is_sysref": False,
+            },
         ]
         return {
             "label": "clk0_ad9528",
@@ -1327,14 +1428,54 @@ class NodeBuilder:
         """Build context dict for ad9523_1.tmpl from an _FMCDAQ2Cfg."""
         _m1 = 1_000_000_000  # adi,pll2-m1-freq distribution frequency
         channels = [
-            {"id": 1,  "name": "DAC_CLK",           "divider": 1,   "freq_str": self._fmt_hz(_m1 // 1)},
-            {"id": 4,  "name": "ADC_CLK_FMC",        "divider": 2,   "freq_str": self._fmt_hz(_m1 // 2)},
-            {"id": 5,  "name": "ADC_SYSREF",          "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
-            {"id": 6,  "name": "CLKD_ADC_SYSREF",     "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
-            {"id": 7,  "name": "CLKD_DAC_SYSREF",     "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
-            {"id": 8,  "name": "DAC_SYSREF",           "divider": 128, "freq_str": self._fmt_hz(_m1 // 128)},
-            {"id": 9,  "name": "FMC_DAC_REF_CLK",     "divider": 2,   "freq_str": self._fmt_hz(_m1 // 2)},
-            {"id": 13, "name": "ADC_CLK",              "divider": 1,   "freq_str": self._fmt_hz(_m1 // 1)},
+            {
+                "id": 1,
+                "name": "DAC_CLK",
+                "divider": 1,
+                "freq_str": self._fmt_hz(_m1 // 1),
+            },
+            {
+                "id": 4,
+                "name": "ADC_CLK_FMC",
+                "divider": 2,
+                "freq_str": self._fmt_hz(_m1 // 2),
+            },
+            {
+                "id": 5,
+                "name": "ADC_SYSREF",
+                "divider": 128,
+                "freq_str": self._fmt_hz(_m1 // 128),
+            },
+            {
+                "id": 6,
+                "name": "CLKD_ADC_SYSREF",
+                "divider": 128,
+                "freq_str": self._fmt_hz(_m1 // 128),
+            },
+            {
+                "id": 7,
+                "name": "CLKD_DAC_SYSREF",
+                "divider": 128,
+                "freq_str": self._fmt_hz(_m1 // 128),
+            },
+            {
+                "id": 8,
+                "name": "DAC_SYSREF",
+                "divider": 128,
+                "freq_str": self._fmt_hz(_m1 // 128),
+            },
+            {
+                "id": 9,
+                "name": "FMC_DAC_REF_CLK",
+                "divider": 2,
+                "freq_str": self._fmt_hz(_m1 // 2),
+            },
+            {
+                "id": 13,
+                "name": "ADC_CLK",
+                "divider": 1,
+                "freq_str": self._fmt_hz(_m1 // 1),
+            },
         ]
         gpio_lines = []
         for prop, attr, cfg_key in [
@@ -1345,7 +1486,9 @@ class NodeBuilder:
             val = getattr(fmc, attr, None)
             if val is not None:
                 gpio_idx = self._coerce_board_int(val, f"fmcdaq2_board.{cfg_key}")
-                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": gpio_idx})
+                gpio_lines.append(
+                    {"prop": prop, "controller": fmc.gpio_controller, "index": gpio_idx}
+                )
         return {
             "label": "clk0_ad9523",
             "cs": fmc.clock_cs,
@@ -1365,7 +1508,9 @@ class NodeBuilder:
         ]:
             val = getattr(fmc, attr, None)
             if val is not None:
-                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+                gpio_lines.append(
+                    {"prop": prop, "controller": fmc.gpio_controller, "index": int(val)}
+                )
         clks_str = (
             f"<&{fmc.adc_jesd_label}>, "
             f"<&clk0_ad9523 {fmc.adc_device_clk_idx}>, "
@@ -1379,7 +1524,10 @@ class NodeBuilder:
             "clks_str": clks_str,
             "clk_names_str": '"jesd_adc_clk", "adc_clk", "adc_sysref"',
             "sampling_frequency_hz": fmc.adc_sampling_frequency_hz,
-            "m": fmc.rx_m, "l": fmc.rx_l, "f": fmc.rx_f, "k": fmc.rx_k,
+            "m": fmc.rx_m,
+            "l": fmc.rx_l,
+            "f": fmc.rx_f,
+            "k": fmc.rx_k,
             "np": fmc.rx_np,
             "jesd204_top_device": 0,
             "jesd204_link_ids": [fmc.adc_jesd_link_id],
@@ -1397,7 +1545,9 @@ class NodeBuilder:
         ]:
             val = getattr(fmc, attr, None)
             if val is not None:
-                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+                gpio_lines.append(
+                    {"prop": prop, "controller": fmc.gpio_controller, "index": int(val)}
+                )
         return {
             "label": "dac0_ad9144",
             "cs": fmc.dac_cs,
@@ -1419,7 +1569,9 @@ class NodeBuilder:
         ]:
             val = getattr(fmc, attr, None)
             if val is not None:
-                gpio_lines.append({"prop": prop, "controller": fmc.gpio_controller, "index": int(val)})
+                gpio_lines.append(
+                    {"prop": prop, "controller": fmc.gpio_controller, "index": int(val)}
+                )
         return {
             "label": "dac0_ad9152",
             "cs": fmc.dac_cs,
@@ -1976,14 +2128,31 @@ class NodeBuilder:
             hmc7044_channels = self._build_hmc7044_channel_ctx(
                 _pll2,
                 [
-                    {"id": 0,  "name": "CORE_CLK_RX",     "divider": 12,   "driver_mode": 2},
-                    {"id": 2,  "name": "DEV_REFCLK",       "divider": 12,   "driver_mode": 2},
-                    {"id": 3,  "name": "DEV_SYSREF",       "divider": 1536, "driver_mode": 2, "is_sysref": True},
-                    {"id": 6,  "name": "CORE_CLK_TX",      "divider": 12,   "driver_mode": 2},
-                    {"id": 8,  "name": "FPGA_REFCLK1",     "divider": 6,    "driver_mode": 2},
-                    {"id": 10, "name": "CORE_CLK_RX_ALT",  "divider": 12,   "driver_mode": 2},
-                    {"id": 12, "name": "FPGA_REFCLK2",     "divider": 6,    "driver_mode": 2},
-                    {"id": 13, "name": "FPGA_SYSREF",      "divider": 1536, "driver_mode": 2, "is_sysref": True},
+                    {"id": 0, "name": "CORE_CLK_RX", "divider": 12, "driver_mode": 2},
+                    {"id": 2, "name": "DEV_REFCLK", "divider": 12, "driver_mode": 2},
+                    {
+                        "id": 3,
+                        "name": "DEV_SYSREF",
+                        "divider": 1536,
+                        "driver_mode": 2,
+                        "is_sysref": True,
+                    },
+                    {"id": 6, "name": "CORE_CLK_TX", "divider": 12, "driver_mode": 2},
+                    {"id": 8, "name": "FPGA_REFCLK1", "divider": 6, "driver_mode": 2},
+                    {
+                        "id": 10,
+                        "name": "CORE_CLK_RX_ALT",
+                        "divider": 12,
+                        "driver_mode": 2,
+                    },
+                    {"id": 12, "name": "FPGA_REFCLK2", "divider": 6, "driver_mode": 2},
+                    {
+                        "id": 13,
+                        "name": "FPGA_SYSREF",
+                        "divider": 1536,
+                        "driver_mode": 2,
+                        "is_sysref": True,
+                    },
                 ],
             )
 
@@ -2145,7 +2314,9 @@ class NodeBuilder:
             self._render("tpl_core.tmpl", tpl_rx_ctx),
             self._render("tpl_core.tmpl", tpl_tx_ctx),
             self._wrap_spi_bus(clock_spi, self._render("hmc7044.tmpl", hmc7044_ctx)),
-            self._wrap_spi_bus(adc_spi, self._render("ad9081_mxfe.tmpl", ad9081_mxfe_ctx)),
+            self._wrap_spi_bus(
+                adc_spi, self._render("ad9081_mxfe.tmpl", ad9081_mxfe_ctx)
+            ),
         ]
 
         # JESD overlay nodes for mxfe instances
@@ -2153,9 +2324,7 @@ class NodeBuilder:
             lbl = jesd.name.replace("-", "_")
             if "mxfe" not in lbl:
                 continue
-            clocks_str = (
-                f"<&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {rx_chan}>, <&axi_mxfe_rx_xcvr 0>"
-            )
+            clocks_str = f"<&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {rx_chan}>, <&axi_mxfe_rx_xcvr 0>"
             nodes.append(
                 self._render(
                     "jesd204_overlay.tmpl",
@@ -2179,9 +2348,7 @@ class NodeBuilder:
             lbl = jesd.name.replace("-", "_")
             if "mxfe" not in lbl:
                 continue
-            clocks_str = (
-                f"<&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {tx_chan}>, <&axi_mxfe_tx_xcvr 0>"
-            )
+            clocks_str = f"<&{ps_clk_label} {ps_clk_index}>, <&hmc7044 {tx_chan}>, <&axi_mxfe_tx_xcvr 0>"
             nodes.append(
                 self._render(
                     "jesd204_overlay.tmpl",
@@ -2462,16 +2629,61 @@ class NodeBuilder:
             raw_channels = None
             hmc7044_channels = self._build_hmc7044_channel_ctx(
                 pll2_output_hz,
-                board_cfg.get("hmc7044_channels", [
-                    {"id": 1,  "name": "ADF4030_REFIN",   "divider": 20,  "driver_mode": 2},
-                    {"id": 3,  "name": "ADF4030_BSYNC0",  "divider": 256, "driver_mode": 2, "is_sysref": True},
-                    {"id": 8,  "name": "CORE_CLK_TX",     "divider": 8,   "driver_mode": 2},
-                    {"id": 9,  "name": "CORE_CLK_RX",     "divider": 8,   "driver_mode": 2},
-                    {"id": 10, "name": "FPGA_REFCLK",     "divider": 8,   "driver_mode": 2},
-                    {"id": 11, "name": "CORE_CLK_RX_B",   "divider": 8,   "driver_mode": 2},
-                    {"id": 12, "name": "CORE_CLK_TX_B",   "divider": 8,   "driver_mode": 2},
-                    {"id": 13, "name": "FPGA_SYSREF",     "divider": 256, "driver_mode": 2, "is_sysref": True},
-                ]),
+                board_cfg.get(
+                    "hmc7044_channels",
+                    [
+                        {
+                            "id": 1,
+                            "name": "ADF4030_REFIN",
+                            "divider": 20,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 3,
+                            "name": "ADF4030_BSYNC0",
+                            "divider": 256,
+                            "driver_mode": 2,
+                            "is_sysref": True,
+                        },
+                        {
+                            "id": 8,
+                            "name": "CORE_CLK_TX",
+                            "divider": 8,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 9,
+                            "name": "CORE_CLK_RX",
+                            "divider": 8,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 10,
+                            "name": "FPGA_REFCLK",
+                            "divider": 8,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 11,
+                            "name": "CORE_CLK_RX_B",
+                            "divider": 8,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 12,
+                            "name": "CORE_CLK_TX_B",
+                            "divider": 8,
+                            "driver_mode": 2,
+                        },
+                        {
+                            "id": 13,
+                            "name": "FPGA_SYSREF",
+                            "divider": 256,
+                            "driver_mode": 2,
+                            "is_sysref": True,
+                        },
+                    ],
+                ),
             )
 
         hmc7044_ctx = self._build_hmc7044_ctx(
@@ -2487,7 +2699,9 @@ class NodeBuilder:
             channels=hmc7044_channels,
             raw_channels=raw_channels,
             jesd204_sysref_provider=True,
-            jesd204_max_sysref_hz=int(board_cfg.get("jesd204_max_sysref_hz", 2_000_000)),
+            jesd204_max_sysref_hz=int(
+                board_cfg.get("jesd204_max_sysref_hz", 2_000_000)
+            ),
             pll1_loop_bandwidth_hz=int(board_cfg.get("pll1_loop_bandwidth_hz", 200)),
             pll1_ref_prio_ctrl=board_cfg.get("pll1_ref_prio_ctrl", "0xE1"),
             pll1_ref_autorevert=board_cfg.get("pll1_ref_autorevert", True),
@@ -2537,9 +2751,7 @@ class NodeBuilder:
                 self._wrap_spi_bus(clock_spi, adf4382_node + hmc7044_spi_children)
             )
         else:
-            nodes.append(
-                self._wrap_spi_bus(clock_spi, hmc7044_spi_children)
-            )
+            nodes.append(self._wrap_spi_bus(clock_spi, hmc7044_spi_children))
 
         # --- HSCI overlay node ---
         hsci_label = board_cfg.get("hsci_label")
@@ -2594,9 +2806,7 @@ class NodeBuilder:
             "jesd204_inputs": ", ".join(tpl_inputs),
         }
         nodes.append(
-            self._wrap_spi_bus(
-                converter_spi, self._render("ad9084.tmpl", ad9084_ctx)
-            )
+            self._wrap_spi_bus(converter_spi, self._render("ad9084.tmpl", ad9084_ctx))
         )
 
         return nodes
@@ -3039,7 +3249,9 @@ class NodeBuilder:
                     self._format_nested_block(str(block))
                     for block in custom_clock_chip_blocks
                 )
-                _vcxo = ad9528_vcxo_freq or int(board_cfg.get("ad9528_vcxo_freq", 122880000))
+                _vcxo = ad9528_vcxo_freq or int(
+                    board_cfg.get("ad9528_vcxo_freq", 122880000)
+                )
                 _clock_output_names = (
                     '"ad9528-1_out0", "ad9528-1_out1", "ad9528-1_out2", '
                     '"ad9528-1_out3", "ad9528-1_out4", "ad9528-1_out5", '
@@ -3213,9 +3425,7 @@ class NodeBuilder:
 
         # --- Build TPL core second pass (spibus-connected + phy clock references) ---
         rx_core_second = (
-            f"\t&{rx_core_label} {{\n"
-            f"\t\tspibus-connected = <&{phy_label}>;\n"
-            "\t};"
+            f"\t&{rx_core_label} {{\n\t\tspibus-connected = <&{phy_label}>;\n\t}};"
         )
         rx_os_core_second = (
             f"\t&{rx_os_core_label} {{\n"

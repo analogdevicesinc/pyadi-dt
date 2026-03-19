@@ -1,5 +1,6 @@
 # adidt/xsa/topology.py
 """Data model and parser for extracting IP topology from a Vivado XSA archive."""
+
 import re
 import warnings
 import zipfile

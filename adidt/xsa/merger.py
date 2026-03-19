@@ -1,5 +1,6 @@
 # adidt/xsa/merger.py
 """Merge a generated base DTS with ADI overlay nodes into a single DTS file."""
+
 import logging
 import re
 import subprocess
@@ -59,10 +60,7 @@ def _file_header(name: str, kind: str) -> str:
         )
     else:
         title = f"ADI Device Tree (merged) — {safe}"
-        usage = (
-            f" * Compile with:\n"
-            f" *   dtc -I dts -O dtb -o system.dtb {safe}.dts"
-        )
+        usage = f" * Compile with:\n *   dtc -I dts -O dtb -o system.dtb {safe}.dts"
     return (
         f"/*\n"
         f" * {title}\n"
