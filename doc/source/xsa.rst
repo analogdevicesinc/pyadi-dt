@@ -335,6 +335,66 @@ For ADRV9008 Kuiper projects, prefer explicit profile selection:
 ``profile="adrv9008_zcu102"``. Many ADRV9008 XSAs use ADRV9009-style JESD/IP
 instance names, which makes converter-family auto-inference ambiguous.
 
+AD9084 (Apollo) VCU118 MicroBlaze support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The pipeline supports AD9084 "apollo" dual-link designs on VCU118 (MicroBlaze).
+These designs feature four JESD204C links (RX A/B + TX A/B) with separate
+XCVR, DMA, and TPL cores per link.  The board builder generates nodes for:
+
+- **ADF4382** PLL (reference clock for AD9084 dev_clk)
+- **HMC7044** clock distributor (JESD reference clocks, SYSREF)
+- **HSCI** high-speed connector interface
+- **JESD204 overlay** nodes with 4-clock config (s_axi_aclk, link_clk,
+  device_clk, lane_clk) and per-link device clock from HMC7044 channels
+- **AD9084** converter node with profile firmware, lane mappings, and HSCI
+
+Configuration uses the ``ad9084_board`` key with JESD204 link IDs from
+``dt-bindings/iio/adc/adi,ad9088.h``:
+
+.. code-block:: python
+
+   cfg = {
+       "jesd": {
+           "rx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1},
+           "tx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1},
+       },
+       "clock": {
+           "rx_device_clk_label": "hmc7044",
+           "rx_device_clk_index": 8,
+           "tx_device_clk_label": "hmc7044",
+           "tx_device_clk_index": 9,
+           "rx_b_device_clk_index": 11,
+           "tx_b_device_clk_index": 12,
+       },
+       "ad9084_board": {
+           "converter_spi": "axi_spi_2",
+           "converter_cs": 0,
+           "clock_spi": "axi_spi",
+           "hmc7044_cs": 1,
+           "adf4382_cs": 0,
+           "dev_clk_ref": "adf4382 0",
+           "dev_clk_scales": "1 10",
+           "firmware_name": "204C_M4_L8_NP16_1p25_4x4.bin",
+           "reset_gpio": 62,
+           "rx_a_link_id": 4,   # FRAMER_LINK_A0_RX
+           "rx_b_link_id": 6,   # FRAMER_LINK_B0_RX
+           "tx_a_link_id": 0,   # DEFRAMER_LINK_A0_TX
+           "tx_b_link_id": 2,   # DEFRAMER_LINK_B0_TX
+           "hsci_label": "axi_hsci_0",
+           "hsci_auto_linkup": True,
+           # ... lane mappings, HMC7044 channel config, etc.
+       },
+   }
+
+The sdtgen postprocessor applies MicroBlaze-specific fixups (CPU cluster
+rename, DDR4 memory node, earlycon bootargs) and the node builder uses
+platform-aware ``reg_addr()``/``reg_size()`` for 32-bit register format.
+
+See ``test/ad9084/test_ad9084_xsa_hw_vcu118.py`` for a complete hardware test
+example that runs the full pipeline and verifies all IIO devices and JESD204C
+links.
+
 If ``reference_dts=Path(...)`` is passed to ``XsaPipeline.run()``, the pipeline
 also writes parity artifacts:
 

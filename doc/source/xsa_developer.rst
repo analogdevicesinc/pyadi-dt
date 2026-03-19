@@ -86,7 +86,9 @@ Entry point
 do not have a dedicated board builder), then delegates to the five board
 builders for the designs that need richer SPI-device and clock-chip content:
 
-- ``_build_ad9081_nodes()`` — AD9081/AD9082/AD9084 MXFE designs
+- ``_build_ad9081_nodes()`` — AD9081/AD9082 MXFE designs
+- ``_build_ad9084_nodes()`` — AD9084 "apollo" dual-link designs (ADF4382 +
+  HMC7044 + HSCI + per-link JESD device clocks)
 - ``_build_adrv9009_nodes()`` — ADRV9009/9025 designs, including FMComms8
 - ``_build_fmcdaq2_nodes()`` — FMCDAQ2 (AD9523-1 + AD9680 + AD9144)
 - ``_build_fmcdaq3_nodes()`` — FMCDAQ3 (AD9528 + AD9680 + AD9152)
@@ -94,6 +96,40 @@ builders for the designs that need richer SPI-device and clock-chip content:
 
 Each board builder returns an empty list when its topology check fails, so all
 five are called unconditionally in ``build()``.
+
+Platform-aware register format
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+MicroBlaze platforms (VCU118) use 32-bit addressing (``#address-cells = <1>``),
+while ZynqMP platforms use 64-bit (``#address-cells = <2>``).  Templates must
+emit ``reg`` properties in the correct cell format.
+
+``NodeBuilder`` exposes two Jinja2 globals — ``reg_addr()`` and ``reg_size()``
+— that format addresses and sizes according to the detected platform:
+
+.. code-block:: jinja
+
+   reg = <{{ reg_addr(instance.base_addr) }} {{ reg_size(0x10000) }}>;
+
+On VCU118 this renders as ``reg = <0x44ad0000 0x10000>`` (2 cells), and on
+ZCU102 as ``reg = <0x0 0x44ad0000 0x0 0x10000>`` (4 cells).
+
+The platform is detected from the FPGA part string in the XSA topology via
+``inferred_platform()``.  32-bit platforms are listed in
+``NodeBuilder._32BIT_PLATFORMS``.
+
+sdtgen postprocessing (MicroBlaze)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``SdtgenRunner`` applies several fixups to the sdtgen-generated DTS for
+MicroBlaze/VCU118 targets that are required for Linux boot:
+
+- **CPU cluster rename**: ``cpus_microblaze@0`` → ``cpus`` (Linux
+  ``of_find_node_by_path("/cpus")`` requires exact name match).
+- **DDR4 memory node**: Adds ``device_type = "memory"`` and collapses 4-cell
+  ``reg`` to 2-cell format when ``#address-cells = <1>``.
+- **earlycon bootargs**: Injects ``bootargs = "earlycon"`` into the ``chosen``
+  node so the kernel produces serial output from early boot.
 
 Jinja2 environment
 ~~~~~~~~~~~~~~~~~~
@@ -138,7 +174,14 @@ instead of repeating the framing in each caller:
 .. code-block:: python
 
    def _wrap_spi_bus(self, label: str, children: str) -> str:
-       return f'\t&{label} {{\n\t\tstatus = "okay";\n{children}\t}};'
+       return (
+           f"\t&{label} {{\n"
+           '\t\tstatus = "okay";\n'
+           "\t\t#address-cells = <1>;\n"
+           "\t\t#size-cells = <0>;\n"
+           f"{children}"
+           "\t};"
+       )
 
 Templates
 ---------
@@ -265,6 +308,12 @@ Template catalogue
      - AXI TPL core overlay.  ``dma_label`` controls the DMA link;
        ``sampl_clk_ref`` adds a ``clocks`` property; ``pl_fifo_enable``
        adds ``adi,axi-pl-fifo-enable``.
+   * - ``ad9084.tmpl``
+     - AD9084 converter SPI device node.  Supports ``adi,device-profile-fw-name``
+       for firmware loading, ``adi,axi-hsci-connected`` for HSCI linkup,
+       ``dev_clk-clock-scales``, JESD204 lane mappings (``jrx0``/``jtx0``/
+       ``jrx1``/``jtx1``), subclass, and ``adi,side-b-use-seperate-tpl-en``
+       for dual-link designs.
    * - ``ad9081_mxfe.tmpl``
      - AD9081 MXFE device node.  Complex nested ``adi,tx-dacs`` and
        ``adi,rx-adcs`` sub-trees rendered from structured context.
