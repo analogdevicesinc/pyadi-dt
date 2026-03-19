@@ -171,6 +171,7 @@ _PART_TO_PLATFORM = {
     "xcvp1202": "vpk180",
     "xc7z045": "zc706",
     "xc7z020": "zc702",
+    "xcvu9p": "vcu118",
     # Some exported HWHs omit the leading "xc" (e.g. "7z045-ffg900-2").
     "7z045": "zc706",
     "7z020": "zc702",
@@ -300,6 +301,7 @@ class XsaParser:
         ad9081_tpl_adc_base: Optional[int] = None
         ad9081_tpl_dac_seen = False
         ad9081_tpl_signature = False
+        is_apollo_design = False
         for mod in root.findall(".//MODULE"):
             mod_type = mod.get("MODTYPE", "").lower()
             instance = mod.get("INSTANCE", mod_type)
@@ -319,18 +321,26 @@ class XsaParser:
                 found_adi = True
                 topology.clkgens.append(self._parse_clkgen(mod, instance, base_addr))
             elif mod_type in _ADI_AD9081_TPL_ADC_TYPES:
-                # AD9081 HDL designs can expose TPL blocks but no explicit
-                # axi_ad9081 converter module in the HWH.
+                # AD9081/AD9084 HDL designs can expose TPL blocks but no
+                # explicit axi_ad9081/axi_ad9084 converter module in the HWH.
                 found_adi = True
                 if ad9081_tpl_adc_base is None:
                     ad9081_tpl_adc_base = base_addr
-                if "mxfe" in instance.lower() or "ad9081" in instance.lower():
+                inst_lower = instance.lower()
+                if "mxfe" in inst_lower or "ad9081" in inst_lower:
                     ad9081_tpl_signature = True
+                if "apollo" in inst_lower or "ad9084" in inst_lower:
+                    ad9081_tpl_signature = True
+                    is_apollo_design = True
             elif mod_type in _ADI_AD9081_TPL_DAC_TYPES:
                 found_adi = True
                 ad9081_tpl_dac_seen = True
-                if "mxfe" in instance.lower() or "ad9081" in instance.lower():
+                inst_lower = instance.lower()
+                if "mxfe" in inst_lower or "ad9081" in inst_lower:
                     ad9081_tpl_signature = True
+                if "apollo" in inst_lower or "ad9084" in inst_lower:
+                    ad9081_tpl_signature = True
+                    is_apollo_design = True
             elif mod_type in _ADI_CONVERTER_TYPES:
                 found_adi = True
                 topology.converters.append(
@@ -343,15 +353,26 @@ class XsaParser:
             and ad9081_tpl_dac_seen
             and ad9081_tpl_signature
         ):
-            topology.converters.append(
-                ConverterInstance(
-                    name="axi_ad9081_0",
-                    ip_type="axi_ad9081",
-                    base_addr=ad9081_tpl_adc_base,
-                    spi_bus=None,
-                    spi_cs=None,
+            if is_apollo_design:
+                topology.converters.append(
+                    ConverterInstance(
+                        name="axi_ad9084_0",
+                        ip_type="axi_ad9084",
+                        base_addr=ad9081_tpl_adc_base,
+                        spi_bus=None,
+                        spi_cs=None,
+                    )
                 )
-            )
+            else:
+                topology.converters.append(
+                    ConverterInstance(
+                        name="axi_ad9081_0",
+                        ip_type="axi_ad9081",
+                        base_addr=ad9081_tpl_adc_base,
+                        spi_bus=None,
+                        spi_cs=None,
+                    )
+                )
 
         if not found_adi:
             warnings.warn(

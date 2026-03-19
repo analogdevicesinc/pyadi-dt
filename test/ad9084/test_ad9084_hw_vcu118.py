@@ -14,6 +14,7 @@ from adidt.boards.ad9084_fmc import ad9084_fmc
 profiles_dir = Path(__file__).parent / "profiles" / "vcu118"
 profile_files = sorted(list(profiles_dir.glob("*.json")))
 profile_names = [f.name for f in profile_files]
+profile_names = [profile_names[0]]
 
 VCXO_HZ = 125_000_000  # HMC7044 VCXO on AD9084-FMCA-EBZ
 

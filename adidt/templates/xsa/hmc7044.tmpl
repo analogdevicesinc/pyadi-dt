@@ -5,6 +5,10 @@
 			#clock-cells = <1>;
 			reg = <{{ cs }}>;
 			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if clkin0_ref is not none %}
+			clocks = <&{{ clkin0_ref }}>;
+			clock-names = "clkin0";
+{%- endif %}
 			adi,pll1-clkin-frequencies = <{{ pll1_clkin_frequencies | join(' ') }}>;
 {%- if pll1_ref_prio_ctrl is not none %}
 			adi,pll1-ref-prio-ctrl = <{{ pll1_ref_prio_ctrl }}>;

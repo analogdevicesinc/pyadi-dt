@@ -159,12 +159,20 @@ class NodeBuilder:
         lower = value.lower()
         return any(key in lower for key in cls._ADRV90XX_KEYWORDS)
 
+    # Platforms using single-cell (32-bit) addressing in amba_pl
+    _32BIT_PLATFORMS = {"vcu118", "zc706"}
+
     def build(self, topology: XsaTopology, cfg: dict[str, Any]) -> dict[str, list[str]]:
         """Render ADI DTS nodes.
 
         Returns:
             Dict with keys "jesd204_rx", "jesd204_tx", "converters".
         """
+        platform = topology.inferred_platform()
+        self._addr_cells = 1 if platform in self._32BIT_PLATFORMS else 2
+        # Invalidate cached Jinja env so reg_addr/reg_size pick up new cells
+        if "_env" in self.__dict__:
+            del self.__dict__["_env"]
         clock_map = self._build_clock_map(topology)
         ps_clk_label, ps_clk_index, gpio_label = self._platform_ps_labels(topology)
         result: dict[str, list[str]] = {
@@ -187,6 +195,9 @@ class NodeBuilder:
         ) and any(
             "mxfe" in j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
         )
+        is_ad9084_design = any(
+            c.ip_type == "axi_ad9084" for c in topology.converters
+        )
         is_fmcdaq2_design = topology.is_fmcdaq2_design()
         is_fmcdaq3_design = topology.is_fmcdaq3_design()
         is_ad9172_design = self._is_ad9172_design(topology) or ("ad9172_board" in cfg)
@@ -204,6 +215,8 @@ class NodeBuilder:
             if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
+                continue
+            if is_ad9084_design:
                 continue
             if is_fmcdaq2_design or is_fmcdaq3_design:
                 continue
@@ -233,6 +246,8 @@ class NodeBuilder:
                 continue
             if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
                 continue
+            if is_ad9084_design:
+                continue
             if is_fmcdaq2_design or is_fmcdaq3_design or is_ad9172_design:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
@@ -259,6 +274,8 @@ class NodeBuilder:
         for conv in topology.converters:
             if is_ad9081_mxfe_design and conv.ip_type == "axi_ad9081":
                 continue
+            if is_ad9084_design and conv.ip_type == "axi_ad9084":
+                continue
             if is_fmcdaq2_design and conv.ip_type in {"axi_ad9680", "axi_ad9144"}:
                 continue
             if is_fmcdaq3_design and conv.ip_type in {"axi_ad9680", "axi_ad9152"}:
@@ -273,6 +290,11 @@ class NodeBuilder:
 
         result["converters"].extend(
             self._build_ad9081_nodes(
+                topology, cfg, ps_clk_label, ps_clk_index, gpio_label
+            )
+        )
+        result["converters"].extend(
+            self._build_ad9084_nodes(
                 topology, cfg, ps_clk_label, ps_clk_index, gpio_label
             )
         )
@@ -1157,6 +1179,8 @@ class NodeBuilder:
             "trx1_clocks_value": trx1_clocks_value,
         }
 
+    _addr_cells: int = 2
+
     def _make_jinja_env(self) -> Environment:
         """Create and return a Jinja2 Environment pointed at the XSA template directory."""
         from .exceptions import XsaParseError
@@ -1166,7 +1190,18 @@ class NodeBuilder:
         )
         if not os.path.isdir(loc):
             raise XsaParseError(f"template directory not found: {loc}")
-        return Environment(loader=FileSystemLoader(loc))
+        env = Environment(loader=FileSystemLoader(loc))
+        # Register reg-formatting globals used by clkgen/jesd templates.
+        # The number of address/size cells depends on the target platform
+        # (e.g. 1 for MicroBlaze, 2 for ZynqMP).
+        cells = self._addr_cells
+        env.globals["reg_addr"] = lambda addr: (
+            f"0x{addr:08x}" if cells == 1 else f"0x0 0x{addr:08x}"
+        )
+        env.globals["reg_size"] = lambda size: (
+            f"0x{size:x}" if cells == 1 else f"0x0 0x{size:x}"
+        )
+        return env
 
     @cached_property
     def _env(self) -> "Environment":
@@ -1182,6 +1217,8 @@ class NodeBuilder:
         return (
             f"\t&{label} {{\n"
             '\t\tstatus = "okay";\n'
+            "\t\t#address-cells = <1>;\n"
+            "\t\t#size-cells = <0>;\n"
             f"{children}"
             "\t};"
         )
@@ -1235,6 +1272,7 @@ class NodeBuilder:
         gpo_controls=None,
         sync_pin_mode=None,
         high_perf_mode_dist_enable: bool = False,
+        clkin0_ref: str | None = None,
     ) -> dict:
         """Build the context dict for hmc7044.tmpl."""
         clock_output_names_str = ", ".join(f'"{n}"' for n in clock_output_names)
@@ -1242,6 +1280,7 @@ class NodeBuilder:
             "label": label,
             "cs": cs,
             "spi_max_hz": spi_max_hz,
+            "clkin0_ref": clkin0_ref,
             "pll1_clkin_frequencies": pll1_clkin_frequencies,
             "vcxo_hz": vcxo_hz,
             "pll2_output_hz": pll2_output_hz,
@@ -1741,10 +1780,14 @@ class NodeBuilder:
         )
 
     @staticmethod
-    def _platform_ps_labels(topology: XsaTopology) -> tuple[str, int, str]:
+    def _platform_ps_labels(topology: XsaTopology) -> tuple[str, int | None, str]:
         """Return ``(ps_clk_label, ps_clk_index, gpio_label)`` appropriate for the topology's platform."""
-        if topology.inferred_platform() == "zc706":
+        platform = topology.inferred_platform()
+        if platform == "zc706":
             return ("clkc", 15, "gpio0")
+        if platform == "vcu118":
+            # MicroBlaze/VCU118: AXI bus clock is a fixed-clock with #clock-cells = <0>
+            return ("clk_bus_0", None, "axi_gpio")
         return ("zynqmp_clk", 71, "gpio")
 
     @staticmethod
@@ -2158,6 +2201,403 @@ class NodeBuilder:
                     },
                 )
             )
+
+        return nodes
+
+    def _build_ad9084_nodes(
+        self,
+        topology: XsaTopology,
+        cfg: dict[str, Any],
+        ps_clk_label: str,
+        ps_clk_index: int,
+        gpio_label: str,
+    ) -> list[str]:
+        """Build DTS node strings for an AD9084 dual-link design.
+
+        The AD9084 HDL design ("apollo") has two links per direction (a + b),
+        each with its own JESD, XCVR, DMA, and TPL core.  This method emits
+        overlay nodes for all FPGA IPs plus the board-level SPI devices
+        (HMC7044 clock chip and AD9084 converter).
+
+        Returns an empty list if the topology does not contain an AD9084 converter.
+        """
+        has_ad9084 = any(c.ip_type == "axi_ad9084" for c in topology.converters)
+        if not has_ad9084:
+            return []
+
+        jesd_cfg = cfg.get("jesd", {})
+        rx_cfg = jesd_cfg.get("rx", {})
+        tx_cfg = jesd_cfg.get("tx", {})
+        rx_f = int(rx_cfg.get("F", 6))
+        rx_k = int(rx_cfg.get("K", 32))
+        tx_f = int(tx_cfg.get("F", 6))
+        tx_k = int(tx_cfg.get("K", 32))
+        clock_cfg = cfg.get("clock", {})
+        board_cfg = cfg.get("ad9084_board", {})
+
+        # Per-link device_clk from clock config
+        rx_dev_clk_label = str(clock_cfg.get("rx_device_clk_label", "axi_hsci_clkgen"))
+        rx_dev_clk_index = clock_cfg.get("rx_device_clk_index", 0)
+        tx_dev_clk_label = str(clock_cfg.get("tx_device_clk_label", rx_dev_clk_label))
+        tx_dev_clk_index = clock_cfg.get("tx_device_clk_index", rx_dev_clk_index)
+        rx_b_dev_clk_index = clock_cfg.get("rx_b_device_clk_index", rx_dev_clk_index)
+        tx_b_dev_clk_index = clock_cfg.get("tx_b_device_clk_index", tx_dev_clk_index)
+
+        # XCVR PLL selection (defaults for VCU118 GTY)
+        rx_sys_clk_select = int(board_cfg.get("rx_sys_clk_select", 3))
+        tx_sys_clk_select = int(board_cfg.get("tx_sys_clk_select", 3))
+        rx_out_clk_select = int(board_cfg.get("rx_out_clk_select", 4))
+        tx_out_clk_select = int(board_cfg.get("tx_out_clk_select", 4))
+
+        # JESD204 link IDs for the four links
+        rx_a_link_id = int(board_cfg.get("rx_a_link_id", 0))
+        rx_b_link_id = int(board_cfg.get("rx_b_link_id", 1))
+        tx_a_link_id = int(board_cfg.get("tx_a_link_id", 2))
+        tx_b_link_id = int(board_cfg.get("tx_b_link_id", 3))
+
+        # SPI configuration
+        converter_spi = str(board_cfg.get("converter_spi", "axi_spi_2"))
+        converter_cs = int(board_cfg.get("converter_cs", 0))
+        clock_spi = str(board_cfg.get("clock_spi", "axi_spi"))
+        hmc7044_cs = int(board_cfg.get("hmc7044_cs", 0))
+
+        # HMC7044 configuration
+        vcxo_hz = int(board_cfg.get("vcxo_hz", 125_000_000))
+        pll2_output_hz = int(board_cfg.get("pll2_output_hz", 2_500_000_000))
+
+        # HMC7044 channel index that provides the FPGA reference clock
+        fpga_refclk_channel = int(board_cfg.get("fpga_refclk_channel", 10))
+
+        # Firmware / profile
+        firmware_name = board_cfg.get("firmware_name")
+        reset_gpio = board_cfg.get("reset_gpio")
+
+        # Derive instance names from topology JESD names.  The AD9084 "apollo"
+        # design uses a consistent naming convention:
+        #   JESD:     axi_apollo_{dir}[_b]_jesd_{dir}_axi
+        #   XCVR:     axi_apollo_{dir}[_b]_xcvr
+        #   DMA:      axi_apollo_{dir}[_b]_dma
+        #   TPL ADC:  [rx|rx_b]_apollo_tpl_core_adc_tpl_core
+        #   TPL DAC:  [tx|tx_b]_apollo_tpl_core_dac_tpl_core
+
+        # Categorise JESD instances into (direction, link_variant) tuples
+        rx_a_jesd = rx_b_jesd = tx_a_jesd = tx_b_jesd = None
+        for j in topology.jesd204_rx:
+            n = j.name.lower()
+            if "_b_" in n or n.startswith("axi_apollo_rx_b"):
+                rx_b_jesd = j
+            else:
+                rx_a_jesd = j
+        for j in topology.jesd204_tx:
+            n = j.name.lower()
+            if "_b_" in n or n.startswith("axi_apollo_tx_b"):
+                tx_b_jesd = j
+            else:
+                tx_a_jesd = j
+
+        # Build link descriptors for each (direction, variant) pair
+        _Link = type("_Link", (), {})
+        links: list[_Link] = []
+        for jesd, direction, variant, link_id, sys_sel, out_sel in [
+            (rx_a_jesd, "rx", "", rx_a_link_id, rx_sys_clk_select, rx_out_clk_select),
+            (rx_b_jesd, "rx", "_b", rx_b_link_id, rx_sys_clk_select, rx_out_clk_select),
+            (tx_a_jesd, "tx", "", tx_a_link_id, tx_sys_clk_select, tx_out_clk_select),
+            (tx_b_jesd, "tx", "_b", tx_b_link_id, tx_sys_clk_select, tx_out_clk_select),
+        ]:
+            if jesd is None:
+                continue
+            lk = _Link()
+            lk.jesd = jesd
+            lk.direction = direction
+            lk.variant = variant
+            lk.link_id = link_id
+            lk.sys_clk_select = sys_sel
+            lk.out_clk_select = out_sel
+            # Infer sibling label names from JESD instance name
+            #   axi_apollo_rx_b_jesd_rx_axi → prefix = axi_apollo_rx_b
+            prefix = jesd.name.replace(f"_jesd_{direction}_axi", "")
+            lk.jesd_label = jesd.name.replace("-", "_")
+            lk.xcvr_label = f"{prefix}_xcvr"
+            lk.dma_label = f"{prefix}_dma"
+            # TPL core naming uses a different convention
+            if direction == "rx":
+                if variant:
+                    lk.tpl_label = f"rx_b_apollo_tpl_core_adc_tpl_core"
+                else:
+                    lk.tpl_label = f"rx_apollo_tpl_core_adc_tpl_core"
+                lk.tpl_compatible = "adi,axi-ad9081-rx-1.0"
+            else:
+                if variant:
+                    lk.tpl_label = f"tx_b_apollo_tpl_core_dac_tpl_core"
+                else:
+                    lk.tpl_label = f"tx_apollo_tpl_core_dac_tpl_core"
+                lk.tpl_compatible = "adi,axi-ad9081-tx-1.0"
+            links.append(lk)
+
+        nodes: list[str] = []
+
+        # --- DMA overlay nodes ---
+        for lk in links:
+            nodes.append(
+                f"\t&{lk.dma_label} {{\n"
+                '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
+                "\t\t#dma-cells = <1>;\n"
+                "\t\t#clock-cells = <0>;\n"
+                f"\t\tclocks = <&{ps_clk_label}"
+                + (f" {ps_clk_index}" if ps_clk_index is not None else "")
+                + ">;\n"
+                "\t};"
+            )
+
+        # --- ADXCVR overlay nodes ---
+        for lk in links:
+            is_rx = lk.direction == "rx"
+            gt_prefix = "rx" if is_rx else "tx"
+            nodes.append(
+                self._render(
+                    "adxcvr.tmpl",
+                    {
+                        "label": lk.xcvr_label,
+                        "sys_clk_select": lk.sys_clk_select,
+                        "out_clk_select": lk.out_clk_select,
+                        "clk_ref": f"hmc7044 {fpga_refclk_channel}",
+                        "use_div40": False,
+                        "div40_clk_ref": None,
+                        "clock_output_names_str": f'"{gt_prefix}{lk.variant}_gt_clk", "{gt_prefix}{lk.variant}_out_clk"',
+                        "use_lpm_enable": False,
+                        "jesd_l": None,
+                        "jesd_m": None,
+                        "jesd_s": None,
+                        "jesd204_inputs": f"hmc7044 0 {lk.link_id}",
+                        "is_rx": is_rx,
+                    },
+                )
+            )
+
+        # --- TPL core overlay nodes ---
+        ad9084_spi_label = "trx0_ad9084"
+        for lk in links:
+            # TX TPL cores need sampl_clk from the AD9084 converter
+            if lk.direction == "tx":
+                sampl_clk_ref = f"{ad9084_spi_label} 1"
+                sampl_clk_name = "sampl_clk"
+            else:
+                sampl_clk_ref = None
+                sampl_clk_name = None
+            nodes.append(
+                self._render(
+                    "tpl_core.tmpl",
+                    {
+                        "label": lk.tpl_label,
+                        "compatible": lk.tpl_compatible,
+                        "direction": lk.direction,
+                        "dma_label": lk.dma_label,
+                        "spibus_label": ad9084_spi_label,
+                        "jesd_label": lk.jesd_label,
+                        "jesd_link_offset": 0,
+                        "link_id": lk.link_id,
+                        "pl_fifo_enable": lk.direction == "tx",
+                        "sampl_clk_ref": sampl_clk_ref,
+                        "sampl_clk_name": sampl_clk_name,
+                    },
+                )
+            )
+
+        # --- JESD204 overlay nodes ---
+        for lk in links:
+            # Pick per-link device_clk from HMC7044 channels
+            if lk.direction == "rx":
+                dev_label = rx_dev_clk_label
+                dev_idx = rx_b_dev_clk_index if lk.variant else rx_dev_clk_index
+            else:
+                dev_label = tx_dev_clk_label
+                dev_idx = tx_b_dev_clk_index if lk.variant else tx_dev_clk_index
+
+            # 4-clock format: s_axi_aclk, link_clk, device_clk, lane_clk
+            axi_clk = (
+                f"<&{ps_clk_label}"
+                + (f" {ps_clk_index}" if ps_clk_index is not None else "")
+                + ">"
+            )
+            dev_idx_str = f" {dev_idx}" if dev_idx is not None else ""
+            clocks_str = (
+                f"{axi_clk}, <&{lk.xcvr_label} 1>, "
+                f"<&{dev_label}{dev_idx_str}>, <&{lk.xcvr_label} 0>"
+            )
+
+            f_val = rx_f if lk.direction == "rx" else tx_f
+            k_val = rx_k if lk.direction == "rx" else tx_k
+
+            nodes.append(
+                self._render(
+                    "jesd204_overlay.tmpl",
+                    {
+                        "label": lk.jesd_label,
+                        "direction": lk.direction,
+                        "clocks_str": clocks_str,
+                        "clock_names_str": '"s_axi_aclk", "link_clk", "device_clk", "lane_clk"',
+                        "clock_output_name": None,
+                        "f": f_val,
+                        "k": k_val,
+                        "jesd204_inputs": f"{lk.xcvr_label} 0 {lk.link_id}",
+                        "converter_resolution": None,
+                        "converters_per_device": None,
+                        "bits_per_sample": None,
+                        "control_bits_per_sample": None,
+                    },
+                )
+            )
+
+        # --- HMC7044 clock chip SPI node ---
+        hmc7044_clock_output_names = [f"hmc7044_out{i}" for i in range(14)]
+
+        # Default channel configuration for AD9084 VCU118
+        custom_hmc7044_blocks = board_cfg.get("hmc7044_channel_blocks")
+        if custom_hmc7044_blocks:
+            raw_channels = "".join(
+                self._format_nested_block(str(block)) for block in custom_hmc7044_blocks
+            )
+            hmc7044_channels = None
+        else:
+            raw_channels = None
+            hmc7044_channels = self._build_hmc7044_channel_ctx(
+                pll2_output_hz,
+                board_cfg.get("hmc7044_channels", [
+                    {"id": 1,  "name": "ADF4030_REFIN",   "divider": 20,  "driver_mode": 2},
+                    {"id": 3,  "name": "ADF4030_BSYNC0",  "divider": 256, "driver_mode": 2, "is_sysref": True},
+                    {"id": 8,  "name": "CORE_CLK_TX",     "divider": 8,   "driver_mode": 2},
+                    {"id": 9,  "name": "CORE_CLK_RX",     "divider": 8,   "driver_mode": 2},
+                    {"id": 10, "name": "FPGA_REFCLK",     "divider": 8,   "driver_mode": 2},
+                    {"id": 11, "name": "CORE_CLK_RX_B",   "divider": 8,   "driver_mode": 2},
+                    {"id": 12, "name": "CORE_CLK_TX_B",   "divider": 8,   "driver_mode": 2},
+                    {"id": 13, "name": "FPGA_SYSREF",     "divider": 256, "driver_mode": 2, "is_sysref": True},
+                ]),
+            )
+
+        hmc7044_ctx = self._build_hmc7044_ctx(
+            label="hmc7044",
+            cs=hmc7044_cs,
+            spi_max_hz=int(board_cfg.get("hmc7044_spi_max_hz", 1_000_000)),
+            pll1_clkin_frequencies=board_cfg.get(
+                "pll1_clkin_frequencies", [vcxo_hz, 10_000_000, 0, 0]
+            ),
+            vcxo_hz=vcxo_hz,
+            pll2_output_hz=pll2_output_hz,
+            clock_output_names=hmc7044_clock_output_names,
+            channels=hmc7044_channels,
+            raw_channels=raw_channels,
+            jesd204_sysref_provider=True,
+            jesd204_max_sysref_hz=int(board_cfg.get("jesd204_max_sysref_hz", 2_000_000)),
+            pll1_loop_bandwidth_hz=int(board_cfg.get("pll1_loop_bandwidth_hz", 200)),
+            pll1_ref_prio_ctrl=board_cfg.get("pll1_ref_prio_ctrl", "0xE1"),
+            pll1_ref_autorevert=board_cfg.get("pll1_ref_autorevert", True),
+            pll1_charge_pump_ua=int(board_cfg.get("pll1_charge_pump_ua", 720)),
+            pfd1_max_freq_hz=int(board_cfg.get("pfd1_max_freq_hz", 1_000_000)),
+            sysref_timer_divider=int(board_cfg.get("sysref_timer_divider", 1024)),
+            pulse_generator_mode=int(board_cfg.get("pulse_generator_mode", 0)),
+            clkin0_buffer_mode=board_cfg.get("clkin0_buffer_mode", "0x07"),
+            clkin1_buffer_mode=board_cfg.get("clkin1_buffer_mode", "0x07"),
+            oscin_buffer_mode=board_cfg.get("oscin_buffer_mode", "0x15"),
+            gpi_controls=board_cfg.get("gpi_controls", [0x00, 0x00, 0x00, 0x00]),
+            gpo_controls=board_cfg.get("gpo_controls", [0x37, 0x33, 0x00, 0x00]),
+            clkin0_ref="clkin_125" if board_cfg.get("adf4382_cs") is not None else None,
+        )
+        # --- ADF4382 PLL SPI node (provides dev_clk to AD9084) ---
+        adf4382_cs = board_cfg.get("adf4382_cs")
+        if adf4382_cs is not None:
+            adf4382_node = (
+                "\t\tadf4382: adf4382@{cs} {{\n"
+                "\t\t\t#clock-cells = <1>;\n"
+                '\t\t\tcompatible = "adi,adf4382";\n'
+                "\t\t\treg = <{cs}>;\n"
+                "\t\t\tspi-max-frequency = <1000000>;\n"
+                "\t\t\tadi,spi-3wire-enable;\n"
+                "\t\t\tclocks = <&clkin_125>;\n"
+                '\t\t\tclock-names = "ref_clk";\n'
+                '\t\t\tclock-output-names = "adf4382_out_clk";\n'
+                '\t\t\tlabel = "adf4382";\n'
+                "\t\t\t#io-channel-cells = <1>;\n"
+                "\t\t}};\n"
+            ).format(cs=int(adf4382_cs))
+            # Fixed 125MHz reference clock for ADF4382/HMC7044.
+            # Inline as a bus-level node so it lands inside &amba_pl.
+            nodes.append(
+                "\tclkin_125: clock@0 {\n"
+                "\t\t#clock-cells = <0>;\n"
+                '\t\tcompatible = "fixed-clock";\n'
+                "\t\tclock-frequency = <125000000>;\n"
+                '\t\tclock-output-names = "clkin_125";\n'
+                "\t};"
+            )
+
+        # Add clkin0 reference to HMC7044 SPI bus wrapper
+        hmc7044_spi_children = self._render("hmc7044.tmpl", hmc7044_ctx)
+        if adf4382_cs is not None:
+            nodes.append(
+                self._wrap_spi_bus(clock_spi, adf4382_node + hmc7044_spi_children)
+            )
+        else:
+            nodes.append(
+                self._wrap_spi_bus(clock_spi, hmc7044_spi_children)
+            )
+
+        # --- HSCI overlay node ---
+        hsci_label = board_cfg.get("hsci_label")
+        if hsci_label:
+            hsci_speed = int(board_cfg.get("hsci_speed_mhz", 800))
+            # The clkgen label used for HSCI pclk
+            hsci_clk_label = next(
+                (c.name.replace("-", "_") for c in topology.clkgens),
+                "axi_hsci_clkgen",
+            )
+            nodes.append(
+                f"\t&{hsci_label} {{\n"
+                '\t\tcompatible = "adi,axi-hsci-1.0.a";\n'
+                f"\t\tclocks = <&{hsci_clk_label} 0>;\n"
+                '\t\tclock-names = "pclk";\n'
+                f"\t\tadi,hsci-interface-speed-mhz = <{hsci_speed}>;\n"
+                "\t};"
+            )
+
+        # --- AD9084 converter SPI node ---
+        # Build jesd204-inputs linking to all TPL cores
+        tpl_inputs = []
+        all_link_ids = []
+        for lk in links:
+            tpl_inputs.append(f"<&{lk.tpl_label} 0 {lk.link_id}>")
+            all_link_ids.append(str(lk.link_id))
+
+        # dev_clk source: ADF4382 or HMC7044
+        dev_clk_ref = board_cfg.get("dev_clk_ref")
+        if not dev_clk_ref:
+            dev_clk_ref = f"hmc7044 {int(board_cfg.get('dev_clk_channel', 9))}"
+        dev_clk_scales = board_cfg.get("dev_clk_scales")
+
+        ad9084_ctx = {
+            "label": ad9084_spi_label,
+            "cs": converter_cs,
+            "spi_max_hz": int(board_cfg.get("converter_spi_max_hz", 1_000_000)),
+            "gpio_label": gpio_label,
+            "reset_gpio": reset_gpio,
+            "dev_clk_ref": dev_clk_ref,
+            "dev_clk_scales": dev_clk_scales,
+            "firmware_name": firmware_name,
+            "subclass": board_cfg.get("subclass", 0),
+            "side_b_separate_tpl": bool(board_cfg.get("side_b_separate_tpl", True)),
+            "jrx0_physical_lane_mapping": board_cfg.get("jrx0_physical_lane_mapping"),
+            "jtx0_logical_lane_mapping": board_cfg.get("jtx0_logical_lane_mapping"),
+            "jrx1_physical_lane_mapping": board_cfg.get("jrx1_physical_lane_mapping"),
+            "jtx1_logical_lane_mapping": board_cfg.get("jtx1_logical_lane_mapping"),
+            "hsci_label": hsci_label,
+            "hsci_auto_linkup": bool(board_cfg.get("hsci_auto_linkup", False)),
+            "link_ids": " ".join(all_link_ids),
+            "jesd204_inputs": ", ".join(tpl_inputs),
+        }
+        nodes.append(
+            self._wrap_spi_bus(
+                converter_spi, self._render("ad9084.tmpl", ad9084_ctx)
+            )
+        )
 
         return nodes
 

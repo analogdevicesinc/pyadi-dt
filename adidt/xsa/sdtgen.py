@@ -11,6 +11,9 @@ class SdtgenRunner:
     """Invokes sdtgen as a subprocess to generate a base SDT/DTS from an XSA file."""
 
     _CPU_CLUSTER_RE = re.compile(r"(\bcpus_a53\s*:\s*)cpus-a53@0(\s*\{)")
+    _CPU_CLUSTER_MB_RE = re.compile(
+        r"(\bcpus_microblaze_\d+\s*:\s*)cpus_microblaze@\d+(\s*\{)"
+    )
     _IPI_STATUS_RE = re.compile(
         r"(&ipi([3-6])\s*\{.*?\bstatus\s*=\s*\")okay(\";)", re.DOTALL
     )
@@ -156,9 +159,14 @@ class SdtgenRunner:
             if updated != text:
                 self._write_text_allow_readonly(path, updated)
 
+    _CHOSEN_RE = re.compile(
+        r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL
+    )
+
     def _normalize_cpu_and_interrupt_nodes(self, text: str) -> str:
         """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup."""
         normalized = self._CPU_CLUSTER_RE.sub(r"\1cpus\2", text)
+        normalized = self._CPU_CLUSTER_MB_RE.sub(r"\1cpus\2", normalized)
         normalized = normalized.replace("<&imux>", "<&gic_a53>")
         normalized = self._IPI_STATUS_RE.sub(r"\1disabled\3", normalized)
         normalized = self._SDHCI1_RE.sub(self._ensure_sdhci1_props, normalized)
@@ -168,6 +176,7 @@ class SdtgenRunner:
         normalized = self._GEM3_REF_RE.sub(self._ensure_gem3_props, normalized)
         normalized = self._GEM3_ADDR_RE.sub(self._ensure_gem3_props, normalized)
         normalized = self._MEMORY_NODE_RE.sub(self._filter_memory_node, normalized)
+        normalized = self._CHOSEN_RE.sub(self._ensure_earlycon, normalized)
         return normalized
 
     def _ensure_sdhci1_props(self, match: re.Match[str]) -> str:
@@ -188,14 +197,47 @@ class SdtgenRunner:
             updated += "\n\t\tiommus = <&smmu 0x877>;"
         return f"{head}{updated}{tail}"
 
+    _DDR_COMPAT_RE = re.compile(r"xlnx,(?:psu-ddr-1\.0|ddr4-[\d.]+)")
+    _MEM_REG_4CELL_RE = re.compile(
+        r"^(\s*reg\s*=\s*<)0x0\s+(0x[0-9a-fA-F]+)\s+0x0\s+(0x[0-9a-fA-F]+)(>.*)$",
+        re.MULTILINE,
+    )
+
     def _filter_memory_node(self, match: re.Match[str]) -> str:
-        """Remove ``device_type = "memory"`` from non-DDR memory nodes to avoid boot conflicts."""
+        """Fix DDR memory nodes and strip ``device_type`` from non-DDR nodes.
+
+        For DDR nodes (``xlnx,psu-ddr-*`` and ``xlnx,ddr4-*``):
+        - Ensure ``device_type = "memory"`` is present (Linux requires it).
+        - Collapse 4-cell ``reg`` to 2-cell when the high 32 bits are zero
+          (sdtgen sometimes emits 64-bit addresses for 32-bit platforms).
+
+        For all other memory nodes (LMB BRAM, OCM, etc.):
+        - Strip ``device_type = "memory"`` to avoid confusing Linux's memory
+          detection.
+        """
         node = match.group(1)
-        if "xlnx,psu-ddr-1.0" in node:
+        if self._DDR_COMPAT_RE.search(node):
+            # Ensure device_type = "memory" is present
+            if 'device_type = "memory"' not in node:
+                node = re.sub(
+                    r"(compatible\s*=\s*\"[^\"]+\";)",
+                    r'\1\n\t\tdevice_type = "memory";',
+                    node,
+                    count=1,
+                )
+            # Collapse 4-cell reg to 2-cell (strip leading zero cells)
+            node = self._MEM_REG_4CELL_RE.sub(r"\1\2 \3\4", node)
             return node
         return re.sub(
             r"^\s*device_type\s*=\s*\"memory\";\n?", "", node, flags=re.MULTILINE
         )
+
+    def _ensure_earlycon(self, match: re.Match[str]) -> str:
+        """Inject ``bootargs = "earlycon"`` into the chosen node if missing."""
+        head, body, tail = match.groups()
+        if "bootargs" not in body:
+            body += '\n\t\tbootargs = "earlycon";'
+        return f"{head}{body}{tail}"
 
     def _write_text_allow_readonly(self, path: Path, content: str) -> None:
         """Write *content* to *path*, temporarily lifting read-only permissions if needed."""
