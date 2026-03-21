@@ -1,9 +1,11 @@
 """Wrapper for invoking the sdtgen tool to generate a base SDT/DTS from an XSA."""
 
+import os
+import re
+import shlex
+import stat
 import subprocess
 from pathlib import Path
-import re
-import stat
 
 from .exceptions import SdtgenError, SdtgenNotFoundError
 
@@ -33,12 +35,112 @@ class SdtgenRunner:
         re.MULTILINE | re.DOTALL,
     )
 
+    _VITIS_RELEASES = ("2025.1", "2023.2", "2022.2")
+    _VITIS_DEFAULT_BASE_DIRS = (
+        "/opt/Xilinx",
+        "/tools/Xilinx",
+        "/usr/local/Xilinx",
+        "~/Xilinx",
+    )
+    _VITIS_INSTALL_HINTS = ("VITIS_ROOT", "XILINX_VITIS", "XILINX_VIVADO", "XILINX_PATH")
+    _VITIS_TOOL_DIRS = ("Vivado", "Vitis", "Vitis_HLS")
+
     def __init__(self, binary: str = "sdtgen"):
         """Initialize the runner with the sdtgen *binary* name or path."""
         self.binary = binary
         # Instance-level cache avoids cross-test interference
         self._checked: bool = False
         self._use_eval_mode: bool = False
+        self._sourced_vitis_settings: Path | None = None
+
+    def _command_shell(self, command: list[str]) -> str:
+        quoted = " ".join(shlex.quote(part) for part in command)
+        if self._sourced_vitis_settings is None:
+            return quoted
+        return (
+            f"source {shlex.quote(str(self._sourced_vitis_settings))} >/dev/null 2>&1; "
+            f"{quoted}"
+        )
+
+    def _run(self, command: list[str], timeout: int = 10, check: bool = False):
+        """Run *command* directly or through a shell after sourcing Vitis."""
+        if self._sourced_vitis_settings is None:
+            return subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                check=check,
+            )
+        return subprocess.run(
+            ["bash", "-lc", self._command_shell(command)],
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=check,
+        )
+
+    def _find_vitis_settings_script(self) -> Path | None:
+        """Find a Vitis/Vivado settings script to source when sdtgen is missing."""
+        candidate_dirs: list[Path] = []
+        for key in self._VITIS_INSTALL_HINTS:
+            value = os.environ.get(key)
+            if not value:
+                continue
+            for entry in value.split(os.pathsep):
+                if entry:
+                    candidate_dirs.append(Path(entry).expanduser())
+        candidate_dirs.extend(Path(x).expanduser() for x in self._VITIS_DEFAULT_BASE_DIRS)
+
+        unique_dirs: list[Path] = []
+        for release in self._VITIS_RELEASES:
+            for tool_dir in self._VITIS_TOOL_DIRS:
+                candidate_dirs.append(Path(f"/opt/Xilinx/{release}"))
+                candidate_dirs.append(Path(f"/tools/Xilinx/{release}"))
+                candidate_dirs.append(Path(f"/usr/local/Xilinx/{release}"))
+                candidate_dirs.append(Path(f"~/Xilinx/{release}").expanduser())
+                candidate_dirs.append(Path(f"/opt/Xilinx/Vits/{release}"))
+                candidate_dirs.append(Path(f"/tools/Xilinx/Vitis/{release}"))
+                candidate_dirs.append(Path(f"/usr/local/Xilinx/Vitis/{release}"))
+                candidate_dirs.append(Path(f"~/Xilinx/{release}").expanduser())
+        for directory in candidate_dirs:
+            try:
+                resolved = directory.resolve()
+            except OSError:
+                continue
+            if resolved not in unique_dirs:
+                unique_dirs.append(resolved)
+
+        candidates: set[Path] = set()
+        for base in unique_dirs:
+            if not base.is_dir():
+                continue
+            direct = base / "settings64.sh"
+            if direct.is_file():
+                candidates.add(direct)
+
+            for tool_dir in self._VITIS_TOOL_DIRS:
+                parent = base / tool_dir
+                if not parent.is_dir():
+                    continue
+                for version_dir in sorted(parent.iterdir(), reverse=True):
+                    if not version_dir.is_dir():
+                        continue
+                    script = version_dir / "settings64.sh"
+                    if script.is_file():
+                        candidates.add(script)
+
+            legacy = base / "settings.sh"
+            if legacy.is_file():
+                candidates.add(legacy)
+
+        if not candidates:
+            return None
+        return sorted(
+            (path for path in candidates if path.is_file()),
+            key=lambda path: (path.stat().st_mtime, path.as_posix()),
+            reverse=True,
+        )[0]
 
     def _check_binary(self) -> None:
         """Confirm the sdtgen binary exists and is reachable.
@@ -53,15 +155,18 @@ class SdtgenRunner:
         result = None
         for help_opt in ("--help", "-help"):
             try:
-                result = subprocess.run(
-                    [self.binary, help_opt],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                    check=False,
-                )
+                result = self._run([self.binary, help_opt], timeout=10, check=False)
             except FileNotFoundError:
-                raise SdtgenNotFoundError()
+                if self._sourced_vitis_settings is None:
+                    self._sourced_vitis_settings = self._find_vitis_settings_script()
+                    if self._sourced_vitis_settings is None:
+                        raise SdtgenNotFoundError()
+                    try:
+                        result = self._run([self.binary, help_opt], timeout=10, check=False)
+                    except FileNotFoundError:
+                        raise SdtgenNotFoundError()
+                else:
+                    raise
             except subprocess.TimeoutExpired:
                 raise SdtgenError(f"sdtgen {help_opt} timed out after 10s")
             # Prefer the first successful probe but allow fallback to -help for
@@ -86,13 +191,7 @@ class SdtgenRunner:
         self._check_binary()
         cmd = self._build_cmd(xsa_path, output_dir, use_eval=self._use_eval_mode)
         try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-                check=False,
-            )
+            result = self._run(cmd, timeout=timeout, check=False)
         except FileNotFoundError:
             raise SdtgenNotFoundError()
         except subprocess.TimeoutExpired:
@@ -107,13 +206,7 @@ class SdtgenRunner:
             self._use_eval_mode = True
             cmd = self._build_cmd(xsa_path, output_dir, use_eval=True)
             try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                    check=False,
-                )
+                result = self._run(cmd, timeout=timeout, check=False)
             except subprocess.TimeoutExpired:
                 raise SdtgenError(f"sdtgen timed out after {timeout}s")
 

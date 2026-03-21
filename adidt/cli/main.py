@@ -797,7 +797,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     interactive HTML visualization report.
 
     \b
-    Requires sdtgen (lopper) on PATH.
+    Requires sdtgen (lopper); if it is not on PATH, the runner will try
+    to discover and source a local Vitis/Vivado settings script.
     Install from: https://github.com/devicetree-org/lopper
 
     \b

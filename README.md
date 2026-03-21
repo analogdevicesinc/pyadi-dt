@@ -289,6 +289,16 @@ venv/bin/pytest -q
 python3 -m pip wheel . --no-deps
 ```
 
+## Binding Discovery and Audit Scripts
+
+Use the new scripts in `scripts/` to track ADI-compatible Linux bindings and
+catch new compatibles not yet represented in pyadi-dt templates/components:
+
+```bash
+python scripts/collect_adi_bindings.py --linux-path /path/to/linux --output scripts/adi_bindings.json
+python scripts/audit_adi_bindings.py --linux-path /path/to/linux --output scripts/adi_binding_audit.json
+```
+
 ## Building Documentation
 
 Documentation is built using Sphinx with the ADI cosmic theme.
