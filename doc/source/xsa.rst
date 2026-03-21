@@ -92,11 +92,21 @@ generator). Install the optional dependency group:
 Usage
 -----
 
+Start with the step-by-step tutorial before tuning profiles:
+
+.. code-block:: bash
+
+   python examples/xsa/adrv9009_zcu102.py --xsa /path/to/design.xsa
+
+or use the full-page tutorial at
+:doc:`examples/xsa_tutorial` and the adijif-focused guide
+:doc:`examples/xsa_adijif_tutorial`.
+
 Run the pipeline from the CLI:
 
 .. code-block:: bash
 
-   adidtc xsa2dt design.xsa config.json --output-dir out/
+   adidtc xsa2dt -x design.xsa -c config.json -o out/
 
 Select an explicit board profile (optional):
 

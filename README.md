@@ -219,6 +219,20 @@ Primary reference:
 Detailed API docs, parameter tables, and full adijif mapping are documented in:
 - `doc/source/xsa.rst` (section: **Python API** and **Using adijif (pyadi-jif) With the XSA Flow**)
 
+### XSA Tutorials
+
+For first-time setup and a practical command-line walkthrough:
+
+- `doc/source/examples/xsa_tutorial.md`
+- `doc/source/examples/xsa_adijif_tutorial.md`
+- `doc/source/xsa.rst` (API usage + reference behavior)
+
+Quick start:
+
+```bash
+adidtc xsa2dt -x /path/to/design.xsa -c cfg.json -o out/
+```
+
 ### FMCDAQ2 + ZC706 Example
 
 Use the new example script to generate DTS output from an FMCDAQ2 ZC706 XSA:
