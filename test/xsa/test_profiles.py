@@ -6,6 +6,7 @@ from adidt.xsa.profiles import ProfileManager, merge_profile_defaults
 
 def test_profile_manager_lists_builtin_profiles():
     names = ProfileManager().list_profiles()
+    assert "ad9084_vcu118" in names
     assert "ad9081_zcu102" in names
     assert "ad9081_zc706" in names
     assert "ad9082_zcu102" in names
@@ -34,6 +35,19 @@ def test_profile_manager_loads_ad9081_profile():
     assert profile["defaults"]["ad9081_board"]["clock_cs"] == 0
     assert profile["defaults"]["ad9081_board"]["adc_spi"] == "spi0"
     assert profile["defaults"]["ad9081_board"]["adc_cs"] == 0
+
+
+def test_profile_manager_loads_ad9084_vcu118_profile():
+    profile = ProfileManager().load("ad9084_vcu118")
+    assert profile["name"] == "ad9084_vcu118"
+    assert profile["defaults"]["clock"]["rx_device_clk_label"] == "hmc7044"
+    assert profile["defaults"]["clock"]["rx_device_clk_index"] == 8
+    assert profile["defaults"]["clock"]["tx_device_clk_index"] == 9
+    assert profile["defaults"]["ad9084_board"]["hmc7044_cs"] == 1
+    assert profile["defaults"]["ad9084_board"]["adf4382_cs"] == 0
+    assert profile["defaults"]["ad9084_board"]["dev_clk_ref"] == "adf4382 0"
+    assert profile["defaults"]["ad9084_board"]["hsci_label"] == "axi_hsci_0"
+    assert profile["defaults"]["ad9084_board"]["rx_a_link_id"] == 4
 
 
 def test_profile_manager_loads_ad9081_zc706_profile():

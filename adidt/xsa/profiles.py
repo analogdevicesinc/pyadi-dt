@@ -38,6 +38,57 @@ _ADRV9009_BOARD_ALLOWED_KEYS = {
     "trx_profile_props",
     "ad9528_channel_blocks",
 }
+_AD9084_BOARD_ALLOWED_KEYS = {
+    "converter_spi",
+    "converter_cs",
+    "clock_spi",
+    "hmc7044_cs",
+    "vcxo_hz",
+    "pll2_output_hz",
+    "fpga_refclk_channel",
+    "firmware_name",
+    "reset_gpio",
+    "rx_sys_clk_select",
+    "tx_sys_clk_select",
+    "rx_out_clk_select",
+    "tx_out_clk_select",
+    "rx_a_link_id",
+    "rx_b_link_id",
+    "tx_a_link_id",
+    "tx_b_link_id",
+    "hmc7044_channel_blocks",
+    "hmc7044_channels",
+    "hmc7044_spi_max_hz",
+    "pll1_clkin_frequencies",
+    "jesd204_max_sysref_hz",
+    "pll1_loop_bandwidth_hz",
+    "pll1_ref_prio_ctrl",
+    "pll1_ref_autorevert",
+    "pll1_charge_pump_ua",
+    "pfd1_max_freq_hz",
+    "sysref_timer_divider",
+    "pulse_generator_mode",
+    "clkin0_buffer_mode",
+    "clkin1_buffer_mode",
+    "oscin_buffer_mode",
+    "gpi_controls",
+    "gpo_controls",
+    "adf4382_cs",
+    "dev_clk_source",
+    "dev_clk_ref",
+    "dev_clk_scales",
+    "dev_clk_channel",
+    "converter_spi_max_hz",
+    "subclass",
+    "side_b_separate_tpl",
+    "jrx0_physical_lane_mapping",
+    "jtx0_logical_lane_mapping",
+    "jrx1_physical_lane_mapping",
+    "jtx1_logical_lane_mapping",
+    "hsci_label",
+    "hsci_speed_mhz",
+    "hsci_auto_linkup",
+}
 _FMCDAQ2_BOARD_ALLOWED_KEYS = {
     "spi_bus",
     "clock_cs",
@@ -76,6 +127,10 @@ _FMCDAQ2_BOARD_ALLOWED_KEYS = {
 }
 _LIST_ONLY_KEYS = {
     "hmc7044_channel_blocks",
+    "hmc7044_channels",
+    "pll1_clkin_frequencies",
+    "gpi_controls",
+    "gpo_controls",
     "trx_profile_props",
     "ad9528_channel_blocks",
 }
@@ -105,7 +160,52 @@ _ADRV9009_BOARD_INT_KEYS = {
     "tx_octets_per_frame",
     "rx_os_octets_per_frame",
 }
+_AD9084_BOARD_INT_KEYS = {
+    "converter_cs",
+    "hmc7044_cs",
+    "vcxo_hz",
+    "pll2_output_hz",
+    "fpga_refclk_channel",
+    "reset_gpio",
+    "rx_sys_clk_select",
+    "tx_sys_clk_select",
+    "rx_out_clk_select",
+    "tx_out_clk_select",
+    "rx_a_link_id",
+    "rx_b_link_id",
+    "tx_a_link_id",
+    "tx_b_link_id",
+    "hmc7044_spi_max_hz",
+    "jesd204_max_sysref_hz",
+    "pll1_loop_bandwidth_hz",
+    "pll1_charge_pump_ua",
+    "pfd1_max_freq_hz",
+    "sysref_timer_divider",
+    "pulse_generator_mode",
+    "adf4382_cs",
+    "dev_clk_channel",
+    "converter_spi_max_hz",
+    "subclass",
+    "hsci_speed_mhz",
+}
 _ADRV9009_BOARD_STR_KEYS = {"spi_bus"}
+_AD9084_BOARD_STR_KEYS = {
+    "converter_spi",
+    "clock_spi",
+    "firmware_name",
+    "pll1_ref_prio_ctrl",
+    "clkin0_buffer_mode",
+    "clkin1_buffer_mode",
+    "oscin_buffer_mode",
+    "dev_clk_source",
+    "dev_clk_ref",
+    "dev_clk_scales",
+    "jrx0_physical_lane_mapping",
+    "jtx0_logical_lane_mapping",
+    "jrx1_physical_lane_mapping",
+    "jtx1_logical_lane_mapping",
+    "hsci_label",
+}
 _FMCDAQ2_BOARD_INT_KEYS = {
     "clock_cs",
     "adc_cs",
@@ -223,6 +323,20 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
             adrv9009_board,
             _ADRV9009_BOARD_INT_KEYS,
             _ADRV9009_BOARD_STR_KEYS,
+        )
+
+    ad9084_board = defaults.get("ad9084_board")
+    if ad9084_board is not None:
+        if not isinstance(ad9084_board, dict):
+            raise ProfileError("invalid profile defaults.ad9084_board: expected object")
+        _validate_board_defaults(
+            "ad9084_board", ad9084_board, _AD9084_BOARD_ALLOWED_KEYS
+        )
+        _validate_typed_keys(
+            "ad9084_board",
+            ad9084_board,
+            _AD9084_BOARD_INT_KEYS,
+            _AD9084_BOARD_STR_KEYS,
         )
 
     fmcdaq2_board = defaults.get("fmcdaq2_board")

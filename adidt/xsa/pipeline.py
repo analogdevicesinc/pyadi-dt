@@ -15,6 +15,7 @@ from .profiles import ProfileManager, merge_profile_defaults
 from .reference import ReferenceManifestExtractor
 from .parity import check_manifest_against_dts, write_parity_reports
 from .exceptions import ParityError
+from .board_fixups import apply_board_fixups
 
 
 class XsaPipeline:
@@ -75,7 +76,6 @@ class XsaPipeline:
         base_dir.mkdir(exist_ok=True)
 
         base_dts_path = SdtgenRunner().run(xsa_path, base_dir, timeout=sdtgen_timeout)
-        base_dts = base_dts_path.read_text()
 
         topology = XsaParser().parse(xsa_path)
         inferred_name = self._derive_name(topology)
@@ -89,6 +89,13 @@ class XsaPipeline:
             cfg_merged = self._apply_profile_jesd_defaults(
                 cfg, cfg_merged, selected_profile
             )
+
+        # Apply board-level fixups to the sdtgen base DTS before merging.
+        # These correct board-specific issues (PHY config, node naming) that
+        # sdtgen cannot derive from the XSA alone.
+        apply_board_fixups(selected_profile, base_dir)
+
+        base_dts = base_dts_path.read_text()
         nodes = NodeBuilder().build(topology, cfg_merged)
         _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
 

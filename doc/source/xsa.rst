@@ -359,6 +359,11 @@ XCVR, DMA, and TPL cores per link.  The board builder generates nodes for:
   device_clk, lane_clk) and per-link device clock from HMC7044 channels
 - **AD9084** converter node with profile firmware, lane mappings, and HSCI
 
+The built-in ``ad9084_vcu118`` profile encodes the AD9084-EBZ board wiring
+for the HMC7044 + AD9084 + ADF4382 combination. When the pipeline sees an
+AD9084 design on VCU118 it now auto-applies those defaults unless the caller
+overrides them explicitly.
+
 Configuration uses the ``ad9084_board`` key with JESD204 link IDs from
 ``dt-bindings/iio/adc/adi,ad9088.h``:
 

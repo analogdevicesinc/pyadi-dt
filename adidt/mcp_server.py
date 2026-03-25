@@ -18,8 +18,11 @@ def generate_devicetree(
     output_dir: str,
     config_json: str = "{}",
     profile: Optional[str] = None,
-    emit_report: bool = False,
-    emit_clock_graphs: bool = False,
+    emit_report: bool = True,
+    emit_clock_graphs: bool = True,
+    sdtgen_timeout: int = 300,
+    reference_dts: Optional[str] = None,
+    strict_parity: bool = False,
 ) -> Dict[str, Any]:
     """Generate a devicetree from a Vivado XSA archive.
 
@@ -29,9 +32,22 @@ def generate_devicetree(
         xsa_path: Path to the Vivado .xsa archive.
         output_dir: Directory where output files are written.
         config_json: JSON string with configuration (clock, JESD, datapath settings).
-        profile: Optional built-in profile name (e.g. "ad9081_zcu102").
-        emit_report: When True, generate an HTML topology report.
+            For AD9084-EBZ on VCU118, prefer `profile="ad9084_vcu118"` so the
+            MCP path applies the board-specific HMC7044 + AD9084 + ADF4382 defaults.
+            Low-level AD9084 overrides can still be passed via `ad9084_board`.
+            JESD framing parameters (F/K/M/L/Np/S) are not in the profile and must
+            be supplied here (typically from pyadi-jif solve_system output).
+        profile: Optional built-in profile name (e.g. "ad9081_zcu102",
+            "ad9084_vcu118").
+        emit_report: When True, generate an HTML topology report. Defaults to True.
         emit_clock_graphs: When True, generate DOT/D2 clock-tree diagrams.
+            Defaults to True.
+        sdtgen_timeout: Maximum seconds to wait for sdtgen to finish generating
+            the base DTS. Default 300 s — adequate for AD9084+VCU118 XSA processing.
+        reference_dts: Optional path to a reference DTS for parity checking. When
+            provided, "map" and "coverage" keys are added to the result.
+        strict_parity: When True and reference_dts is provided, raise an error if
+            the merged DTS is missing required roles, links, or properties.
 
     Returns:
         Dict with paths to generated artifacts (overlay, merged, report, clock_dot, etc.)
@@ -47,6 +63,7 @@ def generate_devicetree(
         return {"error": f"Invalid config_json: {e}"}
 
     out = Path(output_dir)
+    ref = Path(reference_dts) if reference_dts else None
 
     try:
         pipeline = XsaPipeline()
@@ -57,9 +74,23 @@ def generate_devicetree(
             profile=profile,
             emit_report=emit_report,
             emit_clock_graphs=emit_clock_graphs,
+            sdtgen_timeout=sdtgen_timeout,
+            reference_dts=ref,
+            strict_parity=strict_parity,
         )
-        # Convert Path values to strings for JSON serialization
-        return {k: str(v) for k, v in result.items()}
+        serialized = {k: str(v) for k, v in result.items()}
+
+        merged_path = result.get("merged")
+        if merged_path is not None:
+            serialized["dts_path"] = str(merged_path)
+
+        base_dir = result.get("base_dir")
+        if base_dir is not None:
+            pl_dtsi = Path(base_dir) / "pl.dtsi"
+            if pl_dtsi.exists():
+                serialized["pl_dtsi_path"] = str(pl_dtsi)
+
+        return serialized
     except Exception as e:
         return {"error": f"Pipeline failed: {e}"}
 

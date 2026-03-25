@@ -12,6 +12,7 @@ from adidt.xsa.topology import (
     XsaTopology,
 )
 from adidt.xsa.node_builder import NodeBuilder
+from adidt.xsa.profiles import ProfileManager, merge_profile_defaults
 
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
 
@@ -174,6 +175,86 @@ def test_build_converter_fallback_template(cfg):
     )
     nodes = NodeBuilder().build(topo_unknown, cfg)
     assert "no template for axi_unknown_chip" in nodes["converters"][0]
+
+
+def test_build_ad9084_vcu118_uses_ebz_defaults():
+    topo_ad9084 = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_apollo_rx_jesd_rx_axi",
+                base_addr=0x44A10000,
+                num_lanes=8,
+                irq=54,
+                link_clk="unused_rx_clk",
+                direction="rx",
+            ),
+            Jesd204Instance(
+                name="axi_apollo_rx_b_jesd_rx_axi",
+                base_addr=0x44A20000,
+                num_lanes=8,
+                irq=55,
+                link_clk="unused_rx_b_clk",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_apollo_tx_jesd_tx_axi",
+                base_addr=0x44B10000,
+                num_lanes=8,
+                irq=56,
+                link_clk="unused_tx_clk",
+                direction="tx",
+            ),
+            Jesd204Instance(
+                name="axi_apollo_tx_b_jesd_tx_axi",
+                base_addr=0x44B20000,
+                num_lanes=8,
+                irq=57,
+                link_clk="unused_tx_b_clk",
+                direction="tx",
+            ),
+        ],
+        clkgens=[
+            ClkgenInstance(
+                name="axi_hsci_clkgen",
+                base_addr=0x43C00000,
+                output_clks=["hsci_clk"],
+            )
+        ],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9084_0",
+                ip_type="axi_ad9084",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            )
+        ],
+        fpga_part="xcvu9p-flga2104-2l-e",
+    )
+    cfg = merge_profile_defaults(
+        {"jesd": {"rx": {"F": 6, "K": 32}, "tx": {"F": 6, "K": 32}}},
+        ProfileManager().load("ad9084_vcu118"),
+    )
+
+    nodes = NodeBuilder().build(topo_ad9084, cfg)
+    merged = "\n".join(nodes["converters"])
+
+    assert "reg = <1>;" in merged
+    assert 'adi,device-profile-fw-name = "204C_M4_L8_NP16_1p25_4x4.bin";' in merged
+    assert "reset-gpios = <&axi_gpio 62 0>;" in merged
+    assert "adi,axi-hsci-connected = <&axi_hsci_0>;" in merged
+    assert "adi,hsci-auto-linkup-mode-en;" in merged
+    assert "jesd204-link-ids = <4 6 0 2>;" in merged
+    assert "clocks = <&adf4382 0>;" in merged
+    assert "<&hmc7044 8>" in merged
+    assert "<&hmc7044 9>" in merged
+    assert "<&hmc7044 11>" in merged
+    assert "<&hmc7044 12>" in merged
+    assert "adi,pulse-generator-mode = <7>;" in merged
+    assert "adi,oscin-buffer-mode = <0x05>;" in merged
+    assert "adi,jrx0-physical-lane-mapping = <10 8 9 11 5 1 3 7 4 6 2 0>;" in merged
 
 
 def test_build_adrv9009_includes_top_device_link_ids(cfg):

@@ -1,6 +1,7 @@
 # adidt/xsa/node_builder.py
 """Build ADI device-driver DTS overlay nodes from an XSA topology and config."""
 
+from copy import deepcopy
 import os
 import warnings
 from dataclasses import dataclass
@@ -151,6 +152,68 @@ class NodeBuilder:
         # (M, L): (rx_link_mode, tx_link_mode)
         (8, 4): (17, 18),
         (4, 8): (10, 11),
+    }
+    _AD9084_EBZ_VCU118_CLOCK_DEFAULTS: dict[str, Any] = {
+        "rx_device_clk_label": "hmc7044",
+        "rx_device_clk_index": 8,
+        "tx_device_clk_label": "hmc7044",
+        "tx_device_clk_index": 9,
+        "rx_b_device_clk_index": 11,
+        "tx_b_device_clk_index": 12,
+    }
+    _AD9084_EBZ_VCU118_BOARD_DEFAULTS: dict[str, Any] = {
+        "converter_spi": "axi_spi_2",
+        "converter_cs": 0,
+        "clock_spi": "axi_spi",
+        "hmc7044_cs": 1,
+        "pll1_clkin_frequencies": [
+            125_000_000,
+            125_000_000,
+            125_000_000,
+            125_000_000,
+        ],
+        "vcxo_hz": 125_000_000,
+        "pll2_output_hz": 2_500_000_000,
+        "fpga_refclk_channel": 10,
+        "dev_clk_source": "adf4382",
+        "dev_clk_ref": "adf4382 0",
+        "dev_clk_scales": "1 10",
+        "adf4382_cs": 0,
+        "rx_sys_clk_select": 3,
+        "tx_sys_clk_select": 3,
+        "rx_out_clk_select": 4,
+        "tx_out_clk_select": 4,
+        "rx_a_link_id": 4,
+        "rx_b_link_id": 6,
+        "tx_a_link_id": 0,
+        "tx_b_link_id": 2,
+        "firmware_name": "204C_M4_L8_NP16_1p25_4x4.bin",
+        "reset_gpio": 62,
+        "subclass": 0,
+        "side_b_separate_tpl": True,
+        "jrx0_physical_lane_mapping": "10 8 9 11 5 1 3 7 4 6 2 0",
+        "jtx0_logical_lane_mapping": "11 2 3 5 10 1 9 0 6 7 8 4",
+        "jrx1_physical_lane_mapping": "4 6 2 0 1 7 10 3 5 8 9 11",
+        "jtx1_logical_lane_mapping": "3 9 5 4 2 6 1 7 8 11 0 10",
+        "pulse_generator_mode": 7,
+        "oscin_buffer_mode": "0x05",
+        "hsci_label": "axi_hsci_0",
+        "hsci_auto_linkup": True,
+        "hmc7044_channels": [
+            {"id": 1, "name": "ADF4030_REFIN", "divider": 20, "driver_mode": 2},
+            {
+                "id": 3,
+                "name": "ADF4030_BSYNC0",
+                "divider": 512,
+                "driver_mode": 1,
+                "is_sysref": True,
+            },
+            {"id": 8, "name": "CORE_CLK_TX", "divider": 8, "driver_mode": 2},
+            {"id": 9, "name": "CORE_CLK_RX", "divider": 8, "driver_mode": 2},
+            {"id": 10, "name": "FPGA_REFCLK", "divider": 8, "driver_mode": 2},
+            {"id": 11, "name": "CORE_CLK_RX_B", "divider": 8, "driver_mode": 2},
+            {"id": 12, "name": "CORE_CLK_TX_B", "divider": 8, "driver_mode": 2},
+        ],
     }
     _ADRV90XX_KEYWORDS = ("adrv9009", "adrv9025", "adrv9026")
 
@@ -2399,8 +2462,13 @@ class NodeBuilder:
         rx_k = int(rx_cfg.get("K", 32))
         tx_f = int(tx_cfg.get("F", 6))
         tx_k = int(tx_cfg.get("K", 32))
-        clock_cfg = cfg.get("clock", {})
-        board_cfg = cfg.get("ad9084_board", {})
+        clock_cfg = deepcopy(cfg.get("clock", {}))
+        board_cfg = deepcopy(cfg.get("ad9084_board", {}))
+        if topology.inferred_platform() == "vcu118":
+            for key, value in self._AD9084_EBZ_VCU118_CLOCK_DEFAULTS.items():
+                clock_cfg.setdefault(key, deepcopy(value))
+            for key, value in self._AD9084_EBZ_VCU118_BOARD_DEFAULTS.items():
+                board_cfg.setdefault(key, deepcopy(value))
 
         # Per-link device_clk from clock config
         rx_dev_clk_label = str(clock_cfg.get("rx_device_clk_label", "axi_hsci_clkgen"))
@@ -2719,6 +2787,9 @@ class NodeBuilder:
         # --- ADF4382 PLL SPI node (provides dev_clk to AD9084) ---
         adf4382_cs = board_cfg.get("adf4382_cs")
         if adf4382_cs is not None:
+            adf4382_freq = int(
+                clock_cfg.get("adf4382_output_frequency", 20_000_000_000)
+            )
             adf4382_node = (
                 "\t\tadf4382: adf4382@{cs} {{\n"
                 "\t\t\t#clock-cells = <1>;\n"
@@ -2726,13 +2797,14 @@ class NodeBuilder:
                 "\t\t\treg = <{cs}>;\n"
                 "\t\t\tspi-max-frequency = <1000000>;\n"
                 "\t\t\tadi,spi-3wire-enable;\n"
-                "\t\t\tclocks = <&clkin_125>;\n"
+                "\t\t\tclocks = <&hmc7044 1>;\n"
                 '\t\t\tclock-names = "ref_clk";\n'
                 '\t\t\tclock-output-names = "adf4382_out_clk";\n'
+                "\t\t\tadi,power-up-frequency = /bits/ 64 <{freq}>;\n"
                 '\t\t\tlabel = "adf4382";\n'
                 "\t\t\t#io-channel-cells = <1>;\n"
                 "\t\t}};\n"
-            ).format(cs=int(adf4382_cs))
+            ).format(cs=int(adf4382_cs), freq=adf4382_freq)
             # Fixed 125MHz reference clock for ADF4382/HMC7044.
             # Inline as a bus-level node so it lands inside &amba_pl.
             nodes.append(
@@ -2748,7 +2820,7 @@ class NodeBuilder:
         hmc7044_spi_children = self._render("hmc7044.tmpl", hmc7044_ctx)
         if adf4382_cs is not None:
             nodes.append(
-                self._wrap_spi_bus(clock_spi, adf4382_node + hmc7044_spi_children)
+                self._wrap_spi_bus(clock_spi, hmc7044_spi_children + adf4382_node)
             )
         else:
             nodes.append(self._wrap_spi_bus(clock_spi, hmc7044_spi_children))
