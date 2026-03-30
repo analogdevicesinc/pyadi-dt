@@ -10,6 +10,13 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
+from .builders import BoardBuilder
+from .builders.ad9081 import AD9081Builder
+from .builders.ad9084 import AD9084Builder
+from .builders.ad9172 import AD9172Builder
+from .builders.adrv9009 import ADRV9009Builder
+from .builders.fmcdaq2 import FMCDAQ2Builder
+from .builders.fmcdaq3 import FMCDAQ3Builder
 from .pipeline_config import PipelineConfig
 from .topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
 
@@ -149,6 +156,15 @@ class _AD9172Cfg:
 class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
+    _DEFAULT_BUILDERS: list[BoardBuilder] = [
+        ADRV9009Builder(),
+        AD9081Builder(),
+        AD9084Builder(),
+        FMCDAQ2Builder(),
+        FMCDAQ3Builder(),
+        AD9172Builder(),
+    ]
+
     _AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
         # (M, L): (rx_link_mode, tx_link_mode)
         (8, 4): (17, 18),
@@ -256,42 +272,56 @@ class NodeBuilder:
             "jesd204_tx": [],
             "converters": [],
         }
-        is_adrv9009_design = any(
-            c.ip_type in {"axi_adrv9009", "axi_adrv9025", "axi_adrv9026"}
-            or self._is_adrv90xx_name(c.name)
-            for c in topology.converters
+
+        # Determine which builders match this topology + config.
+        matched_builders: list[BoardBuilder] = [
+            b for b in self._DEFAULT_BUILDERS if b.matches(topology, cfg)
+        ]
+        # Aggregate skip info from matched builders.
+        skip_generic_jesd = any(b.skips_generic_jesd() for b in matched_builders)
+        skip_ip_types: set[str] = set()
+        for b in matched_builders:
+            skip_ip_types.update(b.skip_ip_types())
+
+        # Helper: should this JESD/clkgen instance be skipped by generic rendering?
+        def _skip_instance(name: str) -> bool:
+            if not skip_generic_jesd:
+                return False
+            lower = name.lower()
+            # ADRV9009 builder skips its own named instances
+            if self._is_adrv90xx_name(name):
+                return True
+            # AD9081 builder skips mxfe-named instances
+            if "mxfe" in lower and "axi_ad9081" in skip_ip_types:
+                return True
+            # AD9084, FMCDAQ2, FMCDAQ3 skip all generic JESD rendering
+            if "axi_ad9084" in skip_ip_types:
+                return True
+            if {"axi_ad9680", "axi_ad9144"}.issubset(skip_ip_types):
+                return True
+            if {"axi_ad9680", "axi_ad9152"}.issubset(skip_ip_types):
+                return True
+            return False
+
+        # Also check for AD9172 TX skip (skips generic TX but not RX).
+        is_ad9172_matched = any(
+            isinstance(b, AD9172Builder) for b in matched_builders
         )
-        is_adrv9009_design = is_adrv9009_design or any(
-            self._is_adrv90xx_name(j.name)
-            for j in topology.jesd204_rx + topology.jesd204_tx
-        )
-        is_ad9081_mxfe_design = any(
-            c.ip_type == "axi_ad9081" for c in topology.converters
-        ) and any(
-            "mxfe" in j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
-        )
-        is_ad9084_design = any(c.ip_type == "axi_ad9084" for c in topology.converters)
-        is_fmcdaq2_design = topology.is_fmcdaq2_design()
-        is_fmcdaq3_design = topology.is_fmcdaq3_design()
-        is_ad9172_design = self._is_ad9172_design(topology) or ("ad9172_board" in cfg)
+
         rx_labels: list[str] = []
         tx_labels: list[str] = []
 
         for clkgen in topology.clkgens:
-            if is_adrv9009_design and self._is_adrv90xx_name(clkgen.name):
+            if self._is_adrv90xx_name(clkgen.name) and any(
+                isinstance(b, ADRV9009Builder) for b in matched_builders
+            ):
                 continue
             result["clkgens"].append(
                 self._render_clkgen(clkgen, ps_clk_label, ps_clk_index)
             )
 
         for inst in topology.jesd204_rx:
-            if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
-                continue
-            if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
-                continue
-            if is_ad9084_design:
-                continue
-            if is_fmcdaq2_design or is_fmcdaq3_design:
+            if _skip_instance(inst.name):
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "rx", ps_clk_label, ps_clk_index
@@ -315,13 +345,9 @@ class NodeBuilder:
             rx_labels.append(inst.name.replace("-", "_"))
 
         for inst in topology.jesd204_tx:
-            if is_adrv9009_design and self._is_adrv90xx_name(inst.name):
+            if _skip_instance(inst.name):
                 continue
-            if is_ad9081_mxfe_design and "mxfe" in inst.name.lower():
-                continue
-            if is_ad9084_design:
-                continue
-            if is_fmcdaq2_design or is_fmcdaq3_design or is_ad9172_design:
+            if is_ad9172_matched:
                 continue
             clkgen_label, device_clk_label, device_clk_index = self._resolve_clock(
                 inst, clock_map, cfg, "tx", ps_clk_label, ps_clk_index
@@ -345,15 +371,7 @@ class NodeBuilder:
             tx_labels.append(inst.name.replace("-", "_"))
 
         for conv in topology.converters:
-            if is_ad9081_mxfe_design and conv.ip_type == "axi_ad9081":
-                continue
-            if is_ad9084_design and conv.ip_type == "axi_ad9084":
-                continue
-            if is_fmcdaq2_design and conv.ip_type in {"axi_ad9680", "axi_ad9144"}:
-                continue
-            if is_fmcdaq3_design and conv.ip_type in {"axi_ad9680", "axi_ad9152"}:
-                continue
-            if is_ad9172_design and conv.ip_type in {"axi_ad9162"}:
+            if conv.ip_type in skip_ip_types:
                 continue
             rx_label = rx_labels[0] if rx_labels else "jesd_rx"
             tx_label = tx_labels[0] if tx_labels else "jesd_tx"
@@ -361,26 +379,13 @@ class NodeBuilder:
                 self._render_converter(conv, rx_label, tx_label)
             )
 
-        result["converters"].extend(
-            self._build_ad9081_nodes(
-                topology, cfg, ps_clk_label, ps_clk_index, gpio_label
+        # Dispatch to matched builders for board-specific node generation.
+        for builder in matched_builders:
+            result["converters"].extend(
+                builder.build_nodes(
+                    self, topology, cfg, ps_clk_label, ps_clk_index, gpio_label
+                )
             )
-        )
-        result["converters"].extend(
-            self._build_ad9084_nodes(
-                topology, cfg, ps_clk_label, ps_clk_index, gpio_label
-            )
-        )
-        result["converters"].extend(self._build_adrv9009_nodes(topology, cfg))
-        result["converters"].extend(
-            self._build_fmcdaq2_nodes(topology, cfg, ps_clk_label, ps_clk_index)
-        )
-        result["converters"].extend(
-            self._build_fmcdaq3_nodes(topology, cfg, ps_clk_label, ps_clk_index)
-        )
-        result["converters"].extend(
-            self._build_ad9172_nodes(topology, cfg, ps_clk_label, ps_clk_index)
-        )
 
         return result
 
