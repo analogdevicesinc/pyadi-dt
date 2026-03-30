@@ -32,7 +32,7 @@ Pipeline diagram
 .. mermaid::
 
    flowchart LR
-       XSA["Vivado .xsa"] --> SDT["sdtgen/lopper<br/>base DTS artifacts"]
+       XSA["Vivado .xsa"] --> SDT["sdtgen / lopper<br/>base DTS artifacts"]
        XSA --> HWH["HWH parser<br/>ADI IP topology"]
        CFG["pyadi-jif / JSON config<br/>JESD + clock settings"] --> NB["NodeBuilder<br/>ADI DTS nodes"]
        HWH --> NB
@@ -40,12 +40,27 @@ Pipeline diagram
        NB --> MG
        MG --> DTBO["overlay .dtso"]
        MG --> DTS["merged .dts"]
-       DTS --> DTC["dtc/cpp"]
+       DTS --> DTC["dtc / cpp"]
        DTC --> DTB["system.dtb"]
        NB --> REP["HTML report<br/>topology + clocks + JESD"]
        DTS --> CG["ClockGraphGenerator<br/>clock-tree diagrams"]
        CG --> DOTF[".dot + .dot.svg"]
        CG --> D2F[".d2 + .d2.svg"]
+
+       style XSA fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style CFG fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style SDT fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style HWH fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style NB fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style MG fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style DTC fill:#f0f4f8,stroke:#555,color:#212836
+       style DTBO fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style DTS fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style DTB fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style REP fill:#fff4e0,stroke:#c8940a,color:#212836
+       style CG fill:#fff4e0,stroke:#c8940a,color:#212836
+       style DOTF fill:#fff4e0,stroke:#c8940a,color:#212836
+       style D2F fill:#fff4e0,stroke:#c8940a,color:#212836
 
 
 Hardware test flow with ``pyadi-build``
@@ -58,7 +73,7 @@ The hardware tests can optionally build and inject a kernel image with
 
    flowchart TD
        KREL["Kuiper release BOOT.BIN"] --> DEPLOY["KuiperDLDriver deploy"]
-       XSA2["XSA from examples or Kuiper project"] --> PIPE["XsaPipeline.run()"]
+       XSA2["XSA from examples<br/>or Kuiper project"] --> PIPE["XsaPipeline.run()"]
        CFG2["board config<br/>(JSON or adijif-derived)"] --> PIPE
        PIPE --> MDTS["merged DTS"]
        MDTS --> COMPILE["cpp + dtc"]
@@ -70,6 +85,20 @@ The hardware tests can optionally build and inject a kernel image with
        SKIP --> DEPLOY
        DEPLOY --> BOOT["boot target via labgrid"]
        BOOT --> CHECK["run checks on DUT shell<br/>dmesg + jesd_status + IIO devices"]
+
+       style XSA2 fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style CFG2 fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style KREL fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style PIPE fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style MDTS fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style COMPILE fill:#f0f4f8,stroke:#555,color:#212836
+       style MDTB fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style PYB fill:#fff4e0,stroke:#c8940a,color:#212836
+       style PBUILD fill:#fff4e0,stroke:#c8940a,color:#212836
+       style SKIP fill:#f0f4f8,stroke:#555,color:#212836
+       style DEPLOY fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style BOOT fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style CHECK fill:#e8f0e8,stroke:#3a7d44,color:#212836
 
 Example hardware invocation:
 
@@ -240,14 +269,25 @@ adijif integration workflow
    flowchart LR
        AJ["adijif system()<br/>converter + clock + fpga model"] --> MODE["select JESD modes<br/>M/L/F/K/Np/S"]
        MODE --> SOLVE{"run solve()?"}
-       SOLVE -->|yes| SCFG["read solved clock/JESD outputs"]
-       SOLVE -->|no| QCFG["use quick mode settings"]
-       SCFG --> MAP["map to XsaPipeline cfg keys"]
+       SOLVE -->|yes| SCFG["read solved clock /<br/>JESD outputs"]
+       SOLVE -->|no| QCFG["use quick mode<br/>settings"]
+       SCFG --> MAP["map to XsaPipeline<br/>cfg keys"]
        QCFG --> MAP
        MAP --> PIPE2["XsaPipeline.run()"]
-       PIPE2 --> DTS2["merged DTS + overlay + report"]
-       DTS2 --> DTB2["cpp + dtc -> system.dtb"]
-       DTB2 --> HW2["boot + dmesg + jesd_status validation"]
+       PIPE2 --> DTS2["merged DTS +<br/>overlay + report"]
+       DTS2 --> DTB2["cpp + dtc →<br/>system.dtb"]
+       DTB2 --> HW2["boot + dmesg +<br/>jesd_status validation"]
+
+       style AJ fill:#d6e8f7,stroke:#0067b9,color:#212836
+       style MODE fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style SOLVE fill:#fff4e0,stroke:#c8940a,color:#212836
+       style SCFG fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style QCFG fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style MAP fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style PIPE2 fill:#f0f4f8,stroke:#0067b9,color:#212836
+       style DTS2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style DTB2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
+       style HW2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
 
 adijif-to-config mapping
 ~~~~~~~~~~~~~~~~~~~~~~~~
