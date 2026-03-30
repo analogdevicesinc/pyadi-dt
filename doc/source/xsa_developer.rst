@@ -42,6 +42,126 @@ that feed the next stage.
 a ``dict[str, Path]`` of artifact paths.  Each stage class can also be used
 independently.
 
+Component interaction
+~~~~~~~~~~~~~~~~~~~~~
+
+The following diagram shows how the major components interact at runtime.
+Read top-to-bottom for the data flow through a single ``XsaPipeline.run()``
+call.
+
+.. code-block:: text
+
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │  XsaPipeline.run()                                                 │
+   │  (pipeline.py — orchestrator, no rendering logic)                  │
+   │                                                                    │
+   │  1. sdtgen ──▶ base DTS files (pl.dtsi, system-top.dts)           │
+   │  2. XsaParser.parse(xsa) ──▶ XsaTopology                          │
+   │  3. ProfileManager.load() + merge_profile_defaults() ──▶ cfg dict  │
+   │  4. apply_board_fixups() ──▶ patched base DTS                      │
+   │  5. NodeBuilder().build(topology, cfg) ──▶ nodes dict              │
+   │  6. DtsMerger().merge(base_dts, nodes) ──▶ .dtso + .dts           │
+   │  7. (optional) DtsLinter, HtmlVisualizer, ClockGraphGenerator      │
+   └──────────────────────────┬──────────────────────────────────────────┘
+                              │ step 5 detail
+                              ▼
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │  NodeBuilder.build(topology, cfg)                                  │
+   │  (node_builder.py — rendering orchestrator)                        │
+   │                                                                    │
+   │  Inputs:                                                           │
+   │    XsaTopology ─── IP instances, addresses, lane counts, FPGA part │
+   │    PipelineConfig | dict ─── JESD params, clock routing, board cfg │
+   │                                                                    │
+   │  Step A: Platform detection                                        │
+   │    topology.inferred_platform() ──▶ addr_cells, ps_clk, gpio      │
+   │                                                                    │
+   │  Step B: Builder registry dispatch                                 │
+   │    for builder in _DEFAULT_BUILDERS:                                │
+   │      if builder.matches(topology, cfg): ──▶ matched_builders       │
+   │                                                                    │
+   │  Step C: Generic rendering (for unmatched JESD/clkgen instances)   │
+   │    clkgen.tmpl, jesd204_fsm.tmpl ──▶ clkgens[], jesd204_rx/tx[]   │
+   │                                                                    │
+   │  Step D: Board builder rendering (for matched designs)             │
+   │    builder.build_nodes() ──▶ converters[]                          │
+   │    (see board builder detail below)                                │
+   │                                                                    │
+   │  Output:                                                           │
+   │    {"clkgens": [...], "jesd204_rx": [...],                         │
+   │     "jesd204_tx": [...], "converters": [...]}                      │
+   └──────────────────────────┬──────────────────────────────────────────┘
+                              │ step D detail
+                              ▼
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │  Board Builder (e.g. FMCDAQ2Builder)                               │
+   │  (builders/fmcdaq2.py — one per board family)                      │
+   │                                                                    │
+   │  matches():                                                        │
+   │    topology.is_fmcdaq2_design() ──▶ True/False                     │
+   │                                                                    │
+   │  build_nodes():                                                    │
+   │    1. Build board config from cfg dict                             │
+   │         cfg["fmcdaq2_board"] ──▶ FMCDAQ2BoardConfig                │
+   │         cfg["jesd"]["rx"/"tx"] ──▶ JESD params                     │
+   │         cfg["fpga_adc"/"fpga_dac"] ──▶ XCVR PLL selection          │
+   │                                                                    │
+   │    2. Build context dicts for each chip/IP                         │
+   │         _build_ad9523_1_ctx(cfg) ──▶ dict   (clock chip)           │
+   │         _build_ad9680_ctx(cfg) ──▶ dict     (ADC)                  │
+   │         _build_ad9144_ctx(cfg) ──▶ dict     (DAC)                  │
+   │         _build_tpl_core_ctx(cfg, "rx") ──▶ dict                    │
+   │         _build_jesd204_overlay_ctx(cfg, "rx") ──▶ dict             │
+   │         _build_adxcvr_ctx(cfg, "rx") ──▶ dict                      │
+   │         ... (same for tx direction)                                │
+   │                                                                    │
+   │    3. Render templates with context dicts                          │
+   │         _render("ad9523_1.tmpl", ctx) ──▶ DTS string               │
+   │         _render("ad9680.tmpl", ctx) ──▶ DTS string                 │
+   │         _render("ad9144.tmpl", ctx) ──▶ DTS string                 │
+   │         _render("tpl_core.tmpl", ctx) ──▶ DTS string               │
+   │         _render("jesd204_overlay.tmpl", ctx) ──▶ DTS string        │
+   │         _render("adxcvr.tmpl", ctx) ──▶ DTS string                 │
+   │                                                                    │
+   │    4. Wrap SPI device nodes in bus overlay                         │
+   │         _wrap_spi_bus("spi0", ad9523 + ad9680 + ad9144)            │
+   │           ──▶ "&spi0 { status=okay; children... };"                │
+   │                                                                    │
+   │    5. Return all node strings as a flat list                       │
+   │         [spi_bus_block, dma_rx, dma_tx, tpl_rx, tpl_tx,            │
+   │          jesd_rx, jesd_tx, xcvr_rx, xcvr_tx]                       │
+   └──────────────────────────┬──────────────────────────────────────────┘
+                              │ output feeds back to
+                              ▼
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │  DtsMerger.merge(base_dts, nodes)                                  │
+   │  (merger.py)                                                       │
+   │                                                                    │
+   │  1. Categorise nodes:                                              │
+   │       "&label { ... }" ──▶ top-level overlay (outside bus)         │
+   │       other nodes ──▶ inside amba/axi bus                          │
+   │                                                                    │
+   │  2. Insert bus nodes into base DTS amba block                      │
+   │  3. Append overlay nodes at top level                              │
+   │  4. Add section comments (/* --- Clock Generators --- */ etc.)     │
+   │  5. Write .dtso (overlay) and .dts (merged)                        │
+   │  6. Optionally compile with dtc                                    │
+   └─────────────────────────────────────────────────────────────────────┘
+
+The **context builder** pattern is central to how templates receive their
+data.  For every ``.tmpl`` file there is a corresponding ``_build_*_ctx()``
+method that:
+
+1. Reads values from the board config (typed dataclass or raw dict).
+2. Computes derived values (``_fmt_hz()`` for frequency annotations,
+   ``_fmt_gpi_gpo()`` for hex GPIO strings, clock phandle strings).
+3. Pre-formats list values into DTS-ready strings (``clock_output_names_str``).
+4. Returns a flat ``dict`` whose keys match the Jinja2 variable names in the
+   template.
+
+This separation means templates contain no logic beyond conditionals — all
+value computation happens in Python where it can be tested independently.
+
 Key data models
 ~~~~~~~~~~~~~~~
 
@@ -55,18 +175,46 @@ Key data models
    topology-level detection logic so that ``NodeBuilder`` does not have to
    re-parse names in multiple places.
 
-``cfg`` dict
-   A plain Python dict derived from a JSON board profile.  JESD204 parameters
-   live under ``cfg["jesd"]["rx"]`` / ``cfg["jesd"]["tx"]``; board-wiring
-   overrides live under family-specific keys such as ``cfg["ad9081_board"]``,
-   ``cfg["adrv9009_board"]``, etc.  Profile loading and merging is handled by
-   ``profiles.py``.
+``PipelineConfig`` / ``cfg`` dict (``pipeline_config.py``, ``board_configs.py``)
+   Configuration can be supplied as a typed ``PipelineConfig`` object or as a
+   plain Python dict.  ``PipelineConfig`` wraps ``JesdConfig``,
+   ``ClockConfig``, and an optional board-family config (e.g.
+   ``FMCDAQ2BoardConfig``, ``AD9084BoardConfig``).  The ``from_dict()``
+   class method auto-detects the board family from key presence
+   (``"fmcdaq2_board"``, ``"ad9084_board"``, etc.).
+
+   JESD204 parameters live under ``jesd.rx`` / ``jesd.tx``; board-wiring
+   overrides live under family-specific attributes.  Profile loading and
+   merging is handled by ``profiles.py`` — profiles are merged into the raw
+   dict *before* ``PipelineConfig.from_dict()`` is called.
+
+``BoardBuilder`` Protocol (``builders/__init__.py``)
+   Each board family implements the ``BoardBuilder`` protocol with four
+   methods:
+
+   - ``matches(topology, cfg)`` — detect whether this builder handles the
+     design
+   - ``build_nodes(node_builder, topology, cfg, ...)`` — generate DTS node
+     strings
+   - ``skips_generic_jesd()`` — whether this builder renders its own JESD nodes
+   - ``skip_ip_types()`` — converter IP types handled by this builder
+
+   ``NodeBuilder`` iterates ``_DEFAULT_BUILDERS`` and dispatches to matching
+   builders.  Adding a new board family means creating a new builder module
+   and adding it to the list — no changes to ``node_builder.py`` are needed.
+
+   Current builders: ``FMCDAQ2Builder``, ``FMCDAQ3Builder``,
+   ``AD9172Builder``, ``AD9081Builder``, ``AD9084Builder``,
+   ``ADRV9009Builder``.
 
 NodeBuilder internals
 ---------------------
 
 ``NodeBuilder`` (``node_builder.py``) is the heart of the pipeline.  It owns
-all Jinja2 template rendering and all board-specific DTS node assembly.
+the Jinja2 rendering environment, shared infrastructure (``_wrap_spi_bus()``,
+``_fmt_hz()``, ``_coerce_board_int()``, platform detection), and context
+builder methods.  Board builders delegate back to these methods via the
+``node_builder`` reference they receive.
 
 Entry point
 ~~~~~~~~~~~
@@ -82,20 +230,20 @@ Entry point
    #   "converters": [str, ...],   # all board-specific nodes
    # }
 
-``build()`` first handles generic JESD and clkgen nodes (used by designs that
-do not have a dedicated board builder), then delegates to the five board
-builders for the designs that need richer SPI-device and clock-chip content:
+``build()`` detects the platform, resolves clocks, then runs two rendering
+paths:
 
-- ``_build_ad9081_nodes()`` — AD9081/AD9082 MXFE designs
-- ``_build_ad9084_nodes()`` — AD9084 "apollo" dual-link designs (ADF4382 +
-  HMC7044 + HSCI + per-link JESD device clocks)
-- ``_build_adrv9009_nodes()`` — ADRV9009/9025 designs, including FMComms8
-- ``_build_fmcdaq2_nodes()`` — FMCDAQ2 (AD9523-1 + AD9680 + AD9144)
-- ``_build_fmcdaq3_nodes()`` — FMCDAQ3 (AD9528 + AD9680 + AD9152)
-- ``_build_ad9172_nodes()`` — AD9172 (HMC7044 + AD9172)
+1. **Generic path** — renders clkgen and JESD FSM nodes for IP instances
+   that no board builder claims.  Uses ``clkgen.tmpl`` and
+   ``jesd204_fsm.tmpl``.
+2. **Builder path** — iterates ``_DEFAULT_BUILDERS``, calls ``matches()`` on
+   each, then ``build_nodes()`` on the matched builder.  The builder
+   generates all SPI-device, clock-chip, DMA, TPL, JESD overlay, and XCVR
+   nodes for its board family.
 
-Each board builder returns an empty list when its topology check fails, so all
-five are called unconditionally in ``build()``.
+The builder tells ``NodeBuilder`` which IP types it handles (via
+``skip_ip_types()`` and ``skips_generic_jesd()``), so the generic path skips
+those instances.
 
 Platform-aware register format
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
