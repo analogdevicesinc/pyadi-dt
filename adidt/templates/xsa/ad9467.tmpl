@@ -1,0 +1,14 @@
+{# AD9467 high-speed ADC SPI device node — UNTESTED, generated from kernel binding iio/adc/adi,ad9467.yaml #}
+{# Also covers: adi,ad9265, adi,ad9434, adi,ad9643, adi,ad9649, adi,ad9652 #}
+		{{ label }}: {{ compatible_id | default("ad9467") }}@{{ cs }} {
+			compatible = "adi,{{ compatible_id | default("ad9467") }}";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = "adc-clk";
+{%- endif %}
+{%- if reset_gpio is not none %}
+			reset-gpios = <&{{ gpio_label }} {{ reset_gpio }} 0>;
+{%- endif %}
+		};

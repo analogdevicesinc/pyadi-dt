@@ -1,0 +1,23 @@
+{# ADF4371/ADF4372 wideband synthesizer SPI device node — UNTESTED, generated from kernel binding iio/frequency/adf4371.yaml #}
+		{{ label }}: {{ compatible_id | default("adf4371") }}@{{ cs }} {
+			compatible = "adi,{{ compatible_id | default("adf4371") }}";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+			#clock-cells = <1>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = "clkin";
+{%- endif %}
+{%- if spi_3wire %}
+			adi,spi-3wire-enable;
+{%- endif %}
+{%- if muxout_select is defined and muxout_select is not none %}
+			adi,muxout-select = <{{ muxout_select }}>;
+{%- endif %}
+{%- if charge_pump_microamp is defined and charge_pump_microamp is not none %}
+			adi,charge-pump-microamp = <{{ charge_pump_microamp }}>;
+{%- endif %}
+{%- if mute_till_lock %}
+			adi,mute-till-lock-en;
+{%- endif %}
+		};

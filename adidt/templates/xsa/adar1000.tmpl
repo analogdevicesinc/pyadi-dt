@@ -1,0 +1,14 @@
+{# ADAR1000 X/Ku band beamformer SPI device node — UNTESTED, generated from kernel binding iio/adc/adi,adar1000.yaml #}
+		{{ label }}: adar1000@{{ cs }} {
+			compatible = "adi,adar1000";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- for dev in sub_devices %}
+			{{ label }}_dev{{ dev.id }}: dev@{{ dev.id }} {
+				reg = <{{ dev.id }}>;
+{%- if dev.label is defined %}
+				label = "{{ dev.label }}";
+{%- endif %}
+			};
+{%- endfor %}
+		};
