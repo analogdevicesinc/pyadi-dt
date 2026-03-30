@@ -87,10 +87,12 @@ def docs_serve(session):
         "sphinx-click",
         "sphinxcontrib-mermaid",
         "adi-doctools",
+        "linkify-it-py",
         "sphinx-autobuild",
     )
     session.install(".")
-    session.run("sphinx-autobuild", "doc/source", "doc/build/html")
+    session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host",
+                "0.0.0.0")
 
 
 @nox.session(python="3.11")
