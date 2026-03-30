@@ -63,8 +63,8 @@ Pipeline diagram
        style D2F fill:#fff4e0,stroke:#c8940a,color:#212836
 
 
-Base DTS vs overlay
-~~~~~~~~~~~~~~~~~~~
+Base DTS and Overlay Structure
+------------------------------
 
 The pipeline produces two output files: a **merged DTS** (``.dts``) and a
 standalone **overlay** (``.dtso``).  Understanding what each contains — and
@@ -180,8 +180,8 @@ For MicroBlaze ``simpleImage`` targets, use the merged DTS — overlays
 require a base DTB that the bootloader applies the overlay to, which
 MicroBlaze's direct-boot flow does not support.
 
-Hardware test flow with ``pyadi-build``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Hardware Test Flow
+------------------
 
 The hardware tests can optionally build and inject a kernel image with
 ``pyadi-build`` while still using the DTB generated from the XSA pipeline.
