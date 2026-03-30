@@ -23,6 +23,8 @@ def generate_devicetree(
     sdtgen_timeout: int = 300,
     reference_dts: Optional[str] = None,
     strict_parity: bool = False,
+    lint: bool = False,
+    strict_lint: bool = False,
 ) -> Dict[str, Any]:
     """Generate a devicetree from a Vivado XSA archive.
 
@@ -77,6 +79,8 @@ def generate_devicetree(
             sdtgen_timeout=sdtgen_timeout,
             reference_dts=ref,
             strict_parity=strict_parity,
+            lint=lint,
+            strict_lint=strict_lint,
         )
         serialized = {k: str(v) for k, v in result.items()}
 
@@ -176,6 +180,48 @@ def read_dt_property(
         return {"error": "adidt.dt module not available. Install adidt with device tree support."}
     except Exception as e:
         return {"error": f"Failed to read property: {e}"}
+
+
+@mcp.tool
+def lint_devicetree(dts_path: str) -> Dict[str, Any]:
+    """Run the structural DTS linter on a generated DTS file.
+
+    Checks for unresolved phandle references, clock-cell mismatches,
+    duplicate SPI chip selects, and missing compatible strings.
+
+    Args:
+        dts_path: Path to a .dts file to lint.
+
+    Returns:
+        Dict with 'diagnostics' list and 'summary' counts by severity.
+    """
+    path = Path(dts_path)
+    if not path.exists():
+        return {"error": f"DTS file not found: {dts_path}"}
+
+    try:
+        from adidt.xsa.dts_lint import DtsLinter
+
+        diagnostics = DtsLinter().lint_file(path)
+        return {
+            "diagnostics": [
+                {
+                    "severity": d.severity,
+                    "rule": d.rule,
+                    "node": d.node,
+                    "message": d.message,
+                }
+                for d in diagnostics
+            ],
+            "summary": {
+                "errors": sum(1 for d in diagnostics if d.severity == "error"),
+                "warnings": sum(1 for d in diagnostics if d.severity == "warning"),
+                "info": sum(1 for d in diagnostics if d.severity == "info"),
+                "total": len(diagnostics),
+            },
+        }
+    except Exception as e:
+        return {"error": f"Lint failed: {e}"}
 
 
 def main():

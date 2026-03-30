@@ -45,3 +45,12 @@ class ParityError(Exception):
     """Raised when strict manifest parity checks fail."""
 
     pass
+
+
+class DtsLintError(Exception):
+    """Raised when strict DTS lint checks find errors."""
+
+    def __init__(self, message: str, diagnostics: list | None = None):
+        """Initialize with a summary *message* and optional list of :class:`LintDiagnostic`."""
+        super().__init__(message)
+        self.diagnostics = diagnostics or []

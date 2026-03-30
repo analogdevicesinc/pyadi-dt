@@ -787,8 +787,22 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
     is_flag=True,
     help="Fail when manifest parity reports missing required roles",
 )
+@click.option(
+    "--lint/--no-lint",
+    default=False,
+    show_default=True,
+    help="Run structural DTS linter on generated output",
+)
+@click.option(
+    "--strict-lint",
+    is_flag=True,
+    help="Fail when DTS linter finds errors (implies --lint)",
+)
 @click.pass_context
-def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_parity):
+def xsa2dt(
+    ctx, xsa, config, output, timeout, profile, reference_dts, strict_parity,
+    lint, strict_lint,
+):
     """Generate ADI device tree from Vivado XSA file
 
     \b
@@ -815,6 +829,7 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             SdtgenError,
             XsaParseError,
             ConfigError,
+            DtsLintError,
             ParityError,
         )
     except ImportError:
@@ -839,6 +854,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
             profile=profile,
             reference_dts=Path(reference_dts) if reference_dts else None,
             strict_parity=strict_parity,
+            lint=lint,
+            strict_lint=strict_lint,
         )
         if not isinstance(result, dict):
             raise click.ClickException(
@@ -982,6 +999,26 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
                 "  Warning: parity coverage report not provided by pipeline result"
             )
 
+        if "diagnostics" in result:
+            diag_path = _path_or_none(result["diagnostics"], "diagnostics")
+            if diag_path is not None and diag_path.exists():
+                click.echo(f"  Diagnostics: {diag_path}")
+                try:
+                    diag_data = json.loads(diag_path.read_text())
+                    summary = diag_data.get("summary", {})
+                    click.echo(
+                        f"  Lint: {summary.get('errors', 0)} errors, "
+                        f"{summary.get('warnings', 0)} warnings, "
+                        f"{summary.get('info', 0)} info"
+                    )
+                    for item in diag_data.get("diagnostics", []):
+                        sev = item.get("severity", "?")
+                        rule = item.get("rule", "?")
+                        msg = item.get("message", "?")
+                        click.echo(f"    [{sev}] {rule}: {msg}")
+                except Exception:
+                    pass
+
     except FileNotFoundError as e:
         raise click.ClickException(str(e))
     except json.JSONDecodeError as e:
@@ -996,6 +1033,8 @@ def xsa2dt(ctx, xsa, config, output, timeout, profile, reference_dts, strict_par
     except (XsaParseError, ConfigError) as e:
         raise click.ClickException(str(e))
     except ParityError as e:
+        raise click.ClickException(str(e))
+    except DtsLintError as e:
         raise click.ClickException(str(e))
     except click.ClickException:
         raise

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .pipeline_config import PipelineConfig
 from .sdtgen import SdtgenRunner
 from .topology import XsaParser, XsaTopology
 from .node_builder import NodeBuilder
@@ -14,7 +15,8 @@ from .clock_graph import ClockGraphGenerator
 from .profiles import ProfileManager, merge_profile_defaults
 from .reference import ReferenceManifestExtractor
 from .parity import check_manifest_against_dts, write_parity_reports
-from .exceptions import ParityError
+from .dts_lint import DtsLinter
+from .exceptions import DtsLintError, ParityError
 from .board_fixups import apply_board_fixups
 
 
@@ -24,7 +26,7 @@ class XsaPipeline:
     def run(
         self,
         xsa_path: Path,
-        cfg: dict[str, Any],
+        cfg: PipelineConfig | dict[str, Any],
         output_dir: Path,
         sdtgen_timeout: int = 120,
         profile: str | None = None,
@@ -32,6 +34,8 @@ class XsaPipeline:
         strict_parity: bool = False,
         emit_report: bool = False,
         emit_clock_graphs: bool = False,
+        lint: bool = False,
+        strict_lint: bool = False,
     ) -> dict[str, Path]:
         """Run the full pipeline.
 
@@ -58,6 +62,11 @@ class XsaPipeline:
             emit_clock_graphs: When ``True`` (default) DOT and D2 clock-tree
                 diagrams are generated and their paths included in the result
                 dict.  Pass ``False`` to skip clock-graph generation.
+            lint: When ``True``, run the structural DTS linter on the merged
+                DTS and write a diagnostics JSON file.  Defaults to ``False``.
+            strict_lint: When ``True``, raise
+                :class:`~adidt.xsa.exceptions.DtsLintError` if the linter
+                finds any errors.  Implies ``lint=True``.
 
         Returns:
             Dict always containing ``"base_dir"``, ``"overlay"``, and
@@ -65,12 +74,17 @@ class XsaPipeline:
             ``True``.  ``"clock_dot"`` and ``"clock_d2"`` (plus optionally
             ``"clock_dot_svg"`` / ``"clock_d2_svg"``) are present when
             *emit_clock_graphs* is ``True``.  ``"map"`` and ``"coverage"``
-            are present when *reference_dts* is provided.
+            are present when *reference_dts* is provided.  ``"diagnostics"``
+            is present when *lint* or *strict_lint* is ``True``.
 
         Raises:
             ParityError: When *strict_parity* is ``True`` and the merged DTS
                 fails the parity check against *reference_dts*.
+            DtsLintError: When *strict_lint* is ``True`` and the linter finds
+                errors in the generated DTS.
         """
+        if strict_lint:
+            lint = True
         output_dir.mkdir(parents=True, exist_ok=True)
         base_dir = output_dir / "base"
         base_dir.mkdir(exist_ok=True)
@@ -143,6 +157,41 @@ class XsaPipeline:
                     )
                 if issues:
                     raise ParityError("; ".join(issues))
+
+        if lint:
+            diagnostics = DtsLinter().lint(merged_content, topology)
+            import json as _json
+
+            diag_path = output_dir / f"{safe_name}_diagnostics.json"
+            diag_data = {
+                "diagnostics": [
+                    {
+                        "severity": d.severity,
+                        "rule": d.rule,
+                        "node": d.node,
+                        "message": d.message,
+                    }
+                    for d in diagnostics
+                ],
+                "summary": {
+                    "errors": sum(1 for d in diagnostics if d.severity == "error"),
+                    "warnings": sum(
+                        1 for d in diagnostics if d.severity == "warning"
+                    ),
+                    "info": sum(1 for d in diagnostics if d.severity == "info"),
+                    "total": len(diagnostics),
+                },
+            }
+            diag_path.write_text(_json.dumps(diag_data, indent=2) + "\n")
+            result["diagnostics"] = diag_path
+
+            if strict_lint:
+                errors = [d for d in diagnostics if d.severity == "error"]
+                if errors:
+                    raise DtsLintError(
+                        f"{len(errors)} lint error(s) in generated DTS",
+                        errors,
+                    )
 
         return result
 
