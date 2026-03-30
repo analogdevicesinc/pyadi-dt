@@ -30,8 +30,8 @@ Table of Contents
    access
    parts
    utils
-   examples
    xsa
+   examples
 
 .. toctree::
    :maxdepth: 2
