@@ -135,6 +135,46 @@ Exceptions
    :undoc-members:
    :show-inheritance:
 
+Board Configurations
+^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.board_configs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Pipeline Configuration
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.pipeline_config
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Builders
+^^^^^^^^
+
+.. automodule:: adidt.xsa.builders
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Template Contexts
+^^^^^^^^^^^^^^^^^
+
+.. automodule:: adidt.xsa.template_contexts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+DTS Linter
+^^^^^^^^^^
+
+.. automodule:: adidt.xsa.dts_lint
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Boards Module
 -------------
 

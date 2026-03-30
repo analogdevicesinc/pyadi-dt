@@ -11,4 +11,5 @@ from .board_configs import (  # noqa: F401
     JesdConfig,
     JesdLinkParams,
 )
+from .dts_lint import DtsLinter, LintDiagnostic  # noqa: F401
 from .pipeline_config import PipelineConfig  # noqa: F401

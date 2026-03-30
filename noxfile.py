@@ -125,6 +125,17 @@ def build(session):
 
 
 @nox.session(python="3.11")
+def dts_lint(session):
+    """Run DTS structural linter tests."""
+    session.install(".[dev]")
+    session.run(
+        "pytest", "-vs",
+        "test/xsa/test_dts_lint.py",
+        "test/xsa/test_dts_lint_integration.py",
+    )
+
+
+@nox.session(python="3.11")
 def test_specific(session):
     """Run specific test file or test function.
 
