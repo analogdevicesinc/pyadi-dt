@@ -63,6 +63,123 @@ Pipeline diagram
        style D2F fill:#fff4e0,stroke:#c8940a,color:#212836
 
 
+Base DTS vs overlay
+~~~~~~~~~~~~~~~~~~~
+
+The pipeline produces two output files: a **merged DTS** (``.dts``) and a
+standalone **overlay** (``.dtso``).  Understanding what each contains — and
+what the base DTS from ``sdtgen`` provides — is important when debugging boot
+failures or integrating with custom HDL designs.
+
+**Base DTS** (from ``sdtgen`` / ``lopper``)
+
+``sdtgen`` generates a System Device Tree from the ``.hwh`` hardware handoff
+inside the ``.xsa`` archive.  The base includes:
+
+- The root ``/`` node with board and FPGA part identifiers.
+- The ``amba_pl`` bus (``simple-bus``) containing **every AXI IP** in the
+  Vivado block design — JESD204 controllers, DMA engines, SPI controllers,
+  UART, Ethernet, GPIO, timer, interrupt controller, clock generators,
+  transceivers, and memory controllers.
+- Each IP node has ``compatible = "xlnx,..."``, ``reg``, ``interrupts``,
+  and Xilinx-specific properties (``xlnx,ip-name``, ``xlnx,num-lanes``,
+  etc.) derived from the HWH.
+- CPU and memory nodes (``cpus``, ``memory@...``), ``chosen`` with
+  ``stdout-path`` and ``bootargs``, and ``aliases`` for serial/SPI/I2C.
+- Clock infrastructure: fixed-clock nodes and ``clk_bus_0`` providing the
+  AXI bus clock.
+- For MicroBlaze designs: the ``address-map`` property on the CPU node
+  listing all accessible peripherals.
+
+The base DTS nodes use Xilinx generic compatible strings
+(``xlnx,axi-jesd204-rx-1.0``, ``xlnx,axi-dmac-1.0``, etc.) and lack
+ADI-driver-specific properties.  The kernel can parse these nodes but
+ADI drivers will not probe without the correct ``adi,...`` compatible and
+configuration properties.
+
+**What the pipeline adds** (overlay / merged nodes)
+
+The ``NodeBuilder`` renders ADI-specific DTS content that either **replaces**
+or **augments** nodes from the base:
+
+*New nodes (inserted into the bus):*
+
+- **AXI clock generators** — ``adi,axi-clkgen-2.00.a`` nodes with
+  ``#clock-cells``, ``clock-output-names``, and bus clock references.
+- **Fixed clocks** — e.g. ``clkin_125`` for external reference oscillators
+  not described in the HWH.
+
+*New SPI device child nodes:*
+
+- **Clock chips** — HMC7044 (``adi,hmc7044``), AD9523-1 (``adi,ad9523-1``),
+  or AD9528 (``adi,ad9528``) with PLL, VCXO, channel dividers, and
+  JESD204 sysref-provider configuration.
+- **PLLs** — ADF4382 (``adi,adf4382``) for converter device clocks.
+- **Converters** — AD9084 (``adi,ad9084``), AD9081 (``adi,ad9081``),
+  AD9680, AD9144, ADRV9009, etc., with JESD204 link parameters, firmware
+  names, lane mappings, and GPIO connections.
+
+These appear inside ``&spi_bus { ... }`` overlay blocks that add children
+to the SPI controller nodes already present in the base.
+
+*Overlay property additions* (``&label { ... }`` blocks):
+
+- **DMA engines** — adds ``adi,axi-dmac-1.00.a`` compatible and
+  ``#dma-cells`` to the existing DMA nodes.
+- **ADXCVR transceivers** — adds ``adi,axi-adxcvr-1.0`` compatible,
+  ``adi,sys-clk-select``, ``adi,out-clk-select``, clock references, and
+  JESD204 input chain links.
+- **JESD204 controllers** — adds ``adi,axi-jesd204-rx-1.0`` (or ``-tx-``),
+  ``adi,octets-per-frame``, ``adi,frames-per-multiframe``, and the full
+  ``jesd204-device`` / ``jesd204-inputs`` FSM framework properties.
+- **TPL cores** — adds ``adi,axi-ad9081-rx-1.0`` (or board-specific
+  variant), DMA links, and converter associations.
+- **HSCI** — adds ``adi,axi-hsci-1.0.a`` and interface speed for
+  high-speed converter interface blocks.
+
+*Board fixups* (applied to the base before merging):
+
+Some base DTS nodes require corrections that ``sdtgen`` cannot derive from
+the HWH alone.  The ``board_fixups.py`` registry applies platform-specific
+patches — for example, VCU118 Ethernet PHY configuration and IIO device
+name normalization.
+
+**Assumptions about the base DTS**
+
+The pipeline expects the ``sdtgen``-generated base to provide:
+
+1. An ``amba_pl`` (or ``amba``) bus node as the top-level container.
+2. Labeled nodes for every AXI IP that the overlay will reference
+   (``axi_apollo_rx_dma``, ``axi_apollo_rx_xcvr``, etc.).  The labels
+   are derived from the Vivado block design instance names.
+3. A ``clk_bus_0`` fixed-clock node providing the AXI bus clock frequency.
+4. Correct ``#address-cells`` and ``#size-cells`` on the bus (1 for
+   MicroBlaze/VCU118, 2 for ZynqMP/ZCU102).
+5. For MicroBlaze: a ``cpus`` node, ``memory`` node with ``device_type``,
+   and ``chosen`` with ``bootargs = "earlycon"`` and ``stdout-path`` pointing
+   to the UART.  The ``SdtgenRunner`` applies fixups to ensure these are
+   present.
+
+If the XSA comes from an ADI HDL reference design, these assumptions hold
+automatically.  Custom designs must follow the same naming conventions for
+the overlay labels to resolve.
+
+**Merged vs overlay output**
+
+- The **merged DTS** (``.dts``) combines the base and overlay into a single
+  file with ``#include "pl.dtsi"`` for the base, followed by the generated
+  ADI nodes and ``&label { ... }`` augmentations.  Compile it with
+  ``cpp + dtc`` to produce a standalone DTB.
+
+- The **overlay** (``.dtso``) is a ``/plugin/;`` file that can be applied
+  at runtime via ``dtoverlay`` on systems that support dynamic DT overlays.
+  It contains the same ADI nodes but uses ``&amba_pl { ... }`` to target
+  the bus node.
+
+For MicroBlaze ``simpleImage`` targets, use the merged DTS — overlays
+require a base DTB that the bootloader applies the overlay to, which
+MicroBlaze's direct-boot flow does not support.
+
 Hardware test flow with ``pyadi-build``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
