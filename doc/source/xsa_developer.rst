@@ -16,27 +16,55 @@ The XSA pipeline is composed of six loosely coupled stages.  Each stage
 operates on well-defined inputs and produces file or data-structure outputs
 that feed the next stage.
 
-.. code-block:: text
+.. mermaid::
 
-   XSA (ZIP)
-     │
-     ├─▶ XsaParser ──────────────────▶ XsaTopology
-     │    (topology.py)                  (dataclass)
-     │
-     ├─▶ sdtgen / lopper ──────────▶ base DTS artifacts
-     │    (sdtgen.py)
-     │
-     ├─▶ NodeBuilder ◀──── cfg dict ─▶ dict[str, list[str]]
-     │    (node_builder.py)               ADI DTS node strings
-     │
-     ├─▶ DtsMerger ────────────────▶ .dtso overlay + .dts merged
-     │    (merger.py)
-     │
-     ├─▶ HtmlVisualizer ───────────▶ interactive HTML report
-     │    (visualizer.py)
-     │
-     └─▶ ClockGraphGenerator ──────▶ .dot + .d2 (+ SVG when tools present)
-          (clock_graph.py)
+   flowchart TB
+      xsa["XSA Archive (.xsa)"]
+      cfg["Config (JSON / PipelineConfig)"]
+
+      subgraph pipeline ["XsaPipeline.run()"]
+         direction TB
+         sdtgen["<b>sdtgen / lopper</b><br/><i>sdtgen.py</i>"]
+         parser["<b>XsaParser</b><br/><i>topology.py</i>"]
+         profiles["<b>ProfileManager</b><br/><i>profiles.py</i>"]
+         fixups["<b>Board Fixups</b><br/><i>board_fixups.py</i>"]
+         nb["<b>NodeBuilder</b><br/><i>node_builder.py</i>"]
+         merger["<b>DtsMerger</b><br/><i>merger.py</i>"]
+      end
+
+      xsa --> sdtgen
+      xsa --> parser
+      cfg --> profiles
+      profiles --> nb
+      sdtgen --> |"base DTS"| fixups
+      fixups --> merger
+      parser --> |"XsaTopology"| nb
+      nb --> |"node strings"| merger
+
+      merger --> dtso[".dtso overlay"]
+      merger --> dts[".dts merged"]
+
+      subgraph optional ["Optional outputs"]
+         direction LR
+         linter["<b>DtsLinter</b><br/><i>dts_lint.py</i>"]
+         viz["<b>HtmlVisualizer</b><br/><i>visualizer.py</i>"]
+         clock["<b>ClockGraphGenerator</b><br/><i>clock_graph.py</i>"]
+      end
+
+      dts -.-> linter
+      dts -.-> viz
+      dts -.-> clock
+
+      linter -.-> diag["diagnostics.json"]
+      viz -.-> report["report.html"]
+      clock -.-> dot[".dot / .d2"]
+
+      style pipeline fill:#f0f4f8,stroke:#0067b9,stroke-width:2px
+      style optional fill:#fff4e0,stroke:#c8940a,stroke-width:1px
+      style xsa fill:#d6e8f7,stroke:#0067b9
+      style cfg fill:#d6e8f7,stroke:#0067b9
+      style dts fill:#e8f0e8,stroke:#3a7d44
+      style dtso fill:#e8f0e8,stroke:#3a7d44
 
 ``XsaPipeline.run()`` in ``pipeline.py`` wires all stages together and returns
 a ``dict[str, Path]`` of artifact paths.  Each stage class can also be used
@@ -45,108 +73,62 @@ independently.
 Component interaction
 ~~~~~~~~~~~~~~~~~~~~~
 
-The following diagram shows how the major components interact at runtime.
-Read top-to-bottom for the data flow through a single ``XsaPipeline.run()``
-call.
+The following diagram shows how ``NodeBuilder`` orchestrates rendering.
+It receives the topology and config, dispatches to per-board builders via
+a registry, and produces categorised DTS node strings that the merger
+assembles into the final tree.
 
-.. code-block:: text
+.. mermaid::
 
-   ┌─────────────────────────────────────────────────────────────────────┐
-   │  XsaPipeline.run()                                                 │
-   │  (pipeline.py — orchestrator, no rendering logic)                  │
-   │                                                                    │
-   │  1. sdtgen ──▶ base DTS files (pl.dtsi, system-top.dts)           │
-   │  2. XsaParser.parse(xsa) ──▶ XsaTopology                          │
-   │  3. ProfileManager.load() + merge_profile_defaults() ──▶ cfg dict  │
-   │  4. apply_board_fixups() ──▶ patched base DTS                      │
-   │  5. NodeBuilder().build(topology, cfg) ──▶ nodes dict              │
-   │  6. DtsMerger().merge(base_dts, nodes) ──▶ .dtso + .dts           │
-   │  7. (optional) DtsLinter, HtmlVisualizer, ClockGraphGenerator      │
-   └──────────────────────────┬──────────────────────────────────────────┘
-                              │ step 5 detail
-                              ▼
-   ┌─────────────────────────────────────────────────────────────────────┐
-   │  NodeBuilder.build(topology, cfg)                                  │
-   │  (node_builder.py — rendering orchestrator)                        │
-   │                                                                    │
-   │  Inputs:                                                           │
-   │    XsaTopology ─── IP instances, addresses, lane counts, FPGA part │
-   │    PipelineConfig | dict ─── JESD params, clock routing, board cfg │
-   │                                                                    │
-   │  Step A: Platform detection                                        │
-   │    topology.inferred_platform() ──▶ addr_cells, ps_clk, gpio      │
-   │                                                                    │
-   │  Step B: Builder registry dispatch                                 │
-   │    for builder in _DEFAULT_BUILDERS:                                │
-   │      if builder.matches(topology, cfg): ──▶ matched_builders       │
-   │                                                                    │
-   │  Step C: Generic rendering (for unmatched JESD/clkgen instances)   │
-   │    clkgen.tmpl, jesd204_fsm.tmpl ──▶ clkgens[], jesd204_rx/tx[]   │
-   │                                                                    │
-   │  Step D: Board builder rendering (for matched designs)             │
-   │    builder.build_nodes() ──▶ converters[]                          │
-   │    (see board builder detail below)                                │
-   │                                                                    │
-   │  Output:                                                           │
-   │    {"clkgens": [...], "jesd204_rx": [...],                         │
-   │     "jesd204_tx": [...], "converters": [...]}                      │
-   └──────────────────────────┬──────────────────────────────────────────┘
-                              │ step D detail
-                              ▼
-   ┌─────────────────────────────────────────────────────────────────────┐
-   │  Board Builder (e.g. FMCDAQ2Builder)                               │
-   │  (builders/fmcdaq2.py — one per board family)                      │
-   │                                                                    │
-   │  matches():                                                        │
-   │    topology.is_fmcdaq2_design() ──▶ True/False                     │
-   │                                                                    │
-   │  build_nodes():                                                    │
-   │    1. Build board config from cfg dict                             │
-   │         cfg["fmcdaq2_board"] ──▶ FMCDAQ2BoardConfig                │
-   │         cfg["jesd"]["rx"/"tx"] ──▶ JESD params                     │
-   │         cfg["fpga_adc"/"fpga_dac"] ──▶ XCVR PLL selection          │
-   │                                                                    │
-   │    2. Build context dicts for each chip/IP                         │
-   │         _build_ad9523_1_ctx(cfg) ──▶ dict   (clock chip)           │
-   │         _build_ad9680_ctx(cfg) ──▶ dict     (ADC)                  │
-   │         _build_ad9144_ctx(cfg) ──▶ dict     (DAC)                  │
-   │         _build_tpl_core_ctx(cfg, "rx") ──▶ dict                    │
-   │         _build_jesd204_overlay_ctx(cfg, "rx") ──▶ dict             │
-   │         _build_adxcvr_ctx(cfg, "rx") ──▶ dict                      │
-   │         ... (same for tx direction)                                │
-   │                                                                    │
-   │    3. Render templates with context dicts                          │
-   │         _render("ad9523_1.tmpl", ctx) ──▶ DTS string               │
-   │         _render("ad9680.tmpl", ctx) ──▶ DTS string                 │
-   │         _render("ad9144.tmpl", ctx) ──▶ DTS string                 │
-   │         _render("tpl_core.tmpl", ctx) ──▶ DTS string               │
-   │         _render("jesd204_overlay.tmpl", ctx) ──▶ DTS string        │
-   │         _render("adxcvr.tmpl", ctx) ──▶ DTS string                 │
-   │                                                                    │
-   │    4. Wrap SPI device nodes in bus overlay                         │
-   │         _wrap_spi_bus("spi0", ad9523 + ad9680 + ad9144)            │
-   │           ──▶ "&spi0 { status=okay; children... };"                │
-   │                                                                    │
-   │    5. Return all node strings as a flat list                       │
-   │         [spi_bus_block, dma_rx, dma_tx, tpl_rx, tpl_tx,            │
-   │          jesd_rx, jesd_tx, xcvr_rx, xcvr_tx]                       │
-   └──────────────────────────┬──────────────────────────────────────────┘
-                              │ output feeds back to
-                              ▼
-   ┌─────────────────────────────────────────────────────────────────────┐
-   │  DtsMerger.merge(base_dts, nodes)                                  │
-   │  (merger.py)                                                       │
-   │                                                                    │
-   │  1. Categorise nodes:                                              │
-   │       "&label { ... }" ──▶ top-level overlay (outside bus)         │
-   │       other nodes ──▶ inside amba/axi bus                          │
-   │                                                                    │
-   │  2. Insert bus nodes into base DTS amba block                      │
-   │  3. Append overlay nodes at top level                              │
-   │  4. Add section comments (/* --- Clock Generators --- */ etc.)     │
-   │  5. Write .dtso (overlay) and .dts (merged)                        │
-   │  6. Optionally compile with dtc                                    │
-   └─────────────────────────────────────────────────────────────────────┘
+   flowchart TB
+      subgraph inputs ["Inputs"]
+         direction LR
+         topo["<b>XsaTopology</b><br/>IP instances, addresses,<br/>lane counts, FPGA part"]
+         cfg["<b>PipelineConfig | dict</b><br/>JESD params, clock routing,<br/>board-specific config"]
+      end
+
+      subgraph nb ["NodeBuilder.build()"]
+         direction TB
+         platform["<b>A. Platform detection</b><br/>inferred_platform() → addr_cells,<br/>ps_clk_label, gpio_label"]
+         registry["<b>B. Builder registry</b><br/>for builder in _DEFAULT_BUILDERS:<br/>  builder.matches(topology, cfg)"]
+         generic["<b>C. Generic rendering</b><br/>clkgen.tmpl → clkgens[]<br/>jesd204_fsm.tmpl → jesd204_rx/tx[]"]
+         dispatch["<b>D. Board builder dispatch</b><br/>builder.build_nodes() → converters[]"]
+
+         platform --> registry
+         registry --> generic
+         registry --> dispatch
+      end
+
+      subgraph builder ["Board Builder (e.g. FMCDAQ2Builder)"]
+         direction TB
+         extract["1. Extract config<br/>cfg dict → BoardConfig"]
+         context["2. Build contexts<br/>_build_ad9523_ctx() → dict<br/>_build_ad9680_ctx() → dict<br/>_build_ad9144_ctx() → dict"]
+         render["3. Render templates<br/>_render('ad9523_1.tmpl', ctx)<br/>_render('ad9680.tmpl', ctx)<br/>_render('ad9144.tmpl', ctx)"]
+         wrap["4. Assemble nodes<br/>_wrap_spi_bus() for SPI children<br/>+ DMA, TPL, JESD, XCVR overlays"]
+
+         extract --> context --> render --> wrap
+      end
+
+      subgraph merger ["DtsMerger.merge()"]
+         direction TB
+         categorize["Categorise: &overlay vs bus nodes"]
+         insert["Insert bus nodes into amba block"]
+         write["Write .dtso + .dts"]
+         categorize --> insert --> write
+      end
+
+      topo --> nb
+      cfg --> nb
+      dispatch --> builder
+      generic --> merger
+      builder --> |"node strings"| merger
+      write --> output[".dtso overlay + .dts merged"]
+
+      style inputs fill:#d6e8f7,stroke:#0067b9,stroke-width:2px
+      style nb fill:#f0f4f8,stroke:#0067b9,stroke-width:2px
+      style builder fill:#fff4e0,stroke:#c8940a,stroke-width:2px
+      style merger fill:#e8f0e8,stroke:#3a7d44,stroke-width:2px
+      style output fill:#e8f0e8,stroke:#3a7d44
 
 The **context builder** pattern is central to how templates receive their
 data.  For every ``.tmpl`` file there is a corresponding ``_build_*_ctx()``
