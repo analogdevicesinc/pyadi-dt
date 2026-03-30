@@ -170,6 +170,115 @@ Show one profile and its defaults:
 
    adidtc xsa-profile-show ad9081_zcu102
 
+Built-in profiles
+~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :widths: 25 20 20 15 20
+   :header-rows: 1
+
+   * - Profile
+     - Converter Family
+     - Platform
+     - JESD in Profile
+     - Board Config Key
+   * - ``ad9081_zcu102``
+     - AD9081 MxFE
+     - ZCU102
+     - No (supply via cfg)
+     - ``ad9081_board``
+   * - ``ad9081_zc706``
+     - AD9081 MxFE
+     - ZC706
+     - No (supply via cfg)
+     - ``ad9081_board``
+   * - ``ad9082_zcu102``
+     - AD9082 MxFE
+     - ZCU102
+     - No (supply via cfg)
+     - ``ad9081_board``
+   * - ``ad9083_zcu102``
+     - AD9083 MxFE
+     - ZCU102
+     - No (supply via cfg)
+     - ``ad9081_board``
+   * - ``ad9084_vcu118``
+     - AD9084
+     - VCU118
+     - Yes
+     - ``ad9084_board``
+   * - ``ad9172_zcu102``
+     - AD9172 DAC
+     - ZCU102
+     - Yes
+     - ``ad9172_board``
+   * - ``adrv9009_zcu102``
+     - ADRV9009
+     - ZCU102
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9009_zc706``
+     - ADRV9009
+     - ZC706
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9025_zcu102``
+     - ADRV9025
+     - ZCU102
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9008_zcu102``
+     - ADRV9008
+     - ZCU102
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9008_zc706``
+     - ADRV9008
+     - ZC706
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv937x_zcu102``
+     - ADRV937x
+     - ZCU102
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv937x_zc706``
+     - ADRV937x
+     - ZC706
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9002_zc706``
+     - ADRV9002
+     - ZC706
+     - No (supply via cfg)
+     - —
+   * - ``fmcdaq2_zcu102``
+     - FMCDAQ2
+     - ZCU102
+     - No (supply via cfg)
+     - ``fmcdaq2_board``
+   * - ``fmcdaq2_zc706``
+     - FMCDAQ2
+     - ZC706
+     - No (supply via cfg)
+     - ``fmcdaq2_board``
+   * - ``fmcdaq3_zcu102``
+     - FMCDAQ3
+     - ZCU102
+     - Yes
+     - ``fmcdaq3_board``
+   * - ``fmcdaq3_zc706``
+     - FMCDAQ3
+     - ZC706
+     - Yes
+     - ``fmcdaq3_board``
+
+Profiles with **"JESD in Profile = Yes"** include default JESD framing
+parameters (F, K, M, L, Np, S) and can be used with ``cfg={}`` — no user
+config needed.  Profiles with **"No"** require JESD parameters to be supplied
+via the ``cfg`` dict, typically from a ``pyadi-jif`` solver or manual
+configuration.
+
 Or call the pipeline directly from Python:
 
 .. code-block:: python
