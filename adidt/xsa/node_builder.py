@@ -10,6 +10,7 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
+from .pipeline_config import PipelineConfig
 from .topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
 
 
@@ -226,12 +227,22 @@ class NodeBuilder:
     # Platforms using single-cell (32-bit) addressing in amba_pl
     _32BIT_PLATFORMS = {"vcu118", "zc706"}
 
-    def build(self, topology: XsaTopology, cfg: dict[str, Any]) -> dict[str, list[str]]:
+    def build(
+        self, topology: XsaTopology, cfg: PipelineConfig | dict[str, Any]
+    ) -> dict[str, list[str]]:
         """Render ADI DTS nodes.
+
+        Args:
+            topology: Parsed XSA topology.
+            cfg: Pipeline configuration as a :class:`PipelineConfig` or raw dict.
+                Dicts are used as-is for backward compatibility.  ``PipelineConfig``
+                instances are converted to dict via :meth:`PipelineConfig.to_dict`.
 
         Returns:
             Dict with keys "jesd204_rx", "jesd204_tx", "converters".
         """
+        if isinstance(cfg, PipelineConfig):
+            cfg = cfg.to_dict()
         platform = topology.inferred_platform()
         self._addr_cells = 1 if platform in self._32BIT_PLATFORMS else 2
         # Invalidate cached Jinja env so reg_addr/reg_size pick up new cells

@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from typing import Any
 
+from .pipeline_config import PipelineConfig
 from .sdtgen import SdtgenRunner
 from .topology import XsaParser, XsaTopology
 from .node_builder import NodeBuilder
@@ -24,7 +25,7 @@ class XsaPipeline:
     def run(
         self,
         xsa_path: Path,
-        cfg: dict[str, Any],
+        cfg: PipelineConfig | dict[str, Any],
         output_dir: Path,
         sdtgen_timeout: int = 120,
         profile: str | None = None,
