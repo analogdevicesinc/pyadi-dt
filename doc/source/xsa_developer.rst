@@ -671,7 +671,8 @@ convention (tabs, single-level inside the SPI bus node):
    			#clock-cells = <0>;
    		};
 
-Rules:
+Follow these rules when writing templates:
+
 - Use ``{%- if x is not none %}`` (not truthiness) for optional properties.
 - Pre-format any multi-value string property in the context builder, not in
   the template.

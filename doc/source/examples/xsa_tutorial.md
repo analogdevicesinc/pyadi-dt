@@ -129,6 +129,6 @@ required JESD/device roles are present before flashing a SD card.
 - [`xsa.rst`](../xsa.rst)
 - [`xsa_adijif_tutorial.md`](xsa_adijif_tutorial.md)
 - [`examples/xsa_ad9081_zcu102.md`](xsa_ad9081_zcu102.md)
-- [`examples/xsa/adrv9009_zcu102.py`](../../examples/xsa/adrv9009_zcu102.py)
+- `examples/xsa/adrv9009_zcu102.py`
 - `adidtc xsa-profiles`
 - `adidtc xsa-profile-show PROFILE`
