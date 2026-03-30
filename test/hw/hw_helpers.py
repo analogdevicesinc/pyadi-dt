@@ -61,6 +61,59 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
 
+def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
+    """Compile a DTS overlay to a DTBO binary.
+
+    Uses ``dtc -@`` to preserve external symbol references (``&label``
+    phandles) required for runtime overlay application via configfs.
+
+    Args:
+        dtso_path: Path to the source ``.dtso`` overlay file.
+        dtbo_path: Destination path for the compiled ``.dtbo`` output.
+
+    Raises:
+        RuntimeError: if ``dtc`` exits with a non-zero return code.
+    """
+    compile_input = dtso_path
+    text = dtso_path.read_text()
+
+    if "#include" in text:
+        if shutil.which("cpp") is None:
+            raise RuntimeError(
+                "cpp not found on PATH (required for #include preprocessing)"
+            )
+        preprocessed = dtbo_path.parent / f"{dtso_path.stem}.pp.dtso"
+        include_dirs = [dtso_path.parent, dtso_path.parent / "base"]
+        cmd = ["cpp", "-P", "-nostdinc", "-undef", "-x", "assembler-with-cpp"]
+        for inc in include_dirs:
+            if inc.exists():
+                cmd.extend(["-I", str(inc)])
+        cmd.extend([str(dtso_path), str(preprocessed)])
+        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+        if res.returncode != 0:
+            raise RuntimeError(f"cpp failed:\n{res.stderr}")
+        compile_input = preprocessed
+
+    res = subprocess.run(
+        [
+            "dtc",
+            "-@",
+            "-I",
+            "dts",
+            "-O",
+            "dtb",
+            "-o",
+            str(dtbo_path),
+            str(compile_input),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if res.returncode != 0:
+        raise RuntimeError(f"dtc overlay compilation failed:\n{res.stderr}")
+
+
 def require_hw_prereqs() -> None:
     """Skip the current test if required system tools are missing.
 
