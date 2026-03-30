@@ -5,7 +5,7 @@ XSA: /jenkins/ref/ad9084_vcu118_slow/system_top_vcu118.xsa
 
 Flow:
 1. Verify prerequisites (LG_ENV, sdtgen, dtc).
-2. Run XsaPipeline to parse XSA and generate merged DTS.
+2. Run XsaPipeline with the ad9084_vcu118 profile to generate merged DTS.
 3. Copy merged DTS into the MicroBlaze kernel source tree.
 4. Build simpleImage (kernel + embedded DTB) via pyadi-build.
 5. Deploy via JTAG.
@@ -17,13 +17,14 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-from pprint import pprint
 
 import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
+from adidt.xsa.profiles import ProfileManager
 
 
+PROFILE_NAME = "ad9084_vcu118"
 LG_ENV_PATH = "/jenkins/lg_ad9084_vcu118.yaml"
 XSA_PATH = Path("/jenkins/ref/ad9084_vcu118_slow/system_top_vcu118.xsa")
 DTS_NAME = "vcu118_ad9084_xsa"
@@ -46,101 +47,6 @@ def _require_tools() -> None:
         pytest.skip("dtc not found on PATH")
 
 
-def _build_xsa_pipeline_cfg() -> dict:
-    """Return XsaPipeline config for the AD9084 slow profile on VCU118.
-
-    The XSA topology (addresses, lane counts, JESD core instances) is derived
-    from the XSA itself by the pipeline.  This dict supplies JESD framing
-    parameters, clock mapping, and board-level SPI/clock configuration
-    consumed by the AD9084 NodeBuilder path.
-    """
-    return {
-        "jesd": {
-            "rx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1},
-            "tx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1},
-        },
-        "clock": {
-            # JESD device_clk comes from HMC7044 channels, not clkgen.
-            # Per-link device_clk channels: RX=8, RX_B=11, TX=9, TX_B=12
-            "rx_device_clk_label": "hmc7044",
-            "rx_device_clk_index": 8,
-            "tx_device_clk_label": "hmc7044",
-            "tx_device_clk_index": 9,
-            "rx_b_device_clk_index": 11,
-            "tx_b_device_clk_index": 12,
-        },
-        "ad9084_board": {
-            # SPI bus assignments (from VCU118 HDL design)
-            "converter_spi": "axi_spi_2",
-            "converter_cs": 0,
-            "clock_spi": "axi_spi",
-            "hmc7044_cs": 1,
-            "pll1_clkin_frequencies": [
-                125_000_000,
-                125_000_000,
-                125_000_000,
-                125_000_000,
-            ],
-            # HMC7044 clock configuration
-            "vcxo_hz": 125_000_000,
-            "pll2_output_hz": 2_500_000_000,
-            # HMC7044 channel that provides FPGA GTY reference clock
-            "fpga_refclk_channel": 10,
-            # AD9084 dev_clk from ADF4382 (not HMC7044)
-            "dev_clk_source": "adf4382",
-            "dev_clk_ref": "adf4382 0",
-            "dev_clk_scales": "1 10",
-            # ADF4382 PLL on SPI0 CS0
-            "adf4382_cs": 0,
-            # XCVR PLL selection (QPLL for VCU118 GTY)
-            "rx_sys_clk_select": 3,
-            "tx_sys_clk_select": 3,
-            "rx_out_clk_select": 4,
-            "tx_out_clk_select": 4,
-            # JESD204 link IDs (from dt-bindings/iio/adc/adi,ad9088.h)
-            "rx_a_link_id": 4,  # FRAMER_LINK_A0_RX
-            "rx_b_link_id": 6,  # FRAMER_LINK_B0_RX
-            "tx_a_link_id": 0,  # DEFRAMER_LINK_A0_TX
-            "tx_b_link_id": 2,  # DEFRAMER_LINK_B0_TX
-            # Device profile firmware loaded by the ad9088 driver
-            "firmware_name": "204C_M4_L8_NP16_1p25_4x4.bin",
-            # Hardware reset GPIO (active high) on VCU118 axi_gpio
-            "reset_gpio": 62,
-            # JESD204C subclass (0 = standard, 1 = with AION)
-            "subclass": 0,
-            # Side-B uses separate TPL core (ASYNM_A_B_MODE)
-            "side_b_separate_tpl": True,
-            # Lane mappings (from reference DTS for VCU118 AD9084)
-            "jrx0_physical_lane_mapping": "10 8 9 11 5 1 3 7 4 6 2 0",
-            "jtx0_logical_lane_mapping": "11 2 3 5 10 1 9 0 6 7 8 4",
-            "jrx1_physical_lane_mapping": "4 6 2 0 1 7 10 3 5 8 9 11",
-            "jtx1_logical_lane_mapping": "3 9 5 4 2 6 1 7 8 11 0 10",
-            # HMC7044 tuning (from reference DTS)
-            "pulse_generator_mode": 7,  # HMC7044_PULSE_GEN_CONT_PULSE
-            "oscin_buffer_mode": "0x05",
-            # HSCI connection
-            "hsci_label": "axi_hsci_0",
-            "hsci_auto_linkup": True,
-            # Override HMC7044 channel config
-            "hmc7044_channels": [
-                {"id": 1, "name": "ADF4030_REFIN", "divider": 20, "driver_mode": 2},
-                {
-                    "id": 3,
-                    "name": "ADF4030_BSYNC0",
-                    "divider": 512,
-                    "driver_mode": 1,
-                    "is_sysref": True,
-                },
-                {"id": 8, "name": "CORE_CLK_TX", "divider": 8, "driver_mode": 2},
-                {"id": 9, "name": "CORE_CLK_RX", "divider": 8, "driver_mode": 2},
-                {"id": 10, "name": "FPGA_REFCLK", "divider": 8, "driver_mode": 2},
-                {"id": 11, "name": "CORE_CLK_RX_B", "divider": 8, "driver_mode": 2},
-                {"id": 12, "name": "CORE_CLK_TX_B", "divider": 8, "driver_mode": 2},
-            ],
-        },
-    }
-
-
 @pytest.mark.lg_feature(["ad9084", "vcu118"])
 def test_ad9084_vcu118_xsa(target):
     _require_lg_env()
@@ -154,14 +60,15 @@ def test_ad9084_vcu118_xsa(target):
     except ModuleNotFoundError as ex:
         pytest.skip(f"pyadi-build dependency missing: {ex}")
 
-    cfg = _build_xsa_pipeline_cfg()
-
     # 1. Run XSA pipeline: sdtgen → parse topology → render nodes → merge DTS
+    #    All board config (SPI, clocks, lane mappings, JESD params) comes from
+    #    the ad9084_vcu118 profile — no manual cfg dict needed.
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     result = XsaPipeline().run(
         xsa_path=XSA_PATH,
-        cfg=cfg,
+        cfg={},
         output_dir=OUT_DIR,
+        profile=PROFILE_NAME,
         sdtgen_timeout=300,
     )
     merged_dts = result["merged"]
@@ -196,7 +103,8 @@ def test_ad9084_vcu118_xsa(target):
 
     # Ensure the AD9084 profile firmware is included in CONFIG_EXTRA_FIRMWARE
     # so it gets embedded into the simpleImage initramfs.
-    fw_name = cfg.get("ad9084_board", {}).get("firmware_name")
+    profile_data = ProfileManager().load(PROFILE_NAME)
+    fw_name = profile_data["defaults"].get("ad9084_board", {}).get("firmware_name")
     if fw_name:
         # Copy profile firmware from test profiles to kernel firmware dir
         profile_src = HERE / "profiles" / "vcu118" / fw_name

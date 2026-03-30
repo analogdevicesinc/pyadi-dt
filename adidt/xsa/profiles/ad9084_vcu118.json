@@ -1,6 +1,10 @@
 {
   "name": "ad9084_vcu118",
   "defaults": {
+    "jesd": {
+      "rx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1},
+      "tx": {"F": 6, "K": 32, "M": 4, "L": 8, "Np": 12, "S": 1}
+    },
     "clock": {
       "rx_device_clk_label": "hmc7044",
       "rx_device_clk_index": 8,
