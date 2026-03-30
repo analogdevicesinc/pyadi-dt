@@ -125,4 +125,4 @@ Table of contents
    :caption: Reference
 
    cli
-   api
+   api/index
