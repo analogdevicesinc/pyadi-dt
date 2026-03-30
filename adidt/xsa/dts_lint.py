@@ -166,35 +166,45 @@ def _check_phandle_unresolved(
     return diagnostics
 
 
+# Matches "clocks = <...>;" property values (may span multiple phandles)
+_CLOCKS_PROP_RE = re.compile(r"\bclocks\s*=\s*(?P<value>[^;]+);")
+
+
 def _check_clock_cells_mismatch(
     dts: str, nodes: dict[str, str], cells_map: dict[str, dict[str, int]]
 ) -> list[LintDiagnostic]:
-    """Check that phandle refs provide correct arg count matching #clock-cells."""
+    """Check that clock phandle refs provide correct arg count matching #clock-cells.
+
+    Only checks phandle references inside ``clocks = <...>;`` properties,
+    not ``jesd204-inputs`` or other phandle-bearing properties that use
+    different cell counts (e.g., ``#jesd204-cells``).
+    """
     diagnostics: list[LintDiagnostic] = []
 
-    for m in _PHANDLE_REF_RE.finditer(dts):
-        ref_label = m.group("label")
-        args_str = m.group("args").strip()
-        provider_cells = cells_map.get(ref_label, {}).get("clock", None)
-        if provider_cells is None:
-            continue
+    for prop_m in _CLOCKS_PROP_RE.finditer(dts):
+        clocks_value = prop_m.group("value")
+        for ref_m in _PHANDLE_REF_RE.finditer(clocks_value):
+            ref_label = ref_m.group("label")
+            args_str = ref_m.group("args").strip()
+            provider_cells = cells_map.get(ref_label, {}).get("clock", None)
+            if provider_cells is None:
+                continue
 
-        # Count numeric arguments after the label
-        arg_tokens = [t for t in args_str.split() if t]
-        actual_args = len(arg_tokens)
+            arg_tokens = [t for t in args_str.split() if t]
+            actual_args = len(arg_tokens)
 
-        if actual_args != provider_cells:
-            diagnostics.append(
-                LintDiagnostic(
-                    severity="error",
-                    rule="clock-cells-mismatch",
-                    node=ref_label,
-                    message=(
-                        f"<&{ref_label}> has #clock-cells = <{provider_cells}> "
-                        f"but reference provides {actual_args} argument(s)"
-                    ),
+            if actual_args != provider_cells:
+                diagnostics.append(
+                    LintDiagnostic(
+                        severity="error",
+                        rule="clock-cells-mismatch",
+                        node=ref_label,
+                        message=(
+                            f"<&{ref_label}> has #clock-cells = <{provider_cells}> "
+                            f"but reference provides {actual_args} argument(s)"
+                        ),
+                    )
                 )
-            )
     return diagnostics
 
 
@@ -232,17 +242,39 @@ def _check_spi_cs_duplicate(
     return diagnostics
 
 
+# Matches "label: channel@N" node headers — these are child nodes that
+# don't need their own compatible string (parent driver handles them).
+_CHILD_NODE_LABEL_RE = re.compile(r"channel@\d+")
+
+
+def _find_child_labels(dts: str) -> set[str]:
+    """Return labels of nodes that are DT child nodes (channel@N etc.)."""
+    child_labels: set[str] = set()
+    for m in re.finditer(
+        r"(?P<label>[A-Za-z_][\w-]*)\s*:\s*channel@\d+", dts
+    ):
+        child_labels.add(m.group("label"))
+    return child_labels
+
+
 def _check_compatible_missing(
     dts: str, nodes: dict[str, str]
 ) -> list[LintDiagnostic]:
-    """Check that device nodes with reg also have a compatible string."""
+    """Check that device nodes with reg also have a compatible string.
+
+    Skips child nodes (e.g., HMC7044 ``channel@N`` nodes) — these are
+    sub-nodes managed by a parent driver and don't need their own
+    compatible string.
+    """
     diagnostics: list[LintDiagnostic] = []
+    child_labels = _find_child_labels(dts)
 
     for label, body in nodes.items():
-        # Only check nodes that have a reg property (device nodes)
+        if label in child_labels:
+            continue
         if not _REG_RE.search(body):
             continue
-        # Skip pure bus nodes (they have #address-cells but may not need compatible)
+        # Skip bus nodes (they have #address-cells but may not need compatible)
         if "#address-cells" in body and "spi-max-frequency" not in body:
             continue
         if not _COMPATIBLE_RE.search(body):
