@@ -1388,8 +1388,16 @@ class NodeBuilder:
         """Cached Jinja2 environment for the XSA template directory."""
         return self._make_jinja_env()
 
-    def _render(self, template_name: str, ctx: dict) -> str:
-        """Render a Jinja2 template from adidt/templates/xsa/ with the given context."""
+    def _render(self, template_name: str, ctx: dict | Any) -> str:
+        """Render a Jinja2 template from adidt/templates/xsa/ with the given context.
+
+        Args:
+            template_name: Template filename (e.g. ``"adxcvr.tmpl"``).
+            ctx: Context dict or a dataclass with an ``as_dict()`` method
+                (see :mod:`adidt.xsa.template_contexts`).
+        """
+        if hasattr(ctx, "as_dict"):
+            ctx = ctx.as_dict()
         return self._env.get_template(template_name).render(ctx)
 
     def _wrap_spi_bus(self, label: str, children: str) -> str:
