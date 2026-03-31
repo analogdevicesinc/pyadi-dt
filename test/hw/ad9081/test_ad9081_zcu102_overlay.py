@@ -30,19 +30,23 @@ from pathlib import Path
 import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
-from test.hw.hw_helpers import compile_dtso_to_dtbo, shell_out
+from test.hw.hw_helpers import compile_dts_to_dtb, compile_dtso_to_dtbo, shell_out
 
 PROFILE_NAME = "ad9081_zcu102"
 LG_ENV_PATH = "/jenkins/lg_ad9081_zcu102.yaml"
 XSA_PATH = Path(__file__).parent / "system_top.xsa"
 
-# JESD params for this XSA design (M8/L4 mode)
-JESD_CFG = {
-    "jesd": {
-        "rx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
-        "tx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
-    },
-}
+
+def _build_adijif_cfg() -> dict:
+    """Build pipeline config using adijif solver (same as test_ad9081_xsa_hw_clean)."""
+    # Import the resolver from the sibling test
+    import sys as _sys
+
+    _sys.path.insert(0, str(Path(__file__).parent))
+    from test_ad9081_xsa_hw_clean import _resolve_config_from_adijif
+
+    cfg, _summary = _resolve_config_from_adijif(122.88e6, solve=True)
+    return cfg
 OVERLAY_NAME = "ad9081_zcu102_xsa"
 CONFIGFS_OVERLAYS = "/sys/kernel/config/device-tree/overlays"
 DTBO_REMOTE_PATH = f"/tmp/{OVERLAY_NAME}.dtbo"
@@ -73,35 +77,58 @@ def _require_tools() -> None:
 
 
 @pytest.fixture(scope="module")
-def booted_board(board):
-    """Boot the board to a shell via KuiperDLDriver + BootFPGASoC strategy."""
-    kuiper = board.target.get_driver("KuiperDLDriver")
-    kuiper.get_boot_files_from_release()
-    board.transition("shell")
-    return board
-
-
-@pytest.fixture(scope="module")
-def overlay_dtbo(tmp_path_factory) -> Path:
-    """Generate and compile the AD9081 ZCU102 overlay .dtbo."""
+def pipeline_result(tmp_path_factory) -> dict:
+    """Run XsaPipeline to generate merged DTS and overlay."""
     _require_tools()
 
     if not XSA_PATH.exists():
         pytest.skip(f"XSA not found: {XSA_PATH}")
 
-    out_dir = tmp_path_factory.mktemp("overlay") / "out"
-    result = XsaPipeline().run(
+    try:
+        cfg = _build_adijif_cfg()
+    except ImportError:
+        pytest.skip("adijif (pyadi-jif) not installed")
+
+    # Override: force QPLL for both RX and TX XCVR.
+    # The adijif solver may select CPLL for RX, but at 15 Gbps lane rate
+    # the GTH4 CPLL cannot support it (max ~6.25 Gbps).  QPLL is required.
+    cfg.setdefault("ad9081", {})["rx_sys_clk_select"] = 3
+    cfg.setdefault("ad9081", {})["tx_sys_clk_select"] = 3
+
+    out_dir = tmp_path_factory.mktemp("pipeline") / "out"
+    return XsaPipeline().run(
         xsa_path=XSA_PATH,
-        cfg=JESD_CFG,
+        cfg=cfg,
         output_dir=out_dir,
         profile=PROFILE_NAME,
         sdtgen_timeout=300,
     )
 
-    overlay = result["overlay"]
-    assert overlay.exists(), f"overlay not generated: {overlay}"
 
-    dtbo = out_dir / f"{OVERLAY_NAME}.dtbo"
+@pytest.fixture(scope="module")
+def booted_board(board, pipeline_result):
+    """Boot with the pipeline-generated merged DTB.
+
+    Uses the XSA-pipeline merged DTS (compiled to DTB) which has correct
+    XCVR PLL settings (QPLL) and HMC7044 configuration, so JESD204
+    links establish correctly.
+    """
+    merged_dts = pipeline_result["merged"]
+    dtb = merged_dts.parent / "system.dtb"
+    compile_dts_to_dtb(merged_dts, dtb)
+
+    kuiper = board.target.get_driver("KuiperDLDriver")
+    kuiper.get_boot_files_from_release()
+    kuiper.add_files_to_target(dtb)
+    board.transition("shell")
+    return board
+
+
+@pytest.fixture(scope="module")
+def overlay_dtbo(pipeline_result) -> Path:
+    """Compile the overlay .dtso to .dtbo."""
+    overlay = pipeline_result["overlay"]
+    dtbo = overlay.parent / f"{OVERLAY_NAME}.dtbo"
     compile_dtso_to_dtbo(overlay, dtbo)
     assert dtbo.exists() and dtbo.stat().st_size > 100
     print(f"Compiled overlay: {dtbo} ({dtbo.stat().st_size} bytes)")

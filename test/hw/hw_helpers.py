@@ -15,38 +15,32 @@ HERE = Path(__file__).parent
 
 
 def _dedup_root_nodes(pp_dts: Path) -> None:
-    """Remove duplicate root-level child nodes from a preprocessed DTS.
+    """Remove the duplicate sdtgen root block from a preprocessed ZynqMP DTS.
 
     sdtgen for ZynqMP generates ``system-top.dts`` that ``#include``s
-    ``zynqmp.dtsi``.  Both define ``cpus { ... }`` under the root, causing
-    ``dtc`` to error with ``duplicate_node_names``.
+    ``zynqmp.dtsi``, ``zynqmp-clk-ccf.dtsi``, and ``pl.dtsi``.  After
+    ``cpp`` preprocessing, the file has 4 ``/ { ... };`` blocks:
 
-    This function scans the preprocessed DTS for duplicate node names that
-    are direct children of root ``/ { ... }`` blocks and removes the earlier
-    occurrence, keeping the last (sdtgen-corrected) version.
+    - Block 0: ``zynqmp.dtsi`` (canonical A53 CPU, peripherals, clocks)
+    - Block 1: ``zynqmp-clk-ccf.dtsi`` (PS reference clock)
+    - Block 2: ``pl.dtsi`` (FPGA PL bus with all AXI IPs)
+    - Block 3: ``system-top.dts`` (sdtgen re-declaration of cpus, amba_pl, etc.)
+
+    Block 3 duplicates everything already defined in Blocks 0-2 and causes
+    ``dtc`` ``duplicate_node_names`` errors.  Remove it entirely — the
+    content after Block 3 (overlay ``&label { ... }`` references from the
+    merger) is preserved.
     """
-    text = pp_dts.read_text()
-
-    # Find all "label: name" or bare "name" node headers at depth 1 inside
-    # root blocks, track their byte ranges, and remove duplicates.
-    # Strategy: regex won't handle nesting, so use simple line-based detection
-    # of "cpus {" patterns and brace counting.
     import re
 
-    # Pattern for root-level child node: "  label: name {" or "  name {"
-    # at depth 1 inside a "/ {" block.
-    child_re = re.compile(r"^[ \t](\w[\w-]*)\s*:\s*(\w[\w@-]*)\s*\{|^[ \t](\w[\w@-]*)\s*\{", re.M)
+    text = pp_dts.read_text()
 
-    seen_names: dict[str, list[tuple[int, int]]] = {}  # node_name -> [(start, end)]
-
-    for m in child_re.finditer(text):
-        node_name = m.group(2) or m.group(3)
-        if not node_name:
-            continue
+    # Find all "/ {" block positions using brace counting
+    root_re = re.compile(r"^/ \{", re.M)
+    root_blocks: list[tuple[int, int]] = []
+    for m in root_re.finditer(text):
         start = m.start()
-        # Find matching closing brace at depth 0 relative to this node
         depth = 0
-        end = None
         for i in range(m.end() - 1, len(text)):
             if text[i] == "{":
                 depth += 1
@@ -56,27 +50,24 @@ def _dedup_root_nodes(pp_dts: Path) -> None:
                     end = i + 1
                     if end < len(text) and text[end] == ";":
                         end += 1
-                    # Include trailing newline
                     if end < len(text) and text[end] == "\n":
                         end += 1
+                    root_blocks.append((start, end))
                     break
-        if end is None:
-            continue
-        seen_names.setdefault(node_name, []).append((start, end))
 
-    # Collect ranges to remove (all but last occurrence of each duplicate)
-    remove_ranges: list[tuple[int, int]] = []
-    for name, ranges in seen_names.items():
-        if len(ranges) > 1:
-            remove_ranges.extend(ranges[1:])  # Keep first, remove later duplicates
+    # Remove the last root block when there are 4+ (the ZynqMP sdtgen pattern).
+    # Block 3 (system-top.dts) re-declares everything from Blocks 0-2.
+    if len(root_blocks) >= 4:
+        last_start, last_end = root_blocks[-1]
+        text = text[:last_start] + text[last_end:]
 
-    if not remove_ranges:
-        return
-
-    # Sort by start position descending, remove from end to start
-    remove_ranges.sort(key=lambda r: r[0], reverse=True)
-    for start, end in remove_ranges:
-        text = text[:start] + text[end:]
+    # Rename "cpus_microblaze_0: cpus {" → "cpus_microblaze_0: cpus-pmu {"
+    # to avoid conflict with "cpus_a53: cpus" from zynqmp.dtsi.
+    # The MicroBlaze PMU CPU node is only used for address-map metadata.
+    text = text.replace(
+        "cpus_microblaze_0: cpus {",
+        "cpus_microblaze_0: cpus-pmu {",
+    )
 
     pp_dts.write_text(text)
 DEFAULT_OUT_DIR = HERE / "output"
@@ -119,6 +110,11 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         if res.returncode != 0:
             raise RuntimeError(f"cpp failed:\n{res.stderr}")
         compile_input = preprocessed
+
+    # Fix duplicate node names from sdtgen (e.g., cpus_a53 and
+    # cpus_microblaze_0 both using node name "cpus")
+    if compile_input != dts_path:
+        _dedup_root_nodes(compile_input)
 
     res = subprocess.run(
         ["dtc", "-I", "dts", "-O", "dtb", "-o", str(dtb_path), str(compile_input)],
