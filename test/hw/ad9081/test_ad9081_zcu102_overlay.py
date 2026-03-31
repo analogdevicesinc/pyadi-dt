@@ -45,21 +45,19 @@ def _build_adijif_cfg() -> dict:
     """
     import adijif
 
-    # Match the Kuiper reference DTB settings exactly:
-    #   ADC: 3 GHz, CDDC=2, FDDC=1 (output = 1.5 GSPS)
-    #   DAC: 12 GHz, CDUC=8, FDUC=1 (output = 1.5 GSPS)
-    #   VCXO: 122.88 MHz (physical board VCXO)
+    # Board: 122.88 MHz VCXO, M8/L4 HDL design
+    # Kuiper reference: ADC=4 GHz, DAC=12 GHz, CDDC=4, FDDC=4, CDUC=8, FDUC=6
     vcxo_hz = 122.88e6
     sys = adijif.system("ad9081", "hmc7044", "xilinx", vcxo=vcxo_hz)
     sys.fpga.setup_by_dev_kit_name("zcu102")
 
-    cddc = 2
-    fddc = 1
+    cddc = 4
+    fddc = 4
     cduc = 8
-    fduc = 1
+    fduc = 6
 
     sys.converter.clocking_option = "integrated_pll"
-    sys.converter.adc.sample_clock = 3000000000 / cddc / fddc
+    sys.converter.adc.sample_clock = 4000000000 / cddc / fddc
     sys.converter.dac.sample_clock = 12000000000 / cduc / fduc
 
     sys.converter.adc.datapath.cddc_decimations = [cddc] * 4
@@ -69,12 +67,12 @@ def _build_adijif_cfg() -> dict:
     sys.converter.adc.datapath.fddc_enabled = [True] * 8
     sys.converter.dac.datapath.fduc_enabled = [True] * 8
 
-    # M=4, L=8 to match the HDL design sysid
+    # M=8, L=4 to match the M8/L4 HDL design + BOOT.BIN
     mode_rx = adijif.utils.get_jesd_mode_from_params(
-        sys.converter.adc, M=4, L=8, Np=16, jesd_class="jesd204b"
+        sys.converter.adc, M=8, L=4, Np=16, jesd_class="jesd204b"
     )
     mode_tx = adijif.utils.get_jesd_mode_from_params(
-        sys.converter.dac, M=4, L=8, Np=16, jesd_class="jesd204b"
+        sys.converter.dac, M=8, L=4, Np=16, jesd_class="jesd204b"
     )
     if not mode_rx or not mode_tx:
         raise RuntimeError("No matching M4/L8 JESD mode found via adijif")
