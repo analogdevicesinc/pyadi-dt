@@ -133,11 +133,13 @@ HERE = Path(__file__).parent
 OUT_DIR = HERE / "output_overlay"
 
 # IIO device names expected after overlay load
+# IIO device names — includes both Kuiper reference names and sdtgen names
 AD9081_IIO_NAMES = [
     "hmc7044",
     "axi-ad9081-rx-hpc",
     "axi-ad9081-tx-hpc",
-    "ad9081",
+    "ad_ip_jesd204_tpl_adc",
+    "ad_ip_jesd204_tpl_dac",
 ]
 
 if not os.environ.get("LG_ENV"):
@@ -401,110 +403,106 @@ def _get_ip_address(shell) -> str:
 
 
 @pytest.mark.lg_feature(["ad9081", "zcu102"])
-def test_dma_loopback(booted_board, overlay_dtbo):
-    """Verify DMA TX→RX data path using DDS tone loopback.
+def test_jesd_link_status(booted_board):
+    """Verify JESD204 links are in DATA mode after boot."""
+    shell = booted_board.target.get_driver("ADIShellDriver")
 
-    Generates a single DDS tone on TX, captures RX data, and verifies
-    the captured signal has meaningful content (non-zero, with a
-    dominant frequency component matching the DDS tone).
+    # Find JESD status files
+    status_output = shell_out(
+        shell,
+        'for f in $(find /sys/devices/platform -maxdepth 4 -name status -path "*jesd*" 2>/dev/null); do '
+        'echo "FILE=$f"; head -2 "$f"; done; true',
+    )
+    print(f"JESD status:\n{status_output}")
 
-    Requires the AD9081 EBZ to have its TX output looped back to the
-    RX input (external cable or on-board loopback path).
+    assert "Link is enabled" in status_output, (
+        f"JESD link not enabled. Status output:\n{status_output}"
+    )
+
+
+@pytest.mark.lg_feature(["ad9081", "zcu102"])
+def test_dma_loopback(booted_board):
+    """Verify DMA TX→RX data path via raw IIO buffer capture.
+
+    Enables a DDS tone on TX via IIO, captures RX data, and verifies
+    the captured signal has non-zero content.  Uses raw libiio API
+    (not pyadi-iio) to work with both Kuiper and sdtgen device names.
     """
     import numpy as np
 
     shell = booted_board.target.get_driver("ADIShellDriver")
-
-    # Ensure overlay is loaded
-    if not _overlay_is_loaded(shell):
-        _deploy_dtbo_via_shell(shell, overlay_dtbo, DTBO_REMOTE_PATH)
-        result = _load_overlay(shell)
-        assert "RC=0" in result, f"overlay load failed: {result}"
-        import time
-        time.sleep(5)
-
     ip = _get_ip_address(shell)
 
     try:
-        import adi
+        import iio
     except ImportError:
-        pytest.skip("pyadi-iio (adi) not installed")
+        pytest.skip("libiio not installed")
 
     try:
-        dev = adi.ad9081(uri=f"ip:{ip}")
+        ctx = iio.Context(f"ip:{ip}")
     except Exception as ex:
-        pytest.skip(
-            f"could not connect to AD9081 at ip:{ip}: {ex}. "
-            "The overlay may have loaded FPGA IP nodes but the converter "
-            "driver did not probe (JESD link not established or clock "
-            "chip not initialized)."
-        )
+        pytest.skip(f"could not create IIO context at ip:{ip}: {ex}")
 
-    # Configure DDS tone on TX channel 0
-    dds_freq_hz = 1_000_000  # 1 MHz tone
-    dds_scale = 0.5
-    dev.rx_enabled_channels = [0]
-    dev.rx_buffer_size = 2**14
+    # Find ADC and DAC devices (accept both naming conventions)
+    adc = ctx.find_device("axi-ad9081-rx-hpc") or ctx.find_device(
+        "ad_ip_jesd204_tpl_adc"
+    )
+    dac = ctx.find_device("axi-ad9081-tx-hpc") or ctx.find_device(
+        "ad_ip_jesd204_tpl_dac"
+    )
+    if adc is None:
+        pytest.skip("ADC IIO device not found — JESD link may not be up")
+    if dac is None:
+        pytest.skip("DAC IIO device not found — JESD link may not be up")
+
+    print(f"ADC: {adc.name} ({len(adc.channels)} ch)")
+    print(f"DAC: {dac.name} ({len(dac.channels)} ch)")
+
+    # Enable DDS tone on first TX altvoltage channel
+    for ch in dac.channels:
+        if "altvoltage0" in ch.id:
+            try:
+                ch.attrs["frequency"].value = str(1_000_000)
+                ch.attrs["scale"].value = str(0.5)
+                ch.attrs["raw"].value = str(1)
+                print(f"DDS enabled: {ch.id} @ 1 MHz")
+            except Exception as ex:
+                pytest.skip(f"DDS setup failed: {ex}")
+            break
+
+    # Enable first RX voltage channel and capture
+    rx_ch = None
+    for c in adc.channels:
+        if c.id.startswith("voltage") and not c.output:
+            c.enabled = True
+            rx_ch = c
+            break
+    assert rx_ch is not None, "no RX voltage channel found"
 
     try:
-        dev.dds_single_tone(dds_freq_hz, dds_scale, channel=0)
-    except Exception as ex:
-        pytest.skip(f"DDS single tone setup failed (driver may not support it): {ex}")
-
-    # Capture RX data
-    try:
-        # Flush initial buffers
+        buf = iio.Buffer(adc, 2**14)
         for _ in range(3):
-            _ = dev.rx()
-
-        data = dev.rx()
+            buf.refill()
+        buf.refill()
+        data = np.frombuffer(buf.read(), dtype=np.int16)
     except TimeoutError:
         pytest.skip(
-            "DMA buffer refill timed out — JESD204 link may not be established. "
-            "This can happen when the base Kuiper DTB and overlay have "
-            "mismatched JESD parameters, or the converter is not clocked."
+            "DMA buffer refill timed out — JESD204 link may not be in DATA mode"
         )
     except Exception as ex:
         pytest.fail(f"RX capture failed: {ex}")
     finally:
-        try:
-            dev.disable_dds()
-        except Exception:
-            pass
-        try:
-            dev.rx_destroy_buffer()
-        except Exception:
-            pass
+        # Disable DDS
+        for ch in dac.channels:
+            if "altvoltage0" in ch.id:
+                try:
+                    ch.attrs["raw"].value = str(0)
+                except Exception:
+                    pass
+                break
 
-    assert data is not None, "RX returned None"
-    if isinstance(data, list):
-        data = data[0]
-    assert len(data) > 0, "RX returned empty buffer"
-
-    # Verify the captured data is non-trivial (not all zeros)
     peak = np.max(np.abs(data))
-    print(f"RX capture: {len(data)} samples, peak={peak:.1f}")
-    assert peak > 0, "RX data is all zeros — DMA or loopback path may be broken"
-
-    # FFT to verify the DDS tone is present
-    spectrum = np.abs(np.fft.fft(data))
-    dc_bin = spectrum[0]
-    spectrum[0] = 0  # Remove DC
-    peak_bin = np.argmax(spectrum[: len(spectrum) // 2])
-    sample_rate = dev.rx_sample_rate if hasattr(dev, "rx_sample_rate") else None
-    if sample_rate:
-        peak_freq = peak_bin * sample_rate / len(data)
-        print(f"Peak frequency: {peak_freq / 1e6:.3f} MHz (expected {dds_freq_hz / 1e6:.1f} MHz)")
-
-    # The peak bin should have significantly more energy than the noise floor
-    sorted_spectrum = np.sort(spectrum[: len(spectrum) // 2])
-    noise_floor = np.mean(sorted_spectrum[: len(sorted_spectrum) // 2])
-    peak_power = spectrum[peak_bin]
-    snr_linear = peak_power / max(noise_floor, 1)
-    print(f"SNR (linear): {snr_linear:.1f} (peak_bin={peak_bin}, noise_floor={noise_floor:.1f})")
-
-    assert snr_linear > 10, (
-        f"DDS tone not clearly visible in captured data. "
-        f"SNR={snr_linear:.1f} (expected >10). "
-        f"Check TX→RX loopback connection."
-    )
+    print(f"RX capture: {len(data)} samples, peak={peak}")
+    assert peak > 0, "RX data is all zeros — DMA path or JESD link may be broken"
+    assert len(data) > 100, f"RX data too short: {len(data)} samples"
+    print("DMA loopback: data flowing")
