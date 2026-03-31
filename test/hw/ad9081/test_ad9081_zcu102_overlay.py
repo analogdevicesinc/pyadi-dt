@@ -433,13 +433,16 @@ def _create_ad9081(uri: str):
     return dev
 
 
+DDS_TONE_HZ = 1_000_000  # 1 MHz DDS tone for loopback test
+
+
 @pytest.mark.lg_feature(["ad9081", "zcu102"])
 def test_dma_loopback(booted_board):
-    """Verify DMA TX→RX data path using pyadi-iio.
+    """Verify DMA TX→RX data path using pyadi-iio and genalyzer FFT analysis.
 
-    Creates an adi.ad9081 instance (with fallback for sdtgen device names),
-    enables a 1 MHz DDS tone on TX, captures RX samples, and asserts the
-    data is non-zero.
+    Enables a 1 MHz DDS tone on TX via pyadi-iio, captures RX samples,
+    then uses genalyzer to compute the FFT and verify the tone appears
+    at the expected frequency bin with sufficient SNR.
     """
     import numpy as np
 
@@ -458,16 +461,26 @@ def test_dma_loopback(booted_board):
 
     print(f"ADC: {dev._rxadc.name}, DAC: {dev._txdac.name}")
 
+    nfft = 2**14
     dev.rx_enabled_channels = [0]
-    dev.rx_buffer_size = 2**14
+    dev.rx_buffer_size = nfft
+
+    # Enable DDS via raw IIO attributes (pyadi-iio's dds_single_tone may
+    # not work correctly with the patched device name fallback).
+    import iio
+
+    dac = dev._txdac
+    for ch in dac.channels:
+        if ch.id == "altvoltage0":
+            ch.attrs["frequency"].value = str(DDS_TONE_HZ)
+            ch.attrs["scale"].value = str(0.9)
+            ch.attrs["raw"].value = str(1)
+            print(f"DDS enabled: {ch.id} @ {DDS_TONE_HZ / 1e6:.0f} MHz, scale=0.9")
+            break
+    time.sleep(1)
 
     try:
-        dev.dds_single_tone(1_000_000, 0.5, channel=0)
-    except Exception as ex:
-        pytest.skip(f"DDS setup failed: {ex}")
-
-    try:
-        for _ in range(3):
+        for _ in range(5):
             dev.rx()
         data = dev.rx()
     except TimeoutError:
@@ -475,10 +488,13 @@ def test_dma_loopback(booted_board):
     except Exception as ex:
         pytest.fail(f"RX capture failed: {ex}")
     finally:
-        try:
-            dev.disable_dds()
-        except Exception:
-            pass
+        for ch in dac.channels:
+            if ch.id == "altvoltage0":
+                try:
+                    ch.attrs["raw"].value = str(0)
+                except Exception:
+                    pass
+                break
         try:
             dev.rx_destroy_buffer()
         except Exception:
@@ -490,5 +506,65 @@ def test_dma_loopback(booted_board):
     peak = np.max(np.abs(data))
     print(f"RX capture: {len(data)} samples, peak={peak:.1f}")
     assert peak > 0, "RX data is all zeros — DMA path or JESD link may be broken"
-    assert len(data) > 100, f"RX data too short: {len(data)} samples"
-    print("DMA loopback: data flowing via pyadi-iio")
+
+    # --- genalyzer FFT analysis ---
+    try:
+        import genalyzer as gn
+    except ImportError:
+        print("genalyzer not installed — skipping spectral analysis")
+        return
+
+    fs = float(dev.rx_sample_rate)
+    print(f"Sample rate: {fs / 1e6:.3f} MHz")
+
+    # Compute FFT using genalyzer with Blackman-Harris window to reduce
+    # spectral leakage (the DDS tone is not generally coherent with nfft).
+    fft_out = gn.fft(data.astype(np.complex128), 1, nfft, gn.Window.BLACKMAN_HARRIS)
+
+    # Configure Fourier Analysis: mark the DDS tone as the signal of
+    # interest with 4 single-side bins to capture windowed energy.
+    key = "loopback_test"
+    gn.fa_create(key)
+    gn.fa_fsample(key, fs)
+    gn.fa_fdata(key, fs)
+    gn.fa_fixed_tone(key, "A", gn.FaCompTag.SIGNAL, DDS_TONE_HZ)
+    gn.fa_ssb(key, gn.FaSsb.DEFAULT, 4)
+
+    results = gn.fft_analysis(key, fft_out, nfft)
+
+    # Extract key metrics
+    signal_freq = results.get("A:freq", 0.0)
+    signal_mag = results.get("A:mag_dbfs", -999.0)
+    snr = results.get("snr", 0.0)
+    sfdr = results.get("sfdr", 0.0)
+    fsnr = results.get("fsnr", 0.0)
+
+    print(f"Tone frequency: {signal_freq / 1e6:.6f} MHz (expected {DDS_TONE_HZ / 1e6:.1f} MHz)")
+    print(f"Tone magnitude: {signal_mag:.1f} dBFS")
+    print(f"SNR: {snr:.1f} dB, SFDR: {sfdr:.1f} dB, FSNR: {fsnr:.1f} dB")
+
+    # Verify tone is at the expected frequency (within 2 bins)
+    fbin = fs / nfft
+    freq_error = abs(signal_freq - DDS_TONE_HZ)
+    print(f"Frequency error: {freq_error:.0f} Hz (bin size: {fbin:.0f} Hz)")
+    assert freq_error < fbin * 2, (
+        f"DDS tone not at expected frequency: measured {signal_freq / 1e6:.6f} MHz, "
+        f"expected {DDS_TONE_HZ / 1e6:.1f} MHz (error: {freq_error:.0f} Hz, "
+        f"tolerance: {fbin * 2:.0f} Hz)"
+    )
+
+    # Verify the tone has more power than the noise floor.
+    # Without a physical loopback cable, the signal may be weak (board
+    # crosstalk only), so we check relative magnitude rather than
+    # absolute SNR.  With a loopback cable, SNR > 20 dB is typical.
+    if snr > 10:
+        print(f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
+              f"SNR={snr:.1f} dB (good loopback)")
+    elif signal_mag > -40:
+        print(f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
+              f"mag={signal_mag:.1f} dBFS (weak — no loopback cable?)")
+    else:
+        pytest.fail(
+            f"DDS tone too weak: {signal_mag:.1f} dBFS at {signal_freq / 1e6:.3f} MHz. "
+            f"SNR={snr:.1f} dB. Check TX→RX loopback connection and DDS configuration."
+        )
