@@ -390,79 +390,105 @@ def test_jesd_link_status(booted_board):
     )
 
 
+def _create_ad9081(uri: str):
+    """Create an adi.ad9081 instance, falling back to sdtgen device names.
+
+    pyadi-iio's ad9081 class hardcodes ``axi-ad9081-rx-hpc`` and
+    ``axi-ad9081-tx-hpc`` as device names.  The pipeline-generated merged
+    DTB uses sdtgen names (``ad_ip_jesd204_tpl_adc/dac``).  This helper
+    patches the IIO context's ``find_device`` to alias sdtgen names, then
+    lets the standard ad9081 constructor run normally.
+    """
+    import adi
+    import iio
+
+    # Try standard path first
+    try:
+        return adi.ad9081(uri=uri)
+    except (AttributeError, TypeError):
+        pass
+
+    # Patch: create a context that aliases sdtgen names to Kuiper names
+    ctx = iio.Context(uri)
+    _NAME_MAP = {
+        "axi-ad9081-rx-hpc": "ad_ip_jesd204_tpl_adc",
+        "axi-ad9081-tx-hpc": "ad_ip_jesd204_tpl_dac",
+    }
+    _orig_find = ctx.find_device
+
+    def _patched_find(name):
+        result = _orig_find(name)
+        if result is None and name in _NAME_MAP:
+            result = _orig_find(_NAME_MAP[name])
+        return result
+
+    ctx.find_device = _patched_find
+
+    # Pre-set _ctx so context_manager.__init__ reuses it instead of
+    # creating a new unpatched context (it checks `if self._ctx:` first).
+    dev = adi.ad9081.__new__(adi.ad9081)
+    dev._ctx = ctx
+    dev.uri = uri
+    adi.ad9081.__init__(dev, uri=uri)
+    return dev
+
+
 @pytest.mark.lg_feature(["ad9081", "zcu102"])
 def test_dma_loopback(booted_board):
-    """Verify DMA TX→RX data path via pylibiio buffer capture.
+    """Verify DMA TX→RX data path using pyadi-iio.
 
-    Enables a 1 MHz DDS tone on the first TX channel, captures RX samples
-    into an IIO buffer over the network, and asserts the data is non-zero.
-    Uses raw libiio (not pyadi-iio) to work with both Kuiper and sdtgen
-    IIO device names.
+    Creates an adi.ad9081 instance (with fallback for sdtgen device names),
+    enables a 1 MHz DDS tone on TX, captures RX samples, and asserts the
+    data is non-zero.
     """
     import numpy as np
-    import iio
 
     shell = booted_board.target.get_driver("ADIShellDriver")
     ip = _get_ip_address(shell)
 
-    ctx = iio.Context(f"ip:{ip}")
-
-    adc = ctx.find_device("axi-ad9081-rx-hpc") or ctx.find_device(
-        "ad_ip_jesd204_tpl_adc"
-    )
-    dac = ctx.find_device("axi-ad9081-tx-hpc") or ctx.find_device(
-        "ad_ip_jesd204_tpl_dac"
-    )
-    if adc is None:
-        pytest.skip("ADC IIO device not found")
-    if dac is None:
-        pytest.skip("DAC IIO device not found")
-
-    print(f"ADC: {adc.name} ({len(adc.channels)} ch)")
-    print(f"DAC: {dac.name} ({len(dac.channels)} ch)")
-
-    # Enable DDS tone on first TX altvoltage channel
-    for ch in dac.channels:
-        if "altvoltage0" in ch.id:
-            try:
-                ch.attrs["frequency"].value = str(1_000_000)
-                ch.attrs["scale"].value = str(0.5)
-                ch.attrs["raw"].value = str(1)
-                print(f"DDS enabled: {ch.id} @ 1 MHz")
-            except Exception as ex:
-                pytest.skip(f"DDS setup failed: {ex}")
-            break
-
-    # Enable first RX voltage channel
-    rx_ch = None
-    for c in adc.channels:
-        if c.id.startswith("voltage") and not c.output:
-            c.enabled = True
-            rx_ch = c
-            break
-    assert rx_ch is not None, "no RX voltage channel found"
+    try:
+        import adi  # noqa: F401
+    except ImportError:
+        pytest.skip("pyadi-iio not installed")
 
     try:
-        buf = iio.Buffer(adc, 2**14)
+        dev = _create_ad9081(f"ip:{ip}")
+    except Exception as ex:
+        pytest.skip(f"could not connect to AD9081: {ex}")
+
+    print(f"ADC: {dev._rxadc.name}, DAC: {dev._txdac.name}")
+
+    dev.rx_enabled_channels = [0]
+    dev.rx_buffer_size = 2**14
+
+    try:
+        dev.dds_single_tone(1_000_000, 0.5, channel=0)
+    except Exception as ex:
+        pytest.skip(f"DDS setup failed: {ex}")
+
+    try:
         for _ in range(3):
-            buf.refill()
-        buf.refill()
-        data = np.frombuffer(buf.read(), dtype=np.int16)
+            dev.rx()
+        data = dev.rx()
     except TimeoutError:
         pytest.skip("DMA buffer refill timed out — JESD link may not be in DATA mode")
     except Exception as ex:
         pytest.fail(f"RX capture failed: {ex}")
     finally:
-        for ch in dac.channels:
-            if "altvoltage0" in ch.id:
-                try:
-                    ch.attrs["raw"].value = str(0)
-                except Exception:
-                    pass
-                break
+        try:
+            dev.disable_dds()
+        except Exception:
+            pass
+        try:
+            dev.rx_destroy_buffer()
+        except Exception:
+            pass
 
+    if isinstance(data, list):
+        data = data[0]
+    data = np.array(data)
     peak = np.max(np.abs(data))
-    print(f"RX capture: {len(data)} samples, peak={peak}")
+    print(f"RX capture: {len(data)} samples, peak={peak:.1f}")
     assert peak > 0, "RX data is all zeros — DMA path or JESD link may be broken"
     assert len(data) > 100, f"RX data too short: {len(data)} samples"
-    print("DMA loopback: data flowing")
+    print("DMA loopback: data flowing via pyadi-iio")
