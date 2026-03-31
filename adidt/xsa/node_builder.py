@@ -2273,7 +2273,7 @@ class NodeBuilder:
             "\t};"
         )
 
-        # adxcvr RX context (AD9081: 1-clock, use_lpm_enable=False)
+        # adxcvr RX context (AD9081: 1-clock, use_lpm_enable=True for RX CDR)
         adxcvr_rx_ctx = {
             "label": "axi_mxfe_rx_xcvr",
             "sys_clk_select": rx_sys_clk_select,
@@ -2282,7 +2282,7 @@ class NodeBuilder:
             "use_div40": False,
             "div40_clk_ref": None,
             "clock_output_names_str": '"rx_gt_clk", "rx_out_clk"',
-            "use_lpm_enable": False,
+            "use_lpm_enable": True,
             "jesd_l": None,
             "jesd_m": None,
             "jesd_s": None,
