@@ -209,7 +209,7 @@ def overlay_dtbo(pipeline_result) -> Path:
 def _restart_iiod(shell) -> None:
     """Restart iiod so it picks up new/removed IIO devices."""
     shell_out(shell, "systemctl restart iiod 2>/dev/null || killall -HUP iiod 2>/dev/null; true")
-    time.sleep(5)
+    time.sleep(8)
 
 
 def _get_iio_names_remote(ip: str, retries: int = 5, delay: float = 2.0) -> list[str]:

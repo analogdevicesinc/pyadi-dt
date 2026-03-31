@@ -57,9 +57,30 @@ def _dedup_root_nodes(pp_dts: Path) -> None:
 
     # Remove the last root block when there are 4+ (the ZynqMP sdtgen pattern).
     # Block 3 (system-top.dts) re-declares everything from Blocks 0-2.
+    # BUT preserve `chosen` and `aliases` nodes which only exist in Block 3
+    # and are required for console output and device aliasing.
     if len(root_blocks) >= 4:
         last_start, last_end = root_blocks[-1]
+        last_block = text[last_start:last_end]
+
+        # Extract chosen and aliases sub-nodes from the removed block
+        preserved: list[str] = []
+        for node_name in ("chosen", "aliases"):
+            node_re = re.compile(
+                rf"^ {node_name}\b[^\{{]*\{{.*?^ \}};",
+                re.M | re.S,
+            )
+            m = node_re.search(last_block)
+            if m:
+                preserved.append(m.group())
+
         text = text[:last_start] + text[last_end:]
+
+        # Re-insert preserved nodes in a new root block
+        if preserved:
+            preserved_block = "/ {\n" + "\n".join(preserved) + "\n};\n"
+            # Insert before any overlay &label references at end of file
+            text = text.rstrip() + "\n\n" + preserved_block + "\n"
 
     # Rename "cpus_microblaze_0: cpus {" → "cpus_microblaze_0: cpus-pmu {"
     # to avoid conflict with "cpus_a53: cpus" from zynqmp.dtsi.
