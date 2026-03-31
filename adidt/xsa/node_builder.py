@@ -359,6 +359,7 @@ class NodeBuilder:
         )
         dma_rx = (
             f"\t&{fmc.adc_dma_label} {{\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -366,6 +367,7 @@ class NodeBuilder:
         )
         dma_tx = (
             f"\t&{fmc.dac_dma_label} {{\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -549,6 +551,7 @@ class NodeBuilder:
         # DMA nodes
         dma_rx = (
             f"\t&{fmc.adc_dma_label} {{\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -556,6 +559,7 @@ class NodeBuilder:
         )
         dma_tx = (
             f"\t&{fmc.dac_dma_label} {{\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -2254,6 +2258,7 @@ class NodeBuilder:
         # DMA nodes (no template — keep as raw strings)
         dma_rx = (
             "\t&axi_mxfe_rx_dma {\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -2261,6 +2266,7 @@ class NodeBuilder:
         )
         dma_tx = (
             "\t&axi_mxfe_tx_dma {\n"
+            "\t\t/delete-property/ compatible;\n"
             '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
             "\t\t#dma-cells = <1>;\n"
             "\t\t#clock-cells = <0>;\n"
@@ -2532,6 +2538,7 @@ class NodeBuilder:
         for lk in links:
             nodes.append(
                 f"\t&{lk.dma_label} {{\n"
+                "\t\t/delete-property/ compatible;\n"
                 '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
                 "\t\t#dma-cells = <1>;\n"
                 "\t\t#clock-cells = <0>;\n"
@@ -2793,6 +2800,7 @@ class NodeBuilder:
             )
             nodes.append(
                 f"\t&{hsci_label} {{\n"
+                "\t\t/delete-property/ compatible;\n"
                 '\t\tcompatible = "adi,axi-hsci-1.0.a";\n'
                 f"\t\tclocks = <&{hsci_clk_label} 0>;\n"
                 '\t\tclock-names = "pclk";\n'
@@ -3416,6 +3424,7 @@ class NodeBuilder:
         def _dma_node(label: str) -> str:
             return (
                 f"\t&{label} {{\n"
+                "\t\t/delete-property/ compatible;\n"
                 '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
                 "\t\t#dma-cells = <1>;\n"
                 "\t\t#clock-cells = <0>;\n"

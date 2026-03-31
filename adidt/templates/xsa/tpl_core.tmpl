@@ -1,4 +1,7 @@
 	&{{ label }} {
+		/delete-property/ compatible;
+		/delete-property/ clocks;
+		/delete-property/ clock-names;
 		compatible = "{{ compatible }}";
 {%- if dma_label is not none %}
 		dmas = <&{{ dma_label }} 0>;

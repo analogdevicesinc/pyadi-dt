@@ -1,4 +1,10 @@
 	&{{ label }} {
+		/delete-property/ compatible;
+		/delete-property/ clocks;
+		/delete-property/ clock-names;
+		/delete-property/ #clock-cells;
+		/delete-property/ adi,octets-per-frame;
+		/delete-property/ adi,frames-per-multiframe;
 		compatible = "adi,axi-jesd204-{{ direction }}-1.0";
 		clocks = {{ clocks_str }};
 		clock-names = {{ clock_names_str }};
