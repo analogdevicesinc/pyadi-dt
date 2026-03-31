@@ -38,15 +38,95 @@ XSA_PATH = Path(__file__).parent / "system_top.xsa"
 
 
 def _build_adijif_cfg() -> dict:
-    """Build pipeline config using adijif solver (same as test_ad9081_xsa_hw_clean)."""
-    # Import the resolver from the sibling test
-    import sys as _sys
+    """Build pipeline config using adijif for the M4/L8 HDL design.
 
-    _sys.path.insert(0, str(Path(__file__).parent))
-    from test_ad9081_xsa_hw_clean import _resolve_config_from_adijif
+    The HDL sysid reports: M=4 L=8 S=1 NP=16 (8b10b, RATE=15).
+    The adijif solver must target these exact parameters.
+    """
+    import adijif
 
-    cfg, _summary = _resolve_config_from_adijif(122.88e6, solve=True)
-    return cfg
+    # The ZCU102 AD9081 FMC EBZ reference design uses a 100 MHz VCXO
+    vcxo_hz = 100e6
+    sys = adijif.system("ad9081", "hmc7044", "xilinx", vcxo=vcxo_hz)
+    sys.fpga.setup_by_dev_kit_name("zcu102")
+
+    cddc = 4
+    fddc = 4
+    cduc = 8
+    fduc = 6
+
+    sys.converter.clocking_option = "integrated_pll"
+    sys.converter.adc.sample_clock = 4000000000 / cddc / fddc
+    sys.converter.dac.sample_clock = 12000000000 / cduc / fduc
+
+    sys.converter.adc.datapath.cddc_decimations = [cddc] * 4
+    sys.converter.dac.datapath.cduc_interpolation = cduc
+    sys.converter.adc.datapath.fddc_decimations = [fddc] * 8
+    sys.converter.dac.datapath.fduc_interpolation = fduc
+    sys.converter.adc.datapath.fddc_enabled = [True] * 8
+    sys.converter.dac.datapath.fduc_enabled = [True] * 8
+
+    # M=4, L=8 to match the HDL design
+    mode_rx = adijif.utils.get_jesd_mode_from_params(
+        sys.converter.adc, M=4, L=8, Np=16, jesd_class="jesd204b"
+    )
+    mode_tx = adijif.utils.get_jesd_mode_from_params(
+        sys.converter.dac, M=4, L=8, Np=16, jesd_class="jesd204b"
+    )
+    if not mode_rx or not mode_tx:
+        raise RuntimeError("No matching M4/L8 JESD mode found via adijif")
+
+    sys.converter.adc.set_quick_configuration_mode(
+        mode_rx[0]["mode"], mode_rx[0]["jesd_class"]
+    )
+    sys.converter.dac.set_quick_configuration_mode(
+        mode_tx[0]["mode"], mode_tx[0]["jesd_class"]
+    )
+
+    rx = mode_rx[0]["settings"]
+    tx = mode_tx[0]["settings"]
+
+    conf = sys.solve()
+
+    _SYS_MAP = {"XCVR_CPLL": 0, "XCVR_QPLL1": 2, "XCVR_QPLL": 3, "XCVR_QPLL0": 3}
+    _OUT_MAP = {"XCVR_REFCLK": 4, "XCVR_REFCLK_DIV2": 4}
+    fpga_adc = conf.get("fpga_adc", {})
+    fpga_dac = conf.get("fpga_dac", {})
+
+    return {
+        "jesd": {
+            "rx": {k: int(rx[k]) for k in ("F", "K", "M", "L", "Np", "S")},
+            "tx": {k: int(tx[k]) for k in ("F", "K", "M", "L", "Np", "S")},
+        },
+        "clock": {
+            "rx_device_clk_label": "hmc7044",
+            "tx_device_clk_label": "hmc7044",
+            "hmc7044_rx_channel": 10,
+            "hmc7044_tx_channel": 6,
+        },
+        "ad9081": {
+            "rx_link_mode": int(float(mode_rx[0]["mode"])),
+            "tx_link_mode": int(float(mode_tx[0]["mode"])),
+            "adc_frequency_hz": int(sys.converter.adc.sample_clock * cddc * fddc),
+            "dac_frequency_hz": int(sys.converter.dac.sample_clock * cduc * fduc),
+            "rx_cddc_decimation": cddc,
+            "rx_fddc_decimation": fddc,
+            "tx_cduc_interpolation": cduc,
+            "tx_fduc_interpolation": fduc,
+            "rx_sys_clk_select": int(
+                _SYS_MAP.get(str(fpga_adc.get("sys_clk_select", "XCVR_QPLL")).upper(), 3)
+            ),
+            "tx_sys_clk_select": int(
+                _SYS_MAP.get(str(fpga_dac.get("sys_clk_select", "XCVR_QPLL")).upper(), 3)
+            ),
+            "rx_out_clk_select": int(
+                _OUT_MAP.get(str(fpga_adc.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
+            ),
+            "tx_out_clk_select": int(
+                _OUT_MAP.get(str(fpga_dac.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
+            ),
+        },
+    }
 OVERLAY_NAME = "ad9081_zcu102_xsa"
 CONFIGFS_OVERLAYS = "/sys/kernel/config/device-tree/overlays"
 DTBO_REMOTE_PATH = f"/tmp/{OVERLAY_NAME}.dtbo"
@@ -88,12 +168,6 @@ def pipeline_result(tmp_path_factory) -> dict:
         cfg = _build_adijif_cfg()
     except ImportError:
         pytest.skip("adijif (pyadi-jif) not installed")
-
-    # Override: force QPLL for both RX and TX XCVR.
-    # The adijif solver may select CPLL for RX, but at 15 Gbps lane rate
-    # the GTH4 CPLL cannot support it (max ~6.25 Gbps).  QPLL is required.
-    cfg.setdefault("ad9081", {})["rx_sys_clk_select"] = 3
-    cfg.setdefault("ad9081", {})["tx_sys_clk_select"] = 3
 
     out_dir = tmp_path_factory.mktemp("pipeline") / "out"
     return XsaPipeline().run(
