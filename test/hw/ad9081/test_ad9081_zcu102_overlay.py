@@ -122,12 +122,9 @@ def _build_adijif_cfg() -> dict:
             "tx_sys_clk_select": int(
                 _SYS_MAP.get(str(fpga_dac.get("sys_clk_select", "XCVR_QPLL")).upper(), 3)
             ),
-            "rx_out_clk_select": int(
-                _OUT_MAP.get(str(fpga_adc.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
-            ),
-            "tx_out_clk_select": int(
-                _OUT_MAP.get(str(fpga_dac.get("out_clk_select", "XCVR_REFCLK_DIV2")).upper(), 4)
-            ),
+            # out_clk_select = 4 (REFCLK_DIV2) per reference design
+            "rx_out_clk_select": 4,
+            "tx_out_clk_select": 4,
         },
     }
 OVERLAY_NAME = "ad9081_zcu102_xsa"
