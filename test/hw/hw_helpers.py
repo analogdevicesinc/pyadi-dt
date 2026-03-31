@@ -9,7 +9,76 @@ from pathlib import Path
 
 import pytest
 
+import re as _re
+
 HERE = Path(__file__).parent
+
+
+def _dedup_root_nodes(pp_dts: Path) -> None:
+    """Remove duplicate root-level child nodes from a preprocessed DTS.
+
+    sdtgen for ZynqMP generates ``system-top.dts`` that ``#include``s
+    ``zynqmp.dtsi``.  Both define ``cpus { ... }`` under the root, causing
+    ``dtc`` to error with ``duplicate_node_names``.
+
+    This function scans the preprocessed DTS for duplicate node names that
+    are direct children of root ``/ { ... }`` blocks and removes the earlier
+    occurrence, keeping the last (sdtgen-corrected) version.
+    """
+    text = pp_dts.read_text()
+
+    # Find all "label: name" or bare "name" node headers at depth 1 inside
+    # root blocks, track their byte ranges, and remove duplicates.
+    # Strategy: regex won't handle nesting, so use simple line-based detection
+    # of "cpus {" patterns and brace counting.
+    import re
+
+    # Pattern for root-level child node: "  label: name {" or "  name {"
+    # at depth 1 inside a "/ {" block.
+    child_re = re.compile(r"^[ \t](\w[\w-]*)\s*:\s*(\w[\w@-]*)\s*\{|^[ \t](\w[\w@-]*)\s*\{", re.M)
+
+    seen_names: dict[str, list[tuple[int, int]]] = {}  # node_name -> [(start, end)]
+
+    for m in child_re.finditer(text):
+        node_name = m.group(2) or m.group(3)
+        if not node_name:
+            continue
+        start = m.start()
+        # Find matching closing brace at depth 0 relative to this node
+        depth = 0
+        end = None
+        for i in range(m.end() - 1, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    if end < len(text) and text[end] == ";":
+                        end += 1
+                    # Include trailing newline
+                    if end < len(text) and text[end] == "\n":
+                        end += 1
+                    break
+        if end is None:
+            continue
+        seen_names.setdefault(node_name, []).append((start, end))
+
+    # Collect ranges to remove (all but last occurrence of each duplicate)
+    remove_ranges: list[tuple[int, int]] = []
+    for name, ranges in seen_names.items():
+        if len(ranges) > 1:
+            remove_ranges.extend(ranges[1:])  # Keep first, remove later duplicates
+
+    if not remove_ranges:
+        return
+
+    # Sort by start position descending, remove from end to start
+    remove_ranges.sort(key=lambda r: r[0], reverse=True)
+    for start, end in remove_ranges:
+        text = text[:start] + text[end:]
+
+    pp_dts.write_text(text)
 DEFAULT_OUT_DIR = HERE / "output"
 DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not in {
     "0",

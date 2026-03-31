@@ -35,6 +35,14 @@ from test.hw.hw_helpers import compile_dtso_to_dtbo, shell_out
 PROFILE_NAME = "ad9081_zcu102"
 LG_ENV_PATH = "/jenkins/lg_ad9081_zcu102.yaml"
 XSA_PATH = Path(__file__).parent / "system_top.xsa"
+
+# JESD params for this XSA design (M8/L4 mode)
+JESD_CFG = {
+    "jesd": {
+        "rx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
+        "tx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
+    },
+}
 OVERLAY_NAME = "ad9081_zcu102_xsa"
 CONFIGFS_OVERLAYS = "/sys/kernel/config/device-tree/overlays"
 DTBO_REMOTE_PATH = f"/tmp/{OVERLAY_NAME}.dtbo"
@@ -81,19 +89,10 @@ def overlay_dtbo(tmp_path_factory) -> Path:
     if not XSA_PATH.exists():
         pytest.skip(f"XSA not found: {XSA_PATH}")
 
-    # AD9081 profile requires JESD params (not included in profile defaults).
-    # Use M4/L8 mode matching the standard ZCU102 reference design.
-    cfg = {
-        "jesd": {
-            "rx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
-            "tx": {"F": 4, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
-        },
-    }
-
     out_dir = tmp_path_factory.mktemp("overlay") / "out"
     result = XsaPipeline().run(
         xsa_path=XSA_PATH,
-        cfg=cfg,
+        cfg=JESD_CFG,
         output_dir=out_dir,
         profile=PROFILE_NAME,
         sdtgen_timeout=300,
