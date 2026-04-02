@@ -32,8 +32,7 @@ class ADRV9009Builder:
         ):
             return True
         return any(
-            _is_adrv90xx_name(j.name)
-            for j in topology.jesd204_rx + topology.jesd204_tx
+            _is_adrv90xx_name(j.name) for j in topology.jesd204_rx + topology.jesd204_tx
         )
 
     def build_nodes(

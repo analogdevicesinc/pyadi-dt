@@ -171,13 +171,21 @@ def read_dt_property(
 
         if property_name:
             if property_name in all_props:
-                return {"node": node_name, "property": property_name, "value": all_props[property_name]}
+                return {
+                    "node": node_name,
+                    "property": property_name,
+                    "value": all_props[property_name],
+                }
             else:
-                return {"error": f"Property '{property_name}' not found on node '{node_name}'"}
+                return {
+                    "error": f"Property '{property_name}' not found on node '{node_name}'"
+                }
 
         return {"node": node_name, "properties": all_props}
     except ImportError:
-        return {"error": "adidt.dt module not available. Install adidt with device tree support."}
+        return {
+            "error": "adidt.dt module not available. Install adidt with device tree support."
+        }
     except Exception as e:
         return {"error": f"Failed to read property: {e}"}
 

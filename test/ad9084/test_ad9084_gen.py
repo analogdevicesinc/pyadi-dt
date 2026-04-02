@@ -308,7 +308,9 @@ class TestTemplateFiles:
     )
     def test_template_exists(self, platform, template_name):
         """Test that all platform templates exist."""
-        template_dir = Path(__file__).parent.parent.parent / "adidt" / "templates"
+        template_dir = (
+            Path(__file__).parent.parent.parent / "adidt" / "templates" / "boards"
+        )
         template_path = template_dir / template_name
         assert template_path.exists(), f"Template not found: {template_path}"
 

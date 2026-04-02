@@ -115,9 +115,7 @@ def _board_from_dict(cls: type, d: dict[str, Any], strict: bool = False) -> Any:
     if strict:
         unknown = sorted(set(d) - known)
         if unknown:
-            raise ValueError(
-                f"{cls.__name__}: unknown key(s): {', '.join(unknown)}"
-            )
+            raise ValueError(f"{cls.__name__}: unknown key(s): {', '.join(unknown)}")
     kwargs: dict[str, Any] = {}
     for f in fields(cls):
         if f.name in d:

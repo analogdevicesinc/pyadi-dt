@@ -84,12 +84,15 @@ def test_run_discovers_vitis_settings_on_missing_binary(tmp_path):
     settings_script.write_text("echo sourced")
 
     runner = SdtgenRunner()
-    with patch.object(
-        SdtgenRunner, "_find_vitis_settings_script", return_value=settings_script
-    ), patch(
-        "adidt.xsa.sdtgen.subprocess.run",
-        side_effect=[FileNotFoundError, _help_result(), _ok_result()],
-    ) as mock_run:
+    with (
+        patch.object(
+            SdtgenRunner, "_find_vitis_settings_script", return_value=settings_script
+        ),
+        patch(
+            "adidt.xsa.sdtgen.subprocess.run",
+            side_effect=[FileNotFoundError, _help_result(), _ok_result()],
+        ) as mock_run,
+    ):
         result = runner.run(xsa, out_dir)
 
     assert mock_run.call_args_list[0][0][0] == ["sdtgen", "--help"]

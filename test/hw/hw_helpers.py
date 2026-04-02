@@ -91,6 +91,8 @@ def _dedup_root_nodes(pp_dts: Path) -> None:
     )
 
     pp_dts.write_text(text)
+
+
 DEFAULT_OUT_DIR = HERE / "output"
 DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not in {
     "0",

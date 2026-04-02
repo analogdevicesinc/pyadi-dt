@@ -42,7 +42,12 @@ class SdtgenRunner:
         "/usr/local/Xilinx",
         "~/Xilinx",
     )
-    _VITIS_INSTALL_HINTS = ("VITIS_ROOT", "XILINX_VITIS", "XILINX_VIVADO", "XILINX_PATH")
+    _VITIS_INSTALL_HINTS = (
+        "VITIS_ROOT",
+        "XILINX_VITIS",
+        "XILINX_VIVADO",
+        "XILINX_PATH",
+    )
     _VITIS_TOOL_DIRS = ("Vivado", "Vitis", "Vitis_HLS")
 
     def __init__(self, binary: str = "sdtgen"):
@@ -90,7 +95,9 @@ class SdtgenRunner:
             for entry in value.split(os.pathsep):
                 if entry:
                     candidate_dirs.append(Path(entry).expanduser())
-        candidate_dirs.extend(Path(x).expanduser() for x in self._VITIS_DEFAULT_BASE_DIRS)
+        candidate_dirs.extend(
+            Path(x).expanduser() for x in self._VITIS_DEFAULT_BASE_DIRS
+        )
 
         unique_dirs: list[Path] = []
         for release in self._VITIS_RELEASES:
@@ -162,7 +169,9 @@ class SdtgenRunner:
                     if self._sourced_vitis_settings is None:
                         raise SdtgenNotFoundError()
                     try:
-                        result = self._run([self.binary, help_opt], timeout=10, check=False)
+                        result = self._run(
+                            [self.binary, help_opt], timeout=10, check=False
+                        )
                     except FileNotFoundError:
                         raise SdtgenNotFoundError()
                 else:

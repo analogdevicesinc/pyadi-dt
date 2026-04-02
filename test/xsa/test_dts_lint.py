@@ -27,8 +27,7 @@ class TestPhandleUnresolved:
         """
         diags = _lint(dts)
         assert any(
-            d.rule == "phandle-unresolved" and "nonexistent" in d.message
-            for d in diags
+            d.rule == "phandle-unresolved" and "nonexistent" in d.message for d in diags
         )
 
     def test_passes_when_target_exists(self):
@@ -88,9 +87,7 @@ class TestClockCellsMismatch:
         };
         """
         diags = _lint(dts)
-        assert any(
-            d.rule == "clock-cells-mismatch" and "1" in d.message for d in diags
-        )
+        assert any(d.rule == "clock-cells-mismatch" and "1" in d.message for d in diags)
 
     def test_passes_with_correct_args(self):
         dts = """\
@@ -152,8 +149,7 @@ class TestSpiCsDuplicate:
         """
         diags = _lint(dts)
         assert any(
-            d.rule == "spi-cs-duplicate" and "2 devices" in d.message
-            for d in diags
+            d.rule == "spi-cs-duplicate" and "2 devices" in d.message for d in diags
         )
 
     def test_passes_with_unique_cs(self):
@@ -190,8 +186,7 @@ class TestCompatibleMissing:
         """
         diags = _lint(dts)
         assert any(
-            d.rule == "compatible-missing" and "bare_dev" in d.message
-            for d in diags
+            d.rule == "compatible-missing" and "bare_dev" in d.message for d in diags
         )
 
     def test_passes_with_compatible(self):

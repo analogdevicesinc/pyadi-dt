@@ -29,7 +29,9 @@ _ADICOMPAT_TOKEN_RE = re.compile(r"adi,[A-Za-z0-9._+-]+")
 _QUOTED_VALUE_RE = re.compile(r"[\"']([^\"']+)[\"']")
 _YAML_COMPAT_KEY_RE = re.compile(r"^(?P<indent>[ \t]*)compatible[ \t]*:(?P<value>.*)$")
 _TXT_LIST_ITEM_RE = re.compile(r"^\s*-\s*(?P<value>.+)$")
-_TXT_COMPAT_KEY_RE = re.compile(r"^(?P<indent>[ \t]*)compatible[ \t]*:(?P<value>.*)$")
+_TXT_COMPAT_KEY_RE = re.compile(
+    r"^(?P<indent>[ \t]*)compatible[ \t]*:(?P<value>.*)$", re.IGNORECASE
+)
 _TXT_PROPERTIES_HEADER_RE = re.compile(r"^\s*Properties\s*:?\s*$")
 _TEMPLATE_COMPATIBLE_RE = re.compile(
     r"\bcompatible\s*=\s*['\"](?P<compatible>adi,[^'\"]+)['\"]"
@@ -213,9 +215,13 @@ def _parse_txt_binding_file(path: Path, text: str) -> BindingRecord:
     for line in text.splitlines():
         stripped_comment = line.split("#", 1)[0]
         if not stripped_comment.strip():
-            if in_properties and not stripped_comment.startswith(" " * (properties_indent + 1)):
+            if in_properties and not stripped_comment.startswith(
+                " " * (properties_indent + 1)
+            ):
                 in_properties = False
-            if in_compat_list and not stripped_comment.startswith(" " * (compat_indent + 1)):
+            if in_compat_list and not stripped_comment.startswith(
+                " " * (compat_indent + 1)
+            ):
                 in_compat_list = False
             continue
 
@@ -231,7 +237,10 @@ def _parse_txt_binding_file(path: Path, text: str) -> BindingRecord:
             continue
 
         if in_compat_list:
-            if len(stripped_comment) - len(stripped_comment.lstrip(" ")) <= compat_indent:
+            if (
+                len(stripped_comment) - len(stripped_comment.lstrip(" "))
+                <= compat_indent
+            ):
                 in_compat_list = False
             else:
                 list_match = _TXT_LIST_ITEM_RE.match(stripped_comment)
@@ -243,7 +252,9 @@ def _parse_txt_binding_file(path: Path, text: str) -> BindingRecord:
 
         if _TXT_PROPERTIES_HEADER_RE.match(stripped_comment):
             in_properties = True
-            properties_indent = len(stripped_comment) - len(stripped_comment.lstrip(" "))
+            properties_indent = len(stripped_comment) - len(
+                stripped_comment.lstrip(" ")
+            )
             continue
 
         if in_properties:
@@ -380,7 +391,9 @@ def collect_supported_compatibles(project_root: Path) -> set[str]:
     compatible_set.update(_collect_compatibles_from_templates(template_root))
     compatible_set.update(_collect_compatibles_from_parts(parts_root))
     compatible_set.update(_collect_compatibles_from_json_files(project_root))
-    return {compatible for compatible in compatible_set if compatible.startswith("adi,")}
+    return {
+        compatible for compatible in compatible_set if compatible.startswith("adi,")
+    }
 
 
 def collect_supported_prefixes(known_compatibles: set[str]) -> set[str]:
@@ -405,7 +418,11 @@ def is_supported_compatible(
         if candidate.startswith(f"{known}-") or candidate.startswith(f"{known}."):
             return True
     for prefix in known_prefixes:
-        if candidate == prefix or candidate.startswith(f"{prefix}-") or candidate.startswith(f"{prefix}."):
+        if (
+            candidate == prefix
+            or candidate.startswith(f"{prefix}-")
+            or candidate.startswith(f"{prefix}.")
+        ):
             return True
     if "-" in candidate and candidate.rsplit("-", 1)[0] in known_compatibles:
         return True
@@ -471,7 +488,11 @@ def derive_template_basename(
     ]
     for token in candidate_tokens:
         for alias, board in aliases.items():
-            if token == alias or token.startswith(f"{alias}_") or token.startswith(f"{alias}-"):
+            if (
+                token == alias
+                or token.startswith(f"{alias}_")
+                or token.startswith(f"{alias}-")
+            ):
                 if board in boards:
                     return board, None
         if token in boards:
@@ -492,7 +513,9 @@ def _render_template_stub(
     spi_bus: str,
     clock_reference: str,
 ) -> str:
-    include_lines = "\n".join(f'#include "{include_name}"' for include_name in base_includes)
+    include_lines = "\n".join(
+        f'#include "{include_name}"' for include_name in base_includes
+    )
     if not include_lines:
         include_lines = "// TODO: add platform base include(s)"
     reference_line = candidate.reference_dts or "unknown"
@@ -589,7 +612,9 @@ def collect_undocumented_bindings_for_templateing(
                             board=board,
                             platform=None,
                             template_name=template_name,
-                            output_path=str((template_out_dir / template_name).resolve()),
+                            output_path=str(
+                                (template_out_dir / template_name).resolve()
+                            ),
                             reference_dts=None,
                             status="pending",
                             reason="generic board template",
@@ -599,7 +624,9 @@ def collect_undocumented_bindings_for_templateing(
                     continue
 
                 for platform_name, platform_data in sorted(platforms.items()):
-                    template_name = platform_data.get("template") or _derive_template_name(
+                    template_name = platform_data.get(
+                        "template"
+                    ) or _derive_template_name(
                         board,
                         platform_name,
                     )
@@ -616,7 +643,9 @@ def collect_undocumented_bindings_for_templateing(
                             board=board,
                             platform=platform_name,
                             template_name=template_name,
-                            output_path=str((template_out_dir / template_name).resolve()),
+                            output_path=str(
+                                (template_out_dir / template_name).resolve()
+                            ),
                             reference_dts=platform_data.get("reference_dts"),
                             status="pending",
                             reason="mapped from reference targets",
@@ -645,7 +674,9 @@ def generate_template_artifacts(
     force: bool = False,
 ) -> dict:
     generated_at = datetime.now(tz=timezone.utc).isoformat(timespec="seconds")
-    output_dir = (template_out_dir or (project_root / "adidt" / "templates" / "boards")).resolve()
+    output_dir = (
+        template_out_dir or (project_root / "adidt" / "templates" / "boards")
+    ).resolve()
     reference_targets = load_reference_targets(
         reference_targets_path
         or (project_root / "adidt" / "templates" / "reference_dts_targets.json")
@@ -660,7 +691,9 @@ def generate_template_artifacts(
     generated: list[dict] = []
     skipped_existing: list[dict] = []
     not_generated: list[dict] = []
-    by_board_platform: dict[tuple[str, str | None], list[TemplateCandidate]] = defaultdict(list)
+    by_board_platform: dict[tuple[str, str | None], list[TemplateCandidate]] = (
+        defaultdict(list)
+    )
     for candidate in candidates:
         if candidate.status != "pending" or not candidate.board:
             not_generated.append(asdict(candidate))
@@ -679,7 +712,9 @@ def generate_template_artifacts(
             continue
 
         board_entry = boards.get(board, {})
-        platform_entry = board_entry.get("platforms", {}).get(platform, {}) if platform else {}
+        platform_entry = (
+            board_entry.get("platforms", {}).get(platform, {}) if platform else {}
+        )
         if destination.exists() and not force:
             for candidate in scoped_candidates:
                 candidate.status = "skipped_existing"
@@ -687,7 +722,9 @@ def generate_template_artifacts(
                 skipped_existing.append(asdict(candidate))
             continue
 
-        merged_compatibles = sorted({candidate.compatible for candidate in scoped_candidates})
+        merged_compatibles = sorted(
+            {candidate.compatible for candidate in scoped_candidates}
+        )
         stub_compatible = merged_compatibles[0]
         stub_candidate = TemplateCandidate(
             compatible=stub_compatible,
@@ -701,7 +738,9 @@ def generate_template_artifacts(
             reference_dts=first.reference_dts,
             status="generated",
             reason=f"starter template for {len(merged_compatibles)} compatible(s)",
-            source_hints=sorted({hint for item in scoped_candidates for hint in item.source_hints}),
+            source_hints=sorted(
+                {hint for item in scoped_candidates for hint in item.source_hints}
+            ),
         )
         content = _render_template_stub(
             stub_candidate,
@@ -712,9 +751,13 @@ def generate_template_artifacts(
             clock_reference=platform_entry.get("clock_reference", "clkc"),
         )
         compatible_comment = "".join(
-            f"// compatible-covered: {compatible}\n" for compatible in merged_compatibles
+            f"// compatible-covered: {compatible}\n"
+            for compatible in merged_compatibles
         )
-        destination.write_text(content.replace("\n\n&", f"\n\n{compatible_comment}\n&", 1), encoding="utf-8")
+        destination.write_text(
+            content.replace("\n\n&", f"\n\n{compatible_comment}\n&", 1),
+            encoding="utf-8",
+        )
         for candidate in scoped_candidates:
             candidate.status = "generated"
             candidate.reason = f"generated into {first.template_name}"
@@ -730,7 +773,9 @@ def generate_template_artifacts(
                 or (project_root / "adidt" / "templates" / "reference_dts_targets.json")
             ).resolve()
         ),
-        "documentation_path": str(template_doc_out.resolve()) if template_doc_out else None,
+        "documentation_path": str(template_doc_out.resolve())
+        if template_doc_out
+        else None,
         "generated_templates": generated,
         "skipped_existing_templates": skipped_existing,
         "not_generated_templates": not_generated,
@@ -814,12 +859,15 @@ def audit_bindings(
         "undocumented_bindings": undocumented_bindings,
         "summary": {
             "total_bindings": len(binding_records),
-            "total_compatibles": sum(len(record.compatibles) for record in binding_records),
+            "total_compatibles": sum(
+                len(record.compatibles) for record in binding_records
+            ),
             "known_bindings": len(known_bindings),
             "partial_bindings": len(partial_bindings),
             "undocumented_bindings": len(undocumented_bindings),
             "undocumented_compatibles": sum(
-                len(item["undocumented_compatibles"]) for item in partial_bindings + undocumented_bindings
+                len(item["undocumented_compatibles"])
+                for item in partial_bindings + undocumented_bindings
             ),
         },
     }

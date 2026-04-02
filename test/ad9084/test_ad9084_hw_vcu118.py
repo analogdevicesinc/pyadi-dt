@@ -3,10 +3,11 @@ from pathlib import Path
 from pprint import pprint
 import shutil
 
+adibuild = pytest.importorskip("adibuild", reason="adibuild not installed")
 from adibuild import LinuxBuilder, BuildConfig
 from adibuild.platforms import MicroBlazePlatform
 
-import adijif
+adijif = pytest.importorskip("adijif", reason="adijif not installed")
 from adidt.boards.ad9084_fmc import ad9084_fmc
 
 

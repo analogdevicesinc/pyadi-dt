@@ -15,7 +15,9 @@ class TestDtsLinterPipelineIntegration:
         """The AD9081 golden DTS fixture should be lint-clean (no errors)."""
         from pathlib import Path
 
-        golden = Path(__file__).parent / "fixtures" / "ad9081_pipeline_merged_golden.dts"
+        golden = (
+            Path(__file__).parent / "fixtures" / "ad9081_pipeline_merged_golden.dts"
+        )
         if not golden.exists():
             pytest.skip("golden DTS fixture not found")
         diagnostics = DtsLinter().lint_file(golden)
@@ -23,9 +25,7 @@ class TestDtsLinterPipelineIntegration:
         # Golden fixture may have unresolved phandles to base DTS nodes
         # (e.g., &zynqmp_clk, &gpio) that aren't in the overlay-only golden.
         # Filter those out — they'd be resolved in the full merged DTS.
-        real_errors = [
-            e for e in errors if e.rule != "phandle-unresolved"
-        ]
+        real_errors = [e for e in errors if e.rule != "phandle-unresolved"]
         assert not real_errors, f"Golden DTS has lint errors: {real_errors}"
 
 
@@ -59,15 +59,25 @@ class TestLinterOnGeneratedOutput:
 
         topo = XsaTopology(
             jesd204_rx=[
-                Jesd204Instance("axi_apollo_rx_jesd_rx_axi", 0x44A10000, 8, 54, "clk", "rx"),
-                Jesd204Instance("axi_apollo_rx_b_jesd_rx_axi", 0x44A20000, 8, 55, "clk", "rx"),
+                Jesd204Instance(
+                    "axi_apollo_rx_jesd_rx_axi", 0x44A10000, 8, 54, "clk", "rx"
+                ),
+                Jesd204Instance(
+                    "axi_apollo_rx_b_jesd_rx_axi", 0x44A20000, 8, 55, "clk", "rx"
+                ),
             ],
             jesd204_tx=[
-                Jesd204Instance("axi_apollo_tx_jesd_tx_axi", 0x44B10000, 8, 56, "clk", "tx"),
-                Jesd204Instance("axi_apollo_tx_b_jesd_tx_axi", 0x44B20000, 8, 57, "clk", "tx"),
+                Jesd204Instance(
+                    "axi_apollo_tx_jesd_tx_axi", 0x44B10000, 8, 56, "clk", "tx"
+                ),
+                Jesd204Instance(
+                    "axi_apollo_tx_b_jesd_tx_axi", 0x44B20000, 8, 57, "clk", "tx"
+                ),
             ],
             clkgens=[ClkgenInstance("axi_hsci_clkgen", 0x43C00000, ["hsci_clk"])],
-            converters=[ConverterInstance("axi_ad9084_0", "axi_ad9084", 0x44A00000, None, None)],
+            converters=[
+                ConverterInstance("axi_ad9084_0", "axi_ad9084", 0x44A00000, None, None)
+            ],
             fpga_part="xcvu9p-flga2104-2l-e",
         )
         cfg = merge_profile_defaults(
@@ -102,7 +112,12 @@ class TestDiagnosticsJson:
         # Simulate what pipeline.py writes
         diag_data = {
             "diagnostics": [
-                {"severity": d.severity, "rule": d.rule, "node": d.node, "message": d.message}
+                {
+                    "severity": d.severity,
+                    "rule": d.rule,
+                    "node": d.node,
+                    "message": d.message,
+                }
                 for d in diagnostics
             ],
             "summary": {

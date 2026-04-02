@@ -175,9 +175,7 @@ class XsaPipeline:
                 ],
                 "summary": {
                     "errors": sum(1 for d in diagnostics if d.severity == "error"),
-                    "warnings": sum(
-                        1 for d in diagnostics if d.severity == "warning"
-                    ),
+                    "warnings": sum(1 for d in diagnostics if d.severity == "warning"),
                     "info": sum(1 for d in diagnostics if d.severity == "info"),
                     "total": len(diagnostics),
                 },

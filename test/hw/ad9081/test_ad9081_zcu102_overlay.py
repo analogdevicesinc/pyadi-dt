@@ -172,8 +172,11 @@ def pipeline_result(tmp_path_factory) -> dict:
 
     out_dir = tmp_path_factory.mktemp("pipeline") / "out"
     return XsaPipeline().run(
-        xsa_path=XSA_PATH, cfg=cfg, output_dir=out_dir,
-        profile=PROFILE_NAME, sdtgen_timeout=300,
+        xsa_path=XSA_PATH,
+        cfg=cfg,
+        output_dir=out_dir,
+        profile=PROFILE_NAME,
+        sdtgen_timeout=300,
     )
 
 
@@ -208,7 +211,10 @@ def overlay_dtbo(pipeline_result) -> Path:
 
 def _restart_iiod(shell) -> None:
     """Restart iiod so it picks up new/removed IIO devices."""
-    shell_out(shell, "systemctl restart iiod 2>/dev/null || killall -HUP iiod 2>/dev/null; true")
+    shell_out(
+        shell,
+        "systemctl restart iiod 2>/dev/null || killall -HUP iiod 2>/dev/null; true",
+    )
     time.sleep(8)
 
 
@@ -270,10 +276,12 @@ def _deploy_dtbo_via_shell(shell, dtbo_path: Path, remote_path: str) -> None:
     chunk_size = 512
     shell_out(shell, f"rm -f {remote_path}")
     for i in range(0, len(b64), chunk_size):
-        shell_out(shell, f"echo -n '{b64[i:i + chunk_size]}' >> {remote_path}.b64")
+        shell_out(shell, f"echo -n '{b64[i : i + chunk_size]}' >> {remote_path}.b64")
     shell_out(shell, f"base64 -d {remote_path}.b64 > {remote_path}")
     shell_out(shell, f"rm -f {remote_path}.b64")
-    remote_size = shell_out(shell, f"stat -c %s {remote_path} 2>/dev/null; true").strip()
+    remote_size = shell_out(
+        shell, f"stat -c %s {remote_path} 2>/dev/null; true"
+    ).strip()
     assert remote_size == str(len(data)), (
         f"dtbo transfer size mismatch: local={len(data)}, remote={remote_size}"
     )
@@ -368,9 +376,7 @@ def test_reload_overlay(booted_board, overlay_dtbo):
     print(f"IIO devices after reload: {names}")
 
     found = any(n in names for n in AD9081_IIO_NAMES)
-    assert found, (
-        f"No AD9081 IIO device found after overlay reload; found: {names}"
-    )
+    assert found, f"No AD9081 IIO device found after overlay reload; found: {names}"
 
     _unload_overlay(shell)
 
@@ -539,7 +545,9 @@ def test_dma_loopback(booted_board):
     sfdr = results.get("sfdr", 0.0)
     fsnr = results.get("fsnr", 0.0)
 
-    print(f"Tone frequency: {signal_freq / 1e6:.6f} MHz (expected {DDS_TONE_HZ / 1e6:.1f} MHz)")
+    print(
+        f"Tone frequency: {signal_freq / 1e6:.6f} MHz (expected {DDS_TONE_HZ / 1e6:.1f} MHz)"
+    )
     print(f"Tone magnitude: {signal_mag:.1f} dBFS")
     print(f"SNR: {snr:.1f} dB, SFDR: {sfdr:.1f} dB, FSNR: {fsnr:.1f} dB")
 
@@ -558,11 +566,15 @@ def test_dma_loopback(booted_board):
     # crosstalk only), so we check relative magnitude rather than
     # absolute SNR.  With a loopback cable, SNR > 20 dB is typical.
     if snr > 10:
-        print(f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
-              f"SNR={snr:.1f} dB (good loopback)")
+        print(
+            f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
+            f"SNR={snr:.1f} dB (good loopback)"
+        )
     elif signal_mag > -40:
-        print(f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
-              f"mag={signal_mag:.1f} dBFS (weak — no loopback cable?)")
+        print(
+            f"Loopback PASS: tone at {signal_freq / 1e6:.3f} MHz, "
+            f"mag={signal_mag:.1f} dBFS (weak — no loopback cable?)"
+        )
     else:
         pytest.fail(
             f"DDS tone too weak: {signal_mag:.1f} dBFS at {signal_freq / 1e6:.3f} MHz. "

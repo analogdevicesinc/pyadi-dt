@@ -20,6 +20,8 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("labgrid", reason="labgrid not installed")
+
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.profiles import ProfileManager
 

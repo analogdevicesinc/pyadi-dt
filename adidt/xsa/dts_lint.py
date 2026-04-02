@@ -142,9 +142,7 @@ def _parse_cells(nodes: dict[str, str]) -> dict[str, dict[str, int]]:
 # ---------------------------------------------------------------------------
 
 
-def _check_phandle_unresolved(
-    dts: str, nodes: dict[str, str]
-) -> list[LintDiagnostic]:
+def _check_phandle_unresolved(dts: str, nodes: dict[str, str]) -> list[LintDiagnostic]:
     """Check that every <&label> phandle reference has a matching node."""
     defined_labels = set(nodes.keys())
     diagnostics: list[LintDiagnostic] = []
@@ -208,9 +206,7 @@ def _check_clock_cells_mismatch(
     return diagnostics
 
 
-def _check_spi_cs_duplicate(
-    dts: str, nodes: dict[str, str]
-) -> list[LintDiagnostic]:
+def _check_spi_cs_duplicate(dts: str, nodes: dict[str, str]) -> list[LintDiagnostic]:
     """Check that no two SPI child nodes share the same chip select."""
     diagnostics: list[LintDiagnostic] = []
     spi_buses = _parse_spi_buses(dts)
@@ -250,16 +246,12 @@ _CHILD_NODE_LABEL_RE = re.compile(r"channel@\d+")
 def _find_child_labels(dts: str) -> set[str]:
     """Return labels of nodes that are DT child nodes (channel@N etc.)."""
     child_labels: set[str] = set()
-    for m in re.finditer(
-        r"(?P<label>[A-Za-z_][\w-]*)\s*:\s*channel@\d+", dts
-    ):
+    for m in re.finditer(r"(?P<label>[A-Za-z_][\w-]*)\s*:\s*channel@\d+", dts):
         child_labels.add(m.group("label"))
     return child_labels
 
 
-def _check_compatible_missing(
-    dts: str, nodes: dict[str, str]
-) -> list[LintDiagnostic]:
+def _check_compatible_missing(dts: str, nodes: dict[str, str]) -> list[LintDiagnostic]:
     """Check that device nodes with reg also have a compatible string.
 
     Skips child nodes (e.g., HMC7044 ``channel@N`` nodes) — these are
@@ -327,9 +319,7 @@ class DtsLinter:
         diagnostics: list[LintDiagnostic] = []
 
         diagnostics.extend(_check_phandle_unresolved(dts_text, nodes))
-        diagnostics.extend(
-            _check_clock_cells_mismatch(dts_text, nodes, cells_map)
-        )
+        diagnostics.extend(_check_clock_cells_mismatch(dts_text, nodes, cells_map))
         diagnostics.extend(_check_spi_cs_duplicate(dts_text, nodes))
         diagnostics.extend(_check_compatible_missing(dts_text, nodes))
 

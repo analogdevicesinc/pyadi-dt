@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 from adidt.parts import adrv9009
 
+adibuild = pytest.importorskip("adibuild", reason="adibuild not installed")
 from adibuild import LinuxBuilder, BuildConfig
 from adibuild.platforms import ZynqMPPlatform
 

@@ -242,9 +242,7 @@ class NodeBuilder:
             return False
 
         # Also check for AD9172 TX skip (skips generic TX but not RX).
-        is_ad9172_matched = any(
-            isinstance(b, AD9172Builder) for b in matched_builders
-        )
+        is_ad9172_matched = any(isinstance(b, AD9172Builder) for b in matched_builders)
 
         rx_labels: list[str] = []
         tx_labels: list[str] = []

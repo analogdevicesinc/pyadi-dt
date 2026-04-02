@@ -97,7 +97,9 @@ This file has no compatible string.
 """,
     )
 
-    discovered = discover_binding_files(linux_root=linux_root, include_yaml=True, include_txt=True)
+    discovered = discover_binding_files(
+        linux_root=linux_root, include_yaml=True, include_txt=True
+    )
     assert len(discovered) == 3
 
     records = collect_bindings(linux_root=linux_root)
@@ -122,11 +124,11 @@ compatible = "adi,known-tx-1.0";
     )
     _write(
         parts_root / "chip.py",
-        "compatible_id = \"adi,known-rx-1.0\"",
+        'compatible_id = "adi,known-rx-1.0"',
     )
     _write(
         profiles_root / "sample.json",
-        json.dumps({"board": "example", "defaults": {"adi,profile": true}}),
+        json.dumps({"board": "example", "defaults": {"adi,profile": True}}),
     )
 
     _write(

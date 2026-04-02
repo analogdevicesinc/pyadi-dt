@@ -17,8 +17,7 @@ class AD9081Builder:
     def matches(self, topology: XsaTopology, cfg: dict[str, Any]) -> bool:
         has_ad9081 = any(c.ip_type == "axi_ad9081" for c in topology.converters)
         has_mxfe = any(
-            "mxfe" in j.name.lower()
-            for j in topology.jesd204_rx + topology.jesd204_tx
+            "mxfe" in j.name.lower() for j in topology.jesd204_rx + topology.jesd204_tx
         )
         return has_ad9081 and has_mxfe
 

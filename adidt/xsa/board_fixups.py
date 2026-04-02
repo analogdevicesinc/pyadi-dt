@@ -114,7 +114,7 @@ def _fix_vcu118_ethernet(content: str, pl_dtsi: Path) -> str:
         "\t\t\t\t#address-cells = <1>;\n"
         "\t\t\t\t#size-cells = <0>;\n"
         "\t\t\t\taxi_ethernet_0phy1: phy@1 {\n"
-        "\t\t\t\t\tdevice_type = \"ethernet-phy\";\n"
+        '\t\t\t\t\tdevice_type = "ethernet-phy";\n'
         "\t\t\t\t\treg = <1>;\n"
         "\t\t\t\t};\n"
         "\t\t\t};"
@@ -125,7 +125,7 @@ def _fix_vcu118_ethernet(content: str, pl_dtsi: Path) -> str:
         "\t\t\t\t#size-cells = <0>;\n"
         "\t\t\t\tphy1: phy@3 {\n"
         "\t\t\t\t\treg = <3>;\n"
-        "\t\t\t\t\tdevice_type = \"ethernet-phy\";\n"
+        '\t\t\t\t\tdevice_type = "ethernet-phy";\n'
         "\t\t\t\t\tti,sgmii-ref-clock-output-enable;\n"
         "\t\t\t\t\tti,dp83867-rxctrl-strap-quirk;\n"
         "\t\t\t\t\tti,rx-internal-delay = <0x8>;\n"
@@ -138,9 +138,7 @@ def _fix_vcu118_ethernet(content: str, pl_dtsi: Path) -> str:
         content = content.replace(old_mdio, new_mdio)
         logger.info("Applied VCU118 Ethernet PHY fix to %s", pl_dtsi)
     else:
-        logger.warning(
-            "VCU118 Ethernet PHY fix — pattern not found in %s", pl_dtsi
-        )
+        logger.warning("VCU118 Ethernet PHY fix — pattern not found in %s", pl_dtsi)
 
     return content
 

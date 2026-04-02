@@ -22,7 +22,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Collect ADI-compatible bindings from Linux devicetree bindings.",
     )
-    parser.add_argument("--linux-path", type=Path, help="Path to a local linux checkout.")
+    parser.add_argument(
+        "--linux-path", type=Path, help="Path to a local linux checkout."
+    )
     parser.add_argument("--linux-url", help="Clone URL for linux checkout.")
     parser.add_argument("--linux-ref", help="Optional git branch/tag when cloning.")
     parser.add_argument(
@@ -132,7 +134,9 @@ def main() -> int:
             if args.template_json_out:
                 write_json(args.template_json_out, template_report)
             if args.template_doc_out:
-                write_markdown(args.template_doc_out, template_report, kind="template-audit")
+                write_markdown(
+                    args.template_doc_out, template_report, kind="template-audit"
+                )
 
         if not args.quiet:
             summary = report["summary"]

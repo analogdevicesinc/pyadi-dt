@@ -800,8 +800,16 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
 )
 @click.pass_context
 def xsa2dt(
-    ctx, xsa, config, output, timeout, profile, reference_dts, strict_parity,
-    lint, strict_lint,
+    ctx,
+    xsa,
+    config,
+    output,
+    timeout,
+    profile,
+    reference_dts,
+    strict_parity,
+    lint,
+    strict_lint,
 ):
     """Generate ADI device tree from Vivado XSA file
 

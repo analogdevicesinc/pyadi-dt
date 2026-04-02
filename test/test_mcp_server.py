@@ -11,10 +11,9 @@ from adidt.mcp_server import generate_devicetree, mcp
 
 def _tool_data(result):
     """Return the semantic payload from a FastMCP ToolResult."""
-    if (
-        isinstance(result.structured_content, dict)
-        and set(result.structured_content.keys()) == {"result"}
-    ):
+    if isinstance(result.structured_content, dict) and set(
+        result.structured_content.keys()
+    ) == {"result"}:
         return result.structured_content["result"]
     return result.structured_content
 
@@ -33,9 +32,7 @@ def test_server_has_tools():
         "show_xsa_profile",
         "read_dt_property",
     }
-    assert expected.issubset(tool_names), (
-        f"Missing tools: {expected - tool_names}"
-    )
+    assert expected.issubset(tool_names), f"Missing tools: {expected - tool_names}"
 
 
 # ---------------------------------------------------------------------------
@@ -93,10 +90,14 @@ def test_show_xsa_profile_invalid():
 def test_generate_devicetree_missing_xsa():
     """generate_devicetree should return an error for a nonexistent XSA path."""
     tool = asyncio.run(mcp.get_tool("generate_devicetree"))
-    result = asyncio.run(tool.run({
-        "xsa_path": "/tmp/does_not_exist.xsa",
-        "output_dir": "/tmp/dt_out",
-    }))
+    result = asyncio.run(
+        tool.run(
+            {
+                "xsa_path": "/tmp/does_not_exist.xsa",
+                "output_dir": "/tmp/dt_out",
+            }
+        )
+    )
     data = _tool_data(result)
     assert "error" in data
 
@@ -120,20 +121,22 @@ def test_generate_devicetree_mock(tmp_path):
 
     with patch("adidt.mcp_server.XsaPipeline") as MockPipeline:
         mock_instance = MagicMock()
-        mock_instance.run.return_value = {
-            k: Path(v) for k, v in mock_result.items()
-        }
+        mock_instance.run.return_value = {k: Path(v) for k, v in mock_result.items()}
         MockPipeline.return_value = mock_instance
 
         tool = asyncio.run(mcp.get_tool("generate_devicetree"))
-        result = asyncio.run(tool.run({
-            "xsa_path": str(xsa_file),
-            "config_json": '{"jesd": {"rx": {"L": 4}}}',
-            "output_dir": str(output_dir),
-            "profile": "ad9081_zcu102",
-            "emit_report": True,
-            "emit_clock_graphs": False,
-        }))
+        result = asyncio.run(
+            tool.run(
+                {
+                    "xsa_path": str(xsa_file),
+                    "config_json": '{"jesd": {"rx": {"L": 4}}}',
+                    "output_dir": str(output_dir),
+                    "profile": "ad9081_zcu102",
+                    "emit_report": True,
+                    "emit_clock_graphs": False,
+                }
+            )
+        )
 
         # Verify the pipeline was called
         mock_instance.run.assert_called_once()

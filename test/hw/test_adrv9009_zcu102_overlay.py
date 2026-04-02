@@ -90,9 +90,7 @@ class TestOverlayGeneration:
             "overlay missing ADRV9009 compatible"
         )
 
-    @pytest.mark.skipif(
-        shutil.which("dtc") is None, reason="dtc not found on PATH"
-    )
+    @pytest.mark.skipif(shutil.which("dtc") is None, reason="dtc not found on PATH")
     def test_dtso_compiles_to_dtbo(self, tmp_path):
         """A generated .dtso compiles to .dtbo with dtc -@."""
         from test.xsa.kuiper_release import download_project_xsa
@@ -169,7 +167,9 @@ class TestOverlayLoadUnload:
     def test_configfs_overlay_support(self, board):
         """Verify the target kernel has configfs overlay support."""
         shell = board.target.get_driver("ADIShellDriver")
-        result = shell_out(shell, f"test -d {CONFIGFS_OVERLAYS} && echo OK || echo MISSING")
+        result = shell_out(
+            shell, f"test -d {CONFIGFS_OVERLAYS} && echo OK || echo MISSING"
+        )
         assert "OK" in result, (
             f"configfs overlay directory not found at {CONFIGFS_OVERLAYS}. "
             "Ensure CONFIG_OF_OVERLAY=y in the kernel config."
