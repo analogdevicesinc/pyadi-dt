@@ -53,11 +53,12 @@ class JesdLinkModel:
     jesd_label: str
     xcvr_label: str
     core_label: str
-    dma_label: str
+    dma_label: str | None
     link_params: dict[str, int] = field(default_factory=dict)
     xcvr_config: dict[str, Any] = field(default_factory=dict)
     jesd_overlay_config: dict[str, Any] = field(default_factory=dict)
     tpl_core_config: dict[str, Any] = field(default_factory=dict)
+    dma_clocks_str: str | None = None
 
 
 @dataclass
@@ -108,6 +109,7 @@ class BoardModel:
     jesd_links: list[JesdLinkModel] = field(default_factory=list)
     fpga_config: FpgaConfig | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    extra_nodes: list[str] = field(default_factory=list)
 
     def get_component(self, role: str) -> ComponentModel | None:
         """Return the first component matching *role*, or ``None``."""

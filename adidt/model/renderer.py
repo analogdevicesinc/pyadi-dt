@@ -54,8 +54,9 @@ class BoardModelRenderer:
 
         # Render JESD links: DMA overlays, TPL cores, JESD overlays, ADXCVR
         for link in model.jesd_links:
-            # DMA overlay
-            result["converters"].append(self._render_dma_overlay(link))
+            # DMA overlay (skip when dma_label is None)
+            if link.dma_label is not None:
+                result["converters"].append(self._render_dma_overlay(link))
             # TPL core
             result["converters"].append(
                 env.get_template("tpl_core.tmpl").render(link.tpl_core_config)
@@ -71,6 +72,9 @@ class BoardModelRenderer:
             result["converters"].append(
                 env.get_template("adxcvr.tmpl").render(link.xcvr_config)
             )
+
+        # Append extra raw nodes (e.g., fixed clocks, HSCI overlays)
+        result["converters"].extend(model.extra_nodes)
 
         return result
 
@@ -89,14 +93,17 @@ class BoardModelRenderer:
     @staticmethod
     def _render_dma_overlay(link: JesdLinkModel) -> str:
         """Render an AXI DMA compatible-override overlay node."""
-        return (
-            f"\t&{link.dma_label} {{\n"
-            "\t\t/delete-property/ compatible;\n"
-            '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
-            "\t\t#dma-cells = <1>;\n"
-            "\t\t#clock-cells = <0>;\n"
-            "\t};"
-        )
+        lines = [
+            f"\t&{link.dma_label} {{",
+            "\t\t/delete-property/ compatible;",
+            '\t\tcompatible = "adi,axi-dmac-1.00.a";',
+            "\t\t#dma-cells = <1>;",
+            "\t\t#clock-cells = <0>;",
+        ]
+        if link.dma_clocks_str:
+            lines.append(f"\t\tclocks = {link.dma_clocks_str};")
+        lines.append("\t};")
+        return "\n".join(lines)
 
     @staticmethod
     def _make_env(model: BoardModel) -> Environment:
