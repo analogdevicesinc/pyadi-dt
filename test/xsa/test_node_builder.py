@@ -256,6 +256,10 @@ def test_build_ad9084_vcu118_uses_ebz_defaults():
     assert "adi,oscin-buffer-mode = <0x05>;" in merged
     assert "adi,jrx0-physical-lane-mapping = <10 8 9 11 5 1 3 7 4 6 2 0>;" in merged
 
+    # ADF4382 must appear before HMC7044 in the clock SPI bus for correct
+    # probe ordering on AD9084+VCU118 hardware.
+    assert merged.index("adf4382@") < merged.index("hmc7044@")
+
 
 def test_build_adrv9009_includes_top_device_link_ids(cfg):
     topo_adrv9009 = XsaTopology(

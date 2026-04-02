@@ -371,6 +371,20 @@
 &spi0 {
 	status = "okay";
 
+	adf4382: adf4382@0 {
+		#clock-cells = <1>;
+		compatible = "adi,adf4382";
+		reg = <0>;
+		spi-max-frequency = <5000000>;
+		adi,spi-3wire-enable;
+		clocks = <&clkin_125>;
+		clock-names = "ref_clk";
+		clock-output-names = "adf4382_out_clk";
+		adi,power-up-frequency = /bits/ 64 <{{ clock['clock'].get('adf4382_output_frequency', 20000000000) }}>;
+		label = "adf4382";
+		#io-channel-cells = <1>;
+	};
+
 	hmc7044: hmc7044@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -516,20 +530,6 @@
 		};
 	};
 #endif /* WITH_AION */
-
-	adf4382: adf4382@0 {
-		#clock-cells = <1>;
-		compatible = "adi,adf4382";
-		reg = <0>;
-		spi-max-frequency = <5000000>;
-		adi,spi-3wire-enable;
-		clocks = <&clkin_125>;
-		clock-names = "ref_clk";
-		clock-output-names = "adf4382_out_clk";
-		adi,power-up-frequency = /bits/ 64 <{{ clock['clock'].get('adf4382_output_frequency', 20000000000) }}>;
-		label = "adf4382";
-		#io-channel-cells = <1>;
-	};
 };
 
 &axi_spi_2 {

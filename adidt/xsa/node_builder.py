@@ -2784,7 +2784,7 @@ class NodeBuilder:
         hmc7044_spi_children = self._render("hmc7044.tmpl", hmc7044_ctx)
         if adf4382_cs is not None:
             nodes.append(
-                self._wrap_spi_bus(clock_spi, hmc7044_spi_children + adf4382_node)
+                self._wrap_spi_bus(clock_spi, adf4382_node + hmc7044_spi_children)
             )
         else:
             nodes.append(self._wrap_spi_bus(clock_spi, hmc7044_spi_children))

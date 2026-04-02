@@ -62,7 +62,7 @@ where = ["."]
 include = ["adidt*"]
 
 [tool.setuptools.package-data]
-adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js"]
+adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js", "xsa/profiles/*.json"]
 
 [tool.ruff.lint]
 select = ["D"]
