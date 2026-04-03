@@ -202,7 +202,7 @@ class ad9084_fmc(layout):
         ]
         return paths
 
-    def validate_and_default_fpga_config(self, cfg):
+    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
 
         Args:
@@ -249,7 +249,7 @@ class ad9084_fmc(layout):
         kwargs["config_source"] = kwargs.get("config_source", "unknown")
         return kwargs
 
-    def to_board_model(self, cfg):
+    def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from board configuration.
 
         This maps the configuration through the existing board layout
@@ -632,7 +632,7 @@ class ad9084_fmc(layout):
             },
         )
 
-    def map_clocks_to_board_layout(self, cfg):
+    def map_clocks_to_board_layout(self, cfg: dict) -> tuple:
         """Map configuration to board clock connection layout.
 
         The AD9084 uses HMC7044 as the primary clock generator with the
