@@ -599,13 +599,27 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
             click.echo(json.dumps(json_data, indent=2))
 
 
+_BOARD_CLASSES = {
+    "daq2": ("adidt.boards.daq2", "daq2"),
+    "ad9081_fmc": ("adidt.boards.ad9081_fmc", "ad9081_fmc"),
+    "ad9084_fmc": ("adidt.boards.ad9084_fmc", "ad9084_fmc"),
+    "adrv9009_fmc": ("adidt.boards.adrv9009_fmc", "adrv9009_fmc"),
+}
+
+
 @cli.command()
+@click.option(
+    "--board",
+    "-b",
+    required=True,
+    type=click.Choice(sorted(_BOARD_CLASSES.keys())),
+    help="Board class to use for generation",
+)
 @click.option(
     "--platform",
     "-p",
     required=True,
-    type=click.Choice(["zcu102", "vpk180", "zc706"]),
-    help="Target FPGA platform",
+    help="Target platform (e.g., zcu102, vpk180, zc706, vcu118)",
 )
 @click.option(
     "--config",
@@ -626,61 +640,50 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
     "-o",
     default=None,
     type=click.Path(),
-    help="Output DTS file path (default: generated_dts/ad9081_fmc_<platform>.dts)",
+    help="Output DTS file path",
 )
 @click.option("--compile", is_flag=True, help="Compile DTS to DTB using dtc")
 @click.pass_context
-def gen_dts(ctx, platform, config, kernel_path, output, compile):
-    """Generate device tree source file for AD9081
+def gen_dts(ctx, board, platform, config, kernel_path, output, compile):
+    """Generate device tree source from a board class and config.
 
     \b
-    Generate device tree source (DTS) files for AD9081 FMC evaluation boards
-    across multiple FPGA platforms.
-
-    \b
-    Supported Platforms:
-      - zcu102  : Zynq UltraScale+ (ARM64, GTH transceivers)
-      - vpk180  : Versal (ARM64, GTY transceivers)
-      - zc706   : Zynq-7000 (ARM, GTX transceivers)
+    Uses the BoardModel workflow: config → to_board_model() → render → DTS.
+    Supports all board classes with to_board_model().
 
     \b
     Examples:
-      Generate DTS for ZCU102:
-        adidtc gen-dts -p zcu102 -c my_config.json
+      Generate DTS for FMCDAQ2 on ZCU102:
+        adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
 
-      Generate DTS with custom kernel path:
-        adidtc gen-dts -p vpk180 -c cfg.json -k /path/to/linux
+      Generate DTS for AD9081 FMC on VPK180:
+        adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json
 
       Generate and compile to DTB:
-        adidtc gen-dts -p zc706 -c cfg.json --compile
+        adidtc gen-dts -b adrv9009_fmc -p zcu102 -c cfg.json --compile
 
       Custom output path:
-        adidtc gen-dts -p zcu102 -c cfg.json -o custom.dts
+        adidtc gen-dts -b daq2 -p zc706 -c cfg.json -o custom.dts
     """
     try:
         # Load configuration
         with open(config, "r") as f:
             cfg = json.load(f)
 
-        # Initialize board with platform and kernel path
-        from adidt.boards.ad9081_fmc import ad9081_fmc
+        # Import and instantiate the board class
+        module_path, class_name = _BOARD_CLASSES[board]
+        import importlib
 
-        board = ad9081_fmc(platform=platform, kernel_path=kernel_path)
-
-        # Validate and apply FPGA config defaults
-        cfg = board.validate_and_default_fpga_config(cfg)
+        mod = importlib.import_module(module_path)
+        board_cls = getattr(mod, class_name)
+        board_inst = board_cls(platform=platform, kernel_path=kernel_path)
 
         # Override output filename if specified
         if output:
-            board.output_filename = output
+            board_inst.output_filename = output
 
-        # Map configuration to board layout
-        clock, adc, dac, fpga = board.map_clocks_to_board_layout(cfg)
-
-        # Generate DTS
-        output_file = board.gen_dt(
-            clock=clock, adc=adc, dac=dac, fpga=fpga, config_source=config
-        )
+        # Generate DTS via BoardModel
+        output_file = board_inst.gen_dt_from_config(cfg, config_source=config)
 
         click.echo(click.style(f"Generated DTS: {output_file}", fg="green", bold=True))
 
@@ -689,7 +692,7 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
             import subprocess
 
             dtb_file = output_file.replace(".dts", ".dtb")
-            include_paths = board.get_dtc_include_paths()
+            include_paths = board_inst.get_dtc_include_paths()
 
             # Build dtc command with include paths
             dtc_cmd = ["dtc", "-I", "dts", "-O", "dtb"]
