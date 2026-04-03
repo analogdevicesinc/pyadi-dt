@@ -314,23 +314,22 @@ class TestDTCIncludePaths:
             assert os.path.exists(path), f"Include path does not exist: {path}"
 
 
-class TestTemplateFiles:
-    """Test that template files exist."""
+class TestBoardModelSupport:
+    """Test that board classes support the unified BoardModel."""
 
-    @pytest.mark.parametrize(
-        "platform,template_name",
-        [
-            ("zcu102", "adrv9009_fmc_zcu102.tmpl"),
-            ("zc706", "adrv9009_fmc_zc706.tmpl"),
-        ],
-    )
-    def test_template_exists(self, platform, template_name):
-        """Test that all platform templates exist."""
-        template_dir = (
-            Path(__file__).parent.parent.parent / "adidt" / "templates" / "boards"
+    def test_has_to_board_model(self):
+        """Test that adrv9009_fmc has to_board_model()."""
+        from adidt.boards.adrv9009_fmc import adrv9009_fmc
+
+        assert hasattr(adrv9009_fmc, "to_board_model"), (
+            "adrv9009_fmc missing to_board_model()"
         )
-        template_path = template_dir / template_name
-        assert template_path.exists(), f"Template not found: {template_path}"
+
+    def test_has_gen_dt_from_model(self):
+        """Test that adrv9009_fmc has gen_dt_from_model()."""
+        from adidt.boards.adrv9009_fmc import adrv9009_fmc
+
+        assert hasattr(adrv9009_fmc, "gen_dt_from_model")
 
 
 class TestDTSCompilation:
