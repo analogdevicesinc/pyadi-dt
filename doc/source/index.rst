@@ -33,6 +33,22 @@ interactively, or update SD card boot files.
 .. image:: _static/media/props.gif
    :alt: props command demo
 
+**Build device trees programmatically with the BoardModel API.**
+Construct, inspect, and modify a board model before rendering to DTS.
+Both the XSA pipeline and manual board classes produce the same
+``BoardModel`` — edit clock dividers, JESD parameters, or GPIO mappings
+in Python, then render to a deployable device tree.
+
+.. code-block:: python
+
+   from adidt.boards.daq2 import daq2
+   from adidt.model.renderer import BoardModelRenderer
+
+   board = daq2(platform="zcu102")
+   model = board.to_board_model(solver_config)
+   model.get_component("clock").config["vcxo_hz"] = 100_000_000  # edit
+   nodes = BoardModelRenderer().render(model)
+
 **Configure clock chips and converters from JSON.**
 Apply ``pyadi-jif``-solved clock and JESD204 parameters directly to the
 device tree — update HMC7044 channel dividers, AD9081 datapath settings,
@@ -86,6 +102,8 @@ Where to start
 
 - **First time?** Start with the :doc:`examples/xsa_tutorial` for a
   step-by-step walkthrough of XSA-based device tree generation.
+- **Using the BoardModel API?** See :doc:`api/model` for the unified
+  board model, renderer, and context builders.
 - **Inspecting a live board?** See :doc:`access` for the different access
   models (local sysfs, remote SSH, SD card).
 - **Configuring clock chips?** See :doc:`parts` for the part-layer

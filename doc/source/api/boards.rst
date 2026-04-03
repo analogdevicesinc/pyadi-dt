@@ -5,6 +5,12 @@ Board layout classes define the physical wiring between FPGA platforms and
 ADI evaluation boards — SPI bus assignments, GPIO mappings, and DTC include
 paths.
 
+Board classes that support the unified model provide a ``to_board_model(cfg)``
+method that produces a :class:`~adidt.model.board_model.BoardModel` from a
+pyadi-jif solver configuration.  The model can be inspected and modified before
+rendering to DTS via :class:`~adidt.model.renderer.BoardModelRenderer`.
+See :doc:`model` for the full API.
+
 .. automodule:: adidt.boards
    :members:
    :undoc-members:

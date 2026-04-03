@@ -14,9 +14,11 @@ The pipeline performs five stages:
 2. **XSA parsing** – extracts the Vivado hardware handoff (``.hwh`` XML) from
    the ``.xsa`` ZIP and detects ADI AXI IPs (JESD204 controllers, clock
    generators, converters).
-3. **Node building** – renders ADI-specific DTS nodes via Jinja2 templates,
-   using a pyadi-jif JSON config for JESD204 parameters and HMC7044 channel
-   assignments.
+3. **Node building** – each board builder constructs a ``BoardModel``
+   (see :doc:`api/model`) from the XSA topology and config, then renders it
+   to DTS node strings via Jinja2 templates.  The ``BoardModel`` is editable
+   before rendering — callers can modify clock dividers, JESD parameters, or
+   GPIO mappings programmatically.
 4. **DTS merging** – inserts the rendered nodes into the base DTS, producing
    both a standalone overlay (``.dtso``) and a fully merged (``.dts``).
 5. **HTML visualization** – generates a self-contained interactive report
@@ -34,10 +36,12 @@ Pipeline diagram
    flowchart LR
        XSA["Vivado .xsa"] --> SDT["sdtgen / lopper<br/>base DTS artifacts"]
        XSA --> HWH["HWH parser<br/>ADI IP topology"]
-       CFG["pyadi-jif / JSON config<br/>JESD + clock settings"] --> NB["NodeBuilder<br/>ADI DTS nodes"]
+       CFG["pyadi-jif / JSON config<br/>JESD + clock settings"] --> NB["NodeBuilder<br/>BoardModel construction"]
        HWH --> NB
+       NB --> BM["BoardModel<br/>editable board description"]
+       BM --> RN["BoardModelRenderer<br/>ADI DTS nodes"]
        SDT --> MG["DtsMerger<br/>overlay + merged DTS"]
-       NB --> MG
+       RN --> MG
        MG --> DTBO["overlay .dtso"]
        MG --> DTS["merged .dts"]
        DTS --> DTC["dtc / cpp"]
@@ -432,8 +436,11 @@ Core classes and methods used in the XSA flow:
      - Extracts ``.hwh`` from the XSA and returns discovered JESD, clockgen,
        converter, connectivity, and part metadata.
    * - ``NodeBuilder.build(topology: XsaTopology, cfg: dict) -> dict[str, list[str]]``
-     - Renders ADI DTS node blocks for converters/JESD/clocking using profile
-       defaults and runtime config.
+     - Dispatches to board builders, each constructing a ``BoardModel`` and
+       rendering it via ``BoardModelRenderer``.
+   * - ``BoardModelRenderer.render(model: BoardModel) -> dict[str, list[str]]``
+     - Renders a ``BoardModel`` to DTS node strings using per-component
+       Jinja2 templates.  See :doc:`api/model`.
    * - ``DtsMerger.merge(base_dts: str, nodes: dict, output_dir: Path, name: str)``
      - Produces ``<name>.dtso`` overlay + ``<name>.dts`` merged full tree.
    * - ``HtmlVisualizer.generate(topology, cfg, merged_content, output_dir, name)``
