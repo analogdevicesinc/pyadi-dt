@@ -79,11 +79,11 @@ Table of contents
 
    quickstart
    board_class_workflow
+   xsa
+   examples
    access
    parts
    utils
-   xsa
-   examples
 
 .. toctree::
    :maxdepth: 2
