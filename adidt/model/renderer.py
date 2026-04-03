@@ -4,12 +4,20 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from functools import cached_property
+from functools import lru_cache
 from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 
 from .board_model import BoardModel, JesdLinkModel
+
+
+@lru_cache(maxsize=1)
+def _template_dir() -> str:
+    """Return the XSA template directory path (cached)."""
+    return os.path.join(
+        os.path.dirname(os.path.realpath(__file__)), "..", "templates", "xsa"
+    )
 
 
 class BoardModelRenderer:
@@ -110,11 +118,8 @@ class BoardModelRenderer:
 
     @staticmethod
     def _make_env(model: BoardModel) -> Environment:
-        """Create a Jinja2 environment for the XSA template directory."""
-        loc = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "templates", "xsa"
-        )
-        env = Environment(loader=FileSystemLoader(loc))
+        """Create a Jinja2 environment with model-specific reg formatting."""
+        env = Environment(loader=FileSystemLoader(_template_dir()))
         # Register reg-formatting globals matching NodeBuilder._make_jinja_env
         cells = model.fpga_config.addr_cells if model.fpga_config else 2
         env.globals["reg_addr"] = lambda addr: (
