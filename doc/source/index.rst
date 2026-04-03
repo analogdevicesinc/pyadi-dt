@@ -80,6 +80,7 @@ Table of contents
    quickstart
    board_class_workflow
    xsa
+   visualization
    examples
    access
    parts

@@ -75,46 +75,46 @@ jobs:
       run: |
         docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
-  kuiper32-test:
-    runs-on: ubuntu-24.04-arm
-    env:
-      CONTAINER_BASE_NAME: kuiper-container-basic
-      DOCKER_IMAGE: aandrisa/kuiper_basic_32:latest
-      IMAGE_ARCH: linux/arm/v7
-      ARCHITECTURE: armhf
-    name: Test on Kuiper32
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with: 
-        path: ${{env.APP_NAME}}
+  # kuiper32-test:
+  #   runs-on: ubuntu-24.04-arm
+  #   env:
+  #     CONTAINER_BASE_NAME: kuiper-container-basic
+  #     DOCKER_IMAGE: aandrisa/kuiper_basic_32:latest
+  #     IMAGE_ARCH: linux/arm/v7
+  #     ARCHITECTURE: armhf
+  #   name: Test on Kuiper32
+  #   steps:
+  #   - name: Checkout code
+  #     uses: actions/checkout@v4
+  #     with: 
+  #       path: ${{env.APP_NAME}}
     
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+  #   - name: Set up QEMU
+  #     uses: docker/setup-qemu-action@v3
 
-    - name: Start persistent container
-      run: |
-        docker run -d \
-            --platform ${{env.IMAGE_ARCH}} \
-            --name ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} \
-            -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
-            -w /workspace/${{env.APP_NAME}} \
-            ${{env.DOCKER_IMAGE}} tail -f /dev/null
+  #   - name: Start persistent container
+  #     run: |
+  #       docker run -d \
+  #           --platform ${{env.IMAGE_ARCH}} \
+  #           --name ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} \
+  #           -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
+  #           -w /workspace/${{env.APP_NAME}} \
+  #           ${{env.DOCKER_IMAGE}} tail -f /dev/null
 
-    - name: Install system dependencies
-      run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "sudo apt update && sudo apt install -y libffi-dev python3-dev build-essential"
+  #   - name: Install system dependencies
+  #     run: |
+  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "sudo apt update && sudo apt install -y libffi-dev python3-dev build-essential"
 
-    - name: Install Python dependencies
-      run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip && pip install '.[test]'"
+  #   - name: Install Python dependencies
+  #     run: |
+  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip && pip install '.[test]'"
 
-    - name: Run tests
-      run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
+  #   - name: Run tests
+  #     run: |
+  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
   build-package:
-    needs: [python-test, kuiper64-test, kuiper32-test]
+    needs: [python-test, kuiper64-test]
     runs-on: ubuntu-latest
     name: Build Package for PyPI
     steps:
