@@ -132,3 +132,44 @@ class BoardModel:
     def get_jesd_links(self, direction: str) -> list[JesdLinkModel]:
         """Return all JESD links matching *direction*."""
         return [link for link in self.jesd_links if link.direction == direction]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize the model to a plain dict (JSON-compatible).
+
+        Useful for debugging, logging, and sharing configurations.
+        """
+        from dataclasses import asdict
+
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "BoardModel":
+        """Deserialize a ``BoardModel`` from a dict (as produced by :meth:`to_dict`).
+
+        Args:
+            data: Dict with keys matching ``BoardModel`` fields.
+
+        Returns:
+            A new ``BoardModel`` instance.
+        """
+        fpga = data.get("fpga_config")
+        if fpga and isinstance(fpga, dict):
+            fpga = FpgaConfig(**fpga)
+
+        components = [
+            ComponentModel(**c) if isinstance(c, dict) else c
+            for c in data.get("components", [])
+        ]
+        jesd_links = [
+            JesdLinkModel(**j) if isinstance(j, dict) else j
+            for j in data.get("jesd_links", [])
+        ]
+        return cls(
+            name=data["name"],
+            platform=data["platform"],
+            components=components,
+            jesd_links=jesd_links,
+            fpga_config=fpga,
+            metadata=data.get("metadata", {}),
+            extra_nodes=data.get("extra_nodes", []),
+        )
