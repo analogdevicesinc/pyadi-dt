@@ -6,6 +6,8 @@ from pathlib import Path
 
 import pytest
 
+pytest.importorskip("requests", reason="requests not installed")
+
 from adidt.xsa.kuiper import download_kuiper_xsa
 
 

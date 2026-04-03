@@ -6,6 +6,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("fastmcp", reason="fastmcp not installed")
+
 from adidt.mcp_server import generate_devicetree, mcp
 
 
