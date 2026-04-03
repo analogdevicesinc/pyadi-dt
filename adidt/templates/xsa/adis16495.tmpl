@@ -1,0 +1,15 @@
+		{{ label }}: {{ device }}@{{ cs }} {
+			compatible = "{{ compatible }}";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if spi_cpol %}
+			spi-cpol;
+{%- endif %}
+{%- if spi_cpha %}
+			spi-cpha;
+{%- endif %}
+{%- if interrupt_gpio is not none %}
+			interrupt-parent = <&{{ gpio_label }}>;
+			interrupts = <{{ interrupt_gpio }} {{ irq_type }}>;
+{%- endif %}
+		};

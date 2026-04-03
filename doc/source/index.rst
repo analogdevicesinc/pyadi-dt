@@ -9,69 +9,23 @@ clock distribution ICs, RF transceivers, and FPGA-based JESD204 data paths.
 
    pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
 
-What pyadi-dt does
-------------------
+Key capabilities
+----------------
 
-**Generate device trees from Vivado XSA files.**
-Point the ``adidtc xsa2dt`` command at a Vivado ``.xsa`` archive and a board
-profile.  The pipeline parses the hardware description, renders ADI-specific
-DTS nodes via Jinja2 templates, and produces a merged ``.dts`` ready for
-``dtc`` compilation — no manual DTS editing needed.
-
-.. code-block:: bash
-
-   adidtc xsa2dt -x design.xsa --profile ad9084_vcu118 -o out/
-
-**Inspect and modify device trees on live hardware.**
-Read properties from a running board over SSH, browse the device tree
-interactively, or update SD card boot files.
-
-.. code-block:: bash
-
-   adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
-
-.. image:: _static/media/props.gif
-   :alt: props command demo
-
-**Build device trees programmatically with the BoardModel API.**
-Construct, inspect, and modify a board model before rendering to DTS.
-Both the XSA pipeline and manual board classes produce the same
-``BoardModel`` — edit clock dividers, JESD parameters, or GPIO mappings
-in Python, then render to a deployable device tree.
-
-.. code-block:: python
-
-   from adidt.boards.daq2 import daq2
-   from adidt.model.renderer import BoardModelRenderer
-
-   board = daq2(platform="zcu102")
-   model = board.to_board_model(solver_config)
-   model.get_component("clock").config["vcxo_hz"] = 100_000_000  # edit
-   nodes = BoardModelRenderer().render(model)
-
-**Configure clock chips and converters from JSON.**
-Apply ``pyadi-jif``-solved clock and JESD204 parameters directly to the
-device tree — update HMC7044 channel dividers, AD9081 datapath settings,
-or AD9528 PLL configuration with a single command.
-
-.. code-block:: bash
-
-   adidtc jif --config solved_clocks.json
-
-**Validate generated device trees.**
-Run the built-in structural linter to catch unresolved phandle references,
-SPI chip-select conflicts, clock-cell mismatches, and missing compatible
-strings before flashing hardware.
-
-.. code-block:: bash
-
-   adidtc xsa2dt -x design.xsa --profile adrv9009_zcu102 --lint -o out/
+- **XSA-to-DTS pipeline** — Generate complete device trees from Vivado
+  ``.xsa`` archives using built-in board profiles.  No manual DTS editing.
+- **BoardModel API** — Construct, inspect, and modify board models
+  programmatically before rendering to DTS.  Both the XSA pipeline and
+  manual board classes produce the same editable ``BoardModel``.
+- **Device tree inspection** — Read properties from live hardware over SSH,
+  browse the tree interactively, or update SD card boot files.
+- **Clock and JESD configuration** — Apply ``pyadi-jif``-solved parameters
+  directly to the device tree from JSON.
+- **Structural linter** — Catch unresolved phandle references, SPI
+  chip-select conflicts, and clock-cell mismatches before flashing.
 
 Supported hardware
 ------------------
-
-pyadi-dt includes built-in profiles for the following ADI evaluation boards
-and FPGA platforms:
 
 .. list-table::
    :widths: 40 60
@@ -94,22 +48,19 @@ and FPGA platforms:
    * - FMCDAQ3 (AD9680 + AD9152)
      - ZCU102, ZC706
 
-See :doc:`xsa` for the complete profile reference table with JESD parameter
-and board config details.
-
 Where to start
 --------------
 
-- **First time?** Start with the :doc:`examples/xsa_tutorial` for a
-  step-by-step walkthrough of XSA-based device tree generation.
-- **Using the BoardModel API?** See :doc:`api/model` for the unified
-  board model, renderer, and context builders.
-- **Inspecting a live board?** See :doc:`access` for the different access
-  models (local sysfs, remote SSH, SD card).
-- **Configuring clock chips?** See :doc:`parts` for the part-layer
-  abstractions (HMC7044, AD9523-1, AD9528, ADRV9009).
+- **New to pyadi-dt?** See the :doc:`quickstart` for installation,
+  first commands, and code examples.
+- **XSA workflow?** See :doc:`examples/xsa_tutorial` for a step-by-step
+  walkthrough of Vivado XSA-based generation.
+- **Non-XSA workflow?** See :doc:`board_class_workflow` for generating
+  device trees without Vivado (Raspberry Pi, Intel FPGA, custom boards).
+- **BoardModel API?** See :doc:`api/model` for the unified board model,
+  renderer, and context builders.
 - **Adding a new board?** See :doc:`xsa_developer` for the pipeline
-  architecture, builder pattern, and step-by-step guide.
+  architecture and step-by-step guide.
 
 Links
 -----
@@ -126,6 +77,8 @@ Table of contents
    :maxdepth: 2
    :caption: User Guide
 
+   quickstart
+   board_class_workflow
    access
    parts
    utils

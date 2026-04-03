@@ -91,12 +91,39 @@ Board classes with ``to_board_model()``:
 
 - ``adidt.boards.daq2`` (ZCU102, ZC706)
 
+Component factories
+~~~~~~~~~~~~~~~~~~~~
+
+The easiest way to create components.  Each factory returns a
+pre-configured ``ComponentModel`` — no template filenames needed:
+
+.. code-block:: python
+
+   from adidt.model import BoardModel, components
+
+   model = BoardModel(
+       name="my_board",
+       platform="rpi5",
+       components=[
+           components.adis16495(spi_bus="spi0", cs=0, interrupt_gpio=25),
+       ],
+   )
+
+Available factories (``from adidt.model import components``):
+
+- **Simple SPI:** ``components.adis16495`` — ADIS16495/16497 IMU
+- **Clock chips:** ``components.hmc7044``, ``components.ad9523_1``,
+  ``components.ad9528``
+- **ADCs / DACs:** ``components.ad9680``, ``components.ad9144``,
+  ``components.ad9152``, ``components.ad9172``
+- **Transceivers:** ``components.ad9081``, ``components.ad9084``
+
 Context builders
 ~~~~~~~~~~~~~~~~
 
-Context builder functions in ``adidt.model.contexts`` produce the template
-context dicts that ``BoardModelRenderer`` passes to Jinja2 templates.  Each
-function uses keyword-only arguments and returns a flat dict:
+Lower-level functions that produce template context dicts.  Use these
+when you need full control over every field, or when no factory exists
+for your device:
 
 .. code-block:: python
 
@@ -109,16 +136,6 @@ function uses keyword-only arguments and returns a flat dict:
        vcxo_hz=125_000_000,
    )
    # ctx is ready to pass to ad9523_1.tmpl
-
-Available context builders:
-
-- **Clock chips:** ``build_ad9523_1_ctx``, ``build_ad9528_ctx``,
-  ``build_ad9528_1_ctx``, ``build_hmc7044_ctx``, ``build_hmc7044_channel_ctx``
-- **Converters:** ``build_ad9680_ctx``, ``build_ad9144_ctx``,
-  ``build_ad9152_ctx``, ``build_ad9172_device_ctx``, ``build_ad9081_mxfe_ctx``,
-  ``build_adrv9009_device_ctx``, ``build_ad9084_ctx``, ``build_adf4382_ctx``
-- **FPGA infrastructure:** ``build_adxcvr_ctx``, ``build_jesd204_overlay_ctx``,
-  ``build_tpl_core_ctx``
 
 API Reference
 -------------
@@ -143,6 +160,14 @@ Context Builder Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. automodule:: adidt.model.contexts
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Component Factories
+~~~~~~~~~~~~~~~~~~~
+
+.. automodule:: adidt.model.components
    :members:
    :undoc-members:
    :show-inheritance:

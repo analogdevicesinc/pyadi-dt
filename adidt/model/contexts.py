@@ -1,9 +1,8 @@
-"""Shared template-context builders for FMCDAQ2 components.
+"""Shared template-context builders for board components.
 
-Each function takes a board config dataclass (e.g. ``_FMCDAQ2Cfg``) and
-returns a plain dict ready to pass to a Jinja2 template.  These are used
-by both the XSA pipeline (via ``FMCDAQ2Builder``) and the manual board
-class workflow (via ``daq2.to_board_model()``).
+Each function returns a plain dict ready to pass to a Jinja2 template.
+These are used by both the XSA pipeline (via board builders) and the
+manual board-class workflow (via ``to_board_model()``).
 """
 
 from __future__ import annotations
@@ -867,4 +866,42 @@ def build_ad9084_ctx(
         "hsci_auto_linkup": hsci_auto_linkup,
         "link_ids": link_ids,
         "jesd204_inputs": jesd204_inputs,
+    }
+
+
+# ---------------------------------------------------------------------------
+# ADIS16495 IMU (simple SPI device)
+# ---------------------------------------------------------------------------
+
+
+def build_adis16495_ctx(
+    *,
+    label: str = "imu0",
+    device: str = "adis16495",
+    compatible: str = "adi,adis16495-1",
+    cs: int = 0,
+    spi_max_hz: int = 2_000_000,
+    spi_cpol: bool = True,
+    spi_cpha: bool = True,
+    gpio_label: str = "gpio",
+    interrupt_gpio: int | None = None,
+    irq_type: str = "IRQ_TYPE_EDGE_FALLING",
+) -> dict:
+    """Build context dict for ``adis16495.tmpl``.
+
+    The ADIS16495 is a 6-DOF IMU connected via SPI.  This context builder
+    produces a minimal device tree node with SPI mode, interrupt, and
+    compatible string.
+    """
+    return {
+        "label": label,
+        "device": device,
+        "compatible": compatible,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "spi_cpol": spi_cpol,
+        "spi_cpha": spi_cpha,
+        "gpio_label": gpio_label,
+        "interrupt_gpio": interrupt_gpio,
+        "irq_type": irq_type,
     }

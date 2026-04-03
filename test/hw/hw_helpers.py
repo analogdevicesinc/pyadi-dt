@@ -170,31 +170,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         check=False,
     )
     if res.returncode != 0:
-        # If dtc fails due to unresolved overlay labels (e.g., ORX TPL core
-        # that doesn't exist in the base DTS), strip those &label blocks and
-        # retry.
-        if "Label or path" in res.stderr and "not found" in res.stderr:
-            import re
-
-            stripped = _strip_unresolved_overlays(compile_input, res.stderr)
-            if stripped:
-                res = subprocess.run(
-                    [
-                        "dtc",
-                        "-I",
-                        "dts",
-                        "-O",
-                        "dtb",
-                        "-o",
-                        str(dtb_path),
-                        str(compile_input),
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                )
-        if res.returncode != 0:
-            raise RuntimeError(f"dtc failed:\n{res.stderr}")
+        raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
 
 def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:

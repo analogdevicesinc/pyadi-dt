@@ -55,45 +55,42 @@ model = board.to_board_model(conf)
 nodes = BoardModelRenderer().render(model)
 ```
 
-### 3. Direct construction
+### 3. Direct construction with component factories
 
-You can build a `BoardModel` from scratch for custom configurations:
+Build a `BoardModel` from scratch using the `components` module — no
+template filenames needed:
 
 ```python
-from adidt.model.board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
-from adidt.model.contexts import build_ad9523_1_ctx, build_ad9680_ctx
+from adidt.model import BoardModel, components
 from adidt.model.renderer import BoardModelRenderer
 
+# Simple example: IMU on a Raspberry Pi
+model = BoardModel(
+    name="rpi5_imu",
+    platform="rpi5",
+    components=[
+        components.adis16495(spi_bus="spi0", cs=0, interrupt_gpio=25),
+    ],
+)
+
+nodes = BoardModelRenderer().render(model)
+```
+
+For FPGA boards with clock chips and converters:
+
+```python
 model = BoardModel(
     name="custom_board",
     platform="zcu102",
     components=[
-        ComponentModel(
-            role="clock",
-            part="ad9523_1",
-            template="ad9523_1.tmpl",
-            spi_bus="spi0",
-            spi_cs=0,
-            config=build_ad9523_1_ctx(cs=0, vcxo_hz=125_000_000),
-        ),
-        ComponentModel(
-            role="adc",
-            part="ad9680",
-            template="ad9680.tmpl",
-            spi_bus="spi0",
-            spi_cs=2,
-            config=build_ad9680_ctx(
-                cs=2,
-                clks_str="<&clk0_ad9523 13>",
-                clk_names_str='"adc_clk"',
-            ),
+        components.ad9523_1(spi_bus="spi0", cs=0, vcxo_hz=125_000_000),
+        components.ad9680(
+            spi_bus="spi0", cs=2,
+            clks_str="<&clk0_ad9523 13>",
+            clk_names_str='"adc_clk"',
         ),
     ],
     jesd_links=[...],  # JesdLinkModel instances
-    fpga_config=FpgaConfig(
-        platform="zcu102", addr_cells=2,
-        ps_clk_label="zynqmp_clk", ps_clk_index=71, gpio_label="gpio",
-    ),
 )
 
 nodes = BoardModelRenderer().render(model)
@@ -131,29 +128,29 @@ nodes = BoardModelRenderer().render(model)
 | `ADRV9009Builder` | AD9528 | ADRV9009 | `adrv9009_fmc` |
 | `AD9084Builder` | HMC7044 + ADF4382 | AD9084 | `ad9084_fmc` |
 
-## Available context builders
+## Available component factories
 
-Context builders produce the template context dicts used by the renderer.
-Import them from `adidt.model.contexts`:
+The easiest way to add devices.  Import from `adidt.model.components`:
 
-**Clock chips:**
-- `build_ad9523_1_ctx` -- AD9523-1 (FMCDAQ2)
-- `build_ad9528_ctx` -- AD9528 (FMCDAQ3)
-- `build_ad9528_1_ctx` -- AD9528-1 variant (ADRV9009)
-- `build_hmc7044_ctx` -- HMC7044 (AD9081, AD9084, AD9172)
-- `build_hmc7044_channel_ctx` -- HMC7044 channel pre-computation
+```python
+from adidt.model import components
+```
 
-**Converters:**
-- `build_ad9680_ctx` -- AD9680 ADC
-- `build_ad9144_ctx` -- AD9144 DAC
-- `build_ad9152_ctx` -- AD9152 DAC
-- `build_ad9172_device_ctx` -- AD9172 DAC
-- `build_ad9081_mxfe_ctx` -- AD9081 MxFE transceiver
-- `build_adrv9009_device_ctx` -- ADRV9009 transceiver
-- `build_ad9084_ctx` -- AD9084 converter
-- `build_adf4382_ctx` -- ADF4382 PLL
+**Simple SPI:** `components.adis16495` -- ADIS16495/16497 IMU
 
-**FPGA infrastructure:**
-- `build_adxcvr_ctx` -- GT transceiver (ADXCVR)
-- `build_jesd204_overlay_ctx` -- JESD204 controller overlay
-- `build_tpl_core_ctx` -- TPL core (transport protocol layer)
+**Clock chips:** `components.hmc7044`, `components.ad9523_1`, `components.ad9528`
+
+**ADCs / DACs:** `components.ad9680`, `components.ad9144`, `components.ad9152`, `components.ad9172`
+
+**Transceivers:** `components.ad9081`, `components.ad9084`
+
+Each factory accepts `spi_bus`, `cs`, and device-specific keyword arguments.
+
+## Context builders (advanced)
+
+For full control, use context builders directly from `adidt.model.contexts`.
+These return raw dicts for manual `ComponentModel` construction:
+
+- **Clock chips:** `build_ad9523_1_ctx`, `build_ad9528_ctx`, `build_hmc7044_ctx`
+- **Converters:** `build_ad9680_ctx`, `build_ad9144_ctx`, `build_ad9081_mxfe_ctx`, `build_adrv9009_device_ctx`
+- **FPGA:** `build_adxcvr_ctx`, `build_jesd204_overlay_ctx`, `build_tpl_core_ctx`

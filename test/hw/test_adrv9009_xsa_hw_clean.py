@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -9,6 +10,8 @@ from adidt.xsa.pipeline import XsaPipeline
 
 import iio
 import pytest
+
+from test.hw.hw_helpers import compile_dts_to_dtb
 
 HERE = Path(__file__).parent
 DEFAULT_OUT_DIR = HERE / "output"
@@ -123,37 +126,6 @@ def _resolve_config_from_adijif(
     return cfg, summary
 
 
-def _compile_dts_to_dtb(dts_path: Path, dtb_path: Path):
-    compile_input = dts_path
-    text = dts_path.read_text()
-
-    if "#include" in text:
-        if shutil.which("cpp") is None:
-            raise RuntimeError(
-                "cpp not found on PATH (required for #include preprocessing)"
-            )
-        preprocessed = dtb_path.parent / f"{dts_path.stem}.pp.dts"
-        include_dirs = [dts_path.parent, dts_path.parent / "base"]
-        cmd = ["cpp", "-P", "-nostdinc", "-undef", "-x", "assembler-with-cpp"]
-        for inc in include_dirs:
-            if inc.exists():
-                cmd.extend(["-I", str(inc)])
-        cmd.extend([str(dts_path), str(preprocessed)])
-        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        if res.returncode != 0:
-            raise RuntimeError(f"cpp failed:\n{res.stderr}")
-        compile_input = preprocessed
-
-    res = subprocess.run(
-        ["dtc", "-I", "dts", "-O", "dtb", "-o", str(dtb_path), str(compile_input)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if res.returncode != 0:
-        raise RuntimeError(f"dtc failed:\n{res.stderr}")
-
-
 @pytest.fixture(scope="module")
 def board(strategy):
     # with capsys.disabled():
@@ -188,7 +160,7 @@ def test_adrv9009_zcu102_xsa_hw(board):
     )
 
     dtb = out_dir / "system.dtb"
-    _compile_dts_to_dtb(result["merged"], dtb)
+    compile_dts_to_dtb(result["merged"], dtb)
 
     kuiper = board.target.get_driver("KuiperDLDriver")
     kuiper.get_boot_files_from_release()
