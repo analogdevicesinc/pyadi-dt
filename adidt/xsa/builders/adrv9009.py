@@ -251,7 +251,10 @@ class ADRV9009Builder:
         has_rx_clkgen = not is_fmcomms8
         has_tx_clkgen = not is_fmcomms8
 
-        if rx_os_jesd_label:
+        # Determine if ORX path exists in the topology by checking for the
+        # ORX JESD label AND the ORX TPL core label in the sdtgen base DTS.
+        has_rx_os = bool(rx_os_jesd_label)
+        if has_rx_os:
             rx_os_xcvr_label = rx_os_jesd_label.replace(
                 "_jesd_rx_axi", "_xcvr"
             ).replace("_rx_os_jesd", "_rx_os_xcvr")
@@ -259,14 +262,14 @@ class ADRV9009Builder:
                 "_jesd_rx_axi", "_clkgen"
             ).replace("_rx_os_jesd", "_rx_os_clkgen")
         else:
-            rx_os_xcvr_label = "axi_adrv9009_rx_os_xcvr"
-            rx_os_clkgen_label = "axi_adrv9009_rx_os_clkgen"
+            rx_os_xcvr_label = ""
+            rx_os_clkgen_label = ""
 
-        has_rx_os_clkgen = bool(rx_os_jesd_label) and not is_fmcomms8
+        has_rx_os_clkgen = has_rx_os and not is_fmcomms8
 
         # --- TPL core labels ---
         rx_core_label = "axi_adrv9009_core_rx"
-        rx_os_core_label = "axi_adrv9009_core_rx_obs"
+        rx_os_core_label = "axi_adrv9009_core_rx_obs" if has_rx_os else ""
         tx_core_label = "axi_adrv9009_core_tx"
         if is_fmcomms8:
             rx_core_label = _pick_matching_label(
@@ -719,17 +722,19 @@ class ADRV9009Builder:
             "\t\t#jesd204-cells = <2>;\n"
             "\t};"
         )
-        rx_os_xcvr_node = (
-            f"\t&{rx_os_xcvr_label} {{\n"
-            '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = {rx_os_xcvr_conv_clk_ref}, {rx_os_xcvr_div40_ref};\n"
-            '\t\tclock-names = "conv", "div40";\n'
-            "\t\t#clock-cells = <1>;\n"
-            '\t\tclock-output-names = "rx_os_gt_clk", "rx_os_out_clk";\n'
-            "\t\tjesd204-device;\n"
-            "\t\t#jesd204-cells = <2>;\n"
-            "\t};"
-        )
+        rx_os_xcvr_node = ""
+        if has_rx_os:
+            rx_os_xcvr_node = (
+                f"\t&{rx_os_xcvr_label} {{\n"
+                '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
+                f"\t\tclocks = {rx_os_xcvr_conv_clk_ref}, {rx_os_xcvr_div40_ref};\n"
+                '\t\tclock-names = "conv", "div40";\n'
+                "\t\t#clock-cells = <1>;\n"
+                '\t\tclock-output-names = "rx_os_gt_clk", "rx_os_out_clk";\n'
+                "\t\tjesd204-device;\n"
+                "\t\t#jesd204-cells = <2>;\n"
+                "\t};"
+            )
         tx_xcvr_node = (
             f"\t&{tx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
@@ -751,15 +756,17 @@ class ADRV9009Builder:
             '\t\tdma-names = "rx";\n'
             "\t};"
         )
-        rx_os_core_first = (
-            f"\t&{rx_os_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-adrv9009-obs-1.0";\n'
-            f"\t\tdmas = <&{rx_os_dma_label} 0>;\n"
-            '\t\tdma-names = "rx";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
-            '\t\tclock-names = "sampl_clk";\n'
-            "\t};"
-        )
+        rx_os_core_first = ""
+        if has_rx_os:
+            rx_os_core_first = (
+                f"\t&{rx_os_core_label} {{\n"
+                '\t\tcompatible = "adi,axi-adrv9009-obs-1.0";\n'
+                f"\t\tdmas = <&{rx_os_dma_label} 0>;\n"
+                '\t\tdma-names = "rx";\n'
+                f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
+                '\t\tclock-names = "sampl_clk";\n'
+                "\t};"
+            )
         tx_core_first = (
             f"\t&{tx_core_label} {{\n"
             '\t\tcompatible = "adi,axi-adrv9009-tx-1.0";\n'
@@ -775,12 +782,14 @@ class ADRV9009Builder:
         rx_core_second = (
             f"\t&{rx_core_label} {{\n\t\tspibus-connected = <&{phy_label}>;\n\t}};"
         )
-        rx_os_core_second = (
-            f"\t&{rx_os_core_label} {{\n"
-            f"\t\tclocks = <&{phy_label} 1>;\n"
-            '\t\tclock-names = "sampl_clk";\n'
-            "\t};"
-        )
+        rx_os_core_second = ""
+        if has_rx_os:
+            rx_os_core_second = (
+                f"\t&{rx_os_core_label} {{\n"
+                f"\t\tclocks = <&{phy_label} 1>;\n"
+                '\t\tclock-names = "sampl_clk";\n'
+                "\t};"
+            )
         tx_core_second = (
             f"\t&{tx_core_label} {{\n"
             f"\t\tspibus-connected = <&{phy_label}>;\n"
@@ -874,26 +883,24 @@ class ADRV9009Builder:
                 "\t};"
             )
 
-        extra_before.extend(
-            [
-                _dma_node(rx_dma_label),
-                _dma_node(tx_dma_label),
-                _dma_node(rx_os_dma_label),
-                rx_xcvr_node,
-                rx_os_xcvr_node,
-                tx_xcvr_node,
-                rx_core_first,
-                rx_os_core_first,
-                tx_core_first,
-            ]
-        )
+        extra_before.append(_dma_node(rx_dma_label))
+        extra_before.append(_dma_node(tx_dma_label))
+        if has_rx_os:
+            extra_before.append(_dma_node(rx_os_dma_label))
+        extra_before.append(rx_xcvr_node)
+        if has_rx_os:
+            extra_before.append(rx_os_xcvr_node)
+        extra_before.append(tx_xcvr_node)
+        extra_before.append(rx_core_first)
+        if has_rx_os:
+            extra_before.append(rx_os_core_first)
+        extra_before.append(tx_core_first)
 
         # extra_nodes_after: TPL core second pass nodes
-        extra_after: list[str] = [
-            rx_core_second,
-            rx_os_core_second,
-            tx_core_second,
-        ]
+        extra_after: list[str] = [rx_core_second]
+        if has_rx_os:
+            extra_after.append(rx_os_core_second)
+        extra_after.append(tx_core_second)
 
         # --- Platform config ---
         _32BIT_PLATFORMS = {"vcu118", "zc706"}
