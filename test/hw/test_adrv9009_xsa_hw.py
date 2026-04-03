@@ -26,6 +26,12 @@ import pytest
 from adidt.xsa.pipeline import XsaPipeline
 from test.xsa.kuiper_release import download_project_xsa
 
+if not os.environ.get("LG_ENV"):
+    pytest.skip(
+        "set LG_ENV for ADRV9009 ZCU102 hardware test",
+        allow_module_level=True,
+    )
+
 
 LG_ENV_PATH = "/jenkins/lg_hw.yaml"
 KUIPER_RELEASE_DEFAULT = "2023_r2"

@@ -57,21 +57,24 @@ class BoardModelRenderer:
             # DMA overlay (skip when dma_label is None)
             if link.dma_label is not None:
                 result["converters"].append(self._render_dma_overlay(link))
-            # TPL core
-            result["converters"].append(
-                env.get_template("tpl_core.tmpl").render(link.tpl_core_config)
-            )
-            # JESD204 overlay
-            key = f"jesd204_{link.direction}"
-            result[key].append(
-                env.get_template("jesd204_overlay.tmpl").render(
-                    link.jesd_overlay_config
+            # TPL core (skip when config is empty — builder handles it externally)
+            if link.tpl_core_config:
+                result["converters"].append(
+                    env.get_template("tpl_core.tmpl").render(link.tpl_core_config)
                 )
-            )
-            # ADXCVR
-            result["converters"].append(
-                env.get_template("adxcvr.tmpl").render(link.xcvr_config)
-            )
+            # JESD204 overlay
+            if link.jesd_overlay_config:
+                key = f"jesd204_{link.direction}"
+                result[key].append(
+                    env.get_template("jesd204_overlay.tmpl").render(
+                        link.jesd_overlay_config
+                    )
+                )
+            # ADXCVR (skip when config is empty — builder handles it externally)
+            if link.xcvr_config:
+                result["converters"].append(
+                    env.get_template("adxcvr.tmpl").render(link.xcvr_config)
+                )
 
         # Append extra raw nodes (e.g., fixed clocks, HSCI overlays)
         result["converters"].extend(model.extra_nodes)

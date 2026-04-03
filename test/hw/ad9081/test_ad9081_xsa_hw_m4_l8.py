@@ -11,6 +11,12 @@ from adidt.xsa.pipeline import XsaPipeline
 import iio
 import pytest
 
+if not os.environ.get("LG_ENV"):
+    pytest.skip(
+        "set LG_ENV for AD9081 ZCU102 M4/L8 hardware test",
+        allow_module_level=True,
+    )
+
 HERE = Path(__file__).parent
 DEFAULT_OUT_DIR = HERE / "output"
 DEFAULT_KUIPER_RELEASE = "2023_r2"

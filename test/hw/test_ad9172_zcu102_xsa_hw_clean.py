@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -20,6 +21,63 @@ if not os.environ.get("LG_ENV"):
 DEFAULT_KUIPER_RELEASE = "2023_r2"
 DEFAULT_KUIPER_PROJECT = "zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4"
 DEFAULT_KUIPER_BOOTBIN = "release:zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4/BOOT.BIN"
+DEFAULT_VCXO_HZ = 125e6
+DEFAULT_SAMPLE_RATE_HZ = 12288e6
+
+
+def _resolve_config_from_adijif(
+    vcxo_hz: float = DEFAULT_VCXO_HZ,
+    sample_rate_hz: float = DEFAULT_SAMPLE_RATE_HZ,
+    solve: bool = True,
+) -> dict[str, Any]:
+    """Use adijif to derive JESD TX parameters for the AD9172 (DAC-only).
+
+    The AD9172 is not directly available in adijif, so we use the AD9144 as a
+    stand-in — it shares the same JESD204B mode table for L=8, M=4, Np=16.
+    """
+    import adijif
+
+    sys = adijif.system("ad9144", "hmc7044", "xilinx", vcxo_hz)
+    sys.fpga.setup_by_dev_kit_name("zcu102")
+    sys.fpga.ref_clock_constraint = "Unconstrained"
+
+    tx_mode = adijif.utils.get_jesd_mode_from_params(sys.converter, L=8, M=4, Np=16)
+    if not tx_mode:
+        raise RuntimeError("No matching AD9172 JESD TX mode found via adijif")
+
+    sys.converter.set_quick_configuration_mode(tx_mode[0]["mode"], "jesd204b")
+    sys.converter.sample_clock = sample_rate_hz
+
+    def _jesd_mode_val(mode: dict[str, Any], key: str, default: int) -> int:
+        settings = mode.get("settings", {}) if isinstance(mode, dict) else {}
+        if key in settings:
+            return int(settings[key])
+        if key in mode:
+            return int(mode[key])
+        return default
+
+    txm = tx_mode[0]
+    cfg: dict[str, Any] = {
+        "jesd": {
+            "tx": {
+                "F": _jesd_mode_val(txm, "F", 1),
+                "K": _jesd_mode_val(txm, "K", 32),
+                "M": _jesd_mode_val(txm, "M", 4),
+                "L": _jesd_mode_val(txm, "L", 8),
+                "Np": _jesd_mode_val(txm, "Np", 16),
+                "S": _jesd_mode_val(txm, "S", 1),
+            },
+        },
+    }
+
+    if solve:
+        conf = sys.solve()
+        tx_conf = conf.get("jesd_AD9144", {})
+        for key in ("F", "K", "M", "L", "Np", "S"):
+            if key in tx_conf:
+                cfg["jesd"]["tx"][key] = int(tx_conf[key])
+
+    return cfg
 
 
 @pytest.fixture(scope="module")
@@ -42,10 +100,11 @@ def test_ad9172_zcu102_xsa_hw(board, built_kernel_image, tmp_path):
     )
     assert xsa_path.exists(), f"XSA extraction failed: {xsa_path}"
 
+    cfg = _resolve_config_from_adijif(solve=True)
     out_dir = DEFAULT_OUT_DIR
     result = XsaPipeline().run(
         xsa_path=xsa_path,
-        cfg={},
+        cfg=cfg,
         output_dir=out_dir,
         profile="ad9172_zcu102",
         sdtgen_timeout=300,

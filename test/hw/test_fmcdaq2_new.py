@@ -9,6 +9,12 @@ from adibuild.platforms import ZynqMPPlatform
 from adidt.boards.daq2 import daq2
 import adijif
 
+if not os.environ.get("LG_ENV"):
+    pytest.skip(
+        "set LG_ENV for FMCDAQ2 ZCU102 hardware test",
+        allow_module_level=True,
+    )
+
 SAMPLE_RATES = [500, 1000]
 # SAMPLE_RATES = [100]
 

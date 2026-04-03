@@ -101,6 +101,30 @@ DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not i
 }
 
 
+def _strip_unresolved_overlays(dts_path: Path, stderr: str) -> bool:
+    """Remove ``&label { ... };`` blocks for labels that dtc reports as missing.
+
+    Returns True if any blocks were stripped.
+    """
+    import re
+
+    labels = set(re.findall(r"Label or path (\S+) not found", stderr))
+    if not labels:
+        return False
+    text = dts_path.read_text()
+    changed = False
+    for label in labels:
+        # Match &label { ... }; blocks (handles nested braces simply)
+        pattern = rf"^\s*&{re.escape(label)}\s*\{{[^}}]*\}};?\s*$"
+        new_text = re.sub(pattern, "", text, flags=re.MULTILINE)
+        if new_text != text:
+            text = new_text
+            changed = True
+    if changed:
+        dts_path.write_text(text)
+    return changed
+
+
 def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
     """Compile a DTS file to a DTB binary.
 
@@ -146,7 +170,31 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         check=False,
     )
     if res.returncode != 0:
-        raise RuntimeError(f"dtc failed:\n{res.stderr}")
+        # If dtc fails due to unresolved overlay labels (e.g., ORX TPL core
+        # that doesn't exist in the base DTS), strip those &label blocks and
+        # retry.
+        if "Label or path" in res.stderr and "not found" in res.stderr:
+            import re
+
+            stripped = _strip_unresolved_overlays(compile_input, res.stderr)
+            if stripped:
+                res = subprocess.run(
+                    [
+                        "dtc",
+                        "-I",
+                        "dts",
+                        "-O",
+                        "dtb",
+                        "-o",
+                        str(dtb_path),
+                        str(compile_input),
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+        if res.returncode != 0:
+            raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
 
 def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
