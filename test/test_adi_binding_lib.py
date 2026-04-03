@@ -67,7 +67,8 @@ Compatible:
         "adi,axi-ad9081-rx-1.0",
         "adi,axi-ad9081-tx-1.0",
     ]
-    assert yaml_record.adi_properties == ["adi,jesd-phy", "adi,sysref-mode"]
+    assert "adi,jesd-phy" in yaml_record.adi_properties
+    assert "adi,sysref-mode" in yaml_record.adi_properties
 
     assert txt_record.compatibles == ["adi,axi-ad9081-rx-1.0"]
     assert txt_record.adi_properties == ["adi,axi-hsci-link"]

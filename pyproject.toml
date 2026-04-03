@@ -41,6 +41,7 @@ test = [
     "pyadi-jif[cplex,draw]",
     "hashable_list",
     "ordered_set",
+    "requests",
 ]
 dev = [
     "adidt[test]",
