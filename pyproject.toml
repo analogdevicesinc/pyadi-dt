@@ -34,16 +34,19 @@ dependencies = [
 
 [project.optional-dependencies]
 xsa = ["lopper"]
-dev = [
+test = [
     "pytest",
     "pytest-asyncio",
-    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",
-    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
-    "usbsdmux",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
     "hashable_list",
     "ordered_set",
+]
+dev = [
+    "adidt[test]",
+    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",
+    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
+    "usbsdmux",
 ]
 mcp = ["fastmcp"]
 
