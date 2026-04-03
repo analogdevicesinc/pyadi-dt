@@ -1024,8 +1024,8 @@ def xsa2dt(
                         rule = item.get("rule", "?")
                         msg = item.get("message", "?")
                         click.echo(f"    [{sev}] {rule}: {msg}")
-                except Exception:
-                    pass
+                except Exception as ex:
+                    click.echo(f"  Warning: unable to display diagnostics: {ex}")
 
     except FileNotFoundError as e:
         raise click.ClickException(str(e))
