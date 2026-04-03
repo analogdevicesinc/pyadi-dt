@@ -136,9 +136,19 @@ class layout:
         Returns:
             str: Path to the generated DTS file.
         """
+        if not isinstance(cfg, dict):
+            raise TypeError(f"cfg must be a dict, got {type(cfg).__name__}")
         cfg = self.validate_and_default_fpga_config(cfg)
         model = self.to_board_model(cfg)
         return self.gen_dt_from_model(model, config_source=config_source)
+
+    def validate_and_default_fpga_config(self, cfg):
+        """Validate and apply platform defaults for FPGA configuration.
+
+        Subclasses should override to add board-specific validation.
+        The base implementation returns cfg unchanged.
+        """
+        return cfg
 
     def map_jesd_subclass(self, name):
         """Map JESD204 subclass to integer.
