@@ -9,8 +9,15 @@ from adibuild.platforms import ZynqMPPlatform
 from adidt.boards.daq2 import daq2
 import adijif
 
+if not os.environ.get("LG_ENV"):
+    pytest.skip(
+        "set LG_ENV for FMCDAQ2 ZCU102 hardware test",
+        allow_module_level=True,
+    )
+
 SAMPLE_RATES = [500, 1000]
 # SAMPLE_RATES = [100]
+
 
 @pytest.fixture(scope="module")
 def board(strategy):
@@ -39,7 +46,9 @@ def generate_fmcdaq2_config(sample_rate_msps: int, platform: str = "zcu102", jes
     """
     vcxo = 125_000_000  # 125 MHz reference
 
-    sys = adijif.system(["ad9680", "ad9144"], "ad9523_1", "xilinx", vcxo, solver="CPLEX")
+    sys = adijif.system(
+        ["ad9680", "ad9144"], "ad9523_1", "xilinx", vcxo, solver="CPLEX"
+    )
     sys.fpga.setup_by_dev_kit_name(platform)
 
     # Clocking constraints
@@ -53,32 +62,35 @@ def generate_fmcdaq2_config(sample_rate_msps: int, platform: str = "zcu102", jes
 
     # JESD Configuration - Use quick_configuration_mode to lock parameters
     rx_mode = adijif.utils.get_jesd_mode_from_params(
-        sys.converter[0], L=jesd['L'], M=jesd['M'], Np=16, F=1
+        sys.converter[0], L=jesd["L"], M=jesd["M"], Np=16, F=1
     )
     tx_mode = adijif.utils.get_jesd_mode_from_params(
-        sys.converter[1], L=jesd['L'], M=jesd['M'], Np=16, F=1
+        sys.converter[1], L=jesd["L"], M=jesd["M"], Np=16, F=1
     )
-    rx_mode = [mode for mode in rx_mode if "DL" not in mode['mode']]
-    tx_mode = [mode for mode in tx_mode if "DL" not in mode['mode']]
+    rx_mode = [mode for mode in rx_mode if "DL" not in mode["mode"]]
+    tx_mode = [mode for mode in tx_mode if "DL" not in mode["mode"]]
     assert rx_mode and len(rx_mode) == 1
     assert tx_mode and len(tx_mode) == 1
 
-    sys.converter[0].set_quick_configuration_mode(rx_mode[0]['mode'], "jesd204b")
-    sys.converter[1].set_quick_configuration_mode(tx_mode[0]['mode'], "jesd204b")
+    sys.converter[0].set_quick_configuration_mode(rx_mode[0]["mode"], "jesd204b")
+    sys.converter[1].set_quick_configuration_mode(tx_mode[0]["mode"], "jesd204b")
 
     return sys
 
+
 @pytest.mark.lg_feature(["fmcdaq2", "zcu102"])
-@pytest.mark.parametrize("JESD", [{"M":2, "L":4}])
+@pytest.mark.parametrize("JESD", [{"M": 2, "L": 4}])
 @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
 def test_fmcdaq2_new(board, sample_rate_msps, JESD):
     # Skip M=4, L=8 for low sample rates - bit clock cannot meet 1.5 GHz minimum
-    if JESD['M'] == 4 and sample_rate_msps < 150:
-        pytest.skip(f"M=4, L=8 not supported at {sample_rate_msps} MSPS (bit clock too low)")
+    if JESD["M"] == 4 and sample_rate_msps < 150:
+        pytest.skip(
+            f"M=4, L=8 not supported at {sample_rate_msps} MSPS (bit clock too low)"
+        )
 
     kuiper = board.target.get_driver("KuiperDLDriver")
     print(JESD)
-    BB = 'release:zynqmp-zcu102-rev10-fmcdaq2/BOOT.BIN'
+    BB = "release:zynqmp-zcu102-rev10-fmcdaq2/BOOT.BIN"
     kuiper.kuiper_resource.BOOTBIN_path = BB
     kuiper.get_boot_files_from_release()
 
@@ -89,7 +101,6 @@ def test_fmcdaq2_new(board, sample_rate_msps, JESD):
     platform = ZynqMPPlatform(platform_config)
     builder = LinuxBuilder(config, platform)
     builder.prepare_source()
-
 
     # Build device tree
     # lane_rate_gbps = sample_rate_msps * 32 / 1000
@@ -167,9 +178,11 @@ def test_fmcdaq2_new(board, sample_rate_msps, JESD):
     dt_board = daq2(platform="zcu102", kernel_path=kernel_path)
     config = dt_board.validate_and_default_fpga_config(config)
 
-    dtb_output_dir = Path(__file__).parent / "dtbs"
-
-    dts_filename = kernel_path / "arch/arm64/boot/dts/xilinx" / f"fmcdaq2_{sample_rate_msps}msps.dts"
+    dts_filename = (
+        kernel_path
+        / "arch/arm64/boot/dts/xilinx"
+        / f"fmcdaq2_{sample_rate_msps}msps.dts"
+    )
     dt_board.output_filename = str(dts_filename)
 
     clock, adc, dac, fpga = dt_board.map_clocks_to_board_layout(config)
@@ -186,7 +199,7 @@ def test_fmcdaq2_new(board, sample_rate_msps, JESD):
     generated_dts_base = Path(generated_dts).name
     # Replace dts with dtb
     generated_dts_base = generated_dts_base.replace(".dts", ".dtb")
-    builder.platform.config['dtbs'] = [generated_dts_base]
+    builder.platform.config["dtbs"] = [generated_dts_base]
 
     result = builder.build(clean_before=False)
     print(result)
@@ -232,7 +245,9 @@ def test_fmcdaq2_new(board, sample_rate_msps, JESD):
         # Verify sample rate
         if device.attrs.get("sampling_frequency"):
             actual_sample_rate = int(device.attrs["sampling_frequency"].value)
-            print(f"  Sample rate: {actual_sample_rate / 1e6:.1f} MSPS (expected: {sample_rate_msps} MSPS)")
+            print(
+                f"  Sample rate: {actual_sample_rate / 1e6:.1f} MSPS (expected: {sample_rate_msps} MSPS)"
+            )
 
             # Allow 1% tolerance for sample rate verification
             tolerance = expected_sample_rate_hz * 0.01
@@ -243,4 +258,3 @@ def test_fmcdaq2_new(board, sample_rate_msps, JESD):
             )
         else:
             print(f"  Warning: No sampling_frequency attribute found for {device_name}")
-

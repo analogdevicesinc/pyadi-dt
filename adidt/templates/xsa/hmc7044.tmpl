@@ -1,0 +1,94 @@
+		{{ label }}: hmc7044@{{ cs }} {
+			compatible = "adi,hmc7044";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			#clock-cells = <1>;
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if clkin0_ref is not none %}
+			clocks = <&{{ clkin0_ref }}>;
+			clock-names = "clkin0";
+{%- endif %}
+			adi,pll1-clkin-frequencies = <{{ pll1_clkin_frequencies | join(' ') }}>;
+{%- if pll1_ref_prio_ctrl is not none %}
+			adi,pll1-ref-prio-ctrl = <{{ pll1_ref_prio_ctrl }}>;
+{%- endif %}
+{%- if pll1_ref_autorevert %}
+			adi,pll1-ref-autorevert-enable;
+{%- endif %}
+			adi,vcxo-frequency = <{{ vcxo_hz }}>;
+{%- if pll1_loop_bandwidth_hz is not none %}
+			adi,pll1-loop-bandwidth-hz = <{{ pll1_loop_bandwidth_hz }}>;
+{%- endif %}
+{%- if pll1_charge_pump_ua is not none %}
+			adi,pll1-charge-pump-current-ua = <{{ pll1_charge_pump_ua }}>;
+{%- endif %}
+{%- if pfd1_max_freq_hz is not none %}
+			adi,pfd1-maximum-limit-frequency-hz = <{{ pfd1_max_freq_hz }}>;
+{%- endif %}
+			adi,pll2-output-frequency = <{{ pll2_output_hz }}>;
+{%- if sysref_timer_divider is not none %}
+			adi,sysref-timer-divider = <{{ sysref_timer_divider }}>;
+{%- endif %}
+{%- if pulse_generator_mode is not none %}
+			adi,pulse-generator-mode = <{{ pulse_generator_mode }}>;
+{%- endif %}
+{%- if clkin0_buffer_mode is not none %}
+			adi,clkin0-buffer-mode = <{{ clkin0_buffer_mode }}>;
+{%- endif %}
+{%- if clkin1_buffer_mode is not none %}
+			adi,clkin1-buffer-mode = <{{ clkin1_buffer_mode }}>;
+{%- endif %}
+{%- if clkin2_buffer_mode is not none %}
+			adi,clkin2-buffer-mode = <{{ clkin2_buffer_mode }}>;
+{%- endif %}
+{%- if clkin3_buffer_mode is not none %}
+			adi,clkin3-buffer-mode = <{{ clkin3_buffer_mode }}>;
+{%- endif %}
+{%- if oscin_buffer_mode is not none %}
+			adi,oscin-buffer-mode = <{{ oscin_buffer_mode }}>;
+{%- endif %}
+{%- if gpi_controls_str %}
+			adi,gpi-controls = <{{ gpi_controls_str }}>;
+{%- endif %}
+{%- if gpo_controls_str %}
+			adi,gpo-controls = <{{ gpo_controls_str }}>;
+{%- endif %}
+{%- if sync_pin_mode is not none %}
+			adi,sync-pin-mode = <{{ sync_pin_mode }}>;
+{%- endif %}
+{%- if high_perf_mode_dist_enable %}
+			adi,high-performance-mode-clock-dist-enable;
+{%- endif %}
+			clock-output-names = {{ clock_output_names_str }};
+			jesd204-device;
+			#jesd204-cells = <2>;
+{%- if jesd204_sysref_provider %}
+			jesd204-sysref-provider;
+			adi,jesd204-max-sysref-frequency-hz = <{{ jesd204_max_sysref_hz }}>;
+{%- endif %}
+{%- if channels is not none %}
+{%- for ch in channels %}
+			{{ label }}_c{{ ch.id }}: channel@{{ ch.id }} {
+				reg = <{{ ch.id }}>;
+				adi,extended-name = "{{ ch.name }}";
+				adi,divider = <{{ ch.divider }}>; // {{ ch.freq_str }}
+				adi,driver-mode = <{{ ch.driver_mode }}>;
+{%- if ch.coarse_digital_delay is not none %}
+				adi,coarse-digital-delay = <{{ ch.coarse_digital_delay }}>;
+{%- endif %}
+{%- if ch.startup_mode_dynamic %}
+				adi,startup-mode-dynamic-enable;
+{%- endif %}
+{%- if ch.high_perf_mode_disable %}
+				adi,high-performance-mode-disable;
+{%- endif %}
+{%- if ch.is_sysref %}
+				adi,jesd204-sysref-chan;
+{%- endif %}
+			};
+{%- endfor %}
+{%- else %}
+{{ raw_channels }}
+{%- endif %}
+		};

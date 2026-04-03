@@ -33,22 +33,30 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
+xsa = ["lopper"]
+test = [
     "pytest",
-    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",
-    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
-    "usbsdmux",
+    "pytest-asyncio",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
     "hashable_list",
     "ordered_set",
+    "requests",
 ]
+dev = [
+    "adidt[test]",
+    "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git",
+    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
+    "usbsdmux",
+]
+mcp = ["fastmcp"]
 
 #[tool.uv.sources]
 #pyadi-build = { path = "./pyadi-build", editable = true }
 
 [project.scripts]
 adidtc = "adidt.cli.main:cli"
+adidt-mcp = "adidt.mcp_server:main"
 
 [tool.setuptools]
 include-package-data = true
@@ -58,7 +66,19 @@ where = ["."]
 include = ["adidt*"]
 
 [tool.setuptools.package-data]
-adidt = ["templates/*.tmpl"]
+adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js", "xsa/profiles/*.json"]
+
+[tool.ruff.lint]
+select = ["D"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+# Enforce full Google-style docstrings only in the XSA subpackage.
+# All other paths are excluded from docstring rules.
+"adidt/xsa/**" = []
+"**" = ["D"]
 
 [tool.pytest.ini_options]
 testpaths = ["test"]
@@ -76,3 +96,6 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --ignore-glob=*_hw.py"
+markers = [
+    "network: tests requiring internet downloads",
+]

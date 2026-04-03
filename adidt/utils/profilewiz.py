@@ -1,5 +1,3 @@
-
-
 def coefs_to_long_string(coefs):
     """Convert coefficient array to string.
 
@@ -20,6 +18,18 @@ def coefs_to_long_string(coefs):
 
 
 def profile_to_xml(filename):
+    """Convert an ADI Profile Configuration Wizard file to well-formed XML.
+
+    The wizard output uses a non-standard XML dialect; this function normalises
+    attribute syntax and restructures inline key=value elements so the result
+    can be parsed by standard XML libraries such as xmltodict.
+
+    Args:
+        filename: Path to the profile file.
+
+    Returns:
+        str: Well-formed XML string.
+    """
     # Update profile to non-shitty xml
     with open(filename) as sxmlfile:
         sxmldata = sxmlfile.read()

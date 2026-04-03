@@ -11,6 +11,25 @@ build:
   output_dir: ./build
 
 platforms:
+  # Zynq-7000 (ARM32) Platform Configuration
+  zynq:
+    arch: arm
+    cross_compile: arm-linux-gnueabihf-
+    defconfig: adi_zynq_defconfig
+    kernel_target: zImage
+    dtb_path: arch/arm/boot/dts
+    kernel_image_path: arch/arm/boot/zImage
+
+    # Device Tree Blobs for Zynq
+    dtbs:
+      - zynq-zc706-adv7511-fmcdaq2.dtb
+
+    toolchain:
+      preferred: vivado
+      fallback:
+        - arm
+        - system
+
   # ZynqMP (ARM64) Platform Configuration
   zynqmp:
     arch: arm64

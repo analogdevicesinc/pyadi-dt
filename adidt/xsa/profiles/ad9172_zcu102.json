@@ -1,0 +1,35 @@
+{
+  "name": "ad9172_zcu102",
+  "defaults": {
+    "ad9172_board": {
+      "spi_bus": "spi0",
+      "clock_cs": 0,
+      "dac_cs": 1,
+      "clock_spi_max_frequency": 10000000,
+      "dac_spi_max_frequency": 1000000,
+      "dac_jesd_link_id": 0,
+      "hmc7044_ref_clk_hz": 122880000,
+      "hmc7044_vcxo_hz": 122880000,
+      "hmc7044_out_freq_hz": 2949120000,
+      "ad9172_dac_rate_khz": 11796480,
+      "ad9172_jesd_link_mode": 4,
+      "ad9172_dac_interpolation": 8,
+      "ad9172_channel_interpolation": 4,
+      "ad9172_clock_output_divider": 4
+    },
+    "clock": {
+      "tx_device_clk_label": "clkgen",
+      "tx_device_clk_index": 0
+    },
+    "jesd": {
+      "tx": {
+        "F": 2,
+        "K": 32,
+        "M": 4,
+        "L": 4,
+        "Np": 16,
+        "S": 1
+      }
+    }
+  }
+}

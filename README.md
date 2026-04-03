@@ -104,6 +104,201 @@ See [doc/source/ad9081_device_tree_generation.md](doc/source/ad9081_device_tree_
 - Troubleshooting guide
 - Adding new platforms
 
+## XSA Pipeline Diagnostics
+
+`adidtc xsa2dt` now prints parity artifact diagnostics so incomplete or malformed outputs are visible immediately:
+
+```bash
+adidtc xsa2dt -x examples/xsa/system_top.xsa -c cfg.json -o out --reference-dts ref.dts
+```
+
+Example diagnostic lines:
+
+- `Coverage % (roles/links/properties/overall): 75.0/40.0/100.0/66.7`
+- `Overall matched items: 8/12`
+- `Missing gaps (roles/links/properties/mismatched): 1/2/0/1`
+- `Warning: parity map not found: ...`
+- `Warning: parity coverage report not found: ...`
+- `Warning: unable to parse parity map JSON at ...`
+- `Warning: parity map path is not path-like: ...`
+- `Warning: parity coverage report path is not path-like: ...`
+- `Warning: parity map path is empty`
+- `Warning: parity coverage report path is empty`
+- `Warning: parity map path is null`
+- `Warning: parity coverage report path is null`
+- `Warning: parity map path is invalid: ...`
+- `Warning: parity coverage report path is invalid: ...`
+- `Warning: parity map JSON root is not an object: ...`
+- `Warning: parity map not provided by pipeline result`
+- `Warning: parity coverage report not provided by pipeline result`
+
+When parity map data is unavailable (missing/invalid path), has a non-object JSON
+root, or JSON parsing fails,
+`xsa2dt` emits fallback summary lines:
+- `Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a`
+- `Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a`
+
+Missing parity artifact warnings are emitted when parity is requested
+(for example with `--reference-dts` or strict parity mode).
+In strict mode, this applies even when no reference DTS path is provided.
+When parity is not requested, parity artifact paths are reported if present but
+map/coverage parsing and warning checks are skipped.
+
+The command also fails fast when pipeline results:
+
+- return an invalid result type (must be a dictionary)
+- omit required artifacts (`overlay`, `merged`, or `report`)
+- provide empty required artifact values
+- provide non-path required artifact values
+- provide invalid required path-like values (path coercion errors)
+- receive an invalid JSON config file
+- encounter XSA parser/config exceptions raised by the pipeline
+- encounter sdtgen execution or availability failures
+- hit unexpected runtime exceptions in the XSA pipeline flow
+
+Required artifact error messages follow canonical pipeline order:
+`overlay, merged, report`.
+
+## XSA Full-Tree Generation
+
+The XSA pipeline can generate full merged DTS files from Vivado `.xsa` inputs and
+auto-apply board profiles based on detected converter + FPGA platform.
+
+### Built-in XSA Profiles
+
+- `ad9081_zcu102`
+- `ad9081_zc706`
+- `ad9082_zcu102`
+- `ad9083_zcu102`
+- `ad9172_zcu102`
+- `adrv9008_zcu102`
+- `adrv9008_zc706`
+- `adrv9009_zc706`
+- `adrv9002_zc706`
+- `adrv9009_zcu102`
+- `adrv937x_zc706`
+- `adrv937x_zcu102`
+- `adrv9025_zcu102`
+- `fmcdaq2_zc706`
+- `fmcdaq2_zcu102`
+- `fmcdaq3_zc706`
+- `fmcdaq3_zcu102`
+
+### XSA + adijif Workflow (Quick Guide)
+
+Use `adijif` (pyadi-jif) to compute JESD and clock settings, map them into
+`xsa2dt` config keys, then run the full generation pipeline:
+
+```mermaid
+flowchart LR
+    AJ["adijif quick mode / solve()"] --> MAP["cfg['jesd'] + cfg['clock']"]
+    MAP --> PIPE["adidtc xsa2dt / XsaPipeline.run()"]
+    PIPE --> DTS["merged .dts + .dtso + HTML report"]
+    DTS --> DTB["cpp + dtc -> system.dtb"]
+    DTB --> HW["boot + dmesg + jesd_status"]
+```
+
+Primary reference:
+- `examples/xsa/adrv9009_zcu102.py` (adijif-driven config derivation)
+- `examples/xsa/ad9082_zcu102.py` (explicit AD9082 profile flow)
+- `examples/xsa/ad9083_zcu102.py` (explicit AD9083 profile flow)
+- `examples/xsa/ad9081_zc706.py` (explicit AD9081 ZC706 profile flow)
+- `examples/xsa/ad9172_zcu102.py` (explicit AD9172 profile flow)
+- `examples/xsa/adrv9008_zcu102.py` (explicit ADRV9008 profile flow)
+- `examples/xsa/adrv9008_zc706.py` (explicit ADRV9008 ZC706 profile flow)
+- `examples/xsa/adrv9009_zc706.py` (explicit ADRV9009 ZC706 profile flow)
+- `examples/xsa/adrv9002_zc706.py` (explicit ADRV9002 ZC706 profile flow)
+- `examples/xsa/adrv937x_zc706.py` (explicit ADRV937x ZC706 profile flow)
+- `examples/xsa/adrv937x_zcu102.py` (explicit ADRV937x profile flow)
+- `examples/xsa/adrv9025_zcu102.py` (Kuiper/local XSA ADRV9025 flow)
+- `examples/xsa/fmcdaq2_zcu102.py` (FMCDAQ2 ZCU102 adijif + Kuiper/local XSA flow)
+- `examples/xsa/fmcdaq2_zc706.py` (FMCDAQ2 ZC706 adijif + Kuiper/local XSA flow)
+- `examples/xsa/fmcdaq3_zcu102.py` (explicit FMCDAQ3 ZCU102 profile flow)
+- `examples/xsa/fmcdaq3_zc706.py` (explicit FMCDAQ3 ZC706 profile flow)
+
+Detailed API docs, parameter tables, and full adijif mapping are documented in:
+- `doc/source/xsa.rst` (section: **Python API** and **Using adijif (pyadi-jif) With the XSA Flow**)
+
+### XSA Tutorials
+
+For first-time setup and a practical command-line walkthrough:
+
+- `doc/source/examples/xsa_tutorial.md`
+- `doc/source/examples/xsa_adijif_tutorial.md`
+- `doc/source/xsa.rst` (API usage + reference behavior)
+
+Quick start:
+
+```bash
+adidtc xsa2dt -x /path/to/design.xsa -c cfg.json -o out/
+```
+
+### FMCDAQ2 + ZC706 Example
+
+Use the new example script to generate DTS output from an FMCDAQ2 ZC706 XSA:
+
+```bash
+python examples/xsa/fmcdaq2_zc706.py \
+  --download-kuiper \
+  --output-dir examples/xsa/output_fmcdaq2_zc706
+```
+
+Or provide a local XSA:
+
+```bash
+python examples/xsa/fmcdaq2_zc706.py \
+  --xsa /path/to/system_top.xsa \
+  --output-dir examples/xsa/output_fmcdaq2_zc706
+```
+
+This script:
+- resolves JESD/clock settings from `pyadi-jif`
+- runs `XsaPipeline` (SDTGen + topology parse + node build + merge)
+- writes merged DTS and HTML report artifacts
+
+### FMCDAQ2 + ZCU102 Example
+
+Use the ZCU102 variant when the design targets the ZCU102 FMCDAQ2 platform:
+
+```bash
+python examples/xsa/fmcdaq2_zcu102.py \
+  --download-kuiper \
+  --output-dir examples/xsa/output_fmcdaq2_zcu102
+```
+
+Or provide a local XSA:
+
+```bash
+python examples/xsa/fmcdaq2_zcu102.py \
+  --xsa /path/to/system_top.xsa \
+  --output-dir examples/xsa/output_fmcdaq2_zcu102
+```
+
+Notes for FMCDAQ2 profiles:
+- generated defaults use `spi0` for device SPI bus
+- default chip-select mapping is `ad9523=0`, `ad9144=1`, `ad9680=2`
+- default JESD link IDs are `rx=0`, `tx=0`
+
+### Non-Hardware Verification
+
+When skipping hardware runs, validate the implementation with:
+
+```bash
+venv/bin/python -m compileall -q adidt examples test
+venv/bin/pytest -q
+python3 -m pip wheel . --no-deps
+```
+
+## Binding Discovery and Audit Scripts
+
+Use the new scripts in `scripts/` to track ADI-compatible Linux bindings and
+catch new compatibles not yet represented in pyadi-dt templates/components:
+
+```bash
+python scripts/collect_adi_bindings.py --linux-path /path/to/linux --output scripts/adi_bindings.json
+python scripts/audit_adi_bindings.py --linux-path /path/to/linux --output scripts/adi_binding_audit.json
+```
+
 ## Building Documentation
 
 Documentation is built using Sphinx with the ADI cosmic theme.

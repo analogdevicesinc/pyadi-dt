@@ -737,3 +737,363 @@ def gen_dts(ctx, platform, config, kernel_path, output, compile):
 
         traceback.print_exc()
         return
+
+
+@cli.command("xsa2dt")
+@click.option(
+    "--xsa",
+    "-x",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to Vivado .xsa file",
+)
+@click.option(
+    "--config",
+    "-c",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to pyadi-jif JSON configuration file",
+)
+@click.option(
+    "--output",
+    "-o",
+    default="./generated",
+    type=click.Path(),
+    show_default=True,
+    help="Output directory",
+)
+@click.option(
+    "--timeout",
+    "-t",
+    default=120,
+    type=int,
+    show_default=True,
+    help="sdtgen subprocess timeout in seconds",
+)
+@click.option(
+    "--profile",
+    type=str,
+    default=None,
+    help="Optional board profile name (for example: ad9081_zcu102, adrv9009_zcu102)",
+)
+@click.option(
+    "--reference-dts",
+    type=click.Path(exists=True),
+    default=None,
+    help="Optional reference DTS root file used to generate parity reports",
+)
+@click.option(
+    "--strict-parity",
+    is_flag=True,
+    help="Fail when manifest parity reports missing required roles",
+)
+@click.option(
+    "--lint/--no-lint",
+    default=False,
+    show_default=True,
+    help="Run structural DTS linter on generated output",
+)
+@click.option(
+    "--strict-lint",
+    is_flag=True,
+    help="Fail when DTS linter finds errors (implies --lint)",
+)
+@click.pass_context
+def xsa2dt(
+    ctx,
+    xsa,
+    config,
+    output,
+    timeout,
+    profile,
+    reference_dts,
+    strict_parity,
+    lint,
+    strict_lint,
+):
+    """Generate ADI device tree from Vivado XSA file
+
+    \b
+    Invokes sdtgen against the XSA, detects ADI IPs, generates JESD204
+    FSM-compatible nodes, and produces overlay (.dtso), merged (.dts), and
+    interactive HTML visualization report.
+
+    \b
+    Requires sdtgen (lopper); if it is not on PATH, the runner will try
+    to discover and source a local Vitis/Vivado settings script.
+    Install from: https://github.com/devicetree-org/lopper
+
+    \b
+    Examples:
+      adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json
+      adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --profile ad9081_zcu102
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts
+    """
+    try:
+        from adidt.xsa.pipeline import XsaPipeline
+        from adidt.xsa.exceptions import (
+            SdtgenNotFoundError,
+            SdtgenError,
+            XsaParseError,
+            ConfigError,
+            DtsLintError,
+            ParityError,
+        )
+    except ImportError:
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
+        return
+
+    try:
+        with open(config, "r") as f:
+            cfg = json.load(f)
+        parity_requested = bool(reference_dts or strict_parity)
+
+        result = XsaPipeline().run(
+            Path(xsa),
+            cfg,
+            Path(output),
+            sdtgen_timeout=timeout,
+            profile=profile,
+            reference_dts=Path(reference_dts) if reference_dts else None,
+            strict_parity=strict_parity,
+            lint=lint,
+            strict_lint=strict_lint,
+        )
+        if not isinstance(result, dict):
+            raise click.ClickException(
+                f"pipeline returned invalid result type: {type(result).__name__}"
+            )
+        required_artifacts = ("overlay", "merged", "report")
+        missing_required = [key for key in required_artifacts if key not in result]
+        if missing_required:
+            missing_joined = ", ".join(missing_required)
+            raise click.ClickException(
+                f"pipeline result missing required artifacts: {missing_joined}"
+            )
+        empty_required = []
+        for key in required_artifacts:
+            value = result.get(key)
+            if value is None:
+                empty_required.append(key)
+                continue
+            if isinstance(value, str) and not value.strip():
+                empty_required.append(key)
+        if empty_required:
+            empty_joined = ", ".join(empty_required)
+            raise click.ClickException(
+                f"pipeline result has empty required artifacts: {empty_joined}"
+            )
+        non_path_required = []
+        for key in required_artifacts:
+            value = result.get(key)
+            if value is None:
+                continue
+            try:
+                Path(value)
+            except (TypeError, ValueError):
+                non_path_required.append(key)
+        if non_path_required:
+            non_path_joined = ", ".join(non_path_required)
+            raise click.ClickException(
+                f"pipeline result has non-path required artifacts: {non_path_joined}"
+            )
+
+        click.echo(click.style("Done!", fg="green", bold=True))
+        click.echo(f"  Overlay:  {result['overlay']}")
+        click.echo(f"  Merged:   {result['merged']}")
+        click.echo(f"  Report:   {result['report']}")
+
+        def _path_or_none(value, label):
+            if value is None:
+                click.echo(f"  Warning: {label} path is null")
+                return None
+            if isinstance(value, str) and not value.strip():
+                click.echo(f"  Warning: {label} path is empty")
+                return None
+            try:
+                return Path(value)
+            except TypeError:
+                click.echo(f"  Warning: {label} path is not path-like: {value!r}")
+                return None
+            except ValueError as ex:
+                click.echo(f"  Warning: {label} path is invalid: {ex}")
+                return None
+
+        def _print_unavailable_map_summary():
+            click.echo("  Coverage % (roles/links/properties/overall): n/a/n/a/n/a/n/a")
+            click.echo(
+                "  Missing gaps (roles/links/properties/mismatched): n/a/n/a/n/a/n/a"
+            )
+
+        if "map" in result:
+            click.echo(f"  Map:      {result['map']}")
+            if parity_requested:
+                map_path = _path_or_none(result["map"], "parity map")
+                if map_path is None:
+                    _print_unavailable_map_summary()
+                elif not map_path.exists():
+                    click.echo(f"  Warning: parity map not found: {map_path}")
+                    _print_unavailable_map_summary()
+                else:
+                    try:
+                        map_data = json.loads(map_path.read_text())
+                        if not isinstance(map_data, dict):
+                            click.echo(
+                                f"  Warning: parity map JSON root is not an object: {map_path}"
+                            )
+                            _print_unavailable_map_summary()
+                            map_data = None
+                        if map_data is not None:
+                            raw_cov = map_data.get("coverage", {})
+                            cov = raw_cov if isinstance(raw_cov, dict) else {}
+                            click.echo(
+                                "  Coverage % (roles/links/properties/overall): "
+                                f"{cov.get('roles_pct', 'n/a')}/"
+                                f"{cov.get('links_pct', 'n/a')}/"
+                                f"{cov.get('properties_pct', 'n/a')}/"
+                                f"{cov.get('overall_pct', 'n/a')}"
+                            )
+                            if (
+                                cov.get("overall_matched") is not None
+                                and cov.get("overall_total") is not None
+                            ):
+                                click.echo(
+                                    "  Overall matched items: "
+                                    f"{cov.get('overall_matched')}/{cov.get('overall_total')}"
+                                )
+
+                            def _as_list(value):
+                                return value if isinstance(value, list) else []
+
+                            missing_roles = _as_list(map_data.get("missing_roles", []))
+                            missing_links = _as_list(map_data.get("missing_links", []))
+                            missing_props = _as_list(
+                                map_data.get("missing_properties", [])
+                            )
+                            mismatched_props = _as_list(
+                                map_data.get("mismatched_properties", [])
+                            )
+                            click.echo(
+                                "  Missing gaps (roles/links/properties/mismatched): "
+                                f"{len(missing_roles)}/{len(missing_links)}/"
+                                f"{len(missing_props)}/{len(mismatched_props)}"
+                            )
+                    except Exception as ex:
+                        click.echo(
+                            f"  Warning: unable to parse parity map JSON at {map_path} ({ex})"
+                        )
+                        _print_unavailable_map_summary()
+        elif parity_requested:
+            click.echo("  Warning: parity map not provided by pipeline result")
+            _print_unavailable_map_summary()
+        if "coverage" in result:
+            click.echo(f"  Coverage: {result['coverage']}")
+            if parity_requested:
+                cov_path = _path_or_none(result["coverage"], "parity coverage report")
+                if cov_path is None:
+                    pass
+                elif not cov_path.exists():
+                    click.echo(
+                        f"  Warning: parity coverage report not found: {cov_path}"
+                    )
+        elif parity_requested:
+            click.echo(
+                "  Warning: parity coverage report not provided by pipeline result"
+            )
+
+        if "diagnostics" in result:
+            diag_path = _path_or_none(result["diagnostics"], "diagnostics")
+            if diag_path is not None and diag_path.exists():
+                click.echo(f"  Diagnostics: {diag_path}")
+                try:
+                    diag_data = json.loads(diag_path.read_text())
+                    summary = diag_data.get("summary", {})
+                    click.echo(
+                        f"  Lint: {summary.get('errors', 0)} errors, "
+                        f"{summary.get('warnings', 0)} warnings, "
+                        f"{summary.get('info', 0)} info"
+                    )
+                    for item in diag_data.get("diagnostics", []):
+                        sev = item.get("severity", "?")
+                        rule = item.get("rule", "?")
+                        msg = item.get("message", "?")
+                        click.echo(f"    [{sev}] {rule}: {msg}")
+                except Exception:
+                    pass
+
+    except FileNotFoundError as e:
+        raise click.ClickException(str(e))
+    except json.JSONDecodeError as e:
+        raise click.ClickException(f"invalid JSON in config file: {e}")
+    except SdtgenNotFoundError as e:
+        raise click.ClickException(str(e))
+    except SdtgenError as e:
+        message = f"sdtgen failed: {e}"
+        if e.stderr:
+            message = f"{message}\n{e.stderr}"
+        raise click.ClickException(message)
+    except (XsaParseError, ConfigError) as e:
+        raise click.ClickException(str(e))
+    except ParityError as e:
+        raise click.ClickException(str(e))
+    except DtsLintError as e:
+        raise click.ClickException(str(e))
+    except click.ClickException:
+        raise
+    except Exception as e:
+        raise click.ClickException(f"Unexpected error: {e}")
+
+
+@cli.command("xsa-profiles")
+def xsa_profiles():
+    """List available built-in XSA board profiles."""
+    try:
+        from adidt.xsa.profiles import ProfileManager
+    except ImportError:
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
+        return
+
+    names = ProfileManager().list_profiles()
+    if not names:
+        click.echo("No XSA profiles found.")
+        return
+
+    click.echo("Available XSA profiles:")
+    for name in names:
+        click.echo(f"  - {name}")
+
+
+@cli.command("xsa-profile-show")
+@click.argument("name", type=str)
+def xsa_profile_show(name):
+    """Show one built-in XSA board profile as JSON."""
+    try:
+        from adidt.xsa.profiles import ProfileManager
+        from adidt.xsa.exceptions import ProfileError
+    except ImportError:
+        click.echo(
+            click.style(
+                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                fg="red",
+            )
+        )
+        return
+
+    try:
+        profile = ProfileManager().load(name)
+    except ProfileError as ex:
+        click.echo(click.style(f"Error: {ex}", fg="red"))
+        return
+
+    click.echo(json.dumps(profile, indent=2))

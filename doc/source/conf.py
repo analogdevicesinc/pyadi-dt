@@ -41,7 +41,7 @@ extensions = [
     "adi_doctools",
 ]
 
-needs_extensions = {"adi_doctools": "0.4.21"}
+needs_extensions = {"adi_doctools": "0.4.39"}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -98,6 +98,45 @@ html_theme_options = {
     "light_logo": os.path.join("media", "pyadi-dt.svg"),
     "dark_logo": os.path.join("media", "pyadi-dt_w.svg"),
 }
+
+# -- Mermaid configuration ---------------------------------------------------
+
+# Custom theme matching the Analog Devices / ADI cosmic color palette.
+# Light mode: ADI blue (#0067b9), dark navy (#00305b), warm grays.
+# Dark mode: light blue (#92befc), deep charcoal backgrounds.
+mermaid_init_js = """
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+      primaryColor: '#d6e8f7',
+      primaryTextColor: '#212836',
+      primaryBorderColor: '#0067b9',
+      secondaryColor: '#e8f0e8',
+      secondaryTextColor: '#212836',
+      secondaryBorderColor: '#3a7d44',
+      tertiaryColor: '#fff4e0',
+      tertiaryTextColor: '#212836',
+      tertiaryBorderColor: '#c8940a',
+      lineColor: '#555',
+      textColor: '#212836',
+      mainBkg: '#d6e8f7',
+      nodeBorder: '#0067b9',
+      clusterBkg: '#f0f4f8',
+      clusterBorder: '#0067b9',
+      titleColor: '#00305b',
+      edgeLabelBackground: '#fefefe',
+      nodeTextColor: '#212836',
+      actorBorder: '#0067b9',
+      actorBkg: '#d6e8f7',
+      actorTextColor: '#212836',
+      noteBkgColor: '#fff4e0',
+      noteBorderColor: '#c8940a',
+      fontSize: '14px',
+      fontFamily: '"Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif'
+    }
+  });
+"""
 
 # -- Options for source files ------------------------------------------------
 

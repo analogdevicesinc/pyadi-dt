@@ -1,0 +1,23 @@
+		{{ label }}: ad9172@{{ cs }} {
+			compatible = "adi,ad9172";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+			clocks = <&{{ clk_ref }}>;
+			clock-names = "dac_clk";
+			adi,dac-rate-khz = <{{ dac_rate_khz }}>;
+			adi,jesd-link-mode = <{{ jesd_link_mode }}>;
+			adi,jesd-subclass = <1>;
+			adi,dac-interpolation = <{{ dac_interpolation }}>;
+			adi,channel-interpolation = <{{ channel_interpolation }}>;
+			adi,clock-output-divider = <{{ clock_output_divider }}>;
+			adi,syncoutb-signal-type-lvds-enable;
+			adi,scrambling = <1>;
+			adi,sysref-mode = <2>;
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <0>;
+			jesd204-link-ids = <{{ jesd_link_ids | join(' ') }}>;
+			jesd204-inputs = <&{{ jesd204_inputs }}>;
+		};

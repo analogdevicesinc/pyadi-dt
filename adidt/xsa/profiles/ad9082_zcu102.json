@@ -1,0 +1,27 @@
+{
+  "name": "ad9082_zcu102",
+  "defaults": {
+    "clock": {
+      "rx_device_clk_label": "hmc7044",
+      "tx_device_clk_label": "hmc7044",
+      "hmc7044_rx_channel": 10,
+      "hmc7044_tx_channel": 6
+    },
+    "ad9081": {
+      "rx_link_id": 2,
+      "tx_link_id": 0
+    },
+    "ad9081_board": {
+      "clock_spi": "spi1",
+      "clock_cs": 0,
+      "adc_spi": "spi0",
+      "adc_cs": 0,
+      "reset_gpio": 133,
+      "sysref_req_gpio": 121,
+      "rx2_enable_gpio": 135,
+      "rx1_enable_gpio": 134,
+      "tx2_enable_gpio": 137,
+      "tx1_enable_gpio": 136
+    }
+  }
+}

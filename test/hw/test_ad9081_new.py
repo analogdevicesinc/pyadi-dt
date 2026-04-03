@@ -12,6 +12,7 @@ import adijif
 SAMPLE_RATES = [100, 125, 150, 175, 200, 225, 245, 260, 280, 300]
 # SAMPLE_RATES = [100]
 
+
 @pytest.fixture(scope="module")
 def board(strategy):
     # with capsys.disabled():
@@ -24,7 +25,9 @@ def board(strategy):
     # strategy.transition("soft_off")
 
 
-def generate_ad9081_config(sample_rate_msps: int, platform: str = "zcu102", jesd=None) -> dict:
+def generate_ad9081_config(
+    sample_rate_msps: int, platform: str = "zcu102", jesd=None
+) -> dict:
     """Generate AD9081 configuration for given sample rate.
 
     Uses pyadi-jif to generate a complete configuration dict with JESD204
@@ -64,7 +67,7 @@ def generate_ad9081_config(sample_rate_msps: int, platform: str = "zcu102", jesd
     # For 100 MSPS, M=4, L=8: need bit_clock >= 1.5 GHz
     # (100M * decimation * 4) / (8 * 1.25) = 1.5G -> decimation >= 30x
 
-    if jesd['M'] == 4:
+    if jesd["M"] == 4:
         # M=4, L=8 configuration - needs higher decimation for bit clock constraint
         if sample_rate_msps <= 125:
             # 100-125 MSPS: Use 32x decimation to meet 1.5 GHz bit clock minimum
@@ -140,20 +143,24 @@ def generate_ad9081_config(sample_rate_msps: int, platform: str = "zcu102", jesd
     )
 
     print(f"ADC: {sample_rate_msps} MSPS × {adc_total_dec} = {adc_clock_ghz:.2f} GHz ✓")
-    print(f"DAC: {sample_rate_msps} MSPS × {dac_total_interp} = {dac_clock_ghz:.2f} GHz ✓")
+    print(
+        f"DAC: {sample_rate_msps} MSPS × {dac_total_interp} = {dac_clock_ghz:.2f} GHz ✓"
+    )
     print(f"Clock ratio: {dac_total_interp}/{adc_total_dec} = {int(clock_ratio)}:1 ✓")
 
     # JESD Configuration - Use quick_configuration_mode to lock parameters
     # M=8, L=4 -> ADC Mode 10.0, DAC Mode 9
     # M=4, L=8 -> ADC Mode 18.0, DAC Mode 17
-    if jesd['M'] == 8 and jesd['L'] == 4:
+    if jesd["M"] == 8 and jesd["L"] == 4:
         adc_mode = "10.0"
         dac_mode = "9"
-    elif jesd['M'] == 4 and jesd['L'] == 8:
+    elif jesd["M"] == 4 and jesd["L"] == 8:
         adc_mode = "18.0"
         dac_mode = "17"
     else:
-        raise ValueError(f"Unsupported JESD configuration: M={jesd['M']}, L={jesd['L']}")
+        raise ValueError(
+            f"Unsupported JESD configuration: M={jesd['M']}, L={jesd['L']}"
+        )
 
     sys.converter.adc.set_quick_configuration_mode(adc_mode, "jesd204b")
     sys.converter.dac.set_quick_configuration_mode(dac_mode, "jesd204b")
@@ -197,20 +204,23 @@ def generate_ad9081_config(sample_rate_msps: int, platform: str = "zcu102", jesd
 
     return cfg
 
+
 @pytest.mark.lg_feature(["ad9081", "zcu102"])
-@pytest.mark.parametrize("JESD", [{"M":8, "L":4}, {"M":4,"L":8}])
+@pytest.mark.parametrize("JESD", [{"M": 8, "L": 4}, {"M": 4, "L": 8}])
 @pytest.mark.parametrize("sample_rate_msps", SAMPLE_RATES)
 def test_ad9081_new(board, sample_rate_msps, JESD):
     # Skip M=4, L=8 for low sample rates - bit clock cannot meet 1.5 GHz minimum
-    if JESD['M'] == 4 and sample_rate_msps < 150:
-        pytest.skip(f"M=4, L=8 not supported at {sample_rate_msps} MSPS (bit clock too low)")
+    if JESD["M"] == 4 and sample_rate_msps < 150:
+        pytest.skip(
+            f"M=4, L=8 not supported at {sample_rate_msps} MSPS (bit clock too low)"
+        )
 
     kuiper = board.target.get_driver("KuiperDLDriver")
     print(JESD)
-    if JESD['M'] == 4:
-        BB = 'release:zynqmp-zcu102-rev10-ad9081/m4_l8/BOOT.BIN'
+    if JESD["M"] == 4:
+        BB = "release:zynqmp-zcu102-rev10-ad9081/m4_l8/BOOT.BIN"
     else:
-        BB = 'release:zynqmp-zcu102-rev10-ad9081/m4_l8/BOOT.BIN'
+        BB = "release:zynqmp-zcu102-rev10-ad9081/m4_l8/BOOT.BIN"
     # zynqmp-zcu102-rev10-ad9081/m8_l4/BOOT.BIN
     # if M=
     kuiper.kuiper_resource.BOOTBIN_path = BB
@@ -223,7 +233,6 @@ def test_ad9081_new(board, sample_rate_msps, JESD):
     platform = ZynqMPPlatform(platform_config)
     builder = LinuxBuilder(config, platform)
     builder.prepare_source()
-
 
     # Build device tree
     # lane_rate_gbps = sample_rate_msps * 32 / 1000
@@ -241,9 +250,11 @@ def test_ad9081_new(board, sample_rate_msps, JESD):
     dt_board = ad9081_fmc(platform="zcu102", kernel_path=kernel_path)
     config = dt_board.validate_and_default_fpga_config(config)
 
-    dtb_output_dir = Path(__file__).parent / "dtbs"
-
-    dts_filename = kernel_path / "arch/arm64/boot/dts/xilinx" / f"ad9081_{sample_rate_msps}msps.dts"
+    dts_filename = (
+        kernel_path
+        / "arch/arm64/boot/dts/xilinx"
+        / f"ad9081_{sample_rate_msps}msps.dts"
+    )
     dt_board.output_filename = str(dts_filename)
 
     clock, adc, dac, fpga = dt_board.map_clocks_to_board_layout(config)
@@ -260,7 +271,7 @@ def test_ad9081_new(board, sample_rate_msps, JESD):
     generated_dts_base = Path(generated_dts).name
     # Replace dts with dtb
     generated_dts_base = generated_dts_base.replace(".dts", ".dtb")
-    builder.platform.config['dtbs'] = [generated_dts_base]
+    builder.platform.config["dtbs"] = [generated_dts_base]
 
     result = builder.build(clean_before=False)
     print(result)
@@ -303,7 +314,9 @@ def test_ad9081_new(board, sample_rate_msps, JESD):
         # Verify sample rate
         if device.attrs.get("sampling_frequency"):
             actual_sample_rate = int(device.attrs["sampling_frequency"].value)
-            print(f"  Sample rate: {actual_sample_rate / 1e6:.1f} MSPS (expected: {sample_rate_msps} MSPS)")
+            print(
+                f"  Sample rate: {actual_sample_rate / 1e6:.1f} MSPS (expected: {sample_rate_msps} MSPS)"
+            )
 
             # Allow 1% tolerance for sample rate verification
             tolerance = expected_sample_rate_hz * 0.01
@@ -314,4 +327,3 @@ def test_ad9081_new(board, sample_rate_msps, JESD):
             )
         else:
             print(f"  Warning: No sampling_frequency attribute found for {device_name}")
-

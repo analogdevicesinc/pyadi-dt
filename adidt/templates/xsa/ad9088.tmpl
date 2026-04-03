@@ -1,0 +1,26 @@
+{# AD9088 (AD9084 driver) SPI device node — UNTESTED, generated from kernel binding iio/adc/adi,ad9088.yaml #}
+		{{ label }}: ad9088@{{ cs }} {
+			compatible = "adi,ad9088";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = {{ clk_names_str }};
+{%- endif %}
+			#clock-cells = <1>;
+			clock-output-names = "rx_sampl_clk", "tx_sampl_clk";
+{%- if firmware_name is not none %}
+			adi,device-profile-fw-name = "{{ firmware_name }}";
+{%- endif %}
+{%- if subclass is defined and subclass is not none %}
+			adi,subclass = <{{ subclass }}>;
+{%- endif %}
+{%- if spi_3wire %}
+			adi,spi-3wire-enable;
+{%- endif %}
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <{{ jesd204_top_device | default(0) }}>;
+			jesd204-link-ids = <{{ link_ids }}>;
+			jesd204-inputs = {{ jesd204_inputs }};
+		};

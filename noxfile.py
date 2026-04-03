@@ -12,12 +12,14 @@ PYTHON_VERSIONS = ["3.10"]
 
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session):
-    """Run the test suite with pytest."""
-    # Install the package with dev dependencies
-    session.install(".[dev]")
+    """Run the test suite with pytest.
 
-    # Run pytest with verbose output
-    session.run("pytest", "-vs", "test/", *session.posargs)
+    Pass additional args after '--' to override the default test path:
+        nox -s tests -- test/xsa/ -v -k "ad9081"
+    """
+    session.install(".[dev]")
+    args = session.posargs if session.posargs else ["test/"]
+    session.run("pytest", "-vs", *args)
 
 
 @nox.session(python=PYTHON_VERSIONS)
@@ -36,12 +38,9 @@ def tests_remote(session):
 
 @nox.session(python="3.11")
 def lint(session):
-    """Run linting checks with ruff (if available)."""
-    try:
-        session.install("ruff")
-        session.run("ruff", "check", "adidt", "test")
-    except Exception:
-        session.warn("Ruff not available or linting failed")
+    """Run linting checks with ruff."""
+    session.install("ruff")
+    session.run("ruff", "check", "adidt", "test")
 
 
 @nox.session(python="3.11")
@@ -66,18 +65,34 @@ def format_check(session):
 
 @nox.session(python="3.11")
 def docs(session):
-    """Build documentation with mkdocs."""
-    session.install("mkdocs", "mkdocs-material")
+    """Build documentation with Sphinx."""
+    session.install(
+        "sphinx",
+        "myst-parser",
+        "sphinx-click",
+        "sphinxcontrib-mermaid",
+        "adi-doctools",
+        "linkify-it-py",
+    )
     session.install(".")
-    session.run("mkdocs", "build", "--verbose", "--strict")
+    session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
 
 
 @nox.session(python="3.11")
 def docs_serve(session):
-    """Serve documentation locally with mkdocs."""
-    session.install("mkdocs", "mkdocs-material")
+    """Build and serve documentation locally with Sphinx autobuild."""
+    session.install(
+        "sphinx",
+        "myst-parser",
+        "sphinx-click",
+        "sphinxcontrib-mermaid",
+        "adi-doctools",
+        "linkify-it-py",
+        "sphinx-autobuild",
+    )
     session.install(".")
-    session.run("mkdocs", "serve")
+    session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host",
+                "0.0.0.0")
 
 
 @nox.session(python="3.11")
@@ -112,17 +127,14 @@ def build(session):
 
 
 @nox.session(python="3.11")
-def test_quick(session):
-    """Run quick validation tests."""
+def dts_lint(session):
+    """Run DTS structural linter tests."""
     session.install(".[dev]")
-    session.run("pytest", "-vs", "test_quick.py", *session.posargs)
-
-
-@nox.session(python="3.11")
-def test_validation(session):
-    """Run validation tests."""
-    session.install(".[dev]")
-    session.run("pytest", "-vs", "test_validation.py", *session.posargs)
+    session.run(
+        "pytest", "-vs",
+        "test/xsa/test_dts_lint.py",
+        "test/xsa/test_dts_lint_integration.py",
+    )
 
 
 @nox.session(python="3.11")

@@ -55,7 +55,7 @@ class dt(sd):
                     username=username,
                     ip=ip,
                     port=22,
-                    ),
+                ),
                 connect_kwargs={"password": password},
             )
             self._set_arch(arch)
@@ -76,6 +76,7 @@ class dt(sd):
                 self._import_local_sd()
 
     def _set_arch(self, arch):
+        """Resolve and store the target architecture, auto-detecting if needed."""
         self.arch = arch
         if arch == "auto":
             self._check_arch()
@@ -84,6 +85,7 @@ class dt(sd):
         self._dt_filename = "system.dtb" if self._arch == "arm64" else "devicetree.dtb"
 
     def _runr_o(self, cmd, warn=False):
+        """Run a command and return the full result object (with stdout)."""
         hide = "out" if self._hide else None
         if "remote" in self.dt_source:
             o = self._con.run(cmd, hide=hide, warn=warn)
@@ -92,6 +94,7 @@ class dt(sd):
         return o
 
     def _check_arch(self):
+        """Auto-detect target architecture by inspecting uname output."""
         r = self._hide
         self._hide = True
         out = self._runr_o("uname -a", warn=True)
@@ -104,6 +107,7 @@ class dt(sd):
             raise Exception("Unable to determine architecture")
 
     def _runr(self, cmd, warn=False):
+        """Run a command and return its return code."""
         hide = "out" if self._hide else None
         if "remote" in self.dt_source:
             o = self._con.run(cmd, hide=hide, warn=warn)
@@ -112,6 +116,7 @@ class dt(sd):
         return o.return_code
 
     def _remote_dtc(self, cmd):
+        """Verify dtc is available on the target and run the given dtc command."""
         # Check if dtc exists on remote system
         if "remote" in self.dt_source:
             out = self._con.run("which dtc", hide="out", warn=True)
@@ -122,6 +127,11 @@ class dt(sd):
         self._con.run(cmd, hide="out")
 
     def _handle_sd_mount(self):
+        """Unmount the SD card if already mounted and remount it to a fresh temp directory.
+
+        Returns:
+            str: Path to the temporary mount point.
+        """
         if self._runr("grep -qs '/dev/mmcblk0p1' /proc/mounts", warn=True) == 0:
             # Mount so let re-mount to a known location
             self._runr("umount /dev/mmcblk0p1")
@@ -133,6 +143,7 @@ class dt(sd):
         return folder
 
     def _import_remote_sd(self):
+        """Import device tree blob from a remote board's SD card."""
         # Mount SD and get path
         folder = self._handle_sd_mount()
         with (
@@ -147,6 +158,7 @@ class dt(sd):
         self._runr(f"rm -rf {folder}")
 
     def _import_remote_sysfs(self):
+        """Import device tree from a remote board's live sysfs via dtc."""
         # Tell dtc to export DT from filesystem
         self._remote_dtc(
             "dtc -I fs -O dtb /sys/firmware/devicetree/base -o /tmp/out.dtb"
@@ -157,6 +169,7 @@ class dt(sd):
             self._dt = fdt.parse_dtb(self._dtb_data_file)
 
     def _import_file(self):
+        """Import device tree blob from a local file path."""
         if not os.path.isfile(self.local_dt_filepath):
             raise Exception(f"Local DT not found at {self.local_dt_filepath}")
 
@@ -165,6 +178,7 @@ class dt(sd):
             self._dt = fdt.parse_dtb(self._dtb_data_file)
 
     def _import_local_sd(self):
+        """Import device tree blob from the local system's SD card."""
         # Mount SD and get path
         folder = self._handle_sd_mount()
         with open(f"{folder}/{self._dt_filename}", "rb") as f:
@@ -175,6 +189,7 @@ class dt(sd):
         self._runr(f"rm -rf {folder}")
 
     def _import_sysfs(self):
+        """Import device tree from the local system's sysfs via dtc."""
         if os.name == "nt":
             raise Exception("local_sysfs is not support on Windows")
 
@@ -187,6 +202,7 @@ class dt(sd):
             self._dt = fdt.parse_dtb(self._dtb_data_file)
 
     def list_node_props(self, node):
+        """Print all properties of a device tree node."""
         for prop in node.props:
             try:
                 print(prop.name, prop.value)
@@ -194,6 +210,7 @@ class dt(sd):
                 print(prop.name)
 
     def list_child_props(self, node):
+        """Print all properties of every sibling node sharing the same parent."""
         for node in node.parent.nodes:
             for prop in node.props:
                 try:
@@ -215,6 +232,7 @@ class dt(sd):
         return [node.parent for node in nodes if compatible_id in node.value]
 
     def _update_sd(self, reboot=False):
+        """Write the current in-memory DT back to the SD card, optionally rebooting."""
         folder = self._handle_sd_mount()
         with (
             self._con as c,
@@ -229,13 +247,17 @@ class dt(sd):
             self._runr("reboot")
             print("Device rebooting")
 
-    def _update_fs(self): ...
+    def _update_fs(self):
+        """Write the current in-memory DT back to the filesystem (not yet implemented)."""
+        ...
 
     def _update_file(self):
+        """Write the current in-memory DT back to the local file."""
         with open(self.local_dt_filepath, "wb") as file:
             file.write(self._dt.to_dtb())
 
     def update_current_dt(self, reboot=False):
+        """Persist the in-memory DT to whichever storage backend was used to load it."""
         if self.dt_source == "remote_sd":
             try:
                 self._update_sd(reboot=reboot)

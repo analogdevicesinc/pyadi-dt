@@ -1,0 +1,21 @@
+	&{{ label }} {
+		/delete-property/ compatible;
+		/delete-property/ clocks;
+		/delete-property/ clock-names;
+		compatible = "{{ compatible }}";
+{%- if dma_label is not none %}
+		dmas = <&{{ dma_label }} 0>;
+		dma-names = "{{ direction }}";
+{%- endif %}
+{%- if sampl_clk_ref is not none %}
+		clocks = <&{{ sampl_clk_ref }}>;
+		clock-names = "{{ sampl_clk_name }}";
+{%- endif %}
+		spibus-connected = <&{{ spibus_label }}>;
+{%- if pl_fifo_enable %}
+		adi,axi-pl-fifo-enable;
+{%- endif %}
+		jesd204-device;
+		#jesd204-cells = <2>;
+		jesd204-inputs = <&{{ jesd_label }} {{ jesd_link_offset }} {{ link_id }}>;
+	};

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<EDKPROJECT>
+  <HEADER>
+    <DEVICE Name="xczu9eg" Package="ffvb1156" SpeedGrade="-2"/>
+  </HEADER>
+  <MODULES>
+    <MODULE MODTYPE="axi_jesd204_rx" INSTANCE="axi_jesd204_rx_0">
+      <PARAMETERS>
+        <PARAMETER NAME="C_NUM_LANES" VALUE="4"/>
+      </PARAMETERS>
+      <MEMRANGES>
+        <MEMRANGE INSTANCE="axi_jesd204_rx_0" BASEVALUE="0x44A90000" HIGHVALUE="0x44A9FFFF"/>
+      </MEMRANGES>
+      <PORTS>
+        <PORT DIR="I" NAME="s_axi_aclk" SIGIS="CLK" SIGNAME="sys_100mhz"/>
+        <PORT DIR="I" NAME="device_clk" SIGIS="CLK" SIGNAME="jesd_rx_device_clk"/>
+        <PORT DIR="O" NAME="interrupt" SIGNAME="irq_54"/>
+      </PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_jesd204_tx" INSTANCE="axi_jesd204_tx_0">
+      <PARAMETERS>
+        <PARAMETER NAME="C_NUM_LANES" VALUE="4"/>
+      </PARAMETERS>
+      <MEMRANGES>
+        <MEMRANGE INSTANCE="axi_jesd204_tx_0" BASEVALUE="0x44B90000" HIGHVALUE="0x44B9FFFF"/>
+      </MEMRANGES>
+      <PORTS>
+        <PORT DIR="I" NAME="s_axi_aclk" SIGIS="CLK" SIGNAME="sys_100mhz"/>
+        <PORT DIR="I" NAME="device_clk" SIGIS="CLK" SIGNAME="jesd_tx_device_clk"/>
+        <PORT DIR="O" NAME="interrupt" SIGNAME="irq_55"/>
+      </PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_clkgen" INSTANCE="axi_clkgen_0">
+      <MEMRANGES>
+        <MEMRANGE INSTANCE="axi_clkgen_0" BASEVALUE="0x43C00000" HIGHVALUE="0x43C0FFFF"/>
+      </MEMRANGES>
+      <PORTS>
+        <PORT DIR="O" NAME="clk_0" SIGIS="CLK" SIGNAME="jesd_rx_device_clk"/>
+        <PORT DIR="O" NAME="clk_1" SIGIS="CLK" SIGNAME="jesd_tx_device_clk"/>
+      </PORTS>
+    </MODULE>
+    <MODULE MODTYPE="axi_ad9081" INSTANCE="axi_ad9081_0">
+      <MEMRANGES>
+        <MEMRANGE INSTANCE="axi_ad9081_0" BASEVALUE="0x44A00000" HIGHVALUE="0x44A0FFFF"/>
+      </MEMRANGES>
+      <PORTS>
+        <PORT DIR="O" NAME="spi_csn" SIGNAME="spi0_cs_0"/>
+      </PORTS>
+    </MODULE>
+  </MODULES>
+</EDKPROJECT>

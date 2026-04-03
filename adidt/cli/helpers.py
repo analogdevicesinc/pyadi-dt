@@ -6,6 +6,7 @@ console = Console()
 
 
 def to_str(p):
+    """Convert an fdt property object to a human-readable string."""
     try:
         data = p.data
     except (AttributeError, TypeError):
@@ -25,6 +26,7 @@ def to_str(p):
 
 
 def list_node_props(node, no_color):
+    """Print or render a Rich table of all properties in a device tree node."""
     if no_color:
         for prop in node.props:
             print(prop.name, to_str(prop))
@@ -39,6 +41,7 @@ def list_node_props(node, no_color):
 
 
 def list_node_subnodes(nodes, no_color):
+    """Print or render a Rich table listing child node names."""
     if no_color:
         print("\n--Child nodes")
         for node in nodes:
@@ -53,6 +56,7 @@ def list_node_subnodes(nodes, no_color):
 
 
 def list_node_prop(node, prop, no_color):
+    """Print or render a single property value from a device tree node."""
     p = node.get_property(prop)
     if no_color:
         print(prop, to_str(p))

@@ -1,0 +1,28 @@
+{# ADF4382 microwave wideband synthesizer SPI device node — UNTESTED, generated from kernel binding iio/frequency/adi,adf4382.yaml #}
+		{{ label }}: {{ compatible_id | default("adf4382") }}@{{ cs }} {
+			compatible = "adi,{{ compatible_id | default("adf4382") }}";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+			#clock-cells = <1>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = "ref_clk";
+{%- endif %}
+{%- if clock_output_names_str is not none %}
+			clock-output-names = {{ clock_output_names_str }};
+{%- endif %}
+{%- if power_up_frequency is defined and power_up_frequency is not none %}
+			adi,power-up-frequency = /bits/ 64 <{{ power_up_frequency }}>;
+{%- endif %}
+{%- if spi_3wire %}
+			adi,spi-3wire-enable;
+{%- endif %}
+{%- if charge_pump_microamp is defined and charge_pump_microamp is not none %}
+			adi,charge-pump-microamp = <{{ charge_pump_microamp }}>;
+{%- endif %}
+{%- if output_power is defined and output_power is not none %}
+			adi,output-power-value = <{{ output_power }}>;
+{%- endif %}
+			label = "{{ label }}";
+			#io-channel-cells = <1>;
+		};

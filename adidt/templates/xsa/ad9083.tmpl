@@ -1,0 +1,24 @@
+{# AD9083 ADC SPI device node — UNTESTED, generated from kernel binding iio/adc/adi,ad9083.yaml #}
+		{{ label }}: ad9083@{{ cs }} {
+			compatible = "adi,ad9083";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = {{ clk_names_str }};
+{%- endif %}
+{%- if adc_frequency_hz is defined and adc_frequency_hz is not none %}
+			adi,adc-frequency-hz = <{{ adc_frequency_hz }}>;
+{%- endif %}
+			jesd204-device;
+			#jesd204-cells = <2>;
+			jesd204-top-device = <{{ jesd204_top_device | default(0) }}>;
+			jesd204-link-ids = <{{ jesd204_link_ids | join(' ') }}>;
+			jesd204-inputs = <&{{ jesd204_inputs }}>;
+{%- if octets_per_frame is defined and octets_per_frame is not none %}
+			adi,octets-per-frame = <{{ octets_per_frame }}>;
+{%- endif %}
+{%- if frames_per_multiframe is defined and frames_per_multiframe is not none %}
+			adi,frames-per-multiframe = <{{ frames_per_multiframe }}>;
+{%- endif %}
+		};

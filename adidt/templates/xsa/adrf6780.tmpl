@@ -1,0 +1,35 @@
+{# ADRF6780 microwave upconverter SPI device node — UNTESTED, generated from kernel binding iio/frequency/adi,adrf6780.yaml #}
+		{{ label }}: adrf6780@{{ cs }} {
+			compatible = "adi,adrf6780";
+			reg = <{{ cs }}>;
+			spi-max-frequency = <{{ spi_max_hz }}>;
+			#clock-cells = <0>;
+{%- if clks_str is not none %}
+			clocks = {{ clks_str }};
+			clock-names = "lo_in";
+{%- endif %}
+{%- if lo_en %}
+			adi,lo-en;
+{%- endif %}
+{%- if lo_x2_en %}
+			adi,lo-x2-en;
+{%- endif %}
+{%- if lo_ppf_en %}
+			adi,lo-ppf-en;
+{%- endif %}
+{%- if iq_mode_en %}
+			adi,iq-mode-en;
+{%- endif %}
+{%- if if_mode_en %}
+			adi,if-mode-en;
+{%- endif %}
+{%- if vga_buff_en %}
+			adi,vga-buff-en;
+{%- endif %}
+{%- if lo_sideband %}
+			adi,lo-sideband;
+{%- endif %}
+{%- if vdet_out_en %}
+			adi,vdet-out-en;
+{%- endif %}
+		};

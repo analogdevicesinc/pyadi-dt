@@ -10,6 +10,7 @@ class ad9545_dt(dt):
     out_clock_id = 0
 
     def set_clock_node(self, parent, clk, name, reg):
+        """Append a minimal output-clk subnode to parent for the given register address."""
         node = fdt.Node(f"output-clk@{reg}")
 
         node.append(fdt.PropWords("reg", reg))
@@ -72,6 +73,12 @@ class ad9545_dt(dt):
             assigned_clock_rates_prop.append(int(assigned_rate))
 
     def set_source_priorities_from_config(self, node: fdt.Node, config: Dict):
+        """Update PLL profile priority values from the JIF config for each configured PLL.
+
+        Args:
+            node (fdt.Node): AD9545 device tree node.
+            config (Dict): JIF configuration dict containing PLL0/PLL1 entries.
+        """
         for i in range(0, 2):
             pll_name = "PLL" + str(i)
             if pll_name not in config:

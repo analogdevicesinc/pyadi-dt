@@ -135,9 +135,7 @@ def test_hmc7044_add_nodes():
             assert prop.value == mux_mode
 
         if "driver-impedance-mode" in output_dict:
-            impedance_mode = d.driver_impedances[
-                output_dict["driver-impedance-mode"]
-            ]
+            impedance_mode = d.driver_impedances[output_dict["driver-impedance-mode"]]
             prop = output_node.get_property("adi,driver-impedance-mode")
             assert prop.value == impedance_mode
 

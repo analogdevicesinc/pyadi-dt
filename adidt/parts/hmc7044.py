@@ -56,6 +56,7 @@ class hmc7044_dt(dt, clock_dt):
     }
 
     def set_clock_node(self, parent, clk, name, reg):
+        """Append an HMC7044 channel subnode with divider and driver settings to parent."""
         node = fdt.Node(f"channel@{reg}")
 
         node.append(fdt.PropWords("reg", reg))
@@ -94,9 +95,7 @@ class hmc7044_dt(dt, clock_dt):
         # in CMOS mode, the impedance property describes the output status
         if "CMOS" in clk:
             prop_val = clk["CMOS"]["P"] << self.cmos_outputs_reg_field_map[reg]["P"]
-            prop_val | (
-                clk["CMOS"]["N"] << self.cmos_outputs_reg_field_map[reg]["N"]
-            )
+            prop_val | (clk["CMOS"]["N"] << self.cmos_outputs_reg_field_map[reg]["N"])
             node.append(fdt.PropWords("adi,driver-impedance-mode", prop_val))
 
         parent.append(node)

@@ -175,6 +175,72 @@ The script generates a JSON file with this structure:
 
 ---
 
+## ADI Binding Collection and Audit
+
+The scripts in this directory include a small pair for Linux devicetree binding
+inventory and support discovery:
+
+- `collect_adi_bindings.py`: parse ADI binding files from a Linux checkout and
+  emit a compact JSON/Markdown summary.
+- `audit_adi_bindings.py`: compare parsed compatibles against known pyadi-dt
+  compatibles and identify undocumented entries.
+
+### Usage
+
+Collect all ADI bindings from a local Linux tree:
+
+```bash
+python scripts/collect_adi_bindings.py --linux-path ./linux --output adi_bindings.json
+```
+
+Collect Markdown report and skip TXT parsing:
+
+```bash
+python scripts/collect_adi_bindings.py \
+  --linux-path ./linux \
+  --no-include-txt \
+  --report adi_bindings_report.md
+```
+
+Audit against project support:
+
+```bash
+python scripts/audit_adi_bindings.py \
+  --linux-path ./linux \
+  --project-root . \
+  --output adi_undocumented.json \
+  --fail-on-undocumented
+```
+
+Generate starter board templates plus Markdown documentation for undocumented bindings:
+
+```bash
+python scripts/audit_adi_bindings.py \
+  --linux-path ./linux \
+  --project-root . \
+  --generate-templates \
+  --template-json-out generated_templates.json \
+  --template-doc-out adidt/templates/boards/README.generated.md
+```
+
+This generation flow:
+
+- Maps undocumented compatibles to known board names using `adidt/templates/reference_dts_targets.json`
+- Creates starter `.tmpl` files under `adidt/templates/boards`
+- Skips existing templates unless `--force` is set
+- Emits Markdown grouped into generated, skipped, and not-generated entries
+
+The collection script supports the same template-generation flags when you want
+the raw binding inventory and starter template artifacts in one run.
+
+If `--linux-path` is unavailable, both scripts can clone from a remote URL:
+
+```bash
+python scripts/collect_adi_bindings.py \
+  --linux-url https://github.com/analogdevicesinc/linux.git \
+  --linux-ref v6.16
+```
+
 ## Developer Guide
 
 This section explains how the JSON generation works internally, useful for maintaining and extending the script.
