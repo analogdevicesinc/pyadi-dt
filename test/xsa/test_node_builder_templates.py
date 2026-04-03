@@ -1,6 +1,7 @@
 # test/xsa/test_node_builder_templates.py
 from types import SimpleNamespace
 
+from adidt.xsa.builders.adrv9009 import ADRV9009Builder
 from adidt.xsa.node_builder import NodeBuilder
 from adidt.xsa.topology import ConverterInstance, Jesd204Instance, XsaTopology
 
@@ -666,17 +667,27 @@ def _make_standard_adrv9009_cfg():
     }
 
 
+def _build_adrv9009_via_builder(topology, cfg):
+    """Route through the ADRV9009Builder the same way NodeBuilder.build() does."""
+    nb = NodeBuilder()
+    ps_clk_label, ps_clk_index, gpio_label = nb._platform_ps_labels(topology)
+    nb._addr_cells = 2
+    return ADRV9009Builder().build_nodes(
+        nb, topology, cfg, ps_clk_label, ps_clk_index, gpio_label
+    )
+
+
 def test_build_adrv9009_nodes_standard_returns_nonempty():
     topology = _make_standard_adrv9009_topology()
     cfg = _make_standard_adrv9009_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     assert len(result) > 0
 
 
 def test_build_adrv9009_nodes_standard_has_ad9528_clock_chip():
     topology = _make_standard_adrv9009_topology()
     cfg = _make_standard_adrv9009_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "clk0_ad9528: ad9528-1@0" in text
 
@@ -684,7 +695,7 @@ def test_build_adrv9009_nodes_standard_has_ad9528_clock_chip():
 def test_build_adrv9009_nodes_standard_has_tx_jesd_converter_resolution():
     topology = _make_standard_adrv9009_topology()
     cfg = _make_standard_adrv9009_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "adi,octets-per-frame" in text
     assert "adi,converter-resolution = <14>" in text
@@ -693,7 +704,7 @@ def test_build_adrv9009_nodes_standard_has_tx_jesd_converter_resolution():
 def test_build_adrv9009_nodes_standard_has_phy_node():
     topology = _make_standard_adrv9009_topology()
     cfg = _make_standard_adrv9009_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "trx0_adrv9009: adrv9009-phy@1" in text
 
@@ -701,7 +712,7 @@ def test_build_adrv9009_nodes_standard_has_phy_node():
 def test_build_adrv9009_nodes_standard_has_clkgen_nodes():
     topology = _make_standard_adrv9009_topology()
     cfg = _make_standard_adrv9009_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "adi,axi-clkgen-2.00.a" in text
 
@@ -780,14 +791,14 @@ def _make_fmcomms8_cfg():
 def test_build_adrv9009_nodes_fmcomms8_returns_nonempty():
     topology = _make_fmcomms8_topology()
     cfg = _make_fmcomms8_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     assert len(result) > 0
 
 
 def test_build_adrv9009_nodes_fmcomms8_has_hmc7044_clock_chip():
     topology = _make_fmcomms8_topology()
     cfg = _make_fmcomms8_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "hmc7044_fmc: hmc7044@0" in text
 
@@ -795,7 +806,7 @@ def test_build_adrv9009_nodes_fmcomms8_has_hmc7044_clock_chip():
 def test_build_adrv9009_nodes_fmcomms8_has_primary_phy():
     topology = _make_fmcomms8_topology()
     cfg = _make_fmcomms8_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "trx0_adrv9009: adrv9009-phy@1" in text
 
@@ -803,7 +814,7 @@ def test_build_adrv9009_nodes_fmcomms8_has_primary_phy():
 def test_build_adrv9009_nodes_fmcomms8_has_second_phy():
     topology = _make_fmcomms8_topology()
     cfg = _make_fmcomms8_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "trx1_adrv9009" in text
 
@@ -811,7 +822,7 @@ def test_build_adrv9009_nodes_fmcomms8_has_second_phy():
 def test_build_adrv9009_nodes_fmcomms8_no_clkgen():
     topology = _make_fmcomms8_topology()
     cfg = _make_fmcomms8_cfg()
-    result = NodeBuilder()._build_adrv9009_nodes(topology, cfg)
+    result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "adi,axi-clkgen-2.00.a" not in text
 

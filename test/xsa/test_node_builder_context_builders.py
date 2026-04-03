@@ -1,10 +1,13 @@
 # test/xsa/test_node_builder_context_builders.py
-from adidt.xsa.node_builder import NodeBuilder
+from adidt.model.contexts import (
+    build_hmc7044_ctx,
+    build_hmc7044_channel_ctx,
+    fmt_gpi_gpo,
+)
 
 
 def test_build_hmc7044_ctx_returns_required_keys():
-    nb = NodeBuilder()
-    ctx = nb._build_hmc7044_ctx(
+    ctx = build_hmc7044_ctx(
         label="hmc7044",
         cs=0,
         spi_max_hz=1000000,
@@ -22,15 +25,13 @@ def test_build_hmc7044_ctx_returns_required_keys():
 
 
 def test_build_hmc7044_channel_ctx_computes_freq_str():
-    nb = NodeBuilder()
     specs = [{"id": 2, "name": "DEV_REFCLK", "divider": 12, "driver_mode": 2}]
-    channels = nb._build_hmc7044_channel_ctx(3_000_000_000, specs)
+    channels = build_hmc7044_channel_ctx(3_000_000_000, specs)
     assert channels[0]["freq_str"] == "250 MHz"
     assert channels[0]["coarse_digital_delay"] is None
     assert channels[0]["is_sysref"] is False
 
 
 def test_fmt_gpi_gpo_formats_hex():
-    nb = NodeBuilder()
-    result = nb._fmt_gpi_gpo([0x00, 0x00, 0x00, 0x11])
+    result = fmt_gpi_gpo([0x00, 0x00, 0x00, 0x11])
     assert result == "0x00 0x00 0x00 0x11"
