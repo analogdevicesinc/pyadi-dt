@@ -101,12 +101,12 @@ assembles into the final tree.
 
       subgraph builder ["Board Builder (e.g. FMCDAQ2Builder)"]
          direction TB
-         extract["1. Extract config<br/>cfg dict → BoardConfig"]
-         context["2. Build contexts<br/>_build_ad9523_ctx() → dict<br/>_build_ad9680_ctx() → dict<br/>_build_ad9144_ctx() → dict"]
-         render["3. Render templates<br/>_render('ad9523_1.tmpl', ctx)<br/>_render('ad9680.tmpl', ctx)<br/>_render('ad9144.tmpl', ctx)"]
-         wrap["4. Assemble nodes<br/>_wrap_spi_bus() for SPI children<br/>+ DMA, TPL, JESD, XCVR overlays"]
+         extract["1. Extract config<br/>cfg dict → typed values"]
+         model["2. Build BoardModel<br/>ComponentModel (clock, ADC, DAC)<br/>JesdLinkModel (RX, TX)"]
+         context["3. Build contexts<br/>build_ad9523_1_ctx() → dict<br/>build_ad9680_ctx() → dict<br/>build_ad9144_ctx() → dict"]
+         render["4. BoardModelRenderer.render()<br/>SPI grouping, template rendering,<br/>DMA/TPL/JESD/XCVR assembly"]
 
-         extract --> context --> render --> wrap
+         extract --> model --> context --> render
       end
 
       subgraph merger ["DtsMerger.merge()"]
@@ -189,14 +189,49 @@ Key data models
    ``AD9172Builder``, ``AD9081Builder``, ``AD9084Builder``,
    ``ADRV9009Builder``.
 
+``BoardModel`` (``model/board_model.py``)
+   The unified board model that all builders produce internally.  A
+   ``BoardModel`` contains:
+
+   - ``components`` — list of ``ComponentModel`` (clock chips, converters)
+     each with a role, part name, template, SPI bus, and context dict
+   - ``jesd_links`` — list of ``JesdLinkModel`` (RX/TX JESD links) each
+     with ADXCVR, JESD overlay, and TPL core configs
+   - ``fpga_config`` — ``FpgaConfig`` with platform, address cells, and
+     PS clock labels
+   - ``extra_nodes`` — raw DTS node strings for non-template nodes
+   - ``metadata`` — free-form dict for rendering metadata
+
+   The model is **editable** after creation — callers can modify component
+   configs, JESD link parameters, or metadata before rendering.
+
+``BoardModelRenderer`` (``model/renderer.py``)
+   Renders a ``BoardModel`` into the same ``dict[str, list[str]]`` that
+   ``NodeBuilder.build()`` returns.  Uses the per-component templates from
+   ``adidt/templates/xsa/``.
+
+Context builders (``model/contexts.py``)
+   Standalone functions that produce template context dicts.  Each function
+   corresponds to a Jinja2 template and returns a flat dict whose keys
+   match the template variables.  These are shared by both the XSA builders
+   and the manual board-class workflow (``to_board_model()``).
+
+   Available builders: ``build_ad9523_1_ctx``, ``build_ad9528_ctx``,
+   ``build_ad9528_1_ctx``, ``build_hmc7044_ctx``, ``build_ad9680_ctx``,
+   ``build_ad9144_ctx``, ``build_ad9152_ctx``, ``build_ad9172_device_ctx``,
+   ``build_ad9081_mxfe_ctx``, ``build_adrv9009_device_ctx``,
+   ``build_ad9084_ctx``, ``build_adf4382_ctx``, ``build_adxcvr_ctx``,
+   ``build_jesd204_overlay_ctx``, ``build_tpl_core_ctx``.
+
 NodeBuilder internals
 ---------------------
 
-``NodeBuilder`` (``node_builder.py``) is the heart of the pipeline.  It owns
-the Jinja2 rendering environment, shared infrastructure (``_wrap_spi_bus()``,
-``_fmt_hz()``, ``_coerce_board_int()``, platform detection), and context
-builder methods.  Board builders delegate back to these methods via the
-``node_builder`` reference they receive.
+``NodeBuilder`` (``node_builder.py``) orchestrates the pipeline.  It owns
+platform detection, clock resolution, and the generic rendering path.
+Board builders now construct a ``BoardModel`` internally and render it via
+``BoardModelRenderer``, using shared context builders from
+``adidt/model/contexts.py``.  Builders no longer delegate rendering back
+to ``NodeBuilder`` methods — they are self-contained.
 
 Entry point
 ~~~~~~~~~~~
@@ -567,18 +602,23 @@ Template catalogue
 Context builders
 ----------------
 
-Every template has a matching **context builder** method on ``NodeBuilder``.
-Context builders are responsible for:
+Every template has a matching **context builder** function in
+``adidt/model/contexts.py``.  Context builders are responsible for:
 
-1. Reading values from the typed config struct (``_FMCDAQ2Cfg``,
-   ``_AD9172Cfg``, etc.) or from the raw ``board_cfg`` dict.
-2. Computing derived values (e.g. ``_fmt_hz()`` for frequency annotations,
-   ``_fmt_gpi_gpo()`` for hex GPIO control strings).
+1. Accepting named parameters for the component configuration.
+2. Computing derived values (e.g. ``fmt_hz()`` for frequency annotations,
+   ``fmt_gpi_gpo()`` for hex GPIO control strings).
 3. Pre-formatting list values into strings (``clock_output_names_str``, etc.).
 4. Returning a flat ``dict`` whose keys match the variable names used in the
    template.
 
-Naming convention: ``_build_<chip>_ctx()`` or ``_build_<chip>_device_ctx()``.
+Naming convention: ``build_<chip>_ctx()`` or ``build_<chip>_device_ctx()``.
+
+These functions are standalone (not methods on ``NodeBuilder``) so they can
+be reused by both XSA builders and the manual board-class workflow
+(``to_board_model()``).  Legacy ``_build_*_ctx()`` methods still exist on
+``NodeBuilder`` for backward compatibility but internally delegate to the
+shared functions.
 
 Context builder docstrings document the full **context schema** — the
 complete set of keys returned and the meaning of each.  For example:
@@ -616,17 +656,18 @@ complete set of keys returned and the meaning of each.  For example:
            ...
        """
 
-Board-specific config structs
--------------------------------
+Board-specific config extraction
+---------------------------------
 
-Each board family has a private dataclass (``_FMCDAQ2Cfg``, ``_FMCDAQ3Cfg``,
-``_AD9172Cfg``) that is populated from the runtime config by a
-``_build_<family>_cfg()`` method.  These structs hold all resolved values for
-one board so that context builders receive typed inputs instead of raw dicts.
+Each builder's ``build_model()`` method extracts configuration from the
+``cfg`` dict using ``coerce_board_int()`` for type-safe integer conversion.
+The extracted values populate ``ComponentModel.config`` dicts (via context
+builder functions) and ``JesdLinkModel`` fields.
 
-The ADRV9009 and AD9081 builders work directly from the raw ``board_cfg``
-dict (``cfg.get("adrv9009_board", {})``) because their configuration space is
-larger and more variable.
+Legacy private dataclasses (``_FMCDAQ2Cfg``, ``_FMCDAQ3Cfg``,
+``_AD9172Cfg``) still exist in ``node_builder.py`` but are no longer used
+by the builders — configuration extraction now happens directly in each
+builder's ``build_model()`` method.
 
 Adding a new component
 -----------------------
@@ -663,37 +704,32 @@ Follow these rules when writing templates:
 Step 2 — Write the context builder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Add a ``_build_ad_new_ctx()`` method to ``NodeBuilder``.  Document the full
-context schema in the docstring:
+Add a ``build_ad_new_ctx()`` function to ``adidt/model/contexts.py``.
+Use keyword-only arguments so callers are explicit:
 
 .. code-block:: python
 
-   def _build_ad_new_ctx(
-       self,
+   def build_ad_new_ctx(
+       *,
+       label: str = "adc0_ad_new",
        cs: int,
-       spi_max_hz: int,
-       gpio_controller: str,
-       reset_gpio: int | None,
+       spi_max_hz: int = 10_000_000,
+       gpio_controller: str = "gpio0",
+       reset_gpio: int | None = None,
        sampling_freq_hz: int,
    ) -> dict:
-       """Build context dict for ad_new.tmpl.
-
-       Context schema:
-           label (str): Always ``"adc0_ad_new"``.
-           cs (int): SPI chip-select index.
-           spi_max_hz (int): Maximum SPI frequency in Hz.
-           gpio_controller (str): GPIO controller DTS label.
-           reset_gpio (int | None): Reset GPIO line; ``None`` suppresses the property.
-           sampling_freq_hz (int): Sampling frequency in Hz.
-       """
+       """Build context dict for ``ad_new.tmpl``."""
        return {
-           "label": "adc0_ad_new",
+           "label": label,
            "cs": cs,
            "spi_max_hz": spi_max_hz,
            "gpio_controller": gpio_controller,
            "reset_gpio": reset_gpio,
            "sampling_freq_hz": sampling_freq_hz,
        }
+
+Context builders live in ``adidt/model/contexts.py`` so they can be reused
+by both XSA builders and manual board classes (``to_board_model()``).
 
 Step 3 — Write tests
 ~~~~~~~~~~~~~~~~~~~~
@@ -756,24 +792,36 @@ Or use JESD instance name matching if there is no dedicated AXI IP type:
 
 Add the family to ``inferred_converter_family()`` in the priority list.
 
-Step 5 — Wire into a board builder or ``build()``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Step 5 — Wire into a board builder
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If the chip slots into an existing board family, call ``_render()`` inside the
-appropriate board builder and concatenate the result into ``spi_children``:
+All builders now construct a ``BoardModel`` internally.  Add the new
+component as a ``ComponentModel`` in the builder's ``build_model()`` method:
 
 .. code-block:: python
 
-   spi_children = (
-       self._render("existing_clk.tmpl", clk_ctx)
-       + self._render("ad_new.tmpl", self._build_ad_new_ctx(...))
-   )
-   nodes.append(self._wrap_spi_bus(spi_bus, spi_children))
+   from adidt.model.board_model import ComponentModel
+   from adidt.model.contexts import build_ad_new_ctx
 
-If it is a new family entirely, create a new board builder method following
-the existing pattern (see ``_build_fmcdaq2_nodes()`` as a reference), add a
-topology check at the top that returns ``[]`` early, and call it from
-``build()``.
+   # Inside the builder's build_model():
+   components.append(
+       ComponentModel(
+           role="adc",
+           part="ad_new",
+           template="ad_new.tmpl",
+           spi_bus=spi_bus,
+           spi_cs=adc_cs,
+           config=build_ad_new_ctx(cs=adc_cs, sampling_freq_hz=245_760_000),
+       )
+   )
+
+The ``BoardModelRenderer`` handles SPI bus grouping, template rendering,
+and assembly automatically.
+
+If it is a new board family entirely, create a new builder module in
+``adidt/xsa/builders/`` implementing the ``BoardBuilder`` protocol with a
+``build_model()`` method.  See ``fmcdaq2.py`` as the reference
+implementation.  Add the builder to ``NodeBuilder._DEFAULT_BUILDERS``.
 
 Adding a new board
 ------------------
