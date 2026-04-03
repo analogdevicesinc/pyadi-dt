@@ -89,6 +89,7 @@ Table of contents
    :maxdepth: 2
    :caption: Developer Guide
 
+   creating_templates
    xsa_developer
 
 .. toctree::
