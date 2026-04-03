@@ -162,7 +162,7 @@ class adrv9009_fmc(layout):
         ]
         return paths
 
-    def validate_and_default_fpga_config(self, cfg):
+    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration."""
         if "fpga_rx" not in cfg:
             cfg["fpga_rx"] = {}
@@ -197,7 +197,7 @@ class adrv9009_fmc(layout):
 
         return cfg
 
-    def to_board_model(self, cfg):
+    def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from configuration.
 
         This maps the configuration through the existing board layout
@@ -583,7 +583,7 @@ class adrv9009_fmc(layout):
         kwargs["config_source"] = kwargs.get("config_source", "unknown")
         return kwargs
 
-    def map_clocks_to_board_layout(self, cfg):
+    def map_clocks_to_board_layout(self, cfg: dict) -> tuple:
         """Map configuration to board clock connection layout.
 
         The ADRV9009 uses AD9528 as the clock generator with outputs:

@@ -168,7 +168,7 @@ class daq2(layout):
         ]
         return paths
 
-    def validate_and_default_fpga_config(self, cfg):
+    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
 
         Args:
@@ -208,7 +208,7 @@ class daq2(layout):
                 cfg[key] = int(cfg[key])
         return cfg
 
-    def map_jesd_structs(self, cfg):
+    def map_jesd_structs(self, cfg: dict) -> tuple:
         """Extract and annotate ADC and DAC JESD configuration dicts from the solver output.
 
         Args:
@@ -240,7 +240,7 @@ class daq2(layout):
 
         return adc, dac
 
-    def map_clocks_to_board_layout(self, cfg):
+    def map_clocks_to_board_layout(self, cfg: dict) -> tuple:
         """Map JIF solver configuration to the DAQ2 board clock and JESD layout.
 
         Args:
@@ -321,7 +321,7 @@ class daq2(layout):
 
         return ccfg, adc, dac, fpga
 
-    def to_board_model(self, cfg):
+    def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from JIF solver configuration.
 
         This maps the solver output through the existing board layout

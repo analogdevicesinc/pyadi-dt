@@ -183,7 +183,7 @@ class ad9081_fmc(layout):
         ]
         return paths
 
-    def validate_and_default_fpga_config(self, cfg):
+    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
 
         Args:
@@ -231,7 +231,7 @@ class ad9081_fmc(layout):
                 cfg[key] = int(cfg[key])
         return cfg
 
-    def map_jesd_structs(self, cfg):
+    def map_jesd_structs(self, cfg: dict) -> tuple:
         """Map JIF configuration to integer structs.
 
         Args:
@@ -328,7 +328,7 @@ class ad9081_fmc(layout):
     # Board model builder
     # ------------------------------------------------------------------
 
-    def to_board_model(self, cfg):
+    def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from JIF solver configuration.
 
         This maps the solver output through the existing board layout
@@ -678,7 +678,7 @@ class ad9081_fmc(layout):
         kwargs["config_source"] = kwargs.get("config_source", "unknown")
         return kwargs
 
-    def map_clocks_to_board_layout(self, cfg):
+    def map_clocks_to_board_layout(self, cfg: dict) -> tuple:
         """Map JIF configuration to board clock connection layout.
 
         Args:
