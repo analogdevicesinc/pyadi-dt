@@ -78,7 +78,7 @@ def test_ad9084_vcu118_xsa(target):
     print(f"Generated merged DTS: {merged_dts}")
 
     # 2. Prepare MicroBlaze kernel build
-    config_path = HERE / "2023_R2.yaml"
+    config_path = HERE.parent / "2023_R2.yaml"
     build_config = BuildConfig.from_yaml(config_path)
     platform_config = build_config.get_platform("microblaze")
     platform = MicroBlazePlatform(platform_config)
@@ -109,7 +109,7 @@ def test_ad9084_vcu118_xsa(target):
     fw_name = profile_data["defaults"].get("ad9084_board", {}).get("firmware_name")
     if fw_name:
         # Copy profile firmware from test profiles to kernel firmware dir
-        profile_src = HERE / "profiles" / "vcu118" / fw_name
+        profile_src = HERE.parent / "ad9084" / "profiles" / "vcu118" / fw_name
         fw_dir = kernel_path / "firmware"
         if profile_src.exists():
             shutil.copy(profile_src, fw_dir / fw_name)

@@ -89,7 +89,7 @@ def test_ad9084_new(target, profile):
     profile_stem = Path(profile).stem
 
     # 1. Initialize Builder
-    config_path = Path(__file__).parent / "2023_R2.yaml"
+    config_path = Path(__file__).parent.parent / "2023_R2.yaml"
     build_config = BuildConfig.from_yaml(config_path)
     platform_config = build_config.get_platform("microblaze")
     platform = MicroBlazePlatform(platform_config)

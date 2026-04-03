@@ -1,0 +1,903 @@
+{
+  "Clocks": {
+    "Mode": 0,
+    "UsePll": false,
+    "DeviceClock_Hz": 20000000000.0,
+    "PllRefClock_Hz": 125000000.0,
+    "DacToAdcRatio": 0,
+    "AdcRate_sps": -1.0,
+    "DacRate_sps": -1.0
+  },
+  "TxRouteBlueprints": [
+    {
+      "NumberOfRoutes": 4,
+      "BandMode": 0,
+      "AnalogComplexOrReal": 0,
+      "SampleRate_sps": 20000000000.0,
+      "CoarseDrc": {
+        "RateFactor": 4,
+        "NcoFrequency_Hz": 1000000000.0,
+        "NcoPhaseOffset_Degrees": 0.0
+      },
+      "FineDrcs": [
+        {
+          "RateFactor": 4,
+          "NcoFrequency_Hz": 100000000.0,
+          "NcoPhaseOffset_Degrees": 0.0
+        }
+      ],
+      "FracResampler": {
+        "X": 0,
+        "Y": 0,
+        "DitherEnable": true,
+        "AllowFsrc": false
+      },
+      "DigitalComplexOrReal": 1,
+      "Side": 127,
+      "JesdLinkConfigIndexes": [
+        0
+      ],
+      "TotalRateConversion": 16.0
+    }
+  ],
+  "RxRouteBlueprints": [
+    {
+      "NumberOfRoutes": 4,
+      "BandMode": 0,
+      "AnalogComplexOrReal": 0,
+      "SampleRate_sps": 20000000000.0,
+      "CoarseDrc": {
+        "RateFactor": 4,
+        "NcoFrequency_Hz": 2500000000.0,
+        "NcoPhaseOffset_Degrees": 0.0
+      },
+      "FineDrcs": [
+        {
+          "RateFactor": 4,
+          "NcoFrequency_Hz": 5000000.0,
+          "NcoPhaseOffset_Degrees": 0.0
+        }
+      ],
+      "FracResampler": {
+        "X": 0,
+        "Y": 0,
+        "DitherEnable": true,
+        "AllowFsrc": false
+      },
+      "DigitalComplexOrReal": 1,
+      "Side": 127,
+      "JesdLinkConfigIndexes": [
+        0
+      ],
+      "TotalRateConversion": 16.0
+    }
+  ],
+  "JesdBlueprint": {
+    "JesdTx": [
+      {
+        "LinkId": 0,
+        "Version": 1,
+        "Subclass": 0,
+        "L": 8,
+        "M": 4,
+        "S": 1,
+        "F": 1,
+        "N": 16,
+        "Np": 16,
+        "K": 256,
+        "Scramble": true,
+        "QuickMode": 47
+      }
+    ],
+    "JesdRx": [
+      {
+        "LinkId": 0,
+        "Version": 1,
+        "Subclass": 0,
+        "L": 8,
+        "M": 4,
+        "S": 1,
+        "F": 1,
+        "N": 16,
+        "Np": 16,
+        "K": 256,
+        "Scramble": true,
+        "QuickMode": 47
+      }
+    ]
+  },
+  "Features": [
+    {
+      "Side": 127,
+      "AveragingOption": 0,
+      "AveragedScalarGain_dB": 63,
+      "PassthroughScalarGain_dB": 63,
+      "UseOnlyAveragedData": false,
+      "UseCustomFilterCoeffs": false,
+      "CoeffsAveraged": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "CoeffsPassthrough": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "Id": "AdcAveragingFeature",
+      "DependsOn": ""
+    },
+    {
+      "Side": 1,
+      "LinkId": 0,
+      "UseIlLaneMappings": false,
+      "DefaultLoss": 0,
+      "IlLaneMappings": [],
+      "Id": "JesdRxLaneInsertionLossFeature",
+      "DependsOn": ""
+    },
+    {
+      "Side": 2,
+      "LinkId": 0,
+      "UseIlLaneMappings": false,
+      "DefaultLoss": 0,
+      "IlLaneMappings": [],
+      "Id": "JesdRxLaneInsertionLossFeature",
+      "DependsOn": ""
+    },
+    {
+      "Strategy": 2,
+      "UseTargetLaneRate": true,
+      "TargetLaneRate_Hz": 0.0,
+      "LaneRateTolerance_Hz": 1000.0,
+      "MinLaneRate_Hz": 6000000000.0,
+      "MaxLaneRate_Hz": 0.0,
+      "AllowLaneRateAdapt": true,
+      "MinimizeLaneRates": true,
+      "Id": "LaneRateConstraintFeature",
+      "DependsOn": ""
+    },
+    {
+      "DacPreference": 3,
+      "DacShuffle": true,
+      "TxInvSincEn": false,
+      "AdcInitCalIndex": 7,
+      "AdcTrackMode": 1,
+      "AdcSliceMode": 6,
+      "NcoSelMode": 4,
+      "AdcDitherMode": 0,
+      "Id": "MiscFeature",
+      "DependsOn": ""
+    },
+    {
+      "Side": 127,
+      "CbOut0": 0,
+      "CbOut1": 1,
+      "CbOut2_8T8R": -1,
+      "CbOut3_8T8R": -1,
+      "Id": "RxMux0AdcInputFeature",
+      "DependsOn": ""
+    },
+    {
+      "Side": 1,
+      "InvSinc0": true,
+      "InvSinc1": true,
+      "InvSinc2_8T8R": false,
+      "InvSinc3_8T8R": false,
+      "Id": "TxInvSincFeature",
+      "DependsOn": ""
+    },
+    {
+      "Side": 2,
+      "InvSinc0": true,
+      "InvSinc1": true,
+      "InvSinc2_8T8R": false,
+      "InvSinc3_8T8R": false,
+      "Id": "TxInvSincFeature",
+      "DependsOn": ""
+    }
+  ],
+  "UcId": "204C_M4_L8_NP16_1p25_4x4",
+  "Description": "",
+  "BasedOn": "id00_uc06",
+  "IsCustom": true,
+  "EnableLatencyCalculator": true,
+  "DeviceType": 0,
+  "SwTrim": 5,
+  "Version": "9.17.4",
+  "ApplyPatches": false,
+  "Patches": [
+    {
+      "op": "replace",
+      "path": "/profile_cfg/config_version",
+      "type": "System.Int64",
+      "value": 8
+    },
+    {
+      "op": "replace",
+      "path": "/clk_pll/feedback_int",
+      "type": "System.Int64",
+      "value": 50
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_cduc/0/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_cduc/1/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_fduc/0/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_fduc/1/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_fduc/2/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/0/tx_fduc/3/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_cduc/0/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_cduc/1/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_fduc/0/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_fduc/1/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_fduc/2/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/tx_path/1/tx_fduc/3/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_cddc/0/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_cddc/1/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_fddc/0/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_fddc/1/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_fddc/2/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/0/rx_fddc/3/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_cddc/0/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_cddc/1/nco/1/debug_cdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_fddc/0/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_fddc/1/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_fddc/2/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/rx_path/1/rx_fddc/3/nco/1/debug_fdrc_clkoff_n",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/sample_xbar_sel/4",
+      "type": "System.Int64",
+      "value": 2
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/sample_xbar_sel/5",
+      "type": "System.Int64",
+      "value": 3
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/sample_xbar_sel/6",
+      "type": "System.Int64",
+      "value": 6
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/sample_xbar_sel/7",
+      "type": "System.Int64",
+      "value": 7
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/lane_xbar/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/lane_xbar/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/lane_xbar/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/0/lane_xbar/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/1/base_lane_id",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/0/tx_link_cfg/1/high_dens",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/bank_id",
+      "type": "System.Int64",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/base_lane_id",
+      "type": "System.Int64",
+      "value": 8
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/sample_xbar_sel/4",
+      "type": "System.Int64",
+      "value": 2
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/sample_xbar_sel/5",
+      "type": "System.Int64",
+      "value": 3
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/sample_xbar_sel/6",
+      "type": "System.Int64",
+      "value": 6
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/sample_xbar_sel/7",
+      "type": "System.Int64",
+      "value": 7
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/lane_xbar/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/lane_xbar/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/lane_xbar/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/0/lane_xbar/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/1/base_lane_id",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jtx/1/tx_link_cfg/1/high_dens",
+      "type": "System.Boolean",
+      "value": true
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/12",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/13",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/14",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/15",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/16",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/17",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/18",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/19",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/20",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/21",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/22",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/23",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/24",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/25",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/26",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/27",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/28",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/29",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/30",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/sample_xbar_sel/31",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/lane_xbar/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/lane_xbar/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/lane_xbar/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/0/lane_xbar/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/0/rx_link_cfg/1/base_lane_id",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/bank_id",
+      "type": "System.Int64",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/12",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/13",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/14",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/15",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/16",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/17",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/18",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/19",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/20",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/21",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/22",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/23",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/24",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/25",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/26",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/27",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/28",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/29",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/30",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/sample_xbar_sel/31",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/lane_xbar/8",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/lane_xbar/9",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/lane_xbar/10",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/0/lane_xbar/11",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/jrx/1/rx_link_cfg/1/base_lane_id",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/reserved_cfg/0",
+      "type": "System.Int64",
+      "value": 244
+    },
+    {
+      "op": "replace",
+      "path": "/reserved_cfg/1",
+      "type": "System.Int64",
+      "value": 1
+    },
+    {
+      "op": "replace",
+      "path": "/reserved_cfg/4",
+      "type": "System.Int64",
+      "value": 0
+    },
+    {
+      "op": "replace",
+      "path": "/reserved_cfg/5",
+      "type": "System.Int64",
+      "value": 0
+    }
+  ]
+}
