@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The XSA pipeline can generate interactive reports, clock-tree diagrams, and structural lint diagnostics alongside the device tree output." name="description" />
+
+    <title>Visualization and Diagnostics &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Examples" href="examples.html" />
+    <link rel="prev" title="XSA to Device Tree" href="xsa.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Visualization and Diagnostics</a><ul>
+<li><a class="reference internal" href="#html-topology-report">HTML topology report</a><ul>
+<li><a class="reference internal" href="#example-report-layout">Example report layout</a></li>
+<li><a class="reference internal" href="#generating-from-python">Generating from Python</a></li>
+<li><a class="reference internal" href="#generating-from-cli">Generating from CLI</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#clock-tree-diagrams">Clock-tree diagrams</a><ul>
+<li><a class="reference internal" href="#example-fmcdaq2-clock-tree">Example: FMCDAQ2 clock tree</a></li>
+<li><a class="reference internal" href="#node-color-coding">Node color coding</a></li>
+<li><a class="reference internal" href="#edge-color-coding">Edge color coding</a></li>
+<li><a class="reference internal" href="#example-dot-output">Example DOT output</a></li>
+<li><a class="reference internal" href="#id1">Generating from Python</a></li>
+<li><a class="reference internal" href="#installing-rendering-tools">Installing rendering tools</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#dts-structural-linter">DTS structural linter</a><ul>
+<li><a class="reference internal" href="#example-lint-output">Example lint output</a></li>
+<li><a class="reference internal" href="#id2">Generating from Python</a></li>
+<li><a class="reference internal" href="#id3">Generating from CLI</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#combining-all-outputs">Combining all outputs</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="visualization-and-diagnostics">
+<h1>Visualization and Diagnostics<a class="headerlink" href="#visualization-and-diagnostics" title="Link to this heading"></a></h1>
+<p>The XSA pipeline can generate interactive reports, clock-tree diagrams,
+and structural lint diagnostics alongside the device tree output.</p>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#html-topology-report" id="id4">HTML topology report</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example-report-layout" id="id5">Example report layout</a></p></li>
+<li><p><a class="reference internal" href="#generating-from-python" id="id6">Generating from Python</a></p></li>
+<li><p><a class="reference internal" href="#generating-from-cli" id="id7">Generating from CLI</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#clock-tree-diagrams" id="id8">Clock-tree diagrams</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example-fmcdaq2-clock-tree" id="id9">Example: FMCDAQ2 clock tree</a></p></li>
+<li><p><a class="reference internal" href="#node-color-coding" id="id10">Node color coding</a></p></li>
+<li><p><a class="reference internal" href="#edge-color-coding" id="id11">Edge color coding</a></p></li>
+<li><p><a class="reference internal" href="#example-dot-output" id="id12">Example DOT output</a></p></li>
+<li><p><a class="reference internal" href="#id1" id="id13">Generating from Python</a></p></li>
+<li><p><a class="reference internal" href="#installing-rendering-tools" id="id14">Installing rendering tools</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#dts-structural-linter" id="id15">DTS structural linter</a></p>
+<ul>
+<li><p><a class="reference internal" href="#example-lint-output" id="id16">Example lint output</a></p></li>
+<li><p><a class="reference internal" href="#id2" id="id17">Generating from Python</a></p></li>
+<li><p><a class="reference internal" href="#id3" id="id18">Generating from CLI</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#combining-all-outputs" id="id19">Combining all outputs</a></p></li>
+</ul>
+</nav>
+<section id="html-topology-report">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">HTML topology report</a><a class="headerlink" href="#html-topology-report" title="Link to this heading"></a></h2>
+<p>The HTML report is a self-contained interactive page (no CDN or
+external dependencies) built with D3.js.  It contains five panels:</p>
+<ol class="arabic simple">
+<li><p><strong>DTS Node Tree</strong> — searchable list of all device tree nodes from the
+merged DTS, with highlighting for ADI-specific nodes (JESD, AD9081,
+HMC7044, etc.)</p></li>
+<li><p><strong>XSA Match Coverage</strong> — percentage of XSA topology IPs that appear
+in the merged DTS, with matched vs unmatched counts per category</p></li>
+<li><p><strong>Details</strong> — expandable tables for parsed topology (JESD RX/TX,
+converters, clockgens), clock references, and JESD data paths</p></li>
+<li><p><strong>Clock Topology</strong> — D3.js diagram of clock generators and their
+output nets, color-coded by component type</p></li>
+<li><p><strong>JESD204 Data Path</strong> — D3.js diagram showing JESD RX/TX cores,
+converters, and data flow connections with lane count annotations</p></li>
+</ol>
+<section id="example-report-layout">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Example report layout</a><a class="headerlink" href="#example-report-layout" title="Link to this heading"></a></h3>
+<pre  class="mermaid">
+        block-beta
+  columns 2
+  A[&quot;DTS Node Tree\n(searchable)&quot;] B[&quot;XSA Match Coverage\n(stats)&quot;]
+  C[&quot;Clock Topology\n(D3.js SVG)&quot;] D[&quot;JESD204 Data Path\n(D3.js SVG)&quot;]
+  E[&quot;Details: Parsed Topology / Clock References / JESD Paths&quot;]:2
+    </pre></section>
+<section id="generating-from-python">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Generating from Python</a><a class="headerlink" href="#generating-from-python" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">XsaPipeline</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span>
+    <span class="n">emit_report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Report: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;report&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># out/&lt;name&gt;_report.html</span>
+</pre></div>
+</div>
+</section>
+<section id="generating-from-cli">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Generating from CLI</a><a class="headerlink" href="#generating-from-cli" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">xsa2dt</span></code> command generates the report by default:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>--profile<span class="w"> </span>ad9081_zcu102<span class="w"> </span>-o<span class="w"> </span>out/
+<span class="c1"># Opens out/ad9081_zcu102_report.html</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="clock-tree-diagrams">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Clock-tree diagrams</a><a class="headerlink" href="#clock-tree-diagrams" title="Link to this heading"></a></h2>
+<p>The clock graph generator parses <code class="docutils literal notranslate"><span class="pre">clocks</span></code>, <code class="docutils literal notranslate"><span class="pre">clock-names</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">clock-output-names</span></code> properties from the merged DTS and produces
+directed graphs showing the full clock distribution tree.</p>
+<p>Two output formats are always written:</p>
+<ul class="simple">
+<li><p><strong>Graphviz DOT</strong> (<code class="docutils literal notranslate"><span class="pre">.dot</span></code>) — rendered to SVG automatically if
+<code class="docutils literal notranslate"><span class="pre">dot</span></code> is on PATH</p></li>
+<li><p><strong>D2</strong> (<code class="docutils literal notranslate"><span class="pre">.d2</span></code>) — rendered to SVG automatically if <code class="docutils literal notranslate"><span class="pre">d2</span></code> is on PATH</p></li>
+</ul>
+<section id="example-fmcdaq2-clock-tree">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Example: FMCDAQ2 clock tree</a><a class="headerlink" href="#example-fmcdaq2-clock-tree" title="Link to this heading"></a></h3>
+<p>The following diagram shows the clock distribution for an FMCDAQ2 design
+(AD9523-1 clock + AD9680 ADC + AD9144 DAC):</p>
+<pre  class="mermaid">
+        flowchart LR
+  subgraph PS[&quot;Processing System&quot;]
+    zynqmp_clk[&quot;zynqmp_clk\n(PS clock)&quot;]
+  end
+
+  subgraph CLK[&quot;Clock Chip&quot;]
+    clk0_ad9523[&quot;clk0_ad9523\n(AD9523-1)&quot;]
+  end
+
+  subgraph JESD[&quot;JESD204 Links&quot;]
+    jesd_rx[&quot;axi_ad9680_jesd204_rx&quot;]
+    jesd_tx[&quot;axi_ad9144_jesd204_tx&quot;]
+  end
+
+  subgraph XCVR[&quot;GT Transceivers&quot;]
+    xcvr_rx[&quot;axi_ad9680_adxcvr&quot;]
+    xcvr_tx[&quot;axi_ad9144_adxcvr&quot;]
+  end
+
+  subgraph CONV[&quot;Converters&quot;]
+    adc[&quot;adc0_ad9680\n(AD9680 ADC)&quot;]
+    dac[&quot;dac0_ad9144\n(AD9144 DAC)&quot;]
+  end
+
+  zynqmp_clk --&gt;|s_axi_aclk| jesd_rx
+  zynqmp_clk --&gt;|s_axi_aclk| jesd_tx
+  clk0_ad9523 --&gt;|adc_clk| adc
+  clk0_ad9523 --&gt;|adc_sysref| adc
+  clk0_ad9523 --&gt;|dac_clk| dac
+  clk0_ad9523 --&gt;|conv| xcvr_rx
+  clk0_ad9523 --&gt;|conv| xcvr_tx
+  xcvr_rx --&gt;|device_clk| jesd_rx
+  xcvr_rx --&gt;|lane_clk| jesd_rx
+  xcvr_tx --&gt;|device_clk| jesd_tx
+  xcvr_tx --&gt;|lane_clk| jesd_tx
+
+  style PS fill:#7a3800,color:#fff
+  style CLK fill:#1a3d5c,color:#fff
+  style JESD fill:#1a4a20,color:#fff
+  style XCVR fill:#4a1a5c,color:#fff
+  style CONV fill:#5c1a1a,color:#fff
+    </pre></section>
+<section id="node-color-coding">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">Node color coding</a><a class="headerlink" href="#node-color-coding" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Category</p></th>
+<th class="head"><p>Color</p></th>
+<th class="head"><p>Examples</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PS clock</p></td>
+<td><p>Brown</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">zynqmp_clk</span></code>, <code class="docutils literal notranslate"><span class="pre">clkc</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Clock chip</p></td>
+<td><p>Blue</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">hmc7044</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9523</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9528</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Transceiver (XCVR)</p></td>
+<td><p>Purple</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081_adxcvr_rx</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>JESD204</p></td>
+<td><p>Green</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081_jesd204_rx</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Converter core</p></td>
+<td><p>Red</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081_core_rx</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>DMA</p></td>
+<td><p>Gray</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081_rx_dma</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="edge-color-coding">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Edge color coding</a><a class="headerlink" href="#edge-color-coding" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Clock Name</p></th>
+<th class="head"><p>Style</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">device_clk</span></code></p></td>
+<td><p>Blue solid</p></td>
+<td><p>Device clock from XCVR to JESD controller</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">lane_clk</span></code></p></td>
+<td><p>Green solid</p></td>
+<td><p>Lane clock from XCVR to JESD controller</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">conv</span></code></p></td>
+<td><p>Orange solid</p></td>
+<td><p>Reference clock from clock chip to XCVR</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sampl_clk</span></code></p></td>
+<td><p>Purple solid</p></td>
+<td><p>Sampling clock from PHY to TPL core</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">s_axi_aclk</span></code></p></td>
+<td><p>Gray dashed</p></td>
+<td><p>AXI register access clock (PS → peripherals)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="example-dot-output">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">Example DOT output</a><a class="headerlink" href="#example-dot-output" title="Link to this heading"></a></h3>
+<div class="highlight-dot notranslate"><div class="highlight"><pre><span></span><span class="k">digraph</span><span class="w"> </span><span class="nt">clock_topology</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;fmcdaq2 — clock topology&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="na">rankdir</span><span class="p">=</span><span class="s">LR</span><span class="p">;</span>
+<span class="w">    </span><span class="k">node</span><span class="w"> </span><span class="p">[</span><span class="na">style</span><span class="p">=</span><span class="s2">&quot;filled,rounded&quot;</span><span class="w"> </span><span class="na">fontname</span><span class="p">=</span><span class="s2">&quot;monospace&quot;</span><span class="p">];</span>
+
+<span class="w">    </span><span class="nt">zynqmp_clk</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;zynqmp_clk&quot;</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#7a3800&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">clk0_ad9523</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;clk0_ad9523\n(ad9523-1)&quot;</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#1a3d5c&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">axi_ad9680_adxcvr</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;axi_ad9680_adxcvr&quot;</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#4a1a5c&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">axi_ad9680_jesd204_rx</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;axi_ad9680_jesd204_rx&quot;</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#1a4a20&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">adc0_ad9680</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;adc0_ad9680\n(ad9680)&quot;</span><span class="w"> </span><span class="na">fillcolor</span><span class="p">=</span><span class="s2">&quot;#5c1a1a&quot;</span><span class="p">];</span>
+
+<span class="w">    </span><span class="nt">clk0_ad9523</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">adc0_ad9680</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;adc_clk&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">clk0_ad9523</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">axi_ad9680_adxcvr</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;conv&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">axi_ad9680_adxcvr</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">axi_ad9680_jesd204_rx</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;device_clk&quot;</span><span class="p">];</span>
+<span class="w">    </span><span class="nt">zynqmp_clk</span><span class="w"> </span><span class="o">-&gt;</span><span class="w"> </span><span class="nt">axi_ad9680_jesd204_rx</span><span class="w"> </span><span class="p">[</span><span class="na">label</span><span class="p">=</span><span class="s2">&quot;s_axi_aclk&quot;</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s">dashed</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id1">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Generating from Python</a><a class="headerlink" href="#id1" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span>
+    <span class="n">emit_clock_graphs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DOT: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;clock_dot&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;D2:  </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;clock_d2&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># SVG files present if rendering tools are on PATH:</span>
+<span class="k">if</span> <span class="s2">&quot;clock_dot_svg&quot;</span> <span class="ow">in</span> <span class="n">result</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SVG: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;clock_dot_svg&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="installing-rendering-tools">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Installing rendering tools</a><a class="headerlink" href="#installing-rendering-tools" title="Link to this heading"></a></h3>
+<p>DOT and D2 are optional — the <code class="docutils literal notranslate"><span class="pre">.dot</span></code> and <code class="docutils literal notranslate"><span class="pre">.d2</span></code> text files are
+always written.  Install the tools to get SVG output:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Graphviz (DOT → SVG)</span>
+sudo<span class="w"> </span>apt<span class="w"> </span>install<span class="w"> </span>graphviz
+
+<span class="c1"># D2 (D2 → SVG)</span>
+curl<span class="w"> </span>-fsSL<span class="w"> </span>https://d2lang.com/install.sh<span class="w"> </span><span class="p">|</span><span class="w"> </span>sh<span class="w"> </span>-s<span class="w"> </span>--
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dts-structural-linter">
+<h2><a class="toc-backref" href="#id15" role="doc-backlink">DTS structural linter</a><a class="headerlink" href="#dts-structural-linter" title="Link to this heading"></a></h2>
+<p>The built-in linter checks the generated DTS for structural issues
+before flashing to hardware.</p>
+<p>Checks include:</p>
+<ul class="simple">
+<li><p>Unresolved phandle references (<code class="docutils literal notranslate"><span class="pre">&lt;&amp;missing_label&gt;</span></code>)</p></li>
+<li><p>SPI chip-select conflicts (two devices at the same CS on one bus)</p></li>
+<li><p>Clock cell count mismatches (<code class="docutils literal notranslate"><span class="pre">#clock-cells</span></code> vs clock phandle args)</p></li>
+<li><p>Missing <code class="docutils literal notranslate"><span class="pre">compatible</span></code> strings</p></li>
+<li><p>Duplicate node labels</p></li>
+</ul>
+<section id="example-lint-output">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink">Example lint output</a><a class="headerlink" href="#example-lint-output" title="Link to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;diagnostics&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;error&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;unresolved-phandle&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&amp;axi_adrv9009_core_rx_obs&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Label &#39;axi_adrv9009_core_rx_obs&#39; not found in base DTS&quot;</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;severity&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;warning&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;rule&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;spi-cs-conflict&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;node&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&amp;spi0&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;message&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Duplicate chip-select 0 on spi0 bus&quot;</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;summary&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;errors&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;warnings&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;info&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;total&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Generating from Python</a><a class="headerlink" href="#id2" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span>
+    <span class="n">lint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">strict_lint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># Raises DtsLintError on errors</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Diagnostics: </span><span class="si">{</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;diagnostics&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="c1"># out/&lt;name&gt;_diagnostics.json</span>
+</pre></div>
+</div>
+</section>
+<section id="id3">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">Generating from CLI</a><a class="headerlink" href="#id3" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run with lint warnings</span>
+adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>--profile<span class="w"> </span>adrv9009_zcu102<span class="w"> </span>--lint<span class="w"> </span>-o<span class="w"> </span>out/
+
+<span class="c1"># Fail on lint errors</span>
+adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>--profile<span class="w"> </span>adrv9009_zcu102<span class="w"> </span>--strict-lint<span class="w"> </span>-o<span class="w"> </span>out/
+</pre></div>
+</div>
+</section>
+</section>
+<section id="combining-all-outputs">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Combining all outputs</a><a class="headerlink" href="#combining-all-outputs" title="Link to this heading"></a></h2>
+<p>Enable everything at once:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span>
+    <span class="n">emit_report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">emit_clock_graphs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">lint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This produces:</p>
+<pre  class="mermaid">
+        flowchart TB
+  XSA[&quot;design.xsa&quot;] --&gt; Pipeline[&quot;XsaPipeline.run()&quot;]
+  Pipeline --&gt; DTS[&quot;.dts merged&quot;]
+  Pipeline --&gt; DTSO[&quot;.dtso overlay&quot;]
+  Pipeline --&gt; Report[&quot;_report.html\n(interactive D3.js)&quot;]
+  Pipeline --&gt; DOT[&quot;_clocks.dot\n+ .dot.svg&quot;]
+  Pipeline --&gt; D2[&quot;_clocks.d2\n+ .d2.svg&quot;]
+  Pipeline --&gt; Diag[&quot;_diagnostics.json&quot;]
+
+  style DTS fill:#3a7d44,color:#fff
+  style DTSO fill:#3a7d44,color:#fff
+  style Report fill:#0067b9,color:#fff
+  style DOT fill:#c8940a,color:#fff
+  style D2 fill:#c8940a,color:#fff
+  style Diag fill:#b94000,color:#fff
+    </pre></section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="xsa.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">XSA to Device Tree</a>
+    <a href="examples.html" title="Next document (Alt+Shift+RightArrow)" class="next">Examples</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

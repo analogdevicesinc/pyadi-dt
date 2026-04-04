@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This example walks through the full XSA-to-overlay pipeline for the AD9081-FMCA-EBZ evaluation board on the ZCU102 (Zynq UltraScale+)." name="description" />
+
+    <title>XSA → Device Tree: AD9081 on ZCU102 &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="BoardModel: Unified Device Tree Generation" href="board_model_usage.html" />
+    <link rel="prev" title="XSA + adijif Tutorial" href="xsa_adijif_tutorial.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">XSA → Device Tree: AD9081 on ZCU102</a><ul>
+<li><a class="reference internal" href="#design-overview">Design Overview</a></li>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#running-the-example">Running the Example</a></li>
+<li><a class="reference internal" href="#generated-overlay">Generated Overlay</a></li>
+<li><a class="reference internal" href="#pipeline-walkthrough">Pipeline Walkthrough</a><ul>
+<li><a class="reference internal" href="#step-1-parse-and-patch-the-xsa">Step 1 – Parse and patch the XSA</a></li>
+<li><a class="reference internal" href="#step-2-resolve-jesd204-parameters-with-adijif">Step 2 – Resolve JESD204 parameters with adijif</a></li>
+<li><a class="reference internal" href="#step-3-render-and-write-the-overlay">Step 3 – Render and write the overlay</a></li>
+<li><a class="reference internal" href="#ad9081-link-mode-selection-behavior">AD9081 link-mode selection behavior</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-pipeline-with-sdtgen">Full Pipeline (with sdtgen)</a></li>
+<li><a class="reference internal" href="#compiling-the-overlay">Compiling the Overlay</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1" checked=""/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../examples.html">Examples</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="xsa-device-tree-ad9081-on-zcu102">
+<h1>XSA → Device Tree: AD9081 on ZCU102<a class="headerlink" href="#xsa-device-tree-ad9081-on-zcu102" title="Link to this heading"></a></h1>
+<p>This example walks through the full XSA-to-overlay pipeline for the
+<strong>AD9081-FMCA-EBZ</strong> evaluation board on the <strong>ZCU102</strong> (Zynq UltraScale+).</p>
+<p>The script lives at <code class="docutils literal notranslate"><span class="pre">examples/xsa/ad9081_zcu102_xsa_parse.py</span></code> and uses
+<code class="docutils literal notranslate"><span class="pre">examples/xsa/system_top.xsa</span></code> — the Vivado 2023.2 reference design bitfile
+for this board.</p>
+<section id="design-overview">
+<h2>Design Overview<a class="headerlink" href="#design-overview" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Item</p></th>
+<th class="head"><p>Value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>FPGA</p></td>
+<td><p>xczu9eg-ffvb1156-2 (ZCU102)</p></td>
+</tr>
+<tr class="row-odd"><td><p>Converter</p></td>
+<td><p>AD9081 (MxFE), SPI-controlled</p></td>
+</tr>
+<tr class="row-even"><td><p>JESD204 RX</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_mxfe_rx_jesd_rx_axi</span></code> – 4 lanes, <code class="docutils literal notranslate"><span class="pre">0x84A90000</span></code>, IRQ 54</p></td>
+</tr>
+<tr class="row-odd"><td><p>JESD204 TX</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">axi_mxfe_tx_jesd_tx_axi</span></code> – 4 lanes, <code class="docutils literal notranslate"><span class="pre">0x84B90000</span></code>, IRQ 55</p></td>
+</tr>
+<tr class="row-even"><td><p>JESD mode</p></td>
+<td><p>204B, M=8 L=4 S=1 Np=16 → <strong>F=4, K=32</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p>Clock gen</p></td>
+<td><p>HMC7044 external – RX ch 12, TX ch 13</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;adidt[xsa]&quot;</span>
+pip<span class="w"> </span>install<span class="w"> </span>pyadi-jif<span class="o">[</span>cplex<span class="o">]</span><span class="w">   </span><span class="c1"># or [gekko] – solver only needed for clock opt</span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-example">
+<h2>Running the Example<a class="headerlink" href="#running-the-example" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/xsa/ad9081_zcu102_xsa_parse.py
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>============================================================
+AD9081 + ZCU102: XSA → Device Tree overlay
+============================================================
+
+Step 1 – Parsing XSA …
+  FPGA part  : xczu9eg-ffvb1156-2
+  JESD RX    : axi_mxfe_rx_jesd_rx_axi  base=0x84a90000  lanes=4
+  JESD TX    : axi_mxfe_tx_jesd_tx_axi  base=0x84b90000  lanes=4
+  Clock gen  : hmc7044_car  clocks=[...]
+
+Step 2 – Resolving JESD204 parameters via adijif …
+JESD mode (RX): mode=10.0  F=4 K=32 L=4 M=8
+JESD mode (TX): mode=9     F=4 K=32 L=4 M=8
+
+Step 3 – Generating DTS overlay …
+Overlay written to: examples/xsa/output/ad9081_zcu102.dtso
+</pre></div>
+</div>
+</section>
+<section id="generated-overlay">
+<h2>Generated Overlay<a class="headerlink" href="#generated-overlay" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">examples/xsa/output/ad9081_zcu102.dtso</span></code>:</p>
+<div class="highlight-dts notranslate"><div class="highlight"><pre><span></span><span class="cp">/dts-v1/</span><span class="p">;</span>
+<span class="cp">/plugin/</span><span class="p">;</span>
+
+<span class="o">&amp;</span><span class="nf">amba</span><span class="cm"> </span><span class="p">{</span>
+
+<span class="w">	</span><span class="nl">axi_mxfe_rx_jesd_rx_axi</span><span class="p">:</span><span class="w"> </span><span class="nf">axi-jesd204-rx</span><span class="o">@</span><span class="mi">84a90000</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;adi,axi-jesd204-rx-1.0&quot;</span><span class="p">;</span>
+<span class="w">		</span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x84a90000</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x1000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="w"> </span><span class="mi">54</span><span class="w"> </span><span class="na">IRQ_TYPE_LEVEL_HIGH</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">clocks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044_car</span><span class="w"> </span><span class="mi">0</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044</span><span class="w"> </span><span class="mi">12</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044_car</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">clock-names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;s_axi_aclk&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;device_clk&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lane_clk&quot;</span><span class="p">;</span>
+
+<span class="w">		</span><span class="n">adi</span><span class="p">,</span><span class="n">octets-per-frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">4</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">adi</span><span class="p">,</span><span class="n">frames-per-multiframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">32</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">		</span><span class="o">#</span><span class="n">sound-dai-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">	</span><span class="p">};</span>
+
+<span class="w">	</span><span class="nl">axi_mxfe_tx_jesd_tx_axi</span><span class="p">:</span><span class="w"> </span><span class="nf">axi-jesd204-tx</span><span class="o">@</span><span class="mi">84b90000</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">		</span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;adi,axi-jesd204-tx-1.0&quot;</span><span class="p">;</span>
+<span class="w">		</span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x84b90000</span><span class="w"> </span><span class="mh">0x0</span><span class="w"> </span><span class="mh">0x1000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="w"> </span><span class="mi">55</span><span class="w"> </span><span class="na">IRQ_TYPE_LEVEL_HIGH</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">clocks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044_car</span><span class="w"> </span><span class="mi">0</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044</span><span class="w"> </span><span class="mi">13</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">hmc7044_car</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">clock-names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;s_axi_aclk&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;device_clk&quot;</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;lane_clk&quot;</span><span class="p">;</span>
+
+<span class="w">		</span><span class="n">adi</span><span class="p">,</span><span class="n">octets-per-frame</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">4</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">		</span><span class="n">adi</span><span class="p">,</span><span class="n">frames-per-multiframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">32</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">		</span><span class="o">#</span><span class="n">sound-dai-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">	</span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</section>
+<section id="pipeline-walkthrough">
+<h2>Pipeline Walkthrough<a class="headerlink" href="#pipeline-walkthrough" title="Link to this heading"></a></h2>
+<section id="step-1-parse-and-patch-the-xsa">
+<h3>Step 1 – Parse and patch the XSA<a class="headerlink" href="#step-1-parse-and-patch-the-xsa" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">XsaParser.parse()</span></code> extracts <code class="docutils literal notranslate"><span class="pre">axi_jesd204_rx</span></code> and <code class="docutils literal notranslate"><span class="pre">axi_jesd204_tx</span></code> modules
+from the hardware handoff XML embedded in the XSA ZIP archive.</p>
+<p>The Vivado 2023.2 HWH uses a slightly older schema than the parser’s primary
+fixture. The script patches the topology with the correct values:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Parser reads</p></th>
+<th class="head"><p>Actual HWH element</p></th>
+<th class="head"><p>Patched value</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fpga_part</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;DEVICE&gt;</span></code> child</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;SYSTEMINFO</span> <span class="pre">DEVICE=&quot;...&quot;&gt;</span></code> attr</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">xczu9eg-ffvb1156-2</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">num_lanes</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C_NUM_LANES</span></code> param</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">NUM_LANES</span></code> param</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">base_addr</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;MEMRANGE&gt;</span></code> child</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C_BASEADDR</span></code> param</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0x84A90000</span></code> / <code class="docutils literal notranslate"><span class="pre">0x84B90000</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">irq</span></code></p></td>
+<td><p>port named <code class="docutils literal notranslate"><span class="pre">interrupt</span></code></p></td>
+<td><p>port named <code class="docutils literal notranslate"><span class="pre">irq</span></code></p></td>
+<td><p>54 / 55</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A synthetic <code class="docutils literal notranslate"><span class="pre">ClkgenInstance</span></code> named <code class="docutils literal notranslate"><span class="pre">hmc7044_car</span></code> is added so <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code>
+can resolve the device-clock nets to a DTS label. The HMC7044 drives both
+clocks externally — there is no <code class="docutils literal notranslate"><span class="pre">axi_clkgen</span></code> in this design.</p>
+</section>
+<section id="step-2-resolve-jesd204-parameters-with-adijif">
+<h3>Step 2 – Resolve JESD204 parameters with adijif<a class="headerlink" href="#step-2-resolve-jesd204-parameters-with-adijif" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">adijif</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jif</span>
+
+<span class="n">sys</span> <span class="o">=</span> <span class="n">jif</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="s2">&quot;ad9081&quot;</span><span class="p">,</span> <span class="s2">&quot;hmc7044&quot;</span><span class="p">,</span> <span class="s2">&quot;xilinx&quot;</span><span class="p">,</span> <span class="mf">122.88e6</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;CPLEX&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">fpga</span><span class="o">.</span><span class="n">setup_by_dev_kit_name</span><span class="p">(</span><span class="s2">&quot;zcu102&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">sample_clock</span> <span class="o">=</span> <span class="mf">4e9</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">)</span>   <span class="c1"># 250 MSPS</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">dac</span><span class="o">.</span><span class="n">sample_clock</span> <span class="o">=</span> <span class="mf">12e9</span> <span class="o">/</span> <span class="p">(</span><span class="mi">8</span> <span class="o">*</span> <span class="mi">6</span><span class="p">)</span>  <span class="c1"># 250 MSPS</span>
+<span class="c1"># … configure datapath …</span>
+
+<span class="n">modes_rx</span> <span class="o">=</span> <span class="n">jif</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_jesd_mode_from_params</span><span class="p">(</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">Np</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">jesd_class</span><span class="o">=</span><span class="s2">&quot;jesd204b&quot;</span>
+<span class="p">)</span>
+<span class="c1"># → mode 10.0: F=4, K=32</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">get_jesd_mode_from_params</span></code> performs a pure table lookup against the AD9081
+operating modes — it does <strong>not</strong> invoke the constraint solver, so it works
+without cpoptimizer or gekko installed.</p>
+</section>
+<section id="step-3-render-and-write-the-overlay">
+<h3>Step 3 – Render and write the overlay<a class="headerlink" href="#step-3-render-and-write-the-overlay" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.node_builder</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeBuilder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">DtsMerger</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;jesd&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;rx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">},</span> <span class="s2">&quot;tx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">}},</span>
+    <span class="s2">&quot;clock&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;hmc7044_rx_channel&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;hmc7044_tx_channel&quot;</span><span class="p">:</span> <span class="mi">13</span><span class="p">},</span>
+<span class="p">}</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">NodeBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+<span class="n">DtsMerger</span><span class="p">()</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">base_dts</span><span class="p">,</span> <span class="n">nodes</span><span class="p">,</span> <span class="n">output_dir</span><span class="p">,</span> <span class="s2">&quot;ad9081_zcu102&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> renders the Jinja2 templates (<code class="docutils literal notranslate"><span class="pre">jesd204_fsm.tmpl</span></code>) into DTS
+node strings. <code class="docutils literal notranslate"><span class="pre">DtsMerger</span></code> wraps them in a <code class="docutils literal notranslate"><span class="pre">/plugin/;</span></code> overlay targeting the
+<code class="docutils literal notranslate"><span class="pre">&amp;amba</span></code> bus label.</p>
+</section>
+<section id="ad9081-link-mode-selection-behavior">
+<h3>AD9081 link-mode selection behavior<a class="headerlink" href="#ad9081-link-mode-selection-behavior" title="Link to this heading"></a></h3>
+<p>For AD9081 MXFE pipelines, JESD link modes are no longer hardcoded. The
+builder resolves mode values in this order:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;ad9081&quot;][&quot;rx_link_mode&quot;]</span></code> / <code class="docutils literal notranslate"><span class="pre">cfg[&quot;ad9081&quot;][&quot;tx_link_mode&quot;]</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;rx&quot;][&quot;mode&quot;]</span></code> / <code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;tx&quot;][&quot;mode&quot;]</span></code></p></li>
+<li><p>Inference from JESD <code class="docutils literal notranslate"><span class="pre">(M,</span> <span class="pre">L)</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">4)</span></code> -&gt; RX <code class="docutils literal notranslate"><span class="pre">17</span></code>, TX <code class="docutils literal notranslate"><span class="pre">18</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">8)</span></code> -&gt; RX <code class="docutils literal notranslate"><span class="pre">10</span></code>, TX <code class="docutils literal notranslate"><span class="pre">11</span></code></p></li>
+</ul>
+</li>
+</ol>
+<p>If no explicit mode is provided and <code class="docutils literal notranslate"><span class="pre">(M,</span> <span class="pre">L)</span></code> is unsupported, generation fails
+with <code class="docutils literal notranslate"><span class="pre">ConfigError</span></code> so invalid link mode assumptions are not emitted into DTS.</p>
+</section>
+</section>
+<section id="full-pipeline-with-sdtgen">
+<h2>Full Pipeline (with sdtgen)<a class="headerlink" href="#full-pipeline-with-sdtgen" title="Link to this heading"></a></h2>
+<p>When lopper is installed the <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">xsa2dt</span></code> command runs all five stages,
+including SDT base-DTS generation and HTML visualisation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>examples/xsa/system_top.xsa<span class="w"> </span>config.json<span class="w"> </span><span class="se">\</span>
+<span class="w">        </span>--output-dir<span class="w"> </span>out/ad9081_zcu102
+</pre></div>
+</div>
+<p>Where <code class="docutils literal notranslate"><span class="pre">config.json</span></code> contains:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jesd&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;rx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;hmc7044_rx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hmc7044_tx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="compiling-the-overlay">
+<h2>Compiling the Overlay<a class="headerlink" href="#compiling-the-overlay" title="Link to this heading"></a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dtc<span class="w"> </span>-@<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-o<span class="w"> </span>examples/xsa/output/ad9081_zcu102.dtbo<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>examples/xsa/output/ad9081_zcu102.dtso
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">-&#64;</span></code> flag preserves external symbol references (the <code class="docutils literal notranslate"><span class="pre">&amp;amba</span></code> phandle)
+required for overlay application at runtime via <code class="docutils literal notranslate"><span class="pre">configfs</span></code>.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="xsa_adijif_tutorial.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">XSA + adijif Tutorial</a>
+    <a href="board_model_usage.html" title="Next document (Alt+Shift+RightArrow)" class="next">BoardModel: Unified Device Tree Generation</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

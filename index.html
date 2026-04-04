@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="pyadi-dt is a Python library and CLI for generating, inspecting, and managing Linux device trees for Analog Devices hardware — data converters, clock distribution ICs, RF transceivers, and FPGA-based JESD204 data paths." name="description" />
+
+    <title>ADI Device Tree Utilities &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Quick Start" href="quickstart.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="#">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">ADI Device Tree Utilities</a><ul>
+<li><a class="reference internal" href="#key-capabilities">Key capabilities</a></li>
+<li><a class="reference internal" href="#supported-hardware">Supported hardware</a></li>
+<li><a class="reference internal" href="#where-to-start">Where to start</a></li>
+<li><a class="reference internal" href="#links">Links</a></li>
+<li><a class="reference internal" href="#table-of-contents">Table of contents</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="#">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="adi-device-tree-utilities">
+<h1>ADI Device Tree Utilities<a class="headerlink" href="#adi-device-tree-utilities" title="Link to this heading"></a></h1>
+<p><strong>pyadi-dt</strong> is a Python library and CLI for generating, inspecting, and
+managing Linux device trees for <strong>Analog Devices</strong> hardware — data converters,
+clock distribution ICs, RF transceivers, and FPGA-based JESD204 data paths.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/analogdevicesinc/pyadi-dt.git
+</pre></div>
+</div>
+<section id="key-capabilities">
+<h2>Key capabilities<a class="headerlink" href="#key-capabilities" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>XSA-to-DTS pipeline</strong> — Generate complete device trees from Vivado
+<code class="docutils literal notranslate"><span class="pre">.xsa</span></code> archives using built-in board profiles.  No manual DTS editing.</p></li>
+<li><p><strong>BoardModel API</strong> — Construct, inspect, and modify board models
+programmatically before rendering to DTS.  Both the XSA pipeline and
+manual board classes produce the same editable <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code>.</p></li>
+<li><p><strong>Device tree inspection</strong> — Read properties from live hardware over SSH,
+browse the tree interactively, or update SD card boot files.</p></li>
+<li><p><strong>Clock and JESD configuration</strong> — Apply <code class="docutils literal notranslate"><span class="pre">pyadi-jif</span></code>-solved parameters
+directly to the device tree from JSON.</p></li>
+<li><p><strong>Structural linter</strong> — Catch unresolved phandle references, SPI
+chip-select conflicts, and clock-cell mismatches before flashing.</p></li>
+</ul>
+</section>
+<section id="supported-hardware">
+<h2>Supported hardware<a class="headerlink" href="#supported-hardware" title="Link to this heading"></a></h2>
+<p>The Kuiper 2023-R2 release contains <strong>88 board projects</strong> across Xilinx/AMD
+and Intel FPGA platforms.  Use <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">kuiper-boards</span></code> to list all boards
+and their support status.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 30.0%" />
+<col style="width: 35.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Converter Family</p></th>
+<th class="head"><p>Platforms</p></th>
+<th class="head"><p>HW Validated</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AD9081 / AD9082 / AD9083 (MxFE)</p></td>
+<td><p>ZCU102, ZC706, VPK180</p></td>
+<td><p>ZCU102 ✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>AD9084</p></td>
+<td><p>VCU118, VPK180</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>AD9172 (DAC)</p></td>
+<td><p>ZCU102</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>ADRV9009 / ADRV9025 / ADRV9008</p></td>
+<td><p>ZCU102, ZC706, Arria10, ZU11EG</p></td>
+<td><p>ZCU102 ✓</p></td>
+</tr>
+<tr class="row-even"><td><p>ADRV937x / ADRV9002</p></td>
+<td><p>ZCU102, ZC706, Arria10, Zedboard</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>AD936x / FMComms2-5 (SDR)</p></td>
+<td><p>Zedboard, ZC702, ZC706, ZCU102</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>FMCDAQ2 (AD9680 + AD9144)</p></td>
+<td><p>ZCU102, ZC706, Arria10</p></td>
+<td><p>ZCU102 ✓</p></td>
+</tr>
+<tr class="row-odd"><td><p>FMCDAQ3 (AD9680 + AD9152)</p></td>
+<td><p>ZCU102, ZC706</p></td>
+<td><p>ZCU102 ✓</p></td>
+</tr>
+<tr class="row-even"><td><p>Precision ADCs (AD7768, AD9467, etc.)</p></td>
+<td><p>Zedboard</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Raspberry Pi sensors</p></td>
+<td><p>RPi 3/4/5</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="where-to-start">
+<h2>Where to start<a class="headerlink" href="#where-to-start" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><strong>New to pyadi-dt?</strong> See the <a class="reference internal" href="quickstart.html"><span class="doc">Quick Start</span></a> for installation,
+first commands, and code examples.</p></li>
+<li><p><strong>XSA workflow?</strong> See <a class="reference internal" href="examples/xsa_tutorial.html"><span class="doc">XSA Flow Tutorials</span></a> for a step-by-step
+walkthrough of Vivado XSA-based generation.</p></li>
+<li><p><strong>Non-XSA workflow?</strong> See <a class="reference internal" href="board_class_workflow.html"><span class="doc">Device Tree Generation</span></a> for generating
+device trees without Vivado (Raspberry Pi, Intel FPGA, custom boards).</p></li>
+<li><p><strong>BoardModel API?</strong> See <a class="reference internal" href="api/model.html"><span class="doc">Board Model Module</span></a> for the unified board model,
+renderer, and context builders.</p></li>
+<li><p><strong>Adding a new board?</strong> See <a class="reference internal" href="xsa_developer.html"><span class="doc">XSA Pipeline — Developer Guide</span></a> for the pipeline
+architecture and step-by-step guide.</p></li>
+</ul>
+</section>
+<section id="links">
+<h2>Links<a class="headerlink" href="#links" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt" target="_blank">Source</a></p></li>
+<li><p><a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/issues" target="_blank">Issue tracker</a></p></li>
+<li><p><a class="icon link reference external" href="https://ez.analog.com/sw-interface-tools/f/q-a" target="_blank">EngineerZone forum</a></p></li>
+<li><p><a class="icon link reference external" href="http://devicetree-org.github.io/devicetree-specification" target="_blank">DeviceTree specification</a></p></li>
+</ul>
+</section>
+<section id="table-of-contents">
+<h2>Table of contents<a class="headerlink" href="#table-of-contents" title="Link to this heading"></a></h2>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">User Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#generate-a-device-tree-from-an-xsa-file">Generate a device tree from an XSA file</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#generate-a-device-tree-overlay-from-python">Generate a device tree overlay from Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#inspect-a-device-tree-on-live-hardware">Inspect a device tree on live hardware</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#configure-clocks-from-json">Configure clocks from JSON</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quickstart.html#next-steps">Next steps</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="board_class_workflow.html#example-adis16495-imu-on-raspberry-pi">Example: ADIS16495 IMU on Raspberry Pi</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_class_workflow.html#editing-the-model-before-rendering">Editing the model before rendering</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_class_workflow.html#multiple-devices-on-one-board">Multiple devices on one board</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_class_workflow.html#scaling-up-fpga-boards-with-jesd204">Scaling up: FPGA boards with JESD204</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_class_workflow.html#available-components">Available components</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#base-dts-and-overlay-structure">Base DTS and Overlay Structure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#hardware-test-flow">Hardware Test Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#usage">Usage</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#python-api">Python API</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#using-adijif-pyadi-jif-with-the-xsa-flow">Using adijif (pyadi-jif) With the XSA Flow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#configuration">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#supported-ip-cores">Supported IP Cores</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#outputs">Outputs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#clock-topology-graphs">Clock Topology Graphs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html#exceptions">Exceptions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#html-topology-report">HTML topology report</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#clock-tree-diagrams">Clock-tree diagrams</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#dts-structural-linter">DTS structural linter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="visualization.html#combining-all-outputs">Combining all outputs</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="access.html#supported-modes">Supported modes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="access.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="parts.html#support-components">Support Components</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parts.html#example-with-json-from-pyadi-jif">Example with JSON from pyadi-jif</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="utils.html#sd-card-boot-files">SD Card BOOT Files</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Developer Guide</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-1-parse-kernel-bindings">Step 1: Parse kernel bindings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-2-audit-against-existing-templates">Step 2: Audit against existing templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-3-generate-starter-templates">Step 3: Generate starter templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-4-refine-the-template">Step 4: Refine the template</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-5-write-the-context-builder">Step 5: Write the context builder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-6-add-a-component-factory">Step 6: Add a component factory</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#step-7-write-tests">Step 7: Write tests</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#reference-what-the-tools-extract">Reference: what the tools extract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="creating_templates.html#tips">Tips</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#architecture">Architecture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#nodebuilder-internals">NodeBuilder internals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#templates">Templates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#context-builders">Context builders</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#board-specific-config-extraction">Board-specific config extraction</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#adding-a-new-component">Adding a new component</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#adding-a-new-board">Adding a new board</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#utility-helpers">Utility helpers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_developer.html#testing-conventions">Testing conventions</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<div class="toctree-wrapper compound">
+<p class="caption" role="heading"><span class="caption-text">Reference</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cli.html#cli-reference">CLI Reference</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/index.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <div></div>
+    <a href="quickstart.html" title="Next document (Alt+Shift+RightArrow)" class="next">Quick Start</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

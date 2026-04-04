@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="There are two paths available for device tree generation.  The first path is to use the BoardModel API to generate device tree overlays directly from Python. The second path is to use the BoardModel API to generate device tree overlays from a Vivado .xsa file. If you are connecting an ADI device to a Raspberry Pi, BeagleBone, Intel FPGA, or any platform that does not use Vivado, you can generate device tree overlays directly from Python using the BoardModel API." name="description" />
+
+    <title>Device Tree Generation &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="XSA to Device Tree" href="xsa.html" />
+    <link rel="prev" title="Quick Start" href="quickstart.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Device Tree Generation</a><ul>
+<li><a class="reference internal" href="#example-adis16495-imu-on-raspberry-pi">Example: ADIS16495 IMU on Raspberry Pi</a><ul>
+<li><a class="reference internal" href="#step-1-build-a-boardmodel">Step 1: Build a BoardModel</a></li>
+<li><a class="reference internal" href="#step-2-render-to-dts">Step 2: Render to DTS</a></li>
+<li><a class="reference internal" href="#step-3-write-to-a-file">Step 3: Write to a file</a></li>
+<li><a class="reference internal" href="#step-4-compile-and-deploy">Step 4: Compile and deploy</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#editing-the-model-before-rendering">Editing the model before rendering</a></li>
+<li><a class="reference internal" href="#multiple-devices-on-one-board">Multiple devices on one board</a></li>
+<li><a class="reference internal" href="#scaling-up-fpga-boards-with-jesd204">Scaling up: FPGA boards with JESD204</a></li>
+<li><a class="reference internal" href="#available-components">Available components</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="device-tree-generation">
+<h1>Device Tree Generation<a class="headerlink" href="#device-tree-generation" title="Link to this heading"></a></h1>
+<p>There are two paths available for device tree generation.  The first path is to use the <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> API to generate device tree overlays directly from Python. The second path is to use the <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> API to generate device tree overlays from a Vivado <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> file. If you are connecting an ADI device to a Raspberry Pi, BeagleBone, Intel FPGA, or
+any platform that does not use Vivado, you can generate device tree
+overlays directly from Python using the <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> API.</p>
+<p>This guide walks through the simplest case — an ADIS16495 IMU on a
+Raspberry Pi — then shows how the same approach scales to more complex
+boards with clock chips, JESD204 links, and FPGA transceivers. It is recommened to follow the XSA workflow if you are using Vivado, but it is not required. See <a class="reference internal" href="xsa.html"><span class="doc">XSA to Device Tree</span></a> for more information.</p>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#example-adis16495-imu-on-raspberry-pi" id="id1">Example: ADIS16495 IMU on Raspberry Pi</a></p>
+<ul>
+<li><p><a class="reference internal" href="#step-1-build-a-boardmodel" id="id2">Step 1: Build a BoardModel</a></p></li>
+<li><p><a class="reference internal" href="#step-2-render-to-dts" id="id3">Step 2: Render to DTS</a></p></li>
+<li><p><a class="reference internal" href="#step-3-write-to-a-file" id="id4">Step 3: Write to a file</a></p></li>
+<li><p><a class="reference internal" href="#step-4-compile-and-deploy" id="id5">Step 4: Compile and deploy</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#editing-the-model-before-rendering" id="id6">Editing the model before rendering</a></p></li>
+<li><p><a class="reference internal" href="#multiple-devices-on-one-board" id="id7">Multiple devices on one board</a></p></li>
+<li><p><a class="reference internal" href="#scaling-up-fpga-boards-with-jesd204" id="id8">Scaling up: FPGA boards with JESD204</a></p></li>
+<li><p><a class="reference internal" href="#available-components" id="id9">Available components</a></p></li>
+</ul>
+</nav>
+<section id="example-adis16495-imu-on-raspberry-pi">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Example: ADIS16495 IMU on Raspberry Pi</a><a class="headerlink" href="#example-adis16495-imu-on-raspberry-pi" title="Link to this heading"></a></h2>
+<p>The <a class="icon link reference external" href="https://www.analog.com/adis16495" target="_blank">ADIS16495</a> is a 6-DOF inertial
+measurement unit connected via SPI.  Its device tree node is simple:
+a compatible string, SPI mode flags, and an interrupt GPIO.</p>
+<section id="step-1-build-a-boardmodel">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Step 1: Build a BoardModel</a><a class="headerlink" href="#step-1-build-a-boardmodel" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModel</span><span class="p">,</span> <span class="n">components</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">BoardModel</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rpi5_adis16495&quot;</span><span class="p">,</span>
+    <span class="n">platform</span><span class="o">=</span><span class="s2">&quot;rpi5&quot;</span><span class="p">,</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">adis16495</span><span class="p">(</span>
+            <span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span>
+            <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">gpio_label</span><span class="o">=</span><span class="s2">&quot;gpio&quot;</span><span class="p">,</span>
+            <span class="n">interrupt_gpio</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">components</span></code> module provides pre-configured factories for each
+supported device — no need to specify template filenames or role strings.</p>
+<p>That is the entire model.  No JESD links, no FPGA config, no clock chip —
+just one SPI device.</p>
+</section>
+<section id="step-2-render-to-dts">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Step 2: Render to DTS</a><a class="headerlink" href="#step-2-render-to-dts" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.renderer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModelRenderer</span>
+
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="n">overlay_content</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;converters&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">overlay_content</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Output:</p>
+<div class="highlight-dts notranslate"><div class="highlight"><pre><span></span><span class="o">&amp;</span><span class="nf">spi0</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;okay&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="nl">imu0</span><span class="p">:</span><span class="w"> </span><span class="nf">adis16495</span><span class="o">@</span><span class="mi">0</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;adi,adis16495-1&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="n">spi-max-frequency</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2000000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="n">spi-cpol</span><span class="p">;</span>
+<span class="w">        </span><span class="n">spi-cpha</span><span class="p">;</span>
+<span class="w">        </span><span class="n">interrupt-parent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">gpio</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="n">interrupts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">25</span><span class="w"> </span><span class="na">IRQ_TYPE_EDGE_FALLING</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</section>
+<section id="step-3-write-to-a-file">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Step 3: Write to a file</a><a class="headerlink" href="#step-3-write-to-a-file" title="Link to this heading"></a></h3>
+<p>Wrap the overlay in DTS headers and write it out:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s2">&quot;adis16495-rpi5.dts&quot;</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;/dts-v1/;</span><span class="se">\n</span><span class="s2">/plugin/;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">node_list</span> <span class="ow">in</span> <span class="n">nodes</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">node_list</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">node</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-compile-and-deploy">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Step 4: Compile and deploy</a><a class="headerlink" href="#step-4-compile-and-deploy" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compile the overlay</span>
+dtc<span class="w"> </span>-@<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span>-o<span class="w"> </span>adis16495-rpi5.dtbo<span class="w"> </span>adis16495-rpi5.dts
+
+<span class="c1"># Copy to the RPi boot partition</span>
+sudo<span class="w"> </span>cp<span class="w"> </span>adis16495-rpi5.dtbo<span class="w"> </span>/boot/overlays/
+
+<span class="c1"># Enable in config.txt</span>
+<span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;dtoverlay=adis16495-rpi5&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>sudo<span class="w"> </span>tee<span class="w"> </span>-a<span class="w"> </span>/boot/config.txt
+
+<span class="c1"># Reboot</span>
+sudo<span class="w"> </span>reboot
+</pre></div>
+</div>
+<p>After reboot, verify the device appears:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>ls<span class="w"> </span>/sys/bus/iio/devices/
+cat<span class="w"> </span>/sys/bus/iio/devices/iio:device0/name
+<span class="c1"># adis16495-1</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="editing-the-model-before-rendering">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Editing the model before rendering</a><a class="headerlink" href="#editing-the-model-before-rendering" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> is a plain Python dataclass.  Change any field before
+rendering:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change interrupt GPIO pin</span>
+<span class="n">imu</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">imu</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;interrupt_gpio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">17</span>
+
+<span class="c1"># Change SPI chip select</span>
+<span class="n">imu</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;cs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">imu</span><span class="o">.</span><span class="n">spi_cs</span> <span class="o">=</span> <span class="mi">1</span>
+
+<span class="c1"># Use a different ADIS variant</span>
+<span class="n">imu</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;compatible&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adi,adis16497-3&quot;</span>
+<span class="n">imu</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;device&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adis16497&quot;</span>
+
+<span class="c1"># Re-render with changes</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="multiple-devices-on-one-board">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Multiple devices on one board</a><a class="headerlink" href="#multiple-devices-on-one-board" title="Link to this heading"></a></h2>
+<p>Add more components to the same model.  Devices on the same SPI bus are
+automatically grouped:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">BoardModel</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rpi5_multi&quot;</span><span class="p">,</span>
+    <span class="n">platform</span><span class="o">=</span><span class="s2">&quot;rpi5&quot;</span><span class="p">,</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">adis16495</span><span class="p">(</span><span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">interrupt_gpio</span><span class="o">=</span><span class="mi">25</span><span class="p">),</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">adis16495</span><span class="p">(</span>
+            <span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;imu1&quot;</span><span class="p">,</span> <span class="n">interrupt_gpio</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Both devices appear inside the same <code class="docutils literal notranslate"><span class="pre">&amp;spi0</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> block in the
+rendered output.</p>
+</section>
+<section id="scaling-up-fpga-boards-with-jesd204">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Scaling up: FPGA boards with JESD204</a><a class="headerlink" href="#scaling-up-fpga-boards-with-jesd204" title="Link to this heading"></a></h2>
+<p>For boards with clock chips, high-speed converters, and JESD204 links,
+the same <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> structure scales by adding more components and
+<code class="docutils literal notranslate"><span class="pre">JesdLinkModel</span></code> entries.  The existing board classes handle this
+complexity:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.boards.daq2</span><span class="w"> </span><span class="kn">import</span> <span class="n">daq2</span>
+
+<span class="n">board</span> <span class="o">=</span> <span class="n">daq2</span><span class="p">(</span><span class="n">platform</span><span class="o">=</span><span class="s2">&quot;zcu102&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">to_board_model</span><span class="p">(</span><span class="n">solver_config</span><span class="p">)</span>
+<span class="c1"># model.components: AD9523-1 clock, AD9680 ADC, AD9144 DAC</span>
+<span class="c1"># model.jesd_links: RX link, TX link</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="examples/board_model_usage.html"><span class="doc">BoardModel: Unified Device Tree Generation</span></a> for detailed examples with
+<code class="docutils literal notranslate"><span class="pre">daq2</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9081_fmc</span></code>, <code class="docutils literal notranslate"><span class="pre">adrv9009_fmc</span></code>, and <code class="docutils literal notranslate"><span class="pre">ad9084_fmc</span></code>.</p>
+<p>For the XSA pipeline workflow (Vivado-based), see <a class="reference internal" href="examples/xsa_tutorial.html"><span class="doc">XSA Flow Tutorials</span></a>.</p>
+</section>
+<section id="available-components">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Available components</a><a class="headerlink" href="#available-components" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidt.model.components</span></code> module provides factory functions for each
+supported device.  Import and use directly — no template filenames needed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">components</span>
+</pre></div>
+</div>
+<p><strong>Simple SPI devices:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">components.adis16495(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — ADIS16495/16497 IMU</p></li>
+</ul>
+<p><strong>Clock chips:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">components.hmc7044(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — HMC7044 clock distributor</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9523_1(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9523-1 clock generator</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9528(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9528 clock generator</p></li>
+</ul>
+<p><strong>ADCs / DACs:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9680(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9680 ADC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9144(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9144 DAC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9152(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9152 DAC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9172(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9172 RF DAC</p></li>
+</ul>
+<p><strong>Transceivers:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9081(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9081 MxFE</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">components.ad9084(spi_bus,</span> <span class="pre">cs,</span> <span class="pre">...)</span></code> — AD9084 RX transceiver</p></li>
+</ul>
+<p>Each factory accepts device-specific keyword arguments (forwarded to the
+underlying context builder).  See <a class="reference internal" href="api/model.html"><span class="doc">Board Model Module</span></a> for the full API
+reference.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="quickstart.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Quick Start</a>
+    <a href="xsa.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA to Device Tree</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

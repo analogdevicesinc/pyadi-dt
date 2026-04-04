@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This guide walks through creating a new device template starting from a Linux kernel device tree binding.  The tooling in scripts/ can parse bindings, extract compatible strings and properties, and generate starter template stubs — reducing the manual work to filling in device-specific details." name="description" />
+
+    <title>Creating Templates from Kernel Bindings &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="XSA Pipeline — Developer Guide" href="xsa_developer.html" />
+    <link rel="prev" title="Utilities" href="utils.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Creating Templates from Kernel Bindings</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#step-1-parse-kernel-bindings">Step 1: Parse kernel bindings</a></li>
+<li><a class="reference internal" href="#step-2-audit-against-existing-templates">Step 2: Audit against existing templates</a></li>
+<li><a class="reference internal" href="#step-3-generate-starter-templates">Step 3: Generate starter templates</a></li>
+<li><a class="reference internal" href="#step-4-refine-the-template">Step 4: Refine the template</a></li>
+<li><a class="reference internal" href="#step-5-write-the-context-builder">Step 5: Write the context builder</a></li>
+<li><a class="reference internal" href="#step-6-add-a-component-factory">Step 6: Add a component factory</a></li>
+<li><a class="reference internal" href="#step-7-write-tests">Step 7: Write tests</a></li>
+<li><a class="reference internal" href="#reference-what-the-tools-extract">Reference: what the tools extract</a></li>
+<li><a class="reference internal" href="#tips">Tips</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="creating-templates-from-kernel-bindings">
+<h1>Creating Templates from Kernel Bindings<a class="headerlink" href="#creating-templates-from-kernel-bindings" title="Link to this heading"></a></h1>
+<p>This guide walks through creating a new device template starting from
+a Linux kernel device tree binding.  The tooling in <code class="docutils literal notranslate"><span class="pre">scripts/</span></code> can
+parse bindings, extract compatible strings and properties, and generate
+starter template stubs — reducing the manual work to filling in
+device-specific details.</p>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#overview" id="id1">Overview</a></p></li>
+<li><p><a class="reference internal" href="#step-1-parse-kernel-bindings" id="id2">Step 1: Parse kernel bindings</a></p></li>
+<li><p><a class="reference internal" href="#step-2-audit-against-existing-templates" id="id3">Step 2: Audit against existing templates</a></p></li>
+<li><p><a class="reference internal" href="#step-3-generate-starter-templates" id="id4">Step 3: Generate starter templates</a></p></li>
+<li><p><a class="reference internal" href="#step-4-refine-the-template" id="id5">Step 4: Refine the template</a></p></li>
+<li><p><a class="reference internal" href="#step-5-write-the-context-builder" id="id6">Step 5: Write the context builder</a></p></li>
+<li><p><a class="reference internal" href="#step-6-add-a-component-factory" id="id7">Step 6: Add a component factory</a></p></li>
+<li><p><a class="reference internal" href="#step-7-write-tests" id="id8">Step 7: Write tests</a></p></li>
+<li><p><a class="reference internal" href="#reference-what-the-tools-extract" id="id9">Reference: what the tools extract</a></p></li>
+<li><p><a class="reference internal" href="#tips" id="id10">Tips</a></p></li>
+</ul>
+</nav>
+<section id="overview">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Overview</a><a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The workflow has seven steps:</p>
+<pre  class="mermaid">
+        flowchart TB
+  A[&quot;Linux kernel source\n(YAML/TXT bindings)&quot;]
+  B[&quot;collect_adi_bindings.py\nParse all ADI bindings&quot;]
+  C[&quot;audit_adi_bindings.py\nCompare against supported compatibles&quot;]
+  D[&quot;--generate-templates\nCreate starter .tmpl stubs&quot;]
+  E[&quot;Manual editing\nAdd properties, clocks, GPIOs&quot;]
+  F[&quot;contexts.py\nAdd context builder function&quot;]
+  G[&quot;components.py\nAdd factory function&quot;]
+  H[&quot;Ready to use\nin BoardModel&quot;]
+
+  A --&gt; B --&gt; C --&gt; D --&gt; E --&gt; F --&gt; G --&gt; H
+
+  style A fill:#1a3d5c,color:#fff
+  style B fill:#3a7d44,color:#fff
+  style C fill:#3a7d44,color:#fff
+  style D fill:#c8940a,color:#fff
+  style E fill:#b94000,color:#fff
+  style F fill:#0067b9,color:#fff
+  style G fill:#0067b9,color:#fff
+  style H fill:#3a7d44,color:#fff
+    </pre></section>
+<section id="step-1-parse-kernel-bindings">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Step 1: Parse kernel bindings</a><a class="headerlink" href="#step-1-parse-kernel-bindings" title="Link to this heading"></a></h2>
+<p>Clone the ADI Linux kernel (or point to an existing checkout):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/analogdevicesinc/linux.git<span class="w"> </span>/path/to/linux
+</pre></div>
+</div>
+<p>Run the binding collector to discover all ADI bindings:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>scripts/collect_adi_bindings.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--linux<span class="w"> </span>/path/to/linux<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--output<span class="w"> </span>bindings_report.json<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--markdown<span class="w"> </span>bindings_report.md
+</pre></div>
+</div>
+<p>This produces a JSON report listing every ADI binding file with its
+compatible strings and properties.</p>
+</section>
+<section id="step-2-audit-against-existing-templates">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">Step 2: Audit against existing templates</a><a class="headerlink" href="#step-2-audit-against-existing-templates" title="Link to this heading"></a></h2>
+<p>Run the audit to find which bindings are already supported and which
+need templates:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>scripts/audit_adi_bindings.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--linux<span class="w"> </span>/path/to/linux<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project<span class="w"> </span>.
+</pre></div>
+</div>
+<p>The audit classifies each binding as:</p>
+<ul class="simple">
+<li><p><strong>Known</strong> — compatible string already in a template or profile</p></li>
+<li><p><strong>Partial</strong> — some compatible strings documented, others not</p></li>
+<li><p><strong>Undocumented</strong> — no template exists for this device</p></li>
+</ul>
+</section>
+<section id="step-3-generate-starter-templates">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">Step 3: Generate starter templates</a><a class="headerlink" href="#step-3-generate-starter-templates" title="Link to this heading"></a></h2>
+<p>Add <code class="docutils literal notranslate"><span class="pre">--generate-templates</span></code> to create stub files for undocumented
+devices:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>scripts/audit_adi_bindings.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--linux<span class="w"> </span>/path/to/linux<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--project<span class="w"> </span>.<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--generate-templates
+</pre></div>
+</div>
+<p>This creates starter <code class="docutils literal notranslate"><span class="pre">.tmpl</span></code> files in <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/</span></code> with
+boilerplate structure:</p>
+<div class="highlight-dts notranslate"><div class="highlight"><pre><span></span><span class="c1">// SPDX-License-Identifier: GPL-2.0</span>
+<span class="c1">// AUTOGENERATED STARTER TEMPLATE — requires manual review</span>
+<span class="c1">// Source binding: Documentation/devicetree/bindings/iio/imu/adi,adis16495.yaml</span>
+<span class="c1">//</span>
+<span class="c1">// TODO:</span>
+<span class="c1">//   - Replace placeholder nodes, clocks, GPIOs, interrupts</span>
+<span class="c1">//   - Add board-specific wiring</span>
+<span class="c1">//   - Review ADI properties from binding YAML</span>
+
+<span class="o">&amp;</span><span class="nf">spi_bus</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">    </span><span class="kr">status</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;okay&quot;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#address-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">    </span><span class="kr">#size-cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+
+<span class="w">    </span><span class="nf">device</span><span class="o">@</span><span class="mi">0</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;adi,adis16495-1&quot;</span><span class="p">;</span>
+<span class="w">        </span><span class="kr">reg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">0</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="n">spi-max-frequency</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="mi">2000000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">        </span><span class="cm">/* TODO: Add clocks, interrupts, and device properties */</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-refine-the-template">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Step 4: Refine the template</a><a class="headerlink" href="#step-4-refine-the-template" title="Link to this heading"></a></h2>
+<p>The generated stub is a starting point.  Open the binding YAML to see
+what properties the driver expects:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>cat<span class="w"> </span>/path/to/linux/Documentation/devicetree/bindings/iio/imu/adi,adis16495.yaml
+</pre></div>
+</div>
+<p>A typical YAML binding looks like:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">properties</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">compatible</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enum</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adi,adis16495-1</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adi,adis16495-2</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adi,adis16495-3</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adi,adis16497-1</span>
+<span class="w">  </span><span class="nt">reg</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">maxItems</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">spi-max-frequency</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">maximum</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2000000</span>
+<span class="w">  </span><span class="nt">spi-cpol</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">spi-cpha</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">interrupts</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">maxItems</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</pre></div>
+</div>
+<p>Convert these into a Jinja2 template with conditional properties:</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="x">             </span><span class="cp">{{</span> <span class="nv">label</span> <span class="cp">}}</span><span class="x">: </span><span class="cp">{{</span> <span class="nv">device</span> <span class="cp">}}</span><span class="x">@</span><span class="cp">{{</span> <span class="nv">cs</span> <span class="cp">}}</span><span class="x"> {</span>
+<span class="x">                     compatible = &quot;</span><span class="cp">{{</span> <span class="nv">compatible</span> <span class="cp">}}</span><span class="x">&quot;;</span>
+<span class="x">                     reg = &lt;</span><span class="cp">{{</span> <span class="nv">cs</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="x">                     spi-max-frequency = &lt;</span><span class="cp">{{</span> <span class="nv">spi_max_hz</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="cp">{%</span>- <span class="k">if</span> <span class="nv">spi_cpol</span> <span class="cp">%}</span>
+<span class="x">                     spi-cpol;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+<span class="cp">{%</span>- <span class="k">if</span> <span class="nv">spi_cpha</span> <span class="cp">%}</span>
+<span class="x">                     spi-cpha;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+<span class="cp">{%</span>- <span class="k">if</span> <span class="nv">interrupt_gpio</span> <span class="k">is</span> <span class="k">not</span> <span class="nf">none</span> <span class="cp">%}</span>
+<span class="x">                     interrupt-parent = &lt;&amp;</span><span class="cp">{{</span> <span class="nv">gpio_label</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="x">                     interrupts = &lt;</span><span class="cp">{{</span> <span class="nv">interrupt_gpio</span> <span class="cp">}}</span><span class="x"> </span><span class="cp">{{</span> <span class="nv">irq_type</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+<span class="x">             };</span>
+</pre></div>
+</div>
+<p>Key rules for templates:</p>
+<ul class="simple">
+<li><p>Use <strong>tabs</strong> for indentation (DTS convention)</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">{%-</span> <span class="pre">if</span> <span class="pre">x</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span> <span class="pre">%}</span></code> (not truthiness) for optional properties</p></li>
+<li><p>Pre-format multi-value strings in the context builder, not in the template</p></li>
+<li><p>Keep the closing <code class="docutils literal notranslate"><span class="pre">};</span></code> at the same indentation as the opening label</p></li>
+</ul>
+</section>
+<section id="step-5-write-the-context-builder">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Step 5: Write the context builder</a><a class="headerlink" href="#step-5-write-the-context-builder" title="Link to this heading"></a></h2>
+<p>Add a function to <code class="docutils literal notranslate"><span class="pre">adidt/model/contexts.py</span></code> that maps device
+parameters to template variables:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_adis16495_ctx</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;imu0&quot;</span><span class="p">,</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adis16495&quot;</span><span class="p">,</span>
+    <span class="n">compatible</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adi,adis16495-1&quot;</span><span class="p">,</span>
+    <span class="n">cs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">spi_max_hz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2_000_000</span><span class="p">,</span>
+    <span class="n">spi_cpol</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">spi_cpha</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">gpio_label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpio&quot;</span><span class="p">,</span>
+    <span class="n">interrupt_gpio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">irq_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;IRQ_TYPE_EDGE_FALLING&quot;</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build context dict for ``adis16495.tmpl``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+        <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="n">device</span><span class="p">,</span>
+        <span class="s2">&quot;compatible&quot;</span><span class="p">:</span> <span class="n">compatible</span><span class="p">,</span>
+        <span class="s2">&quot;cs&quot;</span><span class="p">:</span> <span class="n">cs</span><span class="p">,</span>
+        <span class="s2">&quot;spi_max_hz&quot;</span><span class="p">:</span> <span class="n">spi_max_hz</span><span class="p">,</span>
+        <span class="s2">&quot;spi_cpol&quot;</span><span class="p">:</span> <span class="n">spi_cpol</span><span class="p">,</span>
+        <span class="s2">&quot;spi_cpha&quot;</span><span class="p">:</span> <span class="n">spi_cpha</span><span class="p">,</span>
+        <span class="s2">&quot;gpio_label&quot;</span><span class="p">:</span> <span class="n">gpio_label</span><span class="p">,</span>
+        <span class="s2">&quot;interrupt_gpio&quot;</span><span class="p">:</span> <span class="n">interrupt_gpio</span><span class="p">,</span>
+        <span class="s2">&quot;irq_type&quot;</span><span class="p">:</span> <span class="n">irq_type</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Use keyword-only arguments (<code class="docutils literal notranslate"><span class="pre">*</span></code>) with sensible defaults from the
+binding’s <code class="docutils literal notranslate"><span class="pre">default</span></code> or <code class="docutils literal notranslate"><span class="pre">maximum</span></code> fields.</p>
+</section>
+<section id="step-6-add-a-component-factory">
+<h2><a class="toc-backref" href="#id7" role="doc-backlink">Step 6: Add a component factory</a><a class="headerlink" href="#step-6-add-a-component-factory" title="Link to this heading"></a></h2>
+<p>Add a factory function to <code class="docutils literal notranslate"><span class="pre">adidt/model/components.py</span></code> so users don’t
+need to know template filenames:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">adis16495</span><span class="p">(</span><span class="n">spi_bus</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ComponentModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;ADIS16495 6-DOF IMU.&quot;&quot;&quot;</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">contexts</span><span class="o">.</span><span class="n">build_adis16495_ctx</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ComponentModel</span><span class="p">(</span>
+        <span class="n">role</span><span class="o">=</span><span class="s2">&quot;imu&quot;</span><span class="p">,</span>
+        <span class="n">part</span><span class="o">=</span><span class="s2">&quot;adis16495&quot;</span><span class="p">,</span>
+        <span class="n">template</span><span class="o">=</span><span class="s2">&quot;adis16495.tmpl&quot;</span><span class="p">,</span>
+        <span class="n">spi_bus</span><span class="o">=</span><span class="n">spi_bus</span><span class="p">,</span>
+        <span class="n">spi_cs</span><span class="o">=</span><span class="n">cs</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="step-7-write-tests">
+<h2><a class="toc-backref" href="#id8" role="doc-backlink">Step 7: Write tests</a><a class="headerlink" href="#step-7-write-tests" title="Link to this heading"></a></h2>
+<p>Add tests to verify the template renders correctly:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModel</span><span class="p">,</span> <span class="n">components</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.renderer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModelRenderer</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_adis16495_renders</span><span class="p">():</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">BoardModel</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">platform</span><span class="o">=</span><span class="s2">&quot;test&quot;</span><span class="p">,</span>
+        <span class="n">components</span><span class="o">=</span><span class="p">[</span>
+            <span class="n">components</span><span class="o">.</span><span class="n">adis16495</span><span class="p">(</span><span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">interrupt_gpio</span><span class="o">=</span><span class="mi">25</span><span class="p">),</span>
+        <span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="s2">&quot;converters&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="s1">&#39;compatible = &quot;adi,adis16495-1&quot;&#39;</span> <span class="ow">in</span> <span class="n">out</span>
+    <span class="k">assert</span> <span class="s2">&quot;spi-cpol&quot;</span> <span class="ow">in</span> <span class="n">out</span>
+    <span class="k">assert</span> <span class="s2">&quot;interrupts = &lt;25&quot;</span> <span class="ow">in</span> <span class="n">out</span>
+</pre></div>
+</div>
+<p>Run with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>test/test_adis16495.py<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+<section id="reference-what-the-tools-extract">
+<h2><a class="toc-backref" href="#id9" role="doc-backlink">Reference: what the tools extract</a><a class="headerlink" href="#reference-what-the-tools-extract" title="Link to this heading"></a></h2>
+<p>The binding parser (<code class="docutils literal notranslate"><span class="pre">scripts/adi_binding_lib.py</span></code>) extracts:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 20.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Field</p></th>
+<th class="head"><p>Extracted?</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Compatible strings</p></td>
+<td><p>Yes</p></td>
+<td><p>From YAML <code class="docutils literal notranslate"><span class="pre">compatible</span></code> key or TXT “Compatible:” section</p></td>
+</tr>
+<tr class="row-odd"><td><p>Property names</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,*</span></code> prefixed properties from YAML <code class="docutils literal notranslate"><span class="pre">properties</span></code> section</p></td>
+</tr>
+<tr class="row-even"><td><p>Property types</p></td>
+<td><p>No</p></td>
+<td><p>YAML has type info (uint32, string, bool) but not extracted</p></td>
+</tr>
+<tr class="row-odd"><td><p>Default values</p></td>
+<td><p>No</p></td>
+<td><p>YAML <code class="docutils literal notranslate"><span class="pre">default</span></code> fields not extracted</p></td>
+</tr>
+<tr class="row-even"><td><p>Required vs optional</p></td>
+<td><p>No</p></td>
+<td><p>YAML <code class="docutils literal notranslate"><span class="pre">required</span></code> list not extracted</p></td>
+</tr>
+<tr class="row-odd"><td><p>Descriptions</p></td>
+<td><p>No</p></td>
+<td><p>Prose descriptions not extracted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For properties not automatically extracted, check the binding YAML
+directly.  The <code class="docutils literal notranslate"><span class="pre">properties</span></code> section lists every valid property with
+its type, constraints, and description.</p>
+</section>
+<section id="tips">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Tips</a><a class="headerlink" href="#tips" title="Link to this heading"></a></h2>
+<ul>
+<li><p><strong>Start simple.</strong> A template with just <code class="docutils literal notranslate"><span class="pre">compatible</span></code>, <code class="docutils literal notranslate"><span class="pre">reg</span></code>,
+<code class="docutils literal notranslate"><span class="pre">spi-max-frequency</span></code>, and an interrupt covers most simple SPI
+devices.  Add properties incrementally.</p></li>
+<li><p><strong>Check the driver source.</strong> The Linux driver’s <code class="docutils literal notranslate"><span class="pre">of_match_table</span></code>
+and <code class="docutils literal notranslate"><span class="pre">probe</span></code> function show exactly which DT properties are read.
+Path: <code class="docutils literal notranslate"><span class="pre">drivers/iio/&lt;subsystem&gt;/&lt;device&gt;.c</span></code></p></li>
+<li><p><strong>Test with dtc.</strong> Compile your template output to verify syntax:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dtc<span class="w"> </span>-@<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span>-o<span class="w"> </span>/dev/null<span class="w"> </span>my_overlay.dts
+</pre></div>
+</div>
+</li>
+<li><p><strong>Use existing templates as reference.</strong> The <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/</span></code>
+directory has 35+ templates covering simple SPI devices to complex
+JESD204 transceivers.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="utils.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Utilities</a>
+    <a href="xsa_developer.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Pipeline — Developer Guide</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

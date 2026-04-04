@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The BoardModel is the core abstraction in pyadi-dt that both the XSA pipeline and manual board-class workflows produce. It describes the complete hardware composition of a board and can be edited before rendering to DTS." name="description" />
+
+    <title>BoardModel: Unified Device Tree Generation &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Live Update Access Models" href="../access.html" />
+    <link rel="prev" title="XSA → Device Tree: AD9081 on ZCU102" href="xsa_ad9081_zcu102.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">BoardModel: Unified Device Tree Generation</a><ul>
+<li><a class="reference internal" href="#three-ways-to-create-a-boardmodel">Three ways to create a BoardModel</a><ul>
+<li><a class="reference internal" href="#from-the-xsa-pipeline-automatic">1. From the XSA pipeline (automatic)</a></li>
+<li><a class="reference internal" href="#from-a-board-class-with-pyadi-jif-manual">2. From a board class with pyadi-jif (manual)</a></li>
+<li><a class="reference internal" href="#direct-construction-with-component-factories">3. Direct construction with component factories</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#editing-a-boardmodel-before-rendering">Editing a BoardModel before rendering</a></li>
+<li><a class="reference internal" href="#supported-builders">Supported builders</a></li>
+<li><a class="reference internal" href="#available-component-factories">Available component factories</a></li>
+<li><a class="reference internal" href="#context-builders-advanced">Context builders (advanced)</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1" checked=""/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../examples.html">Examples</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="boardmodel-unified-device-tree-generation">
+<h1>BoardModel: Unified Device Tree Generation<a class="headerlink" href="#boardmodel-unified-device-tree-generation" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> is the core abstraction in pyadi-dt that both the XSA
+pipeline and manual board-class workflows produce. It describes the complete
+hardware composition of a board and can be edited before rendering to DTS.</p>
+<section id="three-ways-to-create-a-boardmodel">
+<h2>Three ways to create a BoardModel<a class="headerlink" href="#three-ways-to-create-a-boardmodel" title="Link to this heading"></a></h2>
+<section id="from-the-xsa-pipeline-automatic">
+<h3>1. From the XSA pipeline (automatic)<a class="headerlink" href="#from-the-xsa-pipeline-automatic" title="Link to this heading"></a></h3>
+<p>The XSA pipeline constructs a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> internally for every supported
+board. You can access it directly through the builder:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.topology</span><span class="w"> </span><span class="kn">import</span> <span class="n">XsaParser</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.builders.fmcdaq2</span><span class="w"> </span><span class="kn">import</span> <span class="n">FMCDAQ2Builder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.renderer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModelRenderer</span>
+
+<span class="n">topology</span> <span class="o">=</span> <span class="n">XsaParser</span><span class="p">()</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">)</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;jesd&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;rx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="s2">&quot;tx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}}}</span>
+
+<span class="n">builder</span> <span class="o">=</span> <span class="n">FMCDAQ2Builder</span><span class="p">()</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">builder</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="s2">&quot;zynqmp_clk&quot;</span><span class="p">,</span> <span class="mi">71</span><span class="p">,</span> <span class="s2">&quot;gpio&quot;</span><span class="p">)</span>
+
+<span class="c1"># Inspect the model</span>
+<span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">role</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">part</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">spi_bus</span><span class="si">}</span><span class="s2"> cs=</span><span class="si">{</span><span class="n">comp</span><span class="o">.</span><span class="n">spi_cs</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1"># Render to DTS nodes</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="from-a-board-class-with-pyadi-jif-manual">
+<h3>2. From a board class with pyadi-jif (manual)<a class="headerlink" href="#from-a-board-class-with-pyadi-jif-manual" title="Link to this heading"></a></h3>
+<p>Board classes like <code class="docutils literal notranslate"><span class="pre">daq2</span></code> accept pyadi-jif solver output and produce
+a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">adijif</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.boards.daq2</span><span class="w"> </span><span class="kn">import</span> <span class="n">daq2</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.renderer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModelRenderer</span>
+
+<span class="c1"># Solve clock tree with pyadi-jif</span>
+<span class="n">sys</span> <span class="o">=</span> <span class="n">adijif</span><span class="o">.</span><span class="n">system</span><span class="p">([</span><span class="s2">&quot;ad9680&quot;</span><span class="p">,</span> <span class="s2">&quot;ad9144&quot;</span><span class="p">],</span> <span class="s2">&quot;ad9523_1&quot;</span><span class="p">,</span> <span class="s2">&quot;xilinx&quot;</span><span class="p">,</span> <span class="mf">125e6</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">fpga</span><span class="o">.</span><span class="n">setup_by_dev_kit_name</span><span class="p">(</span><span class="s2">&quot;zcu102&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">converter</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sample_clock</span> <span class="o">=</span> <span class="mf">500e6</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">converter</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">sample_clock</span> <span class="o">=</span> <span class="mf">500e6</span>
+<span class="n">conf</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+
+<span class="c1"># Map solver output to board config and build model</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">daq2</span><span class="p">(</span><span class="n">platform</span><span class="o">=</span><span class="s2">&quot;zcu102&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">to_board_model</span><span class="p">(</span><span class="n">conf</span><span class="p">)</span>
+
+<span class="c1"># Render</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="direct-construction-with-component-factories">
+<h3>3. Direct construction with component factories<a class="headerlink" href="#direct-construction-with-component-factories" title="Link to this heading"></a></h3>
+<p>Build a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> from scratch using the <code class="docutils literal notranslate"><span class="pre">components</span></code> module — no
+template filenames needed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModel</span><span class="p">,</span> <span class="n">components</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.renderer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BoardModelRenderer</span>
+
+<span class="c1"># Simple example: IMU on a Raspberry Pi</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">BoardModel</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;rpi5_imu&quot;</span><span class="p">,</span>
+    <span class="n">platform</span><span class="o">=</span><span class="s2">&quot;rpi5&quot;</span><span class="p">,</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">adis16495</span><span class="p">(</span><span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">interrupt_gpio</span><span class="o">=</span><span class="mi">25</span><span class="p">),</span>
+    <span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For FPGA boards with clock chips and converters:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">BoardModel</span><span class="p">(</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;custom_board&quot;</span><span class="p">,</span>
+    <span class="n">platform</span><span class="o">=</span><span class="s2">&quot;zcu102&quot;</span><span class="p">,</span>
+    <span class="n">components</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">ad9523_1</span><span class="p">(</span><span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">vcxo_hz</span><span class="o">=</span><span class="mi">125_000_000</span><span class="p">),</span>
+        <span class="n">components</span><span class="o">.</span><span class="n">ad9680</span><span class="p">(</span>
+            <span class="n">spi_bus</span><span class="o">=</span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">clks_str</span><span class="o">=</span><span class="s2">&quot;&lt;&amp;clk0_ad9523 13&gt;&quot;</span><span class="p">,</span>
+            <span class="n">clk_names_str</span><span class="o">=</span><span class="s1">&#39;&quot;adc_clk&quot;&#39;</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">],</span>
+    <span class="n">jesd_links</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>  <span class="c1"># JesdLinkModel instances</span>
+<span class="p">)</span>
+
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="editing-a-boardmodel-before-rendering">
+<h2>Editing a BoardModel before rendering<a class="headerlink" href="#editing-a-boardmodel-before-rendering" title="Link to this heading"></a></h2>
+<p>The model is fully editable after construction. Modify any component
+config, JESD parameter, or metadata before rendering:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Change clock VCXO frequency</span>
+<span class="n">clock</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_component</span><span class="p">(</span><span class="s2">&quot;clock&quot;</span><span class="p">)</span>
+<span class="n">clock</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;vcxo_hz&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100_000_000</span>
+
+<span class="c1"># Change JESD link parameters</span>
+<span class="n">rx_link</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_jesd_link</span><span class="p">(</span><span class="s2">&quot;rx&quot;</span><span class="p">)</span>
+<span class="n">rx_link</span><span class="o">.</span><span class="n">link_params</span><span class="p">[</span><span class="s2">&quot;L&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+
+<span class="c1"># Add metadata</span>
+<span class="n">model</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;config_source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;custom_edit&quot;</span>
+
+<span class="c1"># Render with modifications applied</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">BoardModelRenderer</span><span class="p">()</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="supported-builders">
+<h2>Supported builders<a class="headerlink" href="#supported-builders" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Builder</p></th>
+<th class="head"><p>Clock</p></th>
+<th class="head"><p>Converters</p></th>
+<th class="head"><p>Board class</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FMCDAQ2Builder</span></code></p></td>
+<td><p>AD9523-1</p></td>
+<td><p>AD9680 + AD9144</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">daq2</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">FMCDAQ3Builder</span></code></p></td>
+<td><p>AD9528</p></td>
+<td><p>AD9680 + AD9152</p></td>
+<td><p>–</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">AD9172Builder</span></code></p></td>
+<td><p>HMC7044</p></td>
+<td><p>AD9172</p></td>
+<td><p>–</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AD9081Builder</span></code></p></td>
+<td><p>HMC7044</p></td>
+<td><p>AD9081 MxFE</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_fmc</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ADRV9009Builder</span></code></p></td>
+<td><p>AD9528</p></td>
+<td><p>ADRV9009</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_fmc</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">AD9084Builder</span></code></p></td>
+<td><p>HMC7044 + ADF4382</p></td>
+<td><p>AD9084</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9084_fmc</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="available-component-factories">
+<h2>Available component factories<a class="headerlink" href="#available-component-factories" title="Link to this heading"></a></h2>
+<p>The easiest way to add devices.  Import from <code class="docutils literal notranslate"><span class="pre">adidt.model.components</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">components</span>
+</pre></div>
+</div>
+<p><strong>Simple SPI:</strong> <code class="docutils literal notranslate"><span class="pre">components.adis16495</span></code> – ADIS16495/16497 IMU</p>
+<p><strong>Clock chips:</strong> <code class="docutils literal notranslate"><span class="pre">components.hmc7044</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9523_1</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9528</span></code></p>
+<p><strong>ADCs / DACs:</strong> <code class="docutils literal notranslate"><span class="pre">components.ad9680</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9144</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9152</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9172</span></code></p>
+<p><strong>Transceivers:</strong> <code class="docutils literal notranslate"><span class="pre">components.ad9081</span></code>, <code class="docutils literal notranslate"><span class="pre">components.ad9084</span></code></p>
+<p>Each factory accepts <code class="docutils literal notranslate"><span class="pre">spi_bus</span></code>, <code class="docutils literal notranslate"><span class="pre">cs</span></code>, and device-specific keyword arguments.</p>
+</section>
+<section id="context-builders-advanced">
+<h2>Context builders (advanced)<a class="headerlink" href="#context-builders-advanced" title="Link to this heading"></a></h2>
+<p>For full control, use context builders directly from <code class="docutils literal notranslate"><span class="pre">adidt.model.contexts</span></code>.
+These return raw dicts for manual <code class="docutils literal notranslate"><span class="pre">ComponentModel</span></code> construction:</p>
+<ul class="simple">
+<li><p><strong>Clock chips:</strong> <code class="docutils literal notranslate"><span class="pre">build_ad9523_1_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_ad9528_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_hmc7044_ctx</span></code></p></li>
+<li><p><strong>Converters:</strong> <code class="docutils literal notranslate"><span class="pre">build_ad9680_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_ad9144_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_ad9081_mxfe_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_adrv9009_device_ctx</span></code></p></li>
+<li><p><strong>FPGA:</strong> <code class="docutils literal notranslate"><span class="pre">build_adxcvr_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_jesd204_overlay_ctx</span></code>, <code class="docutils literal notranslate"><span class="pre">build_tpl_core_ctx</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="xsa_ad9081_zcu102.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">XSA → Device Tree: AD9081 on ZCU102</a>
+    <a href="../access.html" title="Next document (Alt+Shift+RightArrow)" class="next">Live Update Access Models</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

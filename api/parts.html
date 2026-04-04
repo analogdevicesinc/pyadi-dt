@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The parts module provides Python abstractions for configuring individual ADI components via their device tree properties." name="description" />
+
+    <title>Parts Module &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA Pipeline Module" href="xsa.html" />
+    <link rel="prev" title="Board Model Module" href="model.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Parts Module</a><ul>
+<li><a class="reference internal" href="#module-adidt.parts.clock_dt">Clock Device Tree Interface</a><ul>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt"><code class="docutils literal notranslate"><span class="pre">clock_dt</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.handle_64bit"><code class="docutils literal notranslate"><span class="pre">clock_dt.handle_64bit()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.set_clock_node"><code class="docutils literal notranslate"><span class="pre">clock_dt.set_clock_node()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.setter"><code class="docutils literal notranslate"><span class="pre">clock_dt.setter()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.update_existing_clock_node"><code class="docutils literal notranslate"><span class="pre">clock_dt.update_existing_clock_node()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.set_vcxo"><code class="docutils literal notranslate"><span class="pre">clock_dt.set_vcxo()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.get_prop_across_nodes"><code class="docutils literal notranslate"><span class="pre">clock_dt.get_prop_across_nodes()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.get_node_by_prop"><code class="docutils literal notranslate"><span class="pre">clock_dt.get_node_by_prop()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.clock_dt.clock_dt.get_used_clocks"><code class="docutils literal notranslate"><span class="pre">clock_dt.get_used_clocks()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#clock-generators-and-distributors">Clock Generators and Distributors</a><ul>
+<li><a class="reference internal" href="#module-adidt.parts.hmc7044">HMC7044</a><ul>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.pulse_gen_modes"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.pulse_gen_modes</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.driver_modes"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.driver_modes</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.driver_impedances"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.driver_impedances</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.output_mux_modes"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.output_mux_modes</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.cmos_outputs_reg_field_map"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.cmos_outputs_reg_field_map</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.set_clock_node"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.set_clock_node()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.hmc7044.hmc7044_dt.set_dt_node_from_config"><code class="docutils literal notranslate"><span class="pre">hmc7044_dt.set_dt_node_from_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-adidt.parts.ad9523_1">AD9523-1</a><ul>
+<li><a class="reference internal" href="#adidt.parts.ad9523_1.ad9523_1_dt"><code class="docutils literal notranslate"><span class="pre">ad9523_1_dt</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.parts.ad9523_1.ad9523_1_dt.compatible_id"><code class="docutils literal notranslate"><span class="pre">ad9523_1_dt.compatible_id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9523_1.ad9523_1_dt.set_dt_node_from_config"><code class="docutils literal notranslate"><span class="pre">ad9523_1_dt.set_dt_node_from_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-adidt.parts.ad9528">AD9528</a><ul>
+<li><a class="reference internal" href="#adidt.parts.ad9528.parse_profile"><code class="docutils literal notranslate"><span class="pre">parse_profile()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-adidt.parts.ad9545">AD9545</a><ul>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt"><code class="docutils literal notranslate"><span class="pre">ad9545_dt</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.pll_clock_id"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.pll_clock_id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.out_clock_id"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.out_clock_id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.set_clock_node"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.set_clock_node()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.pll_set_rate"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.pll_set_rate()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.output_set_rate"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.output_set_rate()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.set_source_priorities_from_config"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.set_source_priorities_from_config()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.ad9545.ad9545_dt.set_dt_node_from_config"><code class="docutils literal notranslate"><span class="pre">ad9545_dt.set_dt_node_from_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#rf-transceivers">RF Transceivers</a><ul>
+<li><a class="reference internal" href="#module-adidt.parts.adrv9009">ADRV9009</a><ul>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.parse_talInit"><code class="docutils literal notranslate"><span class="pre">parse_talInit()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.handle_ints"><code class="docutils literal notranslate"><span class="pre">handle_ints()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.handle_channel_enable"><code class="docutils literal notranslate"><span class="pre">handle_channel_enable()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.parse_profile"><code class="docutils literal notranslate"><span class="pre">parse_profile()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.adrv9009_dt"><code class="docutils literal notranslate"><span class="pre">adrv9009_dt</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.parts.adrv9009.adrv9009_dt.set_dt_node_from_config"><code class="docutils literal notranslate"><span class="pre">adrv9009_dt.set_dt_node_from_config()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Board Model Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">API Reference</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="parts-module">
+<h1>Parts Module<a class="headerlink" href="#parts-module" title="Link to this heading"></a></h1>
+<p>The parts module provides Python abstractions for configuring individual
+ADI components via their device tree properties.</p>
+<section id="module-adidt.parts.clock_dt">
+<span id="clock-device-tree-interface"></span><span id="module-adidt.parts"></span><h2>Clock Device Tree Interface<a class="headerlink" href="#module-adidt.parts.clock_dt" title="Link to this heading"></a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.parts.clock_dt.</span></span><span class="sig-name descname"><span class="pre">clock_dt</span></span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Mixin with shared helpers for building clock-chip device tree nodes.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.handle_64bit">
+<span class="sig-name descname"><span class="pre">handle_64bit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.handle_64bit" title="Link to this definition"></a></dt>
+<dd><p>Set a DT property to num, splitting into two 32-bit words when the value exceeds 31 bits.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.set_clock_node">
+<span class="sig-name descname"><span class="pre">set_clock_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.set_clock_node" title="Link to this definition"></a></dt>
+<dd><p>Append a new channel subnode to parent with standard clock properties.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.setter">
+<span class="sig-name descname"><span class="pre">setter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.setter" title="Link to this definition"></a></dt>
+<dd><p>Set a property on node, appending it if it does not yet exist.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.update_existing_clock_node">
+<span class="sig-name descname"><span class="pre">update_existing_clock_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clk</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.update_existing_clock_node" title="Link to this definition"></a></dt>
+<dd><p>Update the channel-divider and driver defaults on an existing clock subnode.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.set_vcxo">
+<span class="sig-name descname"><span class="pre">set_vcxo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vcxo</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.set_vcxo" title="Link to this definition"></a></dt>
+<dd><p>Set the adi,vcxo-frequency property on node, raising if the value is fractional.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.get_prop_across_nodes">
+<span class="sig-name descname"><span class="pre">get_prop_across_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.get_prop_across_nodes" title="Link to this definition"></a></dt>
+<dd><p>Return a list of a given property’s value from every direct child node.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.get_node_by_prop">
+<span class="sig-name descname"><span class="pre">get_node_by_prop</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prop</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.get_node_by_prop" title="Link to this definition"></a></dt>
+<dd><p>Return the first child node of parent whose property matches value, or False.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.clock_dt.clock_dt.get_used_clocks">
+<span class="sig-name descname"><span class="pre">get_used_clocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.clock_dt.clock_dt.get_used_clocks" title="Link to this definition"></a></dt>
+<dd><p>Return the list of clock nodes referenced by the ‘clocks’ phandle property of node.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="clock-generators-and-distributors">
+<h2>Clock Generators and Distributors<a class="headerlink" href="#clock-generators-and-distributors" title="Link to this heading"></a></h2>
+<section id="module-adidt.parts.hmc7044">
+<span id="hmc7044"></span><h3>HMC7044<a class="headerlink" href="#module-adidt.parts.hmc7044" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.parts.hmc7044.</span></span><span class="sig-name descname"><span class="pre">hmc7044_dt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local_sysfs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'192.168.2.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'root'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'analog'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dt_filepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dt</span></code>, <a class="reference internal" href="#adidt.parts.clock_dt.clock_dt" title="adidt.parts.clock_dt.clock_dt"><code class="xref py py-class docutils literal notranslate"><span class="pre">clock_dt</span></code></a></p>
+<p>HMC7044 Device tree map class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.pulse_gen_modes">
+<span class="sig-name descname"><span class="pre">pulse_gen_modes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'GEN_16_PULSE':</span> <span class="pre">5,</span> <span class="pre">'GEN_1_PULSE':</span> <span class="pre">1,</span> <span class="pre">'GEN_2_PULSE':</span> <span class="pre">2,</span> <span class="pre">'GEN_4_PULSE':</span> <span class="pre">3,</span> <span class="pre">'GEN_8_PULSE':</span> <span class="pre">4,</span> <span class="pre">'GEN_CONT_PULSE':</span> <span class="pre">7,</span> <span class="pre">'GEN_LEVEL_SENSITIVE':</span> <span class="pre">0}</span></span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.pulse_gen_modes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.driver_modes">
+<span class="sig-name descname"><span class="pre">driver_modes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'CML':</span> <span class="pre">0,</span> <span class="pre">'CMOS':</span> <span class="pre">3,</span> <span class="pre">'LVDS':</span> <span class="pre">2,</span> <span class="pre">'LVPECL':</span> <span class="pre">1}</span></span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.driver_modes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.driver_impedances">
+<span class="sig-name descname"><span class="pre">driver_impedances</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'100_OHM':</span> <span class="pre">1,</span> <span class="pre">'50_OHM':</span> <span class="pre">3,</span> <span class="pre">'DISABLE':</span> <span class="pre">0}</span></span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.driver_impedances" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.output_mux_modes">
+<span class="sig-name descname"><span class="pre">output_mux_modes</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'ANALOG_DELAY':</span> <span class="pre">1,</span> <span class="pre">'CH_DIV':</span> <span class="pre">0,</span> <span class="pre">'GROUP_PAIR':</span> <span class="pre">3,</span> <span class="pre">'VCO_CLOCK':</span> <span class="pre">4}</span></span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.output_mux_modes" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.cmos_outputs_reg_field_map">
+<span class="sig-name descname"><span class="pre">cmos_outputs_reg_field_map</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{0:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">1:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">2:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">3:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">4:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">5:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">6:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">7:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">8:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">9:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">10:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1},</span> <span class="pre">11:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">12:</span> <span class="pre">{'N':</span> <span class="pre">1,</span> <span class="pre">'P':</span> <span class="pre">0},</span> <span class="pre">13:</span> <span class="pre">{'N':</span> <span class="pre">0,</span> <span class="pre">'P':</span> <span class="pre">1}}</span></span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.cmos_outputs_reg_field_map" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.set_clock_node">
+<span class="sig-name descname"><span class="pre">set_clock_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.set_clock_node" title="Link to this definition"></a></dt>
+<dd><p>Append an HMC7044 channel subnode with divider and driver settings to parent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.hmc7044.hmc7044_dt.set_dt_node_from_config">
+<span class="sig-name descname"><span class="pre">set_dt_node_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.hmc7044.hmc7044_dt.set_dt_node_from_config" title="Link to this definition"></a></dt>
+<dd><p>Set HMC7044 node from JIF configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>fdt.Node</em>) – Device tree parent node of hmc7044</p></li>
+<li><p><strong>config</strong> (<em>Dict</em>) – Configuration struct generated from JIF</p></li>
+<li><p><strong>append</strong> (<em>boolean</em>) – Enable appending to subnode, if false the existing are removed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-adidt.parts.ad9523_1">
+<span id="ad9523-1"></span><h3>AD9523-1<a class="headerlink" href="#module-adidt.parts.ad9523_1" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.parts.ad9523_1.ad9523_1_dt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.parts.ad9523_1.</span></span><span class="sig-name descname"><span class="pre">ad9523_1_dt</span></span><a class="headerlink" href="#adidt.parts.ad9523_1.ad9523_1_dt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#adidt.parts.clock_dt.clock_dt" title="adidt.parts.clock_dt.clock_dt"><code class="xref py py-class docutils literal notranslate"><span class="pre">clock_dt</span></code></a></p>
+<p>AD9523-1 Device tree map class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.ad9523_1.ad9523_1_dt.compatible_id">
+<span class="sig-name descname"><span class="pre">compatible_id</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'adi,ad9523-1'</span></span><a class="headerlink" href="#adidt.parts.ad9523_1.ad9523_1_dt.compatible_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9523_1.ad9523_1_dt.set_dt_node_from_config">
+<span class="sig-name descname"><span class="pre">set_dt_node_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9523_1.ad9523_1_dt.set_dt_node_from_config" title="Link to this definition"></a></dt>
+<dd><p>Set AD9523-1 node from JIF configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>fdt.Node</em>) – Device tree parent node of AD9523-1</p></li>
+<li><p><strong>config</strong> (<em>Dict</em>) – Configuration struct generated from JIF</p></li>
+<li><p><strong>append</strong> (<em>boolean</em>) – Enable appending to subnode, if false the existing are removed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-adidt.parts.ad9528">
+<span id="ad9528"></span><h3>AD9528<a class="headerlink" href="#module-adidt.parts.ad9528" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="adidt.parts.ad9528.parse_profile">
+<span class="sig-prename descclassname"><span class="pre">adidt.parts.ad9528.</span></span><span class="sig-name descname"><span class="pre">parse_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9528.parse_profile" title="Link to this definition"></a></dt>
+<dd><p>Parse an AD9528 Profile Configuration Wizard file into a structured dict.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> – Path to the AD9528 profile (.txt) file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parsed profile with keys ‘pll1’, ‘pll2’, ‘out’, and ‘sysref’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-adidt.parts.ad9545">
+<span id="ad9545"></span><h3>AD9545<a class="headerlink" href="#module-adidt.parts.ad9545" title="Link to this heading"></a></h3>
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.parts.ad9545.</span></span><span class="sig-name descname"><span class="pre">ad9545_dt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local_sysfs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'192.168.2.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'root'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'analog'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dt_filepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dt</span></code></p>
+<p>AD9545 Device tree map class.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.pll_clock_id">
+<span class="sig-name descname"><span class="pre">pll_clock_id</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.pll_clock_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.out_clock_id">
+<span class="sig-name descname"><span class="pre">out_clock_id</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.out_clock_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.set_clock_node">
+<span class="sig-name descname"><span class="pre">set_clock_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clk</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.set_clock_node" title="Link to this definition"></a></dt>
+<dd><p>Append a minimal output-clk subnode to parent for the given register address.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.pll_set_rate">
+<span class="sig-name descname"><span class="pre">pll_set_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pll_nr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.pll_set_rate" title="Link to this definition"></a></dt>
+<dd><p>Rate change for PLLs is trickier,
+it is found in the assigned-clocks/assigned-clock-rates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.output_set_rate">
+<span class="sig-name descname"><span class="pre">output_set_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_nr</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.output_set_rate" title="Link to this definition"></a></dt>
+<dd><p>Rate change for PLLs is trickier,
+it is found in the assigned-clocks/assigned-clock-rates</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.set_source_priorities_from_config">
+<span class="sig-name descname"><span class="pre">set_source_priorities_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.set_source_priorities_from_config" title="Link to this definition"></a></dt>
+<dd><p>Update PLL profile priority values from the JIF config for each configured PLL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>fdt.Node</em>) – AD9545 device tree node.</p></li>
+<li><p><strong>config</strong> (<em>Dict</em>) – JIF configuration dict containing PLL0/PLL1 entries.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.ad9545.ad9545_dt.set_dt_node_from_config">
+<span class="sig-name descname"><span class="pre">set_dt_node_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.ad9545.ad9545_dt.set_dt_node_from_config" title="Link to this definition"></a></dt>
+<dd><p>Set AD9545 node from JIF configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>fdt.Node</em>) – Device tree parent node of ad9545</p></li>
+<li><p><strong>config</strong> (<em>Dict</em>) – Configuration struct generated from JIF</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+<section id="rf-transceivers">
+<h2>RF Transceivers<a class="headerlink" href="#rf-transceivers" title="Link to this heading"></a></h2>
+<section id="module-adidt.parts.adrv9009">
+<span id="adrv9009"></span><h3>ADRV9009<a class="headerlink" href="#module-adidt.parts.adrv9009" title="Link to this heading"></a></h3>
+<dl class="py function">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.parse_talInit">
+<span class="sig-prename descclassname"><span class="pre">adidt.parts.adrv9009.</span></span><span class="sig-name descname"><span class="pre">parse_talInit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.parse_talInit" title="Link to this definition"></a></dt>
+<dd><p>Parse a talise_config.c file and return the talInit configuration dict.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.handle_ints">
+<span class="sig-prename descclassname"><span class="pre">adidt.parts.adrv9009.</span></span><span class="sig-name descname"><span class="pre">handle_ints</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.handle_ints" title="Link to this definition"></a></dt>
+<dd><p>Convert a value to an unsigned 32-bit integer, correctly wrapping negatives.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.handle_channel_enable">
+<span class="sig-prename descclassname"><span class="pre">adidt.parts.adrv9009.</span></span><span class="sig-name descname"><span class="pre">handle_channel_enable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.handle_channel_enable" title="Link to this definition"></a></dt>
+<dd><p>Translate a TAL_RX*/TAL_TX*/TAL_ORX* string value in data[key] to its integer code.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<em>dict</em>) – Profile dict to update in-place.</p></li>
+<li><p><strong>key</strong> (<em>str</em>) – Key whose value should be translated.</p></li>
+<li><p><strong>default</strong> (<em>int</em>) – Integer value to use when key is absent.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the key’s string value is not a recognised channel-enable token.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.parse_profile">
+<span class="sig-prename descclassname"><span class="pre">adidt.parts.adrv9009.</span></span><span class="sig-name descname"><span class="pre">parse_profile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.parse_profile" title="Link to this definition"></a></dt>
+<dd><p>Parse an ADRV9009 Profile Configuration Wizard file into a structured dict.</p>
+<p>Converts the ADI profile XML format to a dict with rx, tx, orx, lpbk, and
+clocks sub-dicts ready for use in device tree template rendering.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> – Path to the profile (.xml) file.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Parsed profile with keys ‘rx’, ‘tx’, ‘orx’, ‘lpbk’, ‘clocks’.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.adrv9009_dt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.parts.adrv9009.</span></span><span class="sig-name descname"><span class="pre">adrv9009_dt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">arch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'local_sysfs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'192.168.2.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'root'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'analog'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_dt_filepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.adrv9009_dt" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">dt</span></code></p>
+<p>ADRV9009 device tree map class.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.parts.adrv9009.adrv9009_dt.set_dt_node_from_config">
+<span class="sig-name descname"><span class="pre">set_dt_node_from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Node</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">profile</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.parts.adrv9009.adrv9009_dt.set_dt_node_from_config" title="Link to this definition"></a></dt>
+<dd><p>Set ADRV9009 node from JIF configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>node</strong> (<em>fdt.Node</em>) – Device tree parent node of adrv9009</p></li>
+<li><p><strong>config</strong> (<em>Dict</em>) – Configuration struct generated from JIF</p></li>
+<li><p><strong>append</strong> (<em>boolean</em>) – Enable appending to subnode, if false the existing are removed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="model.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Board Model Module</a>
+    <a href="xsa.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Pipeline Module</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

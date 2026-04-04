@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The adidt.xsa subpackage converts Vivado .xsa archives into Linux Device Tree sources for ADI JESD204 FSM-framework designs." name="description" />
+
+    <title>XSA to Device Tree &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Visualization and Diagnostics" href="visualization.html" />
+    <link rel="prev" title="Device Tree Generation" href="board_class_workflow.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">XSA to Device Tree</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#pipeline-diagram">Pipeline diagram</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#base-dts-and-overlay-structure">Base DTS and Overlay Structure</a></li>
+<li><a class="reference internal" href="#hardware-test-flow">Hardware Test Flow</a></li>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#built-in-profiles">Built-in profiles</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#python-api">Python API</a><ul>
+<li><a class="reference internal" href="#xsapipeline-run-argument-reference"><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run</span></code> argument reference</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#using-adijif-pyadi-jif-with-the-xsa-flow">Using adijif (pyadi-jif) With the XSA Flow</a><ul>
+<li><a class="reference internal" href="#adijif-integration-workflow">adijif integration workflow</a></li>
+<li><a class="reference internal" href="#adijif-to-config-mapping">adijif-to-config mapping</a></li>
+<li><a class="reference internal" href="#reference-implementation">Reference implementation</a></li>
+<li><a class="reference internal" href="#ad9084-apollo-vcu118-microblaze-support">AD9084 (Apollo) VCU118 MicroBlaze support</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration">Configuration</a><ul>
+<li><a class="reference internal" href="#ad9081-link-mode-resolution">AD9081 link-mode resolution</a></li>
+<li><a class="reference internal" href="#board-override-keys">Board override keys</a></li>
+<li><a class="reference internal" href="#hardware-test-note">Hardware test note</a></li>
+<li><a class="reference internal" href="#profile-validation">Profile validation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#supported-ip-cores">Supported IP Cores</a><ul>
+<li><a class="reference internal" href="#parsed-topology-fields">Parsed topology fields</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#outputs">Outputs</a></li>
+<li><a class="reference internal" href="#clock-topology-graphs">Clock Topology Graphs</a></li>
+<li><a class="reference internal" href="#exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="xsa-to-device-tree">
+<h1>XSA to Device Tree<a class="headerlink" href="#xsa-to-device-tree" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidt.xsa</span></code> subpackage converts Vivado <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> archives into Linux
+Device Tree sources for ADI JESD204 FSM-framework designs.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The pipeline performs five stages:</p>
+<ol class="arabic simple">
+<li><p><strong>SDT generation</strong> – invokes <code class="docutils literal notranslate"><span class="pre">lopper</span></code> (<code class="docutils literal notranslate"><span class="pre">sdtgen</span></code>) as a subprocess to
+produce a base System Device Tree from the <code class="docutils literal notranslate"><span class="pre">.xsa</span></code>.</p></li>
+<li><p><strong>XSA parsing</strong> – extracts the Vivado hardware handoff (<code class="docutils literal notranslate"><span class="pre">.hwh</span></code> XML) from
+the <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> ZIP and detects ADI AXI IPs (JESD204 controllers, clock
+generators, converters).</p></li>
+<li><p><strong>Node building</strong> – each board builder constructs a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code>
+(see <a class="reference internal" href="api/model.html"><span class="doc">Board Model Module</span></a>) from the XSA topology and config, then renders it
+to DTS node strings via Jinja2 templates.  The <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> is editable
+before rendering — callers can modify clock dividers, JESD parameters, or
+GPIO mappings programmatically.</p></li>
+<li><p><strong>DTS merging</strong> – inserts the rendered nodes into the base DTS, producing
+both a standalone overlay (<code class="docutils literal notranslate"><span class="pre">.dtso</span></code>) and a fully merged (<code class="docutils literal notranslate"><span class="pre">.dts</span></code>).</p></li>
+<li><p><strong>HTML visualization</strong> – generates a self-contained interactive report
+with D3.js topology, clock tree, and JESD204 parameter panels.</p></li>
+<li><p><strong>Clock graph</strong> – parses <code class="docutils literal notranslate"><span class="pre">clocks</span></code> / <code class="docutils literal notranslate"><span class="pre">clock-names</span></code> / <code class="docutils literal notranslate"><span class="pre">clock-output-names</span></code>
+properties from the merged DTS and writes directed clock-distribution graphs
+in Graphviz DOT and D2 formats (SVG rendered automatically when <code class="docutils literal notranslate"><span class="pre">dot</span></code> /
+<code class="docutils literal notranslate"><span class="pre">d2</span></code> are available on PATH).</p></li>
+</ol>
+<section id="pipeline-diagram">
+<h3>Pipeline diagram<a class="headerlink" href="#pipeline-diagram" title="Link to this heading"></a></h3>
+<pre  class="mermaid">
+        flowchart LR
+    XSA[&quot;Vivado .xsa&quot;] --&gt; SDT[&quot;sdtgen / lopper&lt;br/&gt;base DTS artifacts&quot;]
+    XSA --&gt; HWH[&quot;HWH parser&lt;br/&gt;ADI IP topology&quot;]
+    CFG[&quot;pyadi-jif / JSON config&lt;br/&gt;JESD + clock settings&quot;] --&gt; NB[&quot;NodeBuilder&lt;br/&gt;BoardModel construction&quot;]
+    HWH --&gt; NB
+    NB --&gt; BM[&quot;BoardModel&lt;br/&gt;editable board description&quot;]
+    BM --&gt; RN[&quot;BoardModelRenderer&lt;br/&gt;ADI DTS nodes&quot;]
+    SDT --&gt; MG[&quot;DtsMerger&lt;br/&gt;overlay + merged DTS&quot;]
+    RN --&gt; MG
+    MG --&gt; DTBO[&quot;overlay .dtso&quot;]
+    MG --&gt; DTS[&quot;merged .dts&quot;]
+    DTS --&gt; DTC[&quot;dtc / cpp&quot;]
+    DTC --&gt; DTB[&quot;system.dtb&quot;]
+    NB --&gt; REP[&quot;HTML report&lt;br/&gt;topology + clocks + JESD&quot;]
+    DTS --&gt; CG[&quot;ClockGraphGenerator&lt;br/&gt;clock-tree diagrams&quot;]
+    CG --&gt; DOTF[&quot;.dot + .dot.svg&quot;]
+    CG --&gt; D2F[&quot;.d2 + .d2.svg&quot;]
+
+    style XSA fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style CFG fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style SDT fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style HWH fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style NB fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style MG fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style DTC fill:#f0f4f8,stroke:#555,color:#212836
+    style DTBO fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style DTS fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style DTB fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style REP fill:#fff4e0,stroke:#c8940a,color:#212836
+    style CG fill:#fff4e0,stroke:#c8940a,color:#212836
+    style DOTF fill:#fff4e0,stroke:#c8940a,color:#212836
+    style D2F fill:#fff4e0,stroke:#c8940a,color:#212836
+    </pre></section>
+</section>
+<section id="base-dts-and-overlay-structure">
+<h2>Base DTS and Overlay Structure<a class="headerlink" href="#base-dts-and-overlay-structure" title="Link to this heading"></a></h2>
+<p>The pipeline produces two output files: a <strong>merged DTS</strong> (<code class="docutils literal notranslate"><span class="pre">.dts</span></code>) and a
+standalone <strong>overlay</strong> (<code class="docutils literal notranslate"><span class="pre">.dtso</span></code>).  Understanding what each contains — and
+what the base DTS from <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> provides — is important when debugging boot
+failures or integrating with custom HDL designs.</p>
+<p><strong>Base DTS</strong> (from <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> / <code class="docutils literal notranslate"><span class="pre">lopper</span></code>)</p>
+<p><code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> generates a System Device Tree from the <code class="docutils literal notranslate"><span class="pre">.hwh</span></code> hardware handoff
+inside the <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> archive.  The base includes:</p>
+<ul class="simple">
+<li><p>The root <code class="docutils literal notranslate"><span class="pre">/</span></code> node with board and FPGA part identifiers.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">amba_pl</span></code> bus (<code class="docutils literal notranslate"><span class="pre">simple-bus</span></code>) containing <strong>every AXI IP</strong> in the
+Vivado block design — JESD204 controllers, DMA engines, SPI controllers,
+UART, Ethernet, GPIO, timer, interrupt controller, clock generators,
+transceivers, and memory controllers.</p></li>
+<li><p>Each IP node has <code class="docutils literal notranslate"><span class="pre">compatible</span> <span class="pre">=</span> <span class="pre">&quot;xlnx,...&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">reg</span></code>, <code class="docutils literal notranslate"><span class="pre">interrupts</span></code>,
+and Xilinx-specific properties (<code class="docutils literal notranslate"><span class="pre">xlnx,ip-name</span></code>, <code class="docutils literal notranslate"><span class="pre">xlnx,num-lanes</span></code>,
+etc.) derived from the HWH.</p></li>
+<li><p>CPU and memory nodes (<code class="docutils literal notranslate"><span class="pre">cpus</span></code>, <code class="docutils literal notranslate"><span class="pre">memory&#64;...</span></code>), <code class="docutils literal notranslate"><span class="pre">chosen</span></code> with
+<code class="docutils literal notranslate"><span class="pre">stdout-path</span></code> and <code class="docutils literal notranslate"><span class="pre">bootargs</span></code>, and <code class="docutils literal notranslate"><span class="pre">aliases</span></code> for serial/SPI/I2C.</p></li>
+<li><p>Clock infrastructure: fixed-clock nodes and <code class="docutils literal notranslate"><span class="pre">clk_bus_0</span></code> providing the
+AXI bus clock.</p></li>
+<li><p>For MicroBlaze designs: the <code class="docutils literal notranslate"><span class="pre">address-map</span></code> property on the CPU node
+listing all accessible peripherals.</p></li>
+</ul>
+<p>The base DTS nodes use Xilinx generic compatible strings
+(<code class="docutils literal notranslate"><span class="pre">xlnx,axi-jesd204-rx-1.0</span></code>, <code class="docutils literal notranslate"><span class="pre">xlnx,axi-dmac-1.0</span></code>, etc.) and lack
+ADI-driver-specific properties.  The kernel can parse these nodes but
+ADI drivers will not probe without the correct <code class="docutils literal notranslate"><span class="pre">adi,...</span></code> compatible and
+configuration properties.</p>
+<p><strong>What the pipeline adds</strong> (overlay / merged nodes)</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> renders ADI-specific DTS content that either <strong>replaces</strong>
+or <strong>augments</strong> nodes from the base:</p>
+<p><em>New nodes (inserted into the bus):</em></p>
+<ul class="simple">
+<li><p><strong>AXI clock generators</strong> — <code class="docutils literal notranslate"><span class="pre">adi,axi-clkgen-2.00.a</span></code> nodes with
+<code class="docutils literal notranslate"><span class="pre">#clock-cells</span></code>, <code class="docutils literal notranslate"><span class="pre">clock-output-names</span></code>, and bus clock references.</p></li>
+<li><p><strong>Fixed clocks</strong> — e.g. <code class="docutils literal notranslate"><span class="pre">clkin_125</span></code> for external reference oscillators
+not described in the HWH.</p></li>
+</ul>
+<p><em>New SPI device child nodes:</em></p>
+<ul class="simple">
+<li><p><strong>Clock chips</strong> — HMC7044 (<code class="docutils literal notranslate"><span class="pre">adi,hmc7044</span></code>), AD9523-1 (<code class="docutils literal notranslate"><span class="pre">adi,ad9523-1</span></code>),
+or AD9528 (<code class="docutils literal notranslate"><span class="pre">adi,ad9528</span></code>) with PLL, VCXO, channel dividers, and
+JESD204 sysref-provider configuration.</p></li>
+<li><p><strong>PLLs</strong> — ADF4382 (<code class="docutils literal notranslate"><span class="pre">adi,adf4382</span></code>) for converter device clocks.</p></li>
+<li><p><strong>Converters</strong> — AD9084 (<code class="docutils literal notranslate"><span class="pre">adi,ad9084</span></code>), AD9081 (<code class="docutils literal notranslate"><span class="pre">adi,ad9081</span></code>),
+AD9680, AD9144, ADRV9009, etc., with JESD204 link parameters, firmware
+names, lane mappings, and GPIO connections.</p></li>
+</ul>
+<p>These appear inside <code class="docutils literal notranslate"><span class="pre">&amp;spi_bus</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> overlay blocks that add children
+to the SPI controller nodes already present in the base.</p>
+<p><em>Overlay property additions</em> (<code class="docutils literal notranslate"><span class="pre">&amp;label</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> blocks):</p>
+<ul class="simple">
+<li><p><strong>DMA engines</strong> — adds <code class="docutils literal notranslate"><span class="pre">adi,axi-dmac-1.00.a</span></code> compatible and
+<code class="docutils literal notranslate"><span class="pre">#dma-cells</span></code> to the existing DMA nodes.</p></li>
+<li><p><strong>ADXCVR transceivers</strong> — adds <code class="docutils literal notranslate"><span class="pre">adi,axi-adxcvr-1.0</span></code> compatible,
+<code class="docutils literal notranslate"><span class="pre">adi,sys-clk-select</span></code>, <code class="docutils literal notranslate"><span class="pre">adi,out-clk-select</span></code>, clock references, and
+JESD204 input chain links.</p></li>
+<li><p><strong>JESD204 controllers</strong> — adds <code class="docutils literal notranslate"><span class="pre">adi,axi-jesd204-rx-1.0</span></code> (or <code class="docutils literal notranslate"><span class="pre">-tx-</span></code>),
+<code class="docutils literal notranslate"><span class="pre">adi,octets-per-frame</span></code>, <code class="docutils literal notranslate"><span class="pre">adi,frames-per-multiframe</span></code>, and the full
+<code class="docutils literal notranslate"><span class="pre">jesd204-device</span></code> / <code class="docutils literal notranslate"><span class="pre">jesd204-inputs</span></code> FSM framework properties.</p></li>
+<li><p><strong>TPL cores</strong> — adds <code class="docutils literal notranslate"><span class="pre">adi,axi-ad9081-rx-1.0</span></code> (or board-specific
+variant), DMA links, and converter associations.</p></li>
+<li><p><strong>HSCI</strong> — adds <code class="docutils literal notranslate"><span class="pre">adi,axi-hsci-1.0.a</span></code> and interface speed for
+high-speed converter interface blocks.</p></li>
+</ul>
+<p><em>Board fixups</em> (applied to the base before merging):</p>
+<p>Some base DTS nodes require corrections that <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> cannot derive from
+the HWH alone.  The <code class="docutils literal notranslate"><span class="pre">board_fixups.py</span></code> registry applies platform-specific
+patches — for example, VCU118 Ethernet PHY configuration and IIO device
+name normalization.</p>
+<p><strong>Assumptions about the base DTS</strong></p>
+<p>The pipeline expects the <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code>-generated base to provide:</p>
+<ol class="arabic simple">
+<li><p>An <code class="docutils literal notranslate"><span class="pre">amba_pl</span></code> (or <code class="docutils literal notranslate"><span class="pre">amba</span></code>) bus node as the top-level container.</p></li>
+<li><p>Labeled nodes for every AXI IP that the overlay will reference
+(<code class="docutils literal notranslate"><span class="pre">axi_apollo_rx_dma</span></code>, <code class="docutils literal notranslate"><span class="pre">axi_apollo_rx_xcvr</span></code>, etc.).  The labels
+are derived from the Vivado block design instance names.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">clk_bus_0</span></code> fixed-clock node providing the AXI bus clock frequency.</p></li>
+<li><p>Correct <code class="docutils literal notranslate"><span class="pre">#address-cells</span></code> and <code class="docutils literal notranslate"><span class="pre">#size-cells</span></code> on the bus (1 for
+MicroBlaze/VCU118, 2 for ZynqMP/ZCU102).</p></li>
+<li><p>For MicroBlaze: a <code class="docutils literal notranslate"><span class="pre">cpus</span></code> node, <code class="docutils literal notranslate"><span class="pre">memory</span></code> node with <code class="docutils literal notranslate"><span class="pre">device_type</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">chosen</span></code> with <code class="docutils literal notranslate"><span class="pre">bootargs</span> <span class="pre">=</span> <span class="pre">&quot;earlycon&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">stdout-path</span></code> pointing
+to the UART.  The <code class="docutils literal notranslate"><span class="pre">SdtgenRunner</span></code> applies fixups to ensure these are
+present.</p></li>
+</ol>
+<p>If the XSA comes from an ADI HDL reference design, these assumptions hold
+automatically.  Custom designs must follow the same naming conventions for
+the overlay labels to resolve.</p>
+<p><strong>Merged vs overlay output</strong></p>
+<ul class="simple">
+<li><p>The <strong>merged DTS</strong> (<code class="docutils literal notranslate"><span class="pre">.dts</span></code>) combines the base and overlay into a single
+file with <code class="docutils literal notranslate"><span class="pre">#include</span> <span class="pre">&quot;pl.dtsi&quot;</span></code> for the base, followed by the generated
+ADI nodes and <code class="docutils literal notranslate"><span class="pre">&amp;label</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> augmentations.  Compile it with
+<code class="docutils literal notranslate"><span class="pre">cpp</span> <span class="pre">+</span> <span class="pre">dtc</span></code> to produce a standalone DTB.</p></li>
+<li><p>The <strong>overlay</strong> (<code class="docutils literal notranslate"><span class="pre">.dtso</span></code>) is a <code class="docutils literal notranslate"><span class="pre">/plugin/;</span></code> file that can be applied
+at runtime via <code class="docutils literal notranslate"><span class="pre">dtoverlay</span></code> on systems that support dynamic DT overlays.
+It contains the same ADI nodes but uses <code class="docutils literal notranslate"><span class="pre">&amp;amba_pl</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> to target
+the bus node.</p></li>
+</ul>
+<p>For MicroBlaze <code class="docutils literal notranslate"><span class="pre">simpleImage</span></code> targets, use the merged DTS — overlays
+require a base DTB that the bootloader applies the overlay to, which
+MicroBlaze’s direct-boot flow does not support.</p>
+</section>
+<section id="hardware-test-flow">
+<h2>Hardware Test Flow<a class="headerlink" href="#hardware-test-flow" title="Link to this heading"></a></h2>
+<p>The hardware tests can optionally build and inject a kernel image with
+<code class="docutils literal notranslate"><span class="pre">pyadi-build</span></code> while still using the DTB generated from the XSA pipeline.</p>
+<pre  class="mermaid">
+        flowchart TD
+    KREL[&quot;Kuiper release BOOT.BIN&quot;] --&gt; DEPLOY[&quot;KuiperDLDriver deploy&quot;]
+    XSA2[&quot;XSA from examples&lt;br/&gt;or Kuiper project&quot;] --&gt; PIPE[&quot;XsaPipeline.run()&quot;]
+    CFG2[&quot;board config&lt;br/&gt;(JSON or adijif-derived)&quot;] --&gt; PIPE
+    PIPE --&gt; MDTS[&quot;merged DTS&quot;]
+    MDTS --&gt; COMPILE[&quot;cpp + dtc&quot;]
+    COMPILE --&gt; MDTB[&quot;generated system.dtb&quot;]
+    PYB{&quot;ADI_XSA_BUILD_KERNEL=1 ?&quot;} --&gt;|yes| PBUILD[&quot;pyadi-build&lt;br/&gt;build kernel image&quot;]
+    PYB --&gt;|no| SKIP[&quot;skip kernel replacement&quot;]
+    PBUILD --&gt; DEPLOY
+    MDTB --&gt; DEPLOY
+    SKIP --&gt; DEPLOY
+    DEPLOY --&gt; BOOT[&quot;boot target via labgrid&quot;]
+    BOOT --&gt; CHECK[&quot;run checks on DUT shell&lt;br/&gt;dmesg + jesd_status + IIO devices&quot;]
+
+    style XSA2 fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style CFG2 fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style KREL fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style PIPE fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style MDTS fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style COMPILE fill:#f0f4f8,stroke:#555,color:#212836
+    style MDTB fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style PYB fill:#fff4e0,stroke:#c8940a,color:#212836
+    style PBUILD fill:#fff4e0,stroke:#c8940a,color:#212836
+    style SKIP fill:#f0f4f8,stroke:#555,color:#212836
+    style DEPLOY fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style BOOT fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style CHECK fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    </pre><p>Example hardware invocation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>/tools/Xilinx/2025.1/Vivado/settings64.sh
+<span class="nv">LG_ENV</span><span class="o">=</span>/jenkins/lg_ad9081_zcu102.yaml<span class="w"> </span><span class="nv">ADI_XSA_BUILD_KERNEL</span><span class="o">=</span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>pytest<span class="w"> </span>-q<span class="w"> </span>test/hw/ad9081/test_ad9081_xsa_hw_m4_l8.py
+</pre></div>
+</div>
+</section>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h2>
+<p>The XSA pipeline requires <code class="docutils literal notranslate"><span class="pre">lopper</span></code> (the Xilinx System Device Tree
+generator). Install the optional dependency group:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;adidt[xsa]&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h2>
+<p>Start with the step-by-step tutorial before tuning profiles:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/xsa/adrv9009_zcu102.py<span class="w"> </span>--xsa<span class="w"> </span>/path/to/design.xsa
+</pre></div>
+</div>
+<p>or use the full-page tutorial at
+<a class="reference internal" href="examples/xsa_tutorial.html"><span class="doc">XSA Flow Tutorials</span></a> and the adijif-focused guide
+<a class="reference internal" href="examples/xsa_adijif_tutorial.html"><span class="doc">XSA + adijif Tutorial</span></a>.</p>
+<p>Run the pipeline from the CLI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>-o<span class="w"> </span>out/
+</pre></div>
+</div>
+<p>Select an explicit board profile (optional):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>--profile<span class="w"> </span>ad9081_zcu102<span class="w"> </span>-o<span class="w"> </span>out/
+</pre></div>
+</div>
+<p>Generate manifest parity reports from a reference DTS root:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>-o<span class="w"> </span>out/<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--reference-dts<span class="w"> </span>zynqmp-zcu102-rev10-ad9081-m8-l4.dts
+</pre></div>
+</div>
+<p>Enable strict parity mode to fail generation when required roles are missing:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>design.xsa<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>-o<span class="w"> </span>out/<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--reference-dts<span class="w"> </span>zynqmp-zcu102-rev10-ad9081-m8-l4.dts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--strict-parity
+</pre></div>
+</div>
+<p>List available built-in profiles:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa-profiles
+</pre></div>
+</div>
+<p>Show one profile and its defaults:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa-profile-show<span class="w"> </span>ad9081_zcu102
+</pre></div>
+</div>
+<section id="built-in-profiles">
+<h3>Built-in profiles<a class="headerlink" href="#built-in-profiles" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 15.0%" />
+<col style="width: 20.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Profile</p></th>
+<th class="head"><p>Converter Family</p></th>
+<th class="head"><p>Platform</p></th>
+<th class="head"><p>JESD in Profile</p></th>
+<th class="head"><p>Board Config Key</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9081_zcu102</span></code></p></td>
+<td><p>AD9081 MxFE</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9081_zc706</span></code></p></td>
+<td><p>AD9081 MxFE</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9081_vpk180</span></code></p></td>
+<td><p>AD9081 MxFE</p></td>
+<td><p>VPK180</p></td>
+<td><p>Yes (JESD204C M8/L8)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9082_zcu102</span></code></p></td>
+<td><p>AD9082 MxFE</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9083_zcu102</span></code></p></td>
+<td><p>AD9083 MxFE</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9084_vcu118</span></code></p></td>
+<td><p>AD9084</p></td>
+<td><p>VCU118</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9084_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9172_zcu102</span></code></p></td>
+<td><p>AD9172 DAC</p></td>
+<td><p>ZCU102</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9172_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_zcu102</span></code></p></td>
+<td><p>ADRV9009</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_zc706</span></code></p></td>
+<td><p>ADRV9009</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9025_zcu102</span></code></p></td>
+<td><p>ADRV9025</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9008_zcu102</span></code></p></td>
+<td><p>ADRV9008</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9008_zc706</span></code></p></td>
+<td><p>ADRV9008</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adrv937x_zcu102</span></code></p></td>
+<td><p>ADRV937x</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv937x_zc706</span></code></p></td>
+<td><p>ADRV937x</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9002_zc706</span></code></p></td>
+<td><p>ADRV9002</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p>—</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_zcu102</span></code></p></td>
+<td><p>FMCDAQ2</p></td>
+<td><p>ZCU102</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_zc706</span></code></p></td>
+<td><p>FMCDAQ2</p></td>
+<td><p>ZC706</p></td>
+<td><p>No (supply via cfg)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_board</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_zcu102</span></code></p></td>
+<td><p>FMCDAQ3</p></td>
+<td><p>ZCU102</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_board</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_zc706</span></code></p></td>
+<td><p>FMCDAQ3</p></td>
+<td><p>ZC706</p></td>
+<td><p>Yes</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_board</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Profiles with <strong>“JESD in Profile = Yes”</strong> include default JESD framing
+parameters (F, K, M, L, Np, S) and can be used with <code class="docutils literal notranslate"><span class="pre">cfg={}</span></code> — no user
+config needed.  Profiles with <strong>“No”</strong> require JESD parameters to be supplied
+via the <code class="docutils literal notranslate"><span class="pre">cfg</span></code> dict, typically from a <code class="docutils literal notranslate"><span class="pre">pyadi-jif</span></code> solver or manual
+configuration.</p>
+<p>Or call the pipeline directly from Python:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">XsaPipeline</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;config.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;merged&quot;</span><span class="p">])</span>       <span class="c1"># Path to the merged .dts</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;report&quot;</span><span class="p">])</span>       <span class="c1"># Path to the HTML visualization</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;clock_dot&quot;</span><span class="p">])</span>    <span class="c1"># Path to the Graphviz clock-tree .dot</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s2">&quot;clock_d2&quot;</span><span class="p">])</span>     <span class="c1"># Path to the D2 clock-tree .d2</span>
+<span class="c1"># SVG paths are present only when the rendering tool is installed:</span>
+<span class="c1"># results[&quot;clock_dot_svg&quot;], results[&quot;clock_d2_svg&quot;]</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="python-api">
+<h2>Python API<a class="headerlink" href="#python-api" title="Link to this heading"></a></h2>
+<p>Core classes and methods used in the XSA flow:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>API</p></th>
+<th class="head"><p>Purpose</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">XsaParser.parse(xsa_path:</span> <span class="pre">Path)</span> <span class="pre">-&gt;</span> <span class="pre">XsaTopology</span></code></p></td>
+<td><p>Extracts <code class="docutils literal notranslate"><span class="pre">.hwh</span></code> from the XSA and returns discovered JESD, clockgen,
+converter, connectivity, and part metadata.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">NodeBuilder.build(topology:</span> <span class="pre">XsaTopology,</span> <span class="pre">cfg:</span> <span class="pre">dict)</span> <span class="pre">-&gt;</span> <span class="pre">dict[str,</span> <span class="pre">list[str]]</span></code></p></td>
+<td><p>Dispatches to board builders, each constructing a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> and
+rendering it via <code class="docutils literal notranslate"><span class="pre">BoardModelRenderer</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">BoardModelRenderer.render(model:</span> <span class="pre">BoardModel)</span> <span class="pre">-&gt;</span> <span class="pre">dict[str,</span> <span class="pre">list[str]]</span></code></p></td>
+<td><p>Renders a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> to DTS node strings using per-component
+Jinja2 templates.  See <a class="reference internal" href="api/model.html"><span class="doc">Board Model Module</span></a>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DtsMerger.merge(base_dts:</span> <span class="pre">str,</span> <span class="pre">nodes:</span> <span class="pre">dict,</span> <span class="pre">output_dir:</span> <span class="pre">Path,</span> <span class="pre">name:</span> <span class="pre">str)</span></code></p></td>
+<td><p>Produces <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.dtso</span></code> overlay + <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.dts</span></code> merged full tree.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">HtmlVisualizer.generate(topology,</span> <span class="pre">cfg,</span> <span class="pre">merged_content,</span> <span class="pre">output_dir,</span> <span class="pre">name)</span></code></p></td>
+<td><p>Writes self-contained HTML debug report with topology and clock links.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ClockGraphGenerator.generate(merged_dts,</span> <span class="pre">output_dir,</span> <span class="pre">name)</span> <span class="pre">-&gt;</span> <span class="pre">dict[str,</span> <span class="pre">Path]</span></code></p></td>
+<td><p>Parses clock properties from the merged DTS and writes <code class="docutils literal notranslate"><span class="pre">.dot</span></code> and
+<code class="docutils literal notranslate"><span class="pre">.d2</span></code> clock-tree diagrams; renders SVG when <code class="docutils literal notranslate"><span class="pre">dot</span></code> / <code class="docutils literal notranslate"><span class="pre">d2</span></code> are on PATH.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run(...)</span> <span class="pre">-&gt;</span> <span class="pre">dict[str,</span> <span class="pre">Path]</span></code></p></td>
+<td><p>Orchestrates all stages end-to-end and returns artifact paths.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="xsapipeline-run-argument-reference">
+<h3><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run</span></code> argument reference<a class="headerlink" href="#xsapipeline-run-argument-reference" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 15.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Type</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">xsa_path</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Path</span></code></p></td>
+<td><p>Vivado hardware handoff archive (must contain one <code class="docutils literal notranslate"><span class="pre">.hwh</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">cfg</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dict</span></code></p></td>
+<td><p>Runtime configuration (JESD, clock labels/channels, board overrides).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">output_dir</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Path</span></code></p></td>
+<td><p>Output folder for base SDT, overlay/merged DTS, and report artifacts.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sdtgen_timeout</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">int</span></code></p></td>
+<td><p>Timeout (seconds) for SDT generation subprocess.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">profile</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">str</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>Optional explicit built-in/custom profile name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">reference_dts</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">Path</span> <span class="pre">|</span> <span class="pre">None</span></code></p></td>
+<td><p>Optional DTS root for manifest-parity checks and coverage artifacts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">strict_parity</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">bool</span></code></p></td>
+<td><p>If true, raises <code class="docutils literal notranslate"><span class="pre">ParityError</span></code> when required roles/links/properties
+are missing/mismatched.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="using-adijif-pyadi-jif-with-the-xsa-flow">
+<h2>Using adijif (pyadi-jif) With the XSA Flow<a class="headerlink" href="#using-adijif-pyadi-jif-with-the-xsa-flow" title="Link to this heading"></a></h2>
+<p>The intended integration is:</p>
+<ol class="arabic simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">adijif</span></code> to select/solve JESD and clock settings.</p></li>
+<li><p>Translate solved values into <code class="docutils literal notranslate"><span class="pre">cfg</span></code> keys expected by <code class="docutils literal notranslate"><span class="pre">XsaPipeline</span></code>.</p></li>
+<li><p>Run <code class="docutils literal notranslate"><span class="pre">XsaPipeline</span></code> with either explicit profile or auto-profile.</p></li>
+<li><p>Compile the generated merged DTS to DTB and deploy/test on hardware.</p></li>
+</ol>
+<section id="adijif-integration-workflow">
+<h3>adijif integration workflow<a class="headerlink" href="#adijif-integration-workflow" title="Link to this heading"></a></h3>
+<pre  class="mermaid">
+        flowchart LR
+    AJ[&quot;adijif system()&lt;br/&gt;converter + clock + fpga model&quot;] --&gt; MODE[&quot;select JESD modes&lt;br/&gt;M/L/F/K/Np/S&quot;]
+    MODE --&gt; SOLVE{&quot;run solve()?&quot;}
+    SOLVE --&gt;|yes| SCFG[&quot;read solved clock /&lt;br/&gt;JESD outputs&quot;]
+    SOLVE --&gt;|no| QCFG[&quot;use quick mode&lt;br/&gt;settings&quot;]
+    SCFG --&gt; MAP[&quot;map to XsaPipeline&lt;br/&gt;cfg keys&quot;]
+    QCFG --&gt; MAP
+    MAP --&gt; PIPE2[&quot;XsaPipeline.run()&quot;]
+    PIPE2 --&gt; DTS2[&quot;merged DTS +&lt;br/&gt;overlay + report&quot;]
+    DTS2 --&gt; DTB2[&quot;cpp + dtc →&lt;br/&gt;system.dtb&quot;]
+    DTB2 --&gt; HW2[&quot;boot + dmesg +&lt;br/&gt;jesd_status validation&quot;]
+
+    style AJ fill:#d6e8f7,stroke:#0067b9,color:#212836
+    style MODE fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style SOLVE fill:#fff4e0,stroke:#c8940a,color:#212836
+    style SCFG fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style QCFG fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style MAP fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style PIPE2 fill:#f0f4f8,stroke:#0067b9,color:#212836
+    style DTS2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style DTB2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    style HW2 fill:#e8f0e8,stroke:#3a7d44,color:#212836
+    </pre></section>
+<section id="adijif-to-config-mapping">
+<h3>adijif-to-config mapping<a class="headerlink" href="#adijif-to-config-mapping" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>adijif output</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">cfg</span></code> key in XSA flow</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>RX JESD <code class="docutils literal notranslate"><span class="pre">F,</span> <span class="pre">K,</span> <span class="pre">M,</span> <span class="pre">L,</span> <span class="pre">Np,</span> <span class="pre">S</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;rx&quot;]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>TX JESD <code class="docutils literal notranslate"><span class="pre">F,</span> <span class="pre">K,</span> <span class="pre">M,</span> <span class="pre">L,</span> <span class="pre">Np,</span> <span class="pre">S</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;tx&quot;]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>RX device clock source choice</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;clock&quot;][&quot;rx_device_clk_label&quot;]</span></code> (for example <code class="docutils literal notranslate"><span class="pre">clkgen</span></code>/<code class="docutils literal notranslate"><span class="pre">hmc7044</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p>TX device clock source choice</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;clock&quot;][&quot;tx_device_clk_label&quot;]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>HMC/clock output channel for RX</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;clock&quot;][&quot;hmc7044_rx_channel&quot;]</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>HMC/clock output channel for TX</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;clock&quot;][&quot;hmc7044_tx_channel&quot;]</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Board wiring specifics (SPI/CS/GPIO/link IDs)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code> / <code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code> / <code class="docutils literal notranslate"><span class="pre">fmcdaq2_board</span></code> profile keys</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="reference-implementation">
+<h3>Reference implementation<a class="headerlink" href="#reference-implementation" title="Link to this heading"></a></h3>
+<p>Use the ADRV9009 example for a complete adijif-driven flow:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/xsa/adrv9009_zcu102.py</span></code></p></li>
+</ul>
+<p>For ADRV9025 ZCU102 XSA flows (Kuiper/local XSA), use:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/xsa/adrv9025_zcu102.py</span></code></p></li>
+</ul>
+<p>The script demonstrates both quick-mode JESD extraction and optional
+<code class="docutils literal notranslate"><span class="pre">solve()</span></code> usage, then feeds those values directly into <code class="docutils literal notranslate"><span class="pre">XsaPipeline</span></code>.</p>
+<p>You can also pass <code class="docutils literal notranslate"><span class="pre">profile=&quot;ad9081_zcu102&quot;</span></code> (or another built-in profile) to
+<code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code>. If no profile is passed, the pipeline will auto-select a
+matching profile when available (for example, <code class="docutils literal notranslate"><span class="pre">ad9081_zcu102</span></code>).</p>
+<p>For AD9082 Kuiper projects, prefer explicit profile selection:
+<code class="docutils literal notranslate"><span class="pre">profile=&quot;ad9082_zcu102&quot;</span></code>. AD9081/AD9082 designs often share <code class="docutils literal notranslate"><span class="pre">mxfe</span></code> JESD
+instance names, so topology-only auto-inference is ambiguous.</p>
+<p>For AD9083 Kuiper projects, prefer explicit profile selection:
+<code class="docutils literal notranslate"><span class="pre">profile=&quot;ad9083_zcu102&quot;</span></code> for the same reason (shared <code class="docutils literal notranslate"><span class="pre">mxfe</span></code> naming).</p>
+<p>For AD9081 ZC706 Kuiper projects, use:
+<code class="docutils literal notranslate"><span class="pre">profile=&quot;ad9081_zc706&quot;</span></code>.</p>
+<p>For AD9172 Kuiper projects, use explicit profile selection:
+<code class="docutils literal notranslate"><span class="pre">profile=&quot;ad9172_zcu102&quot;</span></code>. XSA provides JESD/clock transport topology while
+SPI-attached DAC/clock chip details require board-specific overlays.</p>
+<p>Auto-selection also covers FMCDAQ2 variants:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_zcu102</span></code> (ZynqMP/ZCU102)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_zc706</span></code> (Zynq-7000/ZC706)</p></li>
+</ul>
+<p>FMCDAQ3 variants are available via explicit profiles:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_zcu102</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fmcdaq3_zc706</span></code></p></li>
+</ul>
+<p>Current FMCDAQ3 support focuses on JESD/clock transport defaults and artifact
+generation; board-specific SPI device overlay content remains to be extended.</p>
+<p>ADRV family profile variants include:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9008_zcu102</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9008_zc706</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9002_zc706</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9009_zc706</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9009_zcu102</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv937x_zc706</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv937x_zcu102</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adrv9025_zcu102</span></code> (also selected from <code class="docutils literal notranslate"><span class="pre">adrv9026</span></code>-named JESD labels)</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">adrv9009_zcu102</span></code> profile also supports the <strong>AD-FMCOMMS8-EBZ</strong>
+(FMComms8) dual-chip design.  When the XSA topology is detected as
+FMComms8 layout (two ADRV9009 transceivers sharing one SPI bus), the
+pipeline generates a second PHY node (<code class="docutils literal notranslate"><span class="pre">trx1_adrv9009</span></code>) with independent
+HMC7044 channel assignments per chip:</p>
+<ul class="simple">
+<li><p>trx0 (<code class="docutils literal notranslate"><span class="pre">adrv9009-x2</span></code>): uses HMC7044 channels 0/1 (dev/sysref) and 6 (FPGA sysref)</p></li>
+<li><p>trx1 (<code class="docutils literal notranslate"><span class="pre">adrv9009</span></code>): uses HMC7044 channels 2/3 (dev/sysref) and 7 (FPGA sysref)</p></li>
+</ul>
+<p>Hardware tests verify that both <code class="docutils literal notranslate"><span class="pre">adrv9009-phy</span></code> IIO devices appear in
+the IIO context.</p>
+<p>For ADRV9008 Kuiper projects, prefer explicit profile selection:
+<code class="docutils literal notranslate"><span class="pre">profile=&quot;adrv9008_zcu102&quot;</span></code>. Many ADRV9008 XSAs use ADRV9009-style JESD/IP
+instance names, which makes converter-family auto-inference ambiguous.</p>
+</section>
+<section id="ad9084-apollo-vcu118-microblaze-support">
+<h3>AD9084 (Apollo) VCU118 MicroBlaze support<a class="headerlink" href="#ad9084-apollo-vcu118-microblaze-support" title="Link to this heading"></a></h3>
+<p>The pipeline supports AD9084 “apollo” dual-link designs on VCU118 (MicroBlaze).
+These designs feature four JESD204C links (RX A/B + TX A/B) with separate
+XCVR, DMA, and TPL cores per link.  The board builder generates nodes for:</p>
+<ul class="simple">
+<li><p><strong>ADF4382</strong> PLL (reference clock for AD9084 dev_clk)</p></li>
+<li><p><strong>HMC7044</strong> clock distributor (JESD reference clocks, SYSREF)</p></li>
+<li><p><strong>HSCI</strong> high-speed connector interface</p></li>
+<li><p><strong>JESD204 overlay</strong> nodes with 4-clock config (s_axi_aclk, link_clk,
+device_clk, lane_clk) and per-link device clock from HMC7044 channels</p></li>
+<li><p><strong>AD9084</strong> converter node with profile firmware, lane mappings, and HSCI</p></li>
+</ul>
+<p>The built-in <code class="docutils literal notranslate"><span class="pre">ad9084_vcu118</span></code> profile encodes the AD9084-EBZ board wiring
+for the HMC7044 + AD9084 + ADF4382 combination. When the pipeline sees an
+AD9084 design on VCU118 it now auto-applies those defaults unless the caller
+overrides them explicitly.</p>
+<p>Configuration uses the <code class="docutils literal notranslate"><span class="pre">ad9084_board</span></code> key with JESD204 link IDs from
+<code class="docutils literal notranslate"><span class="pre">dt-bindings/iio/adc/adi,ad9088.h</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cfg</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;jesd&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;rx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Np&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+        <span class="s2">&quot;tx&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;F&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span> <span class="s2">&quot;L&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;Np&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span> <span class="s2">&quot;S&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;clock&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;rx_device_clk_label&quot;</span><span class="p">:</span> <span class="s2">&quot;hmc7044&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;rx_device_clk_index&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+        <span class="s2">&quot;tx_device_clk_label&quot;</span><span class="p">:</span> <span class="s2">&quot;hmc7044&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;tx_device_clk_index&quot;</span><span class="p">:</span> <span class="mi">9</span><span class="p">,</span>
+        <span class="s2">&quot;rx_b_device_clk_index&quot;</span><span class="p">:</span> <span class="mi">11</span><span class="p">,</span>
+        <span class="s2">&quot;tx_b_device_clk_index&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">&quot;ad9084_board&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">&quot;converter_spi&quot;</span><span class="p">:</span> <span class="s2">&quot;axi_spi_2&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;converter_cs&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;clock_spi&quot;</span><span class="p">:</span> <span class="s2">&quot;axi_spi&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hmc7044_cs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">&quot;adf4382_cs&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">&quot;dev_clk_ref&quot;</span><span class="p">:</span> <span class="s2">&quot;adf4382 0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dev_clk_scales&quot;</span><span class="p">:</span> <span class="s2">&quot;1 10&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;firmware_name&quot;</span><span class="p">:</span> <span class="s2">&quot;204C_M4_L8_NP16_1p25_4x4.bin&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;reset_gpio&quot;</span><span class="p">:</span> <span class="mi">62</span><span class="p">,</span>
+        <span class="s2">&quot;rx_a_link_id&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>   <span class="c1"># FRAMER_LINK_A0_RX</span>
+        <span class="s2">&quot;rx_b_link_id&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span>   <span class="c1"># FRAMER_LINK_B0_RX</span>
+        <span class="s2">&quot;tx_a_link_id&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>   <span class="c1"># DEFRAMER_LINK_A0_TX</span>
+        <span class="s2">&quot;tx_b_link_id&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>   <span class="c1"># DEFRAMER_LINK_B0_TX</span>
+        <span class="s2">&quot;hsci_label&quot;</span><span class="p">:</span> <span class="s2">&quot;axi_hsci_0&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;hsci_auto_linkup&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="c1"># ... lane mappings, HMC7044 channel config, etc.</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>The sdtgen postprocessor applies MicroBlaze-specific fixups (CPU cluster
+rename, DDR4 memory node, earlycon bootargs) and the node builder uses
+platform-aware <code class="docutils literal notranslate"><span class="pre">reg_addr()</span></code>/<code class="docutils literal notranslate"><span class="pre">reg_size()</span></code> for 32-bit register format.</p>
+<p>See <code class="docutils literal notranslate"><span class="pre">test/ad9084/test_ad9084_xsa_hw_vcu118.py</span></code> for a complete hardware test
+example that runs the full pipeline and verifies all IIO devices and JESD204C
+links.</p>
+<p>If <code class="docutils literal notranslate"><span class="pre">reference_dts=Path(...)</span></code> is passed to <code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code>, the pipeline
+also writes parity artifacts:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.map.json</span></code> – role and required-link parity summary</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;.coverage.md</span></code> – human-readable role/link/property coverage report
+(property checks are value-sensitive)</p></li>
+</ul>
+<p>When <code class="docutils literal notranslate"><span class="pre">strict_parity=True</span></code> is used with <code class="docutils literal notranslate"><span class="pre">reference_dts</span></code>, the pipeline raises
+<code class="docutils literal notranslate"><span class="pre">ParityError</span></code> if any required manifest roles, links, or properties are
+missing in the generated DTS.</p>
+<p>For properties, parity checks compare both property name and value from the
+reference DTS role node. Value comparison is whitespace-insensitive.</p>
+</section>
+</section>
+<section id="configuration">
+<h2>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h2>
+<p>The JSON config file supplies JESD204 link parameters and HMC7044 channel
+assignments. Example for an AD9081 RX+TX design:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jesd&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;rx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clkgen&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;axi_clkgen_0&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;hmc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;rx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<section id="ad9081-link-mode-resolution">
+<h3>AD9081 link-mode resolution<a class="headerlink" href="#ad9081-link-mode-resolution" title="Link to this heading"></a></h3>
+<p>For AD9081 + MXFE XSA designs, <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> resolves
+<code class="docutils literal notranslate"><span class="pre">adi,link-mode</span></code> using this precedence:</p>
+<ol class="arabic simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;ad9081&quot;][&quot;rx_link_mode&quot;]</span></code> / <code class="docutils literal notranslate"><span class="pre">cfg[&quot;ad9081&quot;][&quot;tx_link_mode&quot;]</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;rx&quot;][&quot;mode&quot;]</span></code> / <code class="docutils literal notranslate"><span class="pre">cfg[&quot;jesd&quot;][&quot;tx&quot;][&quot;mode&quot;]</span></code></p></li>
+<li><p>Inference from JESD <code class="docutils literal notranslate"><span class="pre">(M,</span> <span class="pre">L)</span></code> tuples:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">4)</span></code> -&gt; RX <code class="docutils literal notranslate"><span class="pre">17</span></code>, TX <code class="docutils literal notranslate"><span class="pre">18</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">8)</span></code> -&gt; RX <code class="docutils literal notranslate"><span class="pre">10</span></code>, TX <code class="docutils literal notranslate"><span class="pre">11</span></code></p></li>
+</ul>
+</li>
+</ol>
+<p>If no explicit mode is set and <code class="docutils literal notranslate"><span class="pre">(M,</span> <span class="pre">L)</span></code> does not match a supported tuple,
+<code class="docutils literal notranslate"><span class="pre">ConfigError</span></code> is raised instead of silently falling back to hardcoded modes.</p>
+</section>
+<section id="board-override-keys">
+<h3>Board override keys<a class="headerlink" href="#board-override-keys" title="Link to this heading"></a></h3>
+<p>The profile/default config can carry board-specific keys to avoid hardcoding in
+the parser implementation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code> keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">clock_spi</span></code> / <code class="docutils literal notranslate"><span class="pre">clock_cs</span></code> – SPI bus and chip-select for HMC7044</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_spi</span></code> / <code class="docutils literal notranslate"><span class="pre">adc_cs</span></code> – SPI bus and chip-select for AD9081</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reset_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">sysref_req_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">rx1_enable_gpio</span></code> /
+<code class="docutils literal notranslate"><span class="pre">rx2_enable_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">tx1_enable_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">tx2_enable_gpio</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">hmc7044_channel_blocks</span></code> – optional replacement list for HMC7044 channel
+subnodes (raw DTS snippet blocks)</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code> keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">misc_clk_hz</span></code> – fixed clock frequency for <code class="docutils literal notranslate"><span class="pre">misc_clk_0</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">spi_bus</span></code> / <code class="docutils literal notranslate"><span class="pre">clk_cs</span></code> / <code class="docutils literal notranslate"><span class="pre">trx_cs</span></code> – SPI and CS assignments</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trx_reset_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">trx_sysref_req_gpio</span></code> / <code class="docutils literal notranslate"><span class="pre">trx_spi_max_frequency</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ad9528_vcxo_freq</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rx_link_id</span></code> / <code class="docutils literal notranslate"><span class="pre">rx_os_link_id</span></code> / <code class="docutils literal notranslate"><span class="pre">tx_link_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tx_octets_per_frame</span></code> / <code class="docutils literal notranslate"><span class="pre">rx_os_octets_per_frame</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trx_profile_props</span></code> – optional replacement list for ADRV9009 PHY profile
+properties (raw DTS property lines)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ad9528_channel_blocks</span></code> – optional replacement list for AD9528 channel
+subnodes (raw DTS snippet blocks)</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">fmcdaq2_board</span></code> keys:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">spi_bus</span></code> / <code class="docutils literal notranslate"><span class="pre">clock_cs</span></code> / <code class="docutils literal notranslate"><span class="pre">adc_cs</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_cs</span></code> – SPI bus and chip-select
+assignments (default mapping: AD9523 on CS0, AD9144 on CS1, AD9680 on CS2)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clock_vcxo_hz</span></code> / <code class="docutils literal notranslate"><span class="pre">clock_spi_max_frequency</span></code> /
+<code class="docutils literal notranslate"><span class="pre">adc_spi_max_frequency</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_spi_max_frequency</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_dma_label</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_dma_label</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_core_label</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_core_label</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_xcvr_label</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_xcvr_label</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_jesd_label</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_jesd_label</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_jesd_link_id</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_jesd_link_id</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_device_clk_idx</span></code> / <code class="docutils literal notranslate"><span class="pre">adc_sysref_clk_idx</span></code> /
+<code class="docutils literal notranslate"><span class="pre">adc_xcvr_ref_clk_idx</span></code> / <code class="docutils literal notranslate"><span class="pre">dac_device_clk_idx</span></code> /
+<code class="docutils literal notranslate"><span class="pre">dac_xcvr_ref_clk_idx</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adc_sampling_frequency_hz</span></code></p></li>
+<li><p>GPIO overrides: <code class="docutils literal notranslate"><span class="pre">clk_sync_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">clk_status0_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">clk_status1_gpio</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dac_txen_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">dac_reset_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">dac_irq_gpio</span></code>,
+<code class="docutils literal notranslate"><span class="pre">adc_powerdown_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">adc_fastdetect_a_gpio</span></code>, <code class="docutils literal notranslate"><span class="pre">adc_fastdetect_b_gpio</span></code></p></li>
+</ul>
+</section>
+<section id="hardware-test-note">
+<h3>Hardware test note<a class="headerlink" href="#hardware-test-note" title="Link to this heading"></a></h3>
+<p>Some XSA-derived FMCDAQ2 designs expose tpl-core IIO names instead of legacy
+core names. Hardware tests therefore accept either set:</p>
+<ul class="simple">
+<li><p>legacy: <code class="docutils literal notranslate"><span class="pre">axi-ad9680-hpc</span></code>, <code class="docutils literal notranslate"><span class="pre">axi-ad9144-hpc</span></code></p></li>
+<li><p>tpl-core: <code class="docutils literal notranslate"><span class="pre">ad_ip_jesd204_tpl_adc</span></code>, <code class="docutils literal notranslate"><span class="pre">ad_ip_jesd204_tpl_dac</span></code></p></li>
+</ul>
+</section>
+<section id="profile-validation">
+<h3>Profile validation<a class="headerlink" href="#profile-validation" title="Link to this heading"></a></h3>
+<p>Built-in and custom JSON profiles are validated when loaded:</p>
+<ul class="simple">
+<li><p>Unknown keys under <code class="docutils literal notranslate"><span class="pre">ad9081_board</span></code> / <code class="docutils literal notranslate"><span class="pre">adrv9009_board</span></code> raise
+<code class="docutils literal notranslate"><span class="pre">ProfileError</span></code> (prevents silent typos).</p></li>
+<li><p>Structured snippet fields such as <code class="docutils literal notranslate"><span class="pre">hmc7044_channel_blocks</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ad9528_channel_blocks</span></code>, and <code class="docutils literal notranslate"><span class="pre">trx_profile_props</span></code> must be JSON lists.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">merge_profile_defaults()</span></code> deep-copies defaults during merge so mutating the
+effective runtime config does not mutate the source profile data.</p>
+</section>
+</section>
+<section id="supported-ip-cores">
+<h2>Supported IP Cores<a class="headerlink" href="#supported-ip-cores" title="Link to this heading"></a></h2>
+<p>The XSA parser recognises the following ADI IP cores:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 45.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>IP type (<code class="docutils literal notranslate"><span class="pre">MODTYPE</span></code>)</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">axi_jesd204_rx</span></code>, <code class="docutils literal notranslate"><span class="pre">axi_jesd204_tx</span></code></p></td>
+<td><p>JESD204 FSM controllers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">axi_clkgen</span></code></p></td>
+<td><p>PL clock generator</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081</span></code>, <code class="docutils literal notranslate"><span class="pre">axi_ad9084</span></code>, <code class="docutils literal notranslate"><span class="pre">axi_ad9375</span></code></p></td>
+<td><p>RF data converters</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="parsed-topology-fields">
+<h3>Parsed topology fields<a class="headerlink" href="#parsed-topology-fields" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">XsaTopology</span></code> carries:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fpga_part</span></code> – full Xilinx part string (e.g. <code class="docutils literal notranslate"><span class="pre">xczu9eg-ffvb1156-2-e</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jesd204_rx</span></code> / <code class="docutils literal notranslate"><span class="pre">jesd204_tx</span></code> – list of <a class="reference internal" href="api/xsa.html#adidt.xsa.topology.Jesd204Instance" title="adidt.xsa.topology.Jesd204Instance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Jesd204Instance</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">clkgens</span></code> – list of <a class="reference internal" href="api/xsa.html#adidt.xsa.topology.ClkgenInstance" title="adidt.xsa.topology.ClkgenInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClkgenInstance</span></code></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">converters</span></code> – list of <a class="reference internal" href="api/xsa.html#adidt.xsa.topology.ConverterInstance" title="adidt.xsa.topology.ConverterInstance"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConverterInstance</span></code></a></p></li>
+</ul>
+</section>
+</section>
+<section id="outputs">
+<h2>Outputs<a class="headerlink" href="#outputs" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code> returns a dict with the following keys:</p>
+<div class="table-wrapper docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Key</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">base_dir</span></code></p></td>
+<td><p>Directory containing the sdtgen output</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">overlay</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.dtso</span></code> overlay (ADI nodes only)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">merged</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.dts</span></code> with base SDT + ADI nodes merged</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">report</span></code></p></td>
+<td><p>Self-contained HTML visualisation report</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clock_dot</span></code></p></td>
+<td><p>Graphviz DOT clock-tree diagram (always)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clock_d2</span></code></p></td>
+<td><p>D2 clock-tree diagram (always)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clock_dot_svg</span></code></p></td>
+<td><p>SVG rendered from DOT (when <code class="docutils literal notranslate"><span class="pre">dot</span></code> is on PATH)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">clock_d2_svg</span></code></p></td>
+<td><p>SVG rendered from D2 (when <code class="docutils literal notranslate"><span class="pre">d2</span></code> is on PATH)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">map</span></code></p></td>
+<td><p>(Optional) manifest parity JSON report</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">coverage</span></code></p></td>
+<td><p>(Optional) manifest parity Markdown summary</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="clock-topology-graphs">
+<h2>Clock Topology Graphs<a class="headerlink" href="#clock-topology-graphs" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code> automatically produces clock-tree diagrams derived
+from the merged DTS.  Both output formats are written unconditionally; SVG
+renderings are produced alongside each when the corresponding tool is on
+PATH.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 60.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Tool for SVG</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_clocks.dot</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">dot</span></code> (Graphviz)</p></td>
+<td><p>Graphviz directed graph; render manually with
+<code class="docutils literal notranslate"><span class="pre">dot</span> <span class="pre">-Tsvg</span> <span class="pre">-o</span> <span class="pre">clocks.svg</span> <span class="pre">&lt;name&gt;_clocks.dot</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_clocks.d2</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">d2</span></code></p></td>
+<td><p>D2lang diagram; render manually with
+<code class="docutils literal notranslate"><span class="pre">d2</span> <span class="pre">&lt;name&gt;_clocks.d2</span> <span class="pre">clocks.svg</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Both formats use the same colour scheme:</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 75.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Node type</p></th>
+<th class="head"><p>Colour / shape</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PS clocks (<code class="docutils literal notranslate"><span class="pre">zynqmp_clk</span></code>, <code class="docutils literal notranslate"><span class="pre">ps7_clkc</span></code>)</p></td>
+<td><p>Orange, oval</p></td>
+</tr>
+<tr class="row-odd"><td><p>Clock chips (<code class="docutils literal notranslate"><span class="pre">hmc7044</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9528</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9523</span></code>)</p></td>
+<td><p>Dark blue, rectangle</p></td>
+</tr>
+<tr class="row-even"><td><p>GT transceivers (<code class="docutils literal notranslate"><span class="pre">*xcvr*</span></code>)</p></td>
+<td><p>Purple, rectangle</p></td>
+</tr>
+<tr class="row-odd"><td><p>JESD204 controllers (<code class="docutils literal notranslate"><span class="pre">*jesd*</span></code>)</p></td>
+<td><p>Dark green, rectangle</p></td>
+</tr>
+<tr class="row-even"><td><p>PL clock generators (<code class="docutils literal notranslate"><span class="pre">*clkgen*</span></code>)</p></td>
+<td><p>Teal, rectangle</p></td>
+</tr>
+<tr class="row-odd"><td><p>Converters / PHY (<code class="docutils literal notranslate"><span class="pre">trx*</span></code>, <code class="docutils literal notranslate"><span class="pre">ad9*</span></code>, <code class="docutils literal notranslate"><span class="pre">adrv*</span></code>)</p></td>
+<td><p>Dark red, rectangle</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Edges are labelled with the <code class="docutils literal notranslate"><span class="pre">clock-names</span></code> value and the provider channel
+index (e.g. <code class="docutils literal notranslate"><span class="pre">device_clk[9]</span></code>).  Edge styles distinguish signal-domain
+clocks from AXI bus clocks:</p>
+<ul class="simple">
+<li><p><strong>Solid coloured</strong> – <code class="docutils literal notranslate"><span class="pre">device_clk</span></code> (blue), <code class="docutils literal notranslate"><span class="pre">lane_clk</span></code> (green),
+<code class="docutils literal notranslate"><span class="pre">conv</span></code> (gold), <code class="docutils literal notranslate"><span class="pre">sampl_clk</span></code> (purple)</p></li>
+<li><p><strong>Dashed</strong> – <code class="docutils literal notranslate"><span class="pre">s_axi_aclk</span></code> (grey), <code class="docutils literal notranslate"><span class="pre">div40</span></code> (gold dashed)</p></li>
+</ul>
+<p>The graphs can also be generated standalone without running the full
+pipeline:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.clock_graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClockGraphGenerator</span>
+
+<span class="n">merged_dts</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/adrv9009_zcu102.dts&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">ClockGraphGenerator</span><span class="p">()</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="n">merged_dts</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out/&quot;</span><span class="p">),</span> <span class="s2">&quot;adrv9009_zcu102&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;clock_dot&quot;</span><span class="p">])</span>    <span class="c1"># always present</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;clock_d2&quot;</span><span class="p">])</span>     <span class="c1"># always present</span>
+<span class="c1"># result[&quot;clock_dot_svg&quot;] and result[&quot;clock_d2_svg&quot;] when tools are available</span>
+</pre></div>
+</div>
+</section>
+<section id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Exception</p></th>
+<th class="head"><p>Raised when</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">XsaParseError</span></code></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> ZIP contains no <code class="docutils literal notranslate"><span class="pre">.hwh</span></code> file, or the XML is malformed</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ConfigError</span></code></p></td>
+<td><p>A required JESD204 parameter (<code class="docutils literal notranslate"><span class="pre">F</span></code> or <code class="docutils literal notranslate"><span class="pre">K</span></code>) is missing from the config</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ParityError</span></code></p></td>
+<td><p>Strict parity mode is enabled and one or more required roles are missing</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">SdtgenNotFoundError</span></code></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> / <code class="docutils literal notranslate"><span class="pre">lopper</span></code> binary cannot be found on <code class="docutils literal notranslate"><span class="pre">PATH</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SdtgenError</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">sdtgen</span></code> exits with a non-zero return code</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="board_class_workflow.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Device Tree Generation</a>
+    <a href="visualization.html" title="Next document (Alt+Shift+RightArrow)" class="next">Visualization and Diagnostics</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

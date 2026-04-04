@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This guide covers device tree source (DTS) file generation for AD9081 FMC evaluation boards across multiple FPGA platforms." name="description" />
+
+    <title>AD9081 Device Tree Generation &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA Flow Tutorials" href="xsa_tutorial.html" />
+    <link rel="prev" title="Examples" href="../examples.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">AD9081 Device Tree Generation</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a><ul>
+<li><a class="reference internal" href="#supported-platforms">Supported Platforms</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#quick-start">Quick Start</a><ul>
+<li><a class="reference internal" href="#install-pyadi-dt">1. Install pyadi-dt</a></li>
+<li><a class="reference internal" href="#prepare-linux-kernel-source">2. Prepare Linux Kernel Source</a></li>
+<li><a class="reference internal" href="#create-configuration-file">3. Create Configuration File</a></li>
+<li><a class="reference internal" href="#generate-device-tree">4. Generate Device Tree</a></li>
+<li><a class="reference internal" href="#compile-to-dtb-optional">5. Compile to DTB (Optional)</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#command-line-interface">Command Line Interface</a><ul>
+<li><a class="reference internal" href="#gen-dts-command">gen-dts Command</a></li>
+<li><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#configuration-file-format">Configuration File Format</a><ul>
+<li><a class="reference internal" href="#complete-example">Complete Example</a></li>
+<li><a class="reference internal" href="#configuration-sections">Configuration Sections</a><ul>
+<li><a class="reference internal" href="#clock-configuration">Clock Configuration</a></li>
+<li><a class="reference internal" href="#fpga-configuration">FPGA Configuration</a></li>
+<li><a class="reference internal" href="#jesd-configuration">JESD Configuration</a></li>
+<li><a class="reference internal" href="#datapath-configuration">Datapath Configuration</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#python-api-usage">Python API Usage</a><ul>
+<li><a class="reference internal" href="#basic-usage">Basic Usage</a></li>
+<li><a class="reference internal" href="#advanced-usage">Advanced Usage</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#kernel-source-configuration">Kernel Source Configuration</a><ul>
+<li><a class="reference internal" href="#recommended-kernel-sources">Recommended Kernel Sources</a></li>
+<li><a class="reference internal" href="#required-files">Required Files</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compilation">Compilation</a><ul>
+<li><a class="reference internal" href="#manual-compilation">Manual Compilation</a></li>
+<li><a class="reference internal" href="#automated-compilation">Automated Compilation</a></li>
+<li><a class="reference internal" href="#dtc-requirements">DTC Requirements</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li><a class="reference internal" href="#kernel-path-not-found">Kernel Path Not Found</a></li>
+<li><a class="reference internal" href="#base-dts-file-missing">Base DTS File Missing</a></li>
+<li><a class="reference internal" href="#dtc-compilation-failed">DTC Compilation Failed</a></li>
+<li><a class="reference internal" href="#platform-not-supported">Platform Not Supported</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-new-platforms">Adding New Platforms</a><ul>
+<li><a class="reference internal" href="#add-platform-configuration">1. Add Platform Configuration</a></li>
+<li><a class="reference internal" href="#create-template">2. Create Template</a></li>
+<li><a class="reference internal" href="#add-tests">3. Add Tests</a></li>
+<li><a class="reference internal" href="#update-documentation">4. Update Documentation</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#reference">Reference</a><ul>
+<li><a class="reference internal" href="#configuration-templates">Configuration Templates</a></li>
+<li><a class="reference internal" href="#related-resources">Related Resources</a></li>
+<li><a class="reference internal" href="#support">Support</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1" checked=""/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../examples.html">Examples</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="ad9081-device-tree-generation">
+<h1>AD9081 Device Tree Generation<a class="headerlink" href="#ad9081-device-tree-generation" title="Link to this heading"></a></h1>
+<p>This guide covers device tree source (DTS) file generation for AD9081 FMC evaluation boards across multiple FPGA platforms.</p>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">gen-dts</span></code> command generates platform-specific device tree source files for AD9081-based systems from JSON configuration files. These DTS files can be compiled to DTB format and deployed to target hardware.</p>
+<section id="supported-platforms">
+<h3>Supported Platforms<a class="headerlink" href="#supported-platforms" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Platform</p></th>
+<th class="head"><p>SoC/FPGA</p></th>
+<th class="head"><p>Architecture</p></th>
+<th class="head"><p>JESD PHY</p></th>
+<th class="head"><p>Max Lane Rate</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZCU102</p></td>
+<td><p>Zynq UltraScale+</p></td>
+<td><p>ARM64</p></td>
+<td><p>GTH</p></td>
+<td><p>16.3 Gbps</p></td>
+</tr>
+<tr class="row-odd"><td><p>VPK180</p></td>
+<td><p>Versal</p></td>
+<td><p>ARM64</p></td>
+<td><p>GTY</p></td>
+<td><p>28.21 Gbps</p></td>
+</tr>
+<tr class="row-even"><td><p>ZC706</p></td>
+<td><p>Zynq-7000</p></td>
+<td><p>ARM</p></td>
+<td><p>GTX</p></td>
+<td><p>12.5 Gbps</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="quick-start">
+<h2>Quick Start<a class="headerlink" href="#quick-start" title="Link to this heading"></a></h2>
+<section id="install-pyadi-dt">
+<h3>1. Install pyadi-dt<a class="headerlink" href="#install-pyadi-dt" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+</section>
+<section id="prepare-linux-kernel-source">
+<h3>2. Prepare Linux Kernel Source<a class="headerlink" href="#prepare-linux-kernel-source" title="Link to this heading"></a></h3>
+<p>The tool requires Linux kernel source containing base device tree files. Choose one method:</p>
+<p><strong>Option A: Clone to default location</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/analogdevicesinc/linux.git
+</pre></div>
+</div>
+<p><strong>Option B: Set environment variable</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">LINUX_KERNEL_PATH</span><span class="o">=</span>/path/to/your/linux
+</pre></div>
+</div>
+<p><strong>Option C: Pass via command line</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>zcu102<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>-k<span class="w"> </span>/path/to/linux
+</pre></div>
+</div>
+</section>
+<section id="create-configuration-file">
+<h3>3. Create Configuration File<a class="headerlink" href="#create-configuration-file" title="Link to this heading"></a></h3>
+<p>Create a JSON file with your system configuration (see <a class="reference internal" href="#configuration-file-format">Configuration File Format</a>).</p>
+</section>
+<section id="generate-device-tree">
+<h3>4. Generate Device Tree<a class="headerlink" href="#generate-device-tree" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>--platform<span class="w"> </span>zcu102<span class="w"> </span>--config<span class="w"> </span>my_config.json
+</pre></div>
+</div>
+<p>Output: <code class="docutils literal notranslate"><span class="pre">generated_dts/ad9081_fmc_zcu102.dts</span></code></p>
+</section>
+<section id="compile-to-dtb-optional">
+<h3>5. Compile to DTB (Optional)<a class="headerlink" href="#compile-to-dtb-optional" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>--platform<span class="w"> </span>zcu102<span class="w"> </span>--config<span class="w"> </span>my_config.json<span class="w"> </span>--compile
+</pre></div>
+</div>
+<p>Output: <code class="docutils literal notranslate"><span class="pre">generated_dts/ad9081_fmc_zcu102.dtb</span></code></p>
+</section>
+</section>
+<section id="command-line-interface">
+<h2>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h2>
+<section id="gen-dts-command">
+<h3>gen-dts Command<a class="headerlink" href="#gen-dts-command" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p><strong>Required Options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-p,</span> <span class="pre">--platform</span></code> : Target platform (<code class="docutils literal notranslate"><span class="pre">zcu102</span></code>, <code class="docutils literal notranslate"><span class="pre">vpk180</span></code>, or <code class="docutils literal notranslate"><span class="pre">zc706</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-c,</span> <span class="pre">--config</span></code> : Path to JSON configuration file</p></li>
+</ul>
+<p><strong>Optional:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-k,</span> <span class="pre">--kernel-path</span></code> : Path to Linux kernel source (overrides env var)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-o,</span> <span class="pre">--output</span></code> : Custom output DTS file path</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--compile</span></code> : Compile DTS to DTB after generation</p></li>
+</ul>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h3>
+<p><strong>Basic generation:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>zcu102<span class="w"> </span>-c<span class="w"> </span>configs/default.json
+</pre></div>
+</div>
+<p><strong>With custom kernel path:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>vpk180<span class="w"> </span>-c<span class="w"> </span>configs/vpk180.json<span class="w"> </span>-k<span class="w"> </span>~/linux-adi
+</pre></div>
+</div>
+<p><strong>Generate and compile:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>zc706<span class="w"> </span>-c<span class="w"> </span>configs/zc706.json<span class="w"> </span>--compile
+</pre></div>
+</div>
+<p><strong>Custom output location:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>zcu102<span class="w"> </span>-c<span class="w"> </span>cfg.json<span class="w"> </span>-o<span class="w"> </span>/tmp/custom.dts
+</pre></div>
+</div>
+</section>
+</section>
+<section id="configuration-file-format">
+<span id="id1"></span><h2>Configuration File Format<a class="headerlink" href="#configuration-file-format" title="Link to this heading"></a></h2>
+<p>Configuration files are JSON documents containing clock, JESD, and datapath settings. These are typically generated from <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-jif" target="_blank">pyadi-jif</a>.</p>
+<section id="complete-example">
+<h3>Complete Example<a class="headerlink" href="#complete-example" title="Link to this heading"></a></h3>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;converter&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ad9081&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;vcxo&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;vco&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3000000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;output_clocks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;AD9081_ref_clk&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;adc_sysref&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;dac_sysref&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">256</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;adc_fpga_ref_clk&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;adc_fpga_link_out_clk&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;dac_fpga_ref_clk&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;dac_fpga_link_out_clk&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;divider&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;fpga_adc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;sys_clk_select&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XCVR_QPLL&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;out_clk_select&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XCVR_REFCLK_DIV2&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;fpga_dac&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;sys_clk_select&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XCVR_QPLL&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;out_clk_select&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;XCVR_REFCLK_DIV2&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;jesd_adc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;M&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;L&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;S&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Np&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;CS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;HD&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jesd_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">9</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jesd_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jesd204b&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;converter_clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4000000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sample_clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">250000000</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;jesd_dac&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;M&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;L&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;S&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;Np&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;CS&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;HD&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jesd_mode&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;jesd_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;jesd204b&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;converter_clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">12000000000</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;sample_clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">500000000</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;datapath_adc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;cddc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;decimations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">4</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;nco_frequencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;fddc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;decimations&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;nco_frequencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;datapath_dac&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;cduc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;interpolation&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">6</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sources&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="mi">5</span><span class="p">],</span><span class="w"> </span><span class="p">[</span><span class="mi">6</span><span class="p">,</span><span class="w"> </span><span class="mi">7</span><span class="p">]],</span>
+<span class="w">      </span><span class="nt">&quot;nco_frequencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;fduc&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;enabled&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w"> </span><span class="kc">true</span><span class="p">],</span>
+<span class="w">      </span><span class="nt">&quot;interpolation&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;nco_frequencies&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="configuration-sections">
+<h3>Configuration Sections<a class="headerlink" href="#configuration-sections" title="Link to this heading"></a></h3>
+<section id="clock-configuration">
+<h4>Clock Configuration<a class="headerlink" href="#clock-configuration" title="Link to this heading"></a></h4>
+<p><strong>HMC7044 Clock Chip Settings:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">vcxo</span></code>: Reference oscillator frequency (100 MHz or 122.88 MHz typical)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vco</span></code>: PLL2 VCO frequency (up to 3 GHz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">output_clocks</span></code>: Clock output dividers for each channel</p></li>
+</ul>
+</section>
+<section id="fpga-configuration">
+<h4>FPGA Configuration<a class="headerlink" href="#fpga-configuration" title="Link to this heading"></a></h4>
+<p><strong>Transceiver Settings (Optional):</strong></p>
+<p>If omitted, platform defaults are used:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Platform</p></th>
+<th class="head"><p>Default ADC PLL</p></th>
+<th class="head"><p>Default DAC PLL</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZCU102</p></td>
+<td><p>XCVR_QPLL</p></td>
+<td><p>XCVR_QPLL</p></td>
+</tr>
+<tr class="row-odd"><td><p>VPK180</p></td>
+<td><p>XCVR_QPLL0</p></td>
+<td><p>XCVR_QPLL0</p></td>
+</tr>
+<tr class="row-even"><td><p>ZC706</p></td>
+<td><p>XCVR_QPLL</p></td>
+<td><p>XCVR_QPLL</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Available PLL Options:</strong></p>
+<ul class="simple">
+<li><p>ZCU102/ZC706: <code class="docutils literal notranslate"><span class="pre">XCVR_QPLL</span></code>, <code class="docutils literal notranslate"><span class="pre">XCVR_CPLL</span></code></p></li>
+<li><p>VPK180: <code class="docutils literal notranslate"><span class="pre">XCVR_QPLL0</span></code>, <code class="docutils literal notranslate"><span class="pre">XCVR_QPLL1</span></code>, <code class="docutils literal notranslate"><span class="pre">XCVR_CPLL</span></code></p></li>
+</ul>
+<p><strong>Clock Selection Options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">XCVR_REFCLK</span></code>: Reference clock</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">XCVR_REFCLK_DIV2</span></code>: Reference clock divided by 2</p></li>
+</ul>
+</section>
+<section id="jesd-configuration">
+<h4>JESD Configuration<a class="headerlink" href="#jesd-configuration" title="Link to this heading"></a></h4>
+<p><strong>ADC/DAC Link Parameters:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">M</span></code>: Converters per link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">L</span></code>: Lanes per link</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">S</span></code>: Samples per converter per frame</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">F</span></code>: Octets per frame</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">K</span></code>: Frames per multiframe</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Np</span></code>: Converter resolution (bits)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CS</span></code>: Control bits per sample</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">HD</span></code>: High density mode (0 or 1)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jesd_mode</span></code>: Quick config mode (see AD9081 datasheet)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jesd_class</span></code>: JESD204 subclass (<code class="docutils literal notranslate"><span class="pre">jesd204a</span></code>, <code class="docutils literal notranslate"><span class="pre">jesd204b</span></code>, <code class="docutils literal notranslate"><span class="pre">jesd204c</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">converter_clock</span></code>: Converter sampling clock (Hz)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sample_clock</span></code>: Output sample rate (Hz)</p></li>
+</ul>
+</section>
+<section id="datapath-configuration">
+<h4>Datapath Configuration<a class="headerlink" href="#datapath-configuration" title="Link to this heading"></a></h4>
+<p><strong>ADC Datapath:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cddc</span></code>: Coarse DDC settings (4 channels)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code>: Enable/disable each CDDC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">decimations</span></code>: Decimation factor per CDDC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nco_frequencies</span></code>: NCO frequency shift (Hz)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fddc</span></code>: Fine DDC settings (8 channels)</p>
+<ul>
+<li><p>Similar structure to CDDC</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>DAC Datapath:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cduc</span></code>: Coarse DUC settings (4 channels)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code>: Enable/disable each CDUC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interpolation</span></code>: Interpolation factor</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sources</span></code>: FDUC channel mapping for each CDUC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nco_frequencies</span></code>: NCO frequency shift (Hz)</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fduc</span></code>: Fine DUC settings (8 channels)</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enabled</span></code>: Enable/disable each FDUC</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">interpolation</span></code>: Interpolation factor</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nco_frequencies</span></code>: NCO frequency shift (Hz)</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+<section id="python-api-usage">
+<h2>Python API Usage<a class="headerlink" href="#python-api-usage" title="Link to this heading"></a></h2>
+<section id="basic-usage">
+<h3>Basic Usage<a class="headerlink" href="#basic-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.boards.ad9081_fmc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ad9081_fmc</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="c1"># Load configuration</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+<span class="c1"># Initialize board for target platform</span>
+<span class="n">board</span> <span class="o">=</span> <span class="n">ad9081_fmc</span><span class="p">(</span><span class="n">platform</span><span class="o">=</span><span class="s1">&#39;zcu102&#39;</span><span class="p">,</span> <span class="n">kernel_path</span><span class="o">=</span><span class="s1">&#39;/path/to/linux&#39;</span><span class="p">)</span>
+
+<span class="c1"># Validate and apply defaults</span>
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">validate_and_default_fpga_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+<span class="c1"># Map configuration to board layout</span>
+<span class="n">clock</span><span class="p">,</span> <span class="n">adc</span><span class="p">,</span> <span class="n">dac</span><span class="p">,</span> <span class="n">fpga</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">map_clocks_to_board_layout</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+
+<span class="c1"># Generate DTS</span>
+<span class="n">output_file</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">gen_dt</span><span class="p">(</span>
+    <span class="n">clock</span><span class="o">=</span><span class="n">clock</span><span class="p">,</span>
+    <span class="n">adc</span><span class="o">=</span><span class="n">adc</span><span class="p">,</span>
+    <span class="n">dac</span><span class="o">=</span><span class="n">dac</span><span class="p">,</span>
+    <span class="n">fpga</span><span class="o">=</span><span class="n">fpga</span><span class="p">,</span>
+    <span class="n">config_source</span><span class="o">=</span><span class="s1">&#39;config.json&#39;</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Generated: </span><span class="si">{</span><span class="n">output_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="advanced-usage">
+<h3>Advanced Usage<a class="headerlink" href="#advanced-usage" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Custom output location</span>
+<span class="n">board</span><span class="o">.</span><span class="n">output_filename</span> <span class="o">=</span> <span class="s1">&#39;/custom/path/output.dts&#39;</span>
+
+<span class="c1"># Get DTC include paths for manual compilation</span>
+<span class="n">include_paths</span> <span class="o">=</span> <span class="n">board</span><span class="o">.</span><span class="n">get_dtc_include_paths</span><span class="p">()</span>
+
+<span class="c1"># Access platform configuration</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Platform: </span><span class="si">{</span><span class="n">board</span><span class="o">.</span><span class="n">platform</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Architecture: </span><span class="si">{</span><span class="n">board</span><span class="o">.</span><span class="n">platform_config</span><span class="p">[</span><span class="s1">&#39;arch&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JESD PHY: </span><span class="si">{</span><span class="n">board</span><span class="o">.</span><span class="n">platform_config</span><span class="p">[</span><span class="s1">&#39;jesd_phy&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="kernel-source-configuration">
+<h2>Kernel Source Configuration<a class="headerlink" href="#kernel-source-configuration" title="Link to this heading"></a></h2>
+<p>The tool needs Linux kernel source to include base platform DTS files. Three-tier priority system:</p>
+<ol class="arabic simple">
+<li><p><strong>CLI argument</strong> (highest): <code class="docutils literal notranslate"><span class="pre">--kernel-path</span> <span class="pre">/path/to/linux</span></code></p></li>
+<li><p><strong>Environment variable</strong>: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">LINUX_KERNEL_PATH=/path/to/linux</span></code></p></li>
+<li><p><strong>Default location</strong> (lowest): <code class="docutils literal notranslate"><span class="pre">./linux</span></code> in project root</p></li>
+</ol>
+<section id="recommended-kernel-sources">
+<h3>Recommended Kernel Sources<a class="headerlink" href="#recommended-kernel-sources" title="Link to this heading"></a></h3>
+<p><strong>ADI Linux Fork (Recommended):</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/analogdevicesinc/linux.git
+<span class="nb">cd</span><span class="w"> </span>linux
+git<span class="w"> </span>checkout<span class="w"> </span>adi-<span class="o">{</span>version<span class="o">}</span>
+</pre></div>
+</div>
+<p><strong>Xilinx Linux Fork:</strong></p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Xilinx/linux-xlnx.git
+<span class="nb">cd</span><span class="w"> </span>linux-xlnx
+git<span class="w"> </span>checkout<span class="w"> </span>xlnx_rebase_v<span class="o">{</span>version<span class="o">}</span>
+</pre></div>
+</div>
+</section>
+<section id="required-files">
+<h3>Required Files<a class="headerlink" href="#required-files" title="Link to this heading"></a></h3>
+<p>The tool validates these files exist:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Platform</p></th>
+<th class="head"><p>Required DTS File</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ZCU102</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev1.0.dts</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>VPK180</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">arch/arm64/boot/dts/xilinx/versal-vpk180-revA.dts</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>ZC706</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">arch/arm/boot/dts/xilinx/zynq-zc706.dts</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="compilation">
+<h2>Compilation<a class="headerlink" href="#compilation" title="Link to this heading"></a></h2>
+<section id="manual-compilation">
+<h3>Manual Compilation<a class="headerlink" href="#manual-compilation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set kernel path</span>
+<span class="nv">KERNEL</span><span class="o">=</span>/path/to/linux
+
+<span class="c1"># ZCU102 (ARM64)</span>
+dtc<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/arch/arm64/boot/dts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/arch/arm64/boot/dts/xilinx<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/include<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-o<span class="w"> </span>output.dtb<span class="w"> </span>input.dts
+
+<span class="c1"># ZC706 (ARM)</span>
+dtc<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/arch/arm/boot/dts<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/arch/arm/boot/dts/xilinx<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-i<span class="w"> </span><span class="nv">$KERNEL</span>/include<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>-o<span class="w"> </span>output.dtb<span class="w"> </span>input.dts
+</pre></div>
+</div>
+</section>
+<section id="automated-compilation">
+<h3>Automated Compilation<a class="headerlink" href="#automated-compilation" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span>-p<span class="w"> </span>zcu102<span class="w"> </span>-c<span class="w"> </span>config.json<span class="w"> </span>--compile
+</pre></div>
+</div>
+<p>The tool automatically:</p>
+<ol class="arabic simple">
+<li><p>Generates DTS file</p></li>
+<li><p>Determines correct include paths</p></li>
+<li><p>Invokes <code class="docutils literal notranslate"><span class="pre">dtc</span></code> compiler</p></li>
+<li><p>Produces DTB file alongside DTS</p></li>
+</ol>
+</section>
+<section id="dtc-requirements">
+<h3>DTC Requirements<a class="headerlink" href="#dtc-requirements" title="Link to this heading"></a></h3>
+<ul>
+<li><p><strong>Version</strong>: &gt;= 1.4.6 recommended</p></li>
+<li><p><strong>Installation</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Ubuntu/Debian</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>device-tree-compiler
+
+<span class="c1"># Fedora/RHEL</span>
+sudo<span class="w"> </span>dnf<span class="w"> </span>install<span class="w"> </span>dtc
+
+<span class="c1"># Build from source</span>
+git<span class="w"> </span>clone<span class="w"> </span>https://git.kernel.org/pub/scm/utils/dtc/dtc.git
+<span class="nb">cd</span><span class="w"> </span>dtc
+make<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>make<span class="w"> </span>install
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<section id="kernel-path-not-found">
+<h3>Kernel Path Not Found<a class="headerlink" href="#kernel-path-not-found" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">Kernel</span> <span class="n">source</span> <span class="n">path</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span> <span class="o">./</span><span class="n">linux</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Clone kernel to <code class="docutils literal notranslate"><span class="pre">./linux</span></code>: <code class="docutils literal notranslate"><span class="pre">git</span> <span class="pre">clone</span> <span class="pre">https://github.com/analogdevicesinc/linux.git</span></code></p></li>
+<li><p>Set environment: <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">LINUX_KERNEL_PATH=/your/kernel/path</span></code></p></li>
+<li><p>Use CLI argument: <code class="docutils literal notranslate"><span class="pre">--kernel-path</span> <span class="pre">/your/kernel/path</span></code></p></li>
+</ol>
+</section>
+<section id="base-dts-file-missing">
+<h3>Base DTS File Missing<a class="headerlink" href="#base-dts-file-missing" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">FileNotFoundError</span><span class="p">:</span> <span class="n">Base</span> <span class="n">DTS</span> <span class="n">file</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span> <span class="n">arch</span><span class="o">/</span><span class="n">arm64</span><span class="o">/</span><span class="n">boot</span><span class="o">/</span><span class="n">dts</span><span class="o">/</span><span class="n">xilinx</span><span class="o">/</span><span class="n">zynqmp</span><span class="o">-</span><span class="n">zcu102</span><span class="o">-</span><span class="n">rev10</span><span class="o">.</span><span class="n">dts</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Ensure you’re using a compatible kernel branch (ADI or Xilinx fork)</p></li>
+<li><p>Check kernel version supports your platform</p></li>
+<li><p>Verify file path in kernel source tree</p></li>
+</ol>
+</section>
+<section id="dtc-compilation-failed">
+<h3>DTC Compilation Failed<a class="headerlink" href="#dtc-compilation-failed" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Error</span><span class="p">:</span> <span class="o">&lt;</span><span class="nb">input</span><span class="o">&gt;</span><span class="p">:</span><span class="mf">10.1</span><span class="o">-</span><span class="mi">5</span> <span class="n">syntax</span> <span class="n">error</span>
+</pre></div>
+</div>
+<p><strong>Solutions:</strong></p>
+<ol class="arabic simple">
+<li><p>Check DTS syntax in generated file</p></li>
+<li><p>Verify all #include files are accessible</p></li>
+<li><p>Update dtc to latest version</p></li>
+<li><p>Review kernel source compatibility</p></li>
+</ol>
+</section>
+<section id="platform-not-supported">
+<h3>Platform Not Supported<a class="headerlink" href="#platform-not-supported" title="Link to this heading"></a></h3>
+<p><strong>Error:</strong></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="ne">ValueError</span><span class="p">:</span> <span class="n">Platform</span> <span class="s1">&#39;vcu118&#39;</span> <span class="ow">not</span> <span class="n">supported</span>
+</pre></div>
+</div>
+<p><strong>Solution:</strong>
+Currently supported platforms are <code class="docutils literal notranslate"><span class="pre">zcu102</span></code>, <code class="docutils literal notranslate"><span class="pre">vpk180</span></code>, and <code class="docutils literal notranslate"><span class="pre">zc706</span></code>. Other platforms can be added by:</p>
+<ol class="arabic simple">
+<li><p>Adding platform config to <code class="docutils literal notranslate"><span class="pre">ad9081_fmc.PLATFORM_CONFIGS</span></code></p></li>
+<li><p>Creating platform-specific template</p></li>
+<li><p>Verifying base DTS file availability</p></li>
+</ol>
+</section>
+</section>
+<section id="adding-new-platforms">
+<h2>Adding New Platforms<a class="headerlink" href="#adding-new-platforms" title="Link to this heading"></a></h2>
+<p>To add support for a new FPGA platform:</p>
+<section id="add-platform-configuration">
+<h3>1. Add Platform Configuration<a class="headerlink" href="#add-platform-configuration" title="Link to this heading"></a></h3>
+<p>Edit <code class="docutils literal notranslate"><span class="pre">adidt/boards/ad9081_fmc.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">PLATFORM_CONFIGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;new_platform&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;template_filename&#39;</span><span class="p">:</span> <span class="s1">&#39;ad9081_fmc_new_platform.tmpl&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;base_dts_file&#39;</span><span class="p">:</span> <span class="s1">&#39;arch/arm64/boot/dts/vendor/board.dts&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;base_dts_include&#39;</span><span class="p">:</span> <span class="s1">&#39;board.dts&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;arch&#39;</span><span class="p">:</span> <span class="s1">&#39;arm64&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;jesd_phy&#39;</span><span class="p">:</span> <span class="s1">&#39;GTH&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;default_fpga_adc_pll&#39;</span><span class="p">:</span> <span class="s1">&#39;XCVR_QPLL&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;default_fpga_dac_pll&#39;</span><span class="p">:</span> <span class="s1">&#39;XCVR_QPLL&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;spi_bus&#39;</span><span class="p">:</span> <span class="s1">&#39;spi1&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;output_dir&#39;</span><span class="p">:</span> <span class="s1">&#39;generated_dts&#39;</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<section id="create-template">
+<h3>2. Create Template<a class="headerlink" href="#create-template" title="Link to this heading"></a></h3>
+<p>Create <code class="docutils literal notranslate"><span class="pre">adidt/templates/ad9081_fmc_new_platform.tmpl</span></code> based on existing templates.</p>
+<p>Key sections to customize:</p>
+<ul class="simple">
+<li><p>Clock references (<code class="docutils literal notranslate"><span class="pre">&amp;clk_name</span></code>)</p></li>
+<li><p>SPI bus reference (<code class="docutils literal notranslate"><span class="pre">&amp;spi0</span></code> or <code class="docutils literal notranslate"><span class="pre">&amp;spi1</span></code>)</p></li>
+<li><p>JESD core clock names</p></li>
+<li><p>GPIO references</p></li>
+</ul>
+</section>
+<section id="add-tests">
+<h3>3. Add Tests<a class="headerlink" href="#add-tests" title="Link to this heading"></a></h3>
+<p>Add test configuration in <code class="docutils literal notranslate"><span class="pre">test/ad9081/configs/new_platform_config.json</span></code>.</p>
+<p>Update <code class="docutils literal notranslate"><span class="pre">test/ad9081/test_ad9081_gen.py</span></code> to include new platform in parametrized tests.</p>
+</section>
+<section id="update-documentation">
+<h3>4. Update Documentation<a class="headerlink" href="#update-documentation" title="Link to this heading"></a></h3>
+<p>Add platform to supported platforms table and any platform-specific notes.</p>
+</section>
+</section>
+<section id="reference">
+<h2>Reference<a class="headerlink" href="#reference" title="Link to this heading"></a></h2>
+<section id="configuration-templates">
+<h3>Configuration Templates<a class="headerlink" href="#configuration-templates" title="Link to this heading"></a></h3>
+<p>Example configurations are provided in <code class="docutils literal notranslate"><span class="pre">test/ad9081/configs/</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">zcu102_config.json</span></code>: ZCU102 reference design</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vpk180_config.json</span></code>: VPK180 reference design</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">zc706_config.json</span></code>: ZC706 reference design</p></li>
+</ul>
+</section>
+<section id="related-resources">
+<h3>Related Resources<a class="headerlink" href="#related-resources" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p><a class="icon link reference external" href="https://www.analog.com/ad9081" target="_blank">AD9081 Product Page</a></p></li>
+<li><p><a class="icon link reference external" href="https://wiki.analog.com/resources/tools-software/linux-drivers/iio-mxfe/ad9081" target="_blank">AD9081 Linux Driver</a></p></li>
+<li><p><a class="icon link reference external" href="https://wiki.analog.com/resources/eval/user-guides/quadmxfe" target="_blank">AD9081 FMC-EBZ User Guide</a></p></li>
+<li><p><a class="icon link reference external" href="https://www.analog.com/en/technical-articles/jesd204b-survival-guide.html" target="_blank">JESD204B/C Overview</a></p></li>
+<li><p><a class="icon link reference external" href="https://www.kernel.org/doc/Documentation/devicetree/" target="_blank">Linux Device Tree Documentation</a></p></li>
+</ul>
+</section>
+<section id="support">
+<h3>Support<a class="headerlink" href="#support" title="Link to this heading"></a></h3>
+<p>For issues or questions:</p>
+<ul class="simple">
+<li><p>GitHub Issues: <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/issues" target="_blank">https://github.com/analogdevicesinc/pyadi-dt/issues</a></p></li>
+<li><p>EngineerZone: <a class="icon link reference external" href="https://ez.analog.com/" target="_blank">https://ez.analog.com/</a></p></li>
+</ul>
+<hr class="docutils" />
+<p><strong>Last Updated:</strong> 2026-01-14<br />
+<strong>Version:</strong> 1.0</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../examples.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Examples</a>
+    <a href="xsa_tutorial.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Flow Tutorials</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

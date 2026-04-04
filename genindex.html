@@ -1,0 +1,3275 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#Symbols"><strong>Symbols</strong></a>
+ | <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#O"><strong>O</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ | <a href="#X"><strong>X</strong></a>
+ 
+</div>
+<h2 id="Symbols">Symbols</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    --arch
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-a">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --board
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-b">adidtc command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-b">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --children
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-ch">adidtc-prop command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --compat
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-cp">adidtc-prop command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-cp">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --compile
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-compile">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --config
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-c">adidtc-gen-dts command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-c">adidtc-profile2dt command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-c">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --context
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-c">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --dry-run
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-d">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-d">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --filename
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-jif-f">adidtc-jif command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --filepath
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-f">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --format
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-f">adidtc-deps command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --hide-missing
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-show-missing">adidtc-deps command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --ip
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-i">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --json-output
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-json-output">adidtc-kuiper-boards command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --kernel-path
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-k">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --lint
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-lint">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --max-depth
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-d">adidtc-deps command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --no-color
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-nc">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --no-lint
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-lint">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --output
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-o">adidtc-deps command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-o">adidtc-gen-dts command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-o">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --password
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-w">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --platform
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-p">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --profile
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-p">adidtc-profile2dt command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-profile">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --prop
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-props-p">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --reboot
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-jif-r">adidtc-jif command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-r">adidtc-prop command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-r">adidtc-props command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-r">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-r">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --reference-dts
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-reference-dts">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --show
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-s">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-s">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --show-missing
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-show-missing">adidtc-deps command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --status
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-s">adidtc-kuiper-boards command line option</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    --strict-lint
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-strict-lint">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --strict-parity
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-strict-parity">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --timeout
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-t">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --username
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-u">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --value
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-props-v">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    --xsa
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-x">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -a
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-a">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -b
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-b">adidtc command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-b">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -c
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-c">adidtc command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-c">adidtc-gen-dts command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-c">adidtc-profile2dt command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-c">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -ch
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-ch">adidtc-prop command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -cp
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-cp">adidtc-prop command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-cp">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -d
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-d">adidtc-deps command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-d">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-d">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -f
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-f">adidtc command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-f">adidtc-deps command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-jif-f">adidtc-jif command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -i
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-i">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -k
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-k">adidtc-gen-dts command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -nc
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-nc">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -o
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-o">adidtc-deps command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-o">adidtc-gen-dts command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-o">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -p
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-p">adidtc-gen-dts command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-p">adidtc-profile2dt command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-p">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -r
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-jif-r">adidtc-jif command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-r">adidtc-prop command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-r">adidtc-props command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-r">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-r">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -s
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-s">adidtc-kuiper-boards command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-s">adidtc-sd-move command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-s">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -t
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-t">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -u
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-u">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -v
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-props-v">adidtc-props command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -w
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-w">adidtc command line option</a>
+</li>
+      </ul></li>
+      <li>
+    -x
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-x">adidtc-xsa2dt command line option</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.__init__">__init__() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.__init__">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.__init__">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.__init__">(adidt.boards.daq2.daq2 method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.exceptions.ConfigError.__init__">(adidt.xsa.exceptions.ConfigError method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.exceptions.DtsLintError.__init__">(adidt.xsa.exceptions.DtsLintError method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.exceptions.SdtgenError.__init__">(adidt.xsa.exceptions.SdtgenError method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.exceptions.SdtgenNotFoundError.__init__">(adidt.xsa.exceptions.SdtgenNotFoundError method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.sdtgen.SdtgenRunner.__init__">(adidt.xsa.sdtgen.SdtgenRunner method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/model.html#adidt.model.components.ad7124">ad7124() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9081">ad9081() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.ad9081_board">ad9081_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc">ad9081_fmc (class in adidt.boards.ad9081_fmc)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig">AD9081BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9084">ad9084() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.ad9084_board">ad9084_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc">ad9084_fmc (class in adidt.boards.ad9084_fmc)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig">AD9084BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9144">ad9144() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context">Ad9144Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9152">ad9152() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.ad9152_jesd_link_mode">ad9152_jesd_link_mode (adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context">Ad9152Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9172">ad9172() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.ad9172_board">ad9172_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.ad9172_channel_interpolation">ad9172_channel_interpolation (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.ad9172_clock_output_divider">ad9172_clock_output_divider (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.ad9172_dac_interpolation">ad9172_dac_interpolation (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.ad9172_dac_rate_khz">ad9172_dac_rate_khz (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.ad9172_jesd_link_mode">ad9172_jesd_link_mode (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig">AD9172BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext">Ad9172DeviceContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9523_1">ad9523_1() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9523_1.ad9523_1_dt">ad9523_1_dt (class in adidt.parts.ad9523_1)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context">Ad9523Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9528">ad9528() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.ad9528_channel_blocks">ad9528_channel_blocks (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.ad9528_vcxo_freq">ad9528_vcxo_freq (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context">Ad9528Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt">ad9545_dt (class in adidt.parts.ad9545)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.ad9680">ad9680() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context">Ad9680Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.adc">adc (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.adc">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.adc">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.adc">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_core_label">adc_core_label (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_core_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.adc_cs">adc_cs (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_cs">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_cs">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_device_clk_idx">adc_device_clk_idx (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_device_clk_idx">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_dma_label">adc_dma_label (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_dma_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_fastdetect_a_gpio">adc_fastdetect_a_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_fastdetect_a_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_fastdetect_b_gpio">adc_fastdetect_b_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_fastdetect_b_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_jesd_label">adc_jesd_label (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_jesd_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_jesd_link_id">adc_jesd_link_id (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_jesd_link_id">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_powerdown_gpio">adc_powerdown_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_powerdown_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_sampling_frequency_hz">adc_sampling_frequency_hz (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_sampling_frequency_hz">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.adc_spi">adc_spi (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_spi_max_frequency">adc_spi_max_frequency (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_spi_max_frequency">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_sysref_clk_idx">adc_sysref_clk_idx (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_xcvr_label">adc_xcvr_label (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_xcvr_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.adc_xcvr_ref_clk_idx">adc_xcvr_ref_clk_idx (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.adc_xcvr_ref_clk_idx">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.adf4382_cs">adf4382_cs (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li>
+    adidt
+
+      <ul>
+        <li><a href="api/core.html#module-adidt">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.ad9081_fmc
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.ad9081_fmc">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.ad9084_fmc
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.ad9084_fmc">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.adrv9009_fmc
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_fmc">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.adrv9009_pcbz
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_pcbz">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.adrv9009_zu11eg
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_zu11eg">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.daq2
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.daq2">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.boards.layout
+
+      <ul>
+        <li><a href="api/boards.html#module-adidt.boards.layout">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.model.components
+
+      <ul>
+        <li><a href="api/model.html#module-adidt.model.components">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.model.contexts
+
+      <ul>
+        <li><a href="api/model.html#module-adidt.model.contexts">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.model.renderer
+
+      <ul>
+        <li><a href="api/model.html#module-adidt.model.renderer">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.ad9523_1
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.ad9523_1">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.ad9528
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.ad9528">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.ad9545
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.ad9545">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.adrv9009
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.adrv9009">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.clock_dt
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.clock_dt">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.parts.hmc7044
+
+      <ul>
+        <li><a href="api/parts.html#module-adidt.parts.hmc7044">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.board_configs
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.board_configs">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.builders
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.builders">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.dts_lint
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.dts_lint">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.exceptions
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.exceptions">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.merger
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.merger">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.node_builder
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.node_builder">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.pipeline
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.pipeline">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.pipeline_config
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.pipeline_config">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.sdtgen
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.sdtgen">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.template_contexts
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.template_contexts">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidt.xsa.topology
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.topology">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    adidt.xsa.visualizer
+
+      <ul>
+        <li><a href="api/xsa.html#module-adidt.xsa.visualizer">module</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-a">--arch</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-b">--board</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-c">--context</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-f">--filepath</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-i">--ip</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-nc">--no-color</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-w">--password</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-u">--username</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-a">-a</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-b">-b</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-c">-c</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-f">-f</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-i">-i</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-nc">-nc</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-u">-u</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-w">-w</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-deps command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-f">--format</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-show-missing">--hide-missing</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-d">--max-depth</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-o">--output</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-show-missing">--show-missing</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-d">-d</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-f">-f</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-o">-o</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-deps-arg-DT_FILE">DT_FILE</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-gen-dts command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-b">--board</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-compile">--compile</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-c">--config</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-k">--kernel-path</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-o">--output</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-p">--platform</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-b">-b</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-c">-c</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-k">-k</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-o">-o</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-gen-dts-p">-p</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-jif command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-jif-f">--filename</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-jif-r">--reboot</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-jif-f">-f</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-jif-r">-r</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-jif-arg-NODE_TYPE">NODE_TYPE</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-kuiper-boards command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-json-output">--json-output</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-s">--status</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-kuiper-boards-s">-s</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-profile2dt command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-c">--config</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-p">--profile</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-c">-c</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-profile2dt-p">-p</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-prop command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-ch">--children</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-cp">--compat</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-r">--reboot</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-ch">-ch</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-cp">-cp</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-r">-r</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-NODE_NAME">NODE_NAME</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-PROP">PROP</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-VALUE">VALUE</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-props command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-props-cp">--compat</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-p">--prop</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-r">--reboot</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-v">--value</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-cp">-cp</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-p">-p</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-r">-r</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-v">-v</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-arg-NODE_NAME">NODE_NAME</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-sd-move command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-d">--dry-run</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-r">--reboot</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-s">--show</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-d">-d</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-r">-r</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-s">-s</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-arg-RD">RD</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-sd-remote-copy command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-d">--dry-run</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-r">--reboot</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-s">--show</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-d">-d</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-r">-r</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-s">-s</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-arg-FILES">FILES</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-xsa-profile-show command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa-profile-show-arg-NAME">NAME</a>
+</li>
+      </ul></li>
+      <li>
+    adidtc-xsa2dt command line option
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-c">--config</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-lint">--lint</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-lint">--no-lint</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-o">--output</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-profile">--profile</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-reference-dts">--reference-dts</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-strict-lint">--strict-lint</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-strict-parity">--strict-parity</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-t">--timeout</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-x">--xsa</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-c">-c</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-o">-o</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-t">-t</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-xsa2dt-x">-x</a>
+</li>
+      </ul></li>
+      <li><a href="api/model.html#adidt.model.components.adis16495">adis16495() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.adrv9009_board">adrv9009_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.adrv9009.adrv9009_dt">adrv9009_dt (class in adidt.parts.adrv9009)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc">adrv9009_fmc (class in adidt.boards.adrv9009_fmc)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz">adrv9009_pcbz (class in adidt.boards.adrv9009_pcbz)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg">adrv9009_zu11eg (class in adidt.boards.adrv9009_zu11eg)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig">ADRV9009BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext">AdxcvrContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.adxl345">adxl345() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.as_dict">as_dict() (adidt.xsa.template_contexts.Ad9144Context method)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.as_dict">(adidt.xsa.template_contexts.Ad9152Context method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.as_dict">(adidt.xsa.template_contexts.Ad9172DeviceContext method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.as_dict">(adidt.xsa.template_contexts.Ad9523Context method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.as_dict">(adidt.xsa.template_contexts.Ad9528Context method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.as_dict">(adidt.xsa.template_contexts.Ad9680Context method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.as_dict">(adidt.xsa.template_contexts.AdxcvrContext method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.ClkgenContext.as_dict">(adidt.xsa.template_contexts.ClkgenContext method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.as_dict">(adidt.xsa.template_contexts.Hmc7044ChannelContext method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.as_dict">(adidt.xsa.template_contexts.Hmc7044Context method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.as_dict">(adidt.xsa.template_contexts.Jesd204OverlayContext method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.as_dict">(adidt.xsa.template_contexts.TplCoreContext method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ClkgenInstance.base_addr">base_addr (adidt.xsa.topology.ClkgenInstance attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance.base_addr">(adidt.xsa.topology.ConverterInstance attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.base_addr">(adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.SignalConnection.bidirectional">bidirectional (adidt.xsa.topology.SignalConnection attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic.binding_confidence">binding_confidence (adidt.xsa.dts_lint.LintDiagnostic attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.bits_per_sample">bits_per_sample (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.builders.BoardBuilder">BoardBuilder (class in adidt.xsa.builders)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.renderer.BoardModelRenderer">BoardModelRenderer (class in adidt.model.renderer)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.node_builder.NodeBuilder.build">build() (adidt.xsa.node_builder.NodeBuilder method)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad7124_ctx">build_ad7124_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9081_mxfe_ctx">build_ad9081_mxfe_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9084_ctx">build_ad9084_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9144_ctx">build_ad9144_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9152_ctx">build_ad9152_ctx() (in module adidt.model.contexts)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9172_device_ctx">build_ad9172_device_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9523_1_ctx">build_ad9523_1_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9528_1_ctx">build_ad9528_1_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9528_ctx">build_ad9528_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_ad9680_ctx">build_ad9680_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_adf4382_ctx">build_adf4382_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_adis16495_ctx">build_adis16495_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_adrv9009_device_ctx">build_adrv9009_device_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_adxcvr_ctx">build_adxcvr_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_adxl345_ctx">build_adxl345_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_hmc7044_channel_ctx">build_hmc7044_channel_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_hmc7044_ctx">build_hmc7044_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_jesd204_overlay_ctx">build_jesd204_overlay_ctx() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.builders.BoardBuilder.build_nodes">build_nodes() (adidt.xsa.builders.BoardBuilder method)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.build_tpl_core_ctx">build_tpl_core_ctx() (in module adidt.model.contexts)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.channel_interpolation">channel_interpolation (adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.channels">channels (adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.channels">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.channels">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.clk_cs">clk_cs (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.clk_names_str">clk_names_str (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.clk_ref">clk_ref (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.clk_ref">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.clk_ref">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.clk_ref">(adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clk_status0_gpio">clk_status0_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.clk_status0_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clk_status1_gpio">clk_status1_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.clk_status1_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clk_sync_gpio">clk_sync_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.ClkgenContext">ClkgenContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ClkgenInstance">ClkgenInstance (class in adidt.xsa.topology)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.clkgens">clkgens (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.clkin0_buffer_mode">clkin0_buffer_mode (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clkin0_buffer_mode">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clkin0_ref">clkin0_ref (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.clkin1_buffer_mode">clkin1_buffer_mode (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clkin1_buffer_mode">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clkin2_buffer_mode">clkin2_buffer_mode (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clkin3_buffer_mode">clkin3_buffer_mode (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.clks_str">clks_str (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.clock">clock (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.clock">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.clock">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.clock">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.clock">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.clock">(adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.clock_cs">clock_cs (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.clock_cs">(adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clock_cs">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.clock_cs">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt">clock_dt (class in adidt.parts.clock_dt)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.clock_names_str">clock_names_str (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.clock_output_divider">clock_output_divider (adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.clock_output_name">clock_output_name (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.clock_output_names_str">clock_output_names_str (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.clock_output_names_str">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.clock_spi">clock_spi (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.clock_spi">(adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.clock_spi_max_frequency">clock_spi_max_frequency (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clock_spi_max_frequency">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.clock_spi_max_frequency">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.clock_vcxo_hz">clock_vcxo_hz (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.clock_vcxo_hz">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig">ClockConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.clocks_str">clocks_str (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.cmos_outputs_reg_field_map">cmos_outputs_reg_field_map (adidt.parts.hmc7044.hmc7044_dt attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.coarse_digital_delay">coarse_digital_delay (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.coerce_board_int">coerce_board_int() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.compatible">compatible (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9523_1.ad9523_1_dt.compatible_id">compatible_id (adidt.parts.ad9523_1.ad9523_1_dt attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.ConfigError">ConfigError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.SignalConnection.consumers">consumers (adidt.xsa.topology.SignalConnection attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.control_bits_per_sample">control_bits_per_sample (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.converter_cs">converter_cs (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.converter_resolution">converter_resolution (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.converter_spi">converter_spi (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.converter_spi_max_hz">converter_spi_max_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance">ConverterInstance (class in adidt.xsa.topology)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.converters">converters (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.converters_per_device">converters_per_device (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.cs">cs (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.cs">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.cs">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.cs">(adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.cs">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.cs">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.cs">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.dac">dac (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.dac">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.dac">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.dac">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_core_label">dac_core_label (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_core_label">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_core_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_cs">dac_cs (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_cs">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_cs">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_device_clk_idx">dac_device_clk_idx (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_device_clk_idx">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_dma_label">dac_dma_label (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_dma_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.dac_interpolation">dac_interpolation (adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_irq_gpio">dac_irq_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_irq_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_jesd_label">dac_jesd_label (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_jesd_label">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_jesd_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_jesd_link_id">dac_jesd_link_id (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_jesd_link_id">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_jesd_link_id">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.dac_rate_khz">dac_rate_khz (adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_reset_gpio">dac_reset_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_spi_max_frequency">dac_spi_max_frequency (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_spi_max_frequency">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_spi_max_frequency">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_txen_gpio">dac_txen_gpio (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_txen_gpio">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.dac_xcvr_label">dac_xcvr_label (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_xcvr_label">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_xcvr_label">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.dac_xcvr_ref_clk_idx">dac_xcvr_ref_clk_idx (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.dac_xcvr_ref_clk_idx">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.daq2.daq2">daq2 (class in adidt.boards.daq2)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.DEFAULT_KERNEL_PATH">DEFAULT_KERNEL_PATH (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.DEFAULT_KERNEL_PATH">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.DEFAULT_KERNEL_PATH">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.DEFAULT_KERNEL_PATH">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.dev_clk_channel">dev_clk_channel (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.dev_clk_ref">dev_clk_ref (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.dev_clk_scales">dev_clk_scales (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.dev_clk_source">dev_clk_source (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.direction">direction (adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.direction">(adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.direction">(adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.div40_clk_ref">div40_clk_ref (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.divider">divider (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.dma_label">dma_label (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.driver_impedances">driver_impedances (adidt.parts.hmc7044.hmc7044_dt attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.driver_mode">driver_mode (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.driver_modes">driver_modes (adidt.parts.hmc7044.hmc7044_dt attribute)</a>
+</li>
+      <li>
+    DT_FILE
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-deps-arg-DT_FILE">adidtc-deps command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.DtsLinter">DtsLinter (class in adidt.xsa.dts_lint)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.DtsLintError">DtsLintError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.merger.DtsMerger">DtsMerger (class in adidt.xsa.merger)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.ext_clock">ext_clock (adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.F">F (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.f">f (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.f">(adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      </ul></li>
+      <li>
+    FILES
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-remote-copy-arg-FILES">adidtc-sd-remote-copy command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.firmware_name">firmware_name (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.fmcdaq2_board">fmcdaq2_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig">FMCDAQ2BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.fmcdaq3_board">fmcdaq3_board (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig">FMCDAQ3BoardConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.fmt_gpi_gpo">fmt_gpi_gpo() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.contexts.fmt_hz">fmt_hz() (in module adidt.model.contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.fpga_adc">fpga_adc (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.fpga_dac">fpga_dac (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.fpga_part">fpga_part (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.fpga_refclk_channel">fpga_refclk_channel (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.freq_str">freq_str (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.from_dict">from_dict() (adidt.xsa.board_configs.AD9081BoardConfig class method)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.from_dict">(adidt.xsa.board_configs.AD9084BoardConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.from_dict">(adidt.xsa.board_configs.AD9172BoardConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.from_dict">(adidt.xsa.board_configs.ADRV9009BoardConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.from_dict">(adidt.xsa.board_configs.ClockConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.from_dict">(adidt.xsa.board_configs.FMCDAQ2BoardConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.from_dict">(adidt.xsa.board_configs.FMCDAQ3BoardConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdConfig.from_dict">(adidt.xsa.board_configs.JesdConfig class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.from_dict">(adidt.xsa.board_configs.JesdLinkParams class method)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.from_dict">(adidt.xsa.pipeline_config.PipelineConfig class method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.gen_dt">gen_dt() (adidt.boards.layout.layout method)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.gen_dt_from_config">gen_dt_from_config() (adidt.boards.layout.layout method)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.gen_dt_from_model">gen_dt_from_model() (adidt.boards.layout.layout method)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.gen_dt_preprocess">gen_dt_preprocess() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.gen_dt_preprocess">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.gen_dt_preprocess">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.gen_dt_preprocess">(adidt.boards.adrv9009_pcbz.adrv9009_pcbz method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.gen_dt_preprocess">(adidt.boards.daq2.daq2 method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.gen_dt_preprocess">(adidt.boards.layout.layout method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.visualizer.HtmlVisualizer.generate">generate() (adidt.xsa.visualizer.HtmlVisualizer method)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.get_dtc_include_paths">get_dtc_include_paths() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.get_dtc_include_paths">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.get_dtc_include_paths">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.get_dtc_include_paths">(adidt.boards.daq2.daq2 method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.get_node_by_prop">get_node_by_prop() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.get_prop_across_nodes">get_prop_across_nodes() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.get_used_clocks">get_used_clocks() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.gpi_controls">gpi_controls (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.gpi_controls_str">gpi_controls_str (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.gpio_controller">gpio_controller (adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.gpio_controller">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.gpio_lines">gpio_lines (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.gpio_lines">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.gpio_lines">(adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.gpio_lines">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.gpio_lines">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.gpo_controls">gpo_controls (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.gpo_controls_str">gpo_controls_str (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.handle_64bit">handle_64bit() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.adrv9009.handle_channel_enable">handle_channel_enable() (in module adidt.parts.adrv9009)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.adrv9009.handle_ints">handle_ints() (in module adidt.parts.adrv9009)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.has_converter_types">has_converter_types() (adidt.xsa.topology.XsaTopology method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.high_perf_mode_disable">high_perf_mode_disable (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.high_perf_mode_dist_enable">high_perf_mode_dist_enable (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/model.html#adidt.model.components.hmc7044">hmc7044() (in module adidt.model.components)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.hmc7044_channel_blocks">hmc7044_channel_blocks (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hmc7044_channel_blocks">(adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hmc7044_channels">hmc7044_channels (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hmc7044_cs">hmc7044_cs (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt">hmc7044_dt (class in adidt.parts.hmc7044)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.hmc7044_out_freq_hz">hmc7044_out_freq_hz (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.hmc7044_ref_clk_hz">hmc7044_ref_clk_hz (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.hmc7044_rx_channel">hmc7044_rx_channel (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hmc7044_spi_max_hz">hmc7044_spi_max_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.hmc7044_tx_channel">hmc7044_tx_channel (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.hmc7044_vcxo_hz">hmc7044_vcxo_hz (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext">Hmc7044ChannelContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context">Hmc7044Context (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hsci_auto_linkup">hsci_auto_linkup (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hsci_label">hsci_label (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.hsci_speed_mhz">hsci_speed_mhz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.visualizer.HtmlVisualizer">HtmlVisualizer (class in adidt.xsa.visualizer)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.id">id (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.includes">includes (adidt.boards.layout.layout attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.inferred_converter_family">inferred_converter_family() (adidt.xsa.topology.XsaTopology method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.inferred_platform">inferred_platform() (adidt.xsa.topology.XsaTopology method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.SdtgenNotFoundError.INSTALL_URL">INSTALL_URL (adidt.xsa.exceptions.SdtgenNotFoundError attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.ClkgenContext.instance">instance (adidt.xsa.template_contexts.ClkgenContext attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance.ip_type">ip_type (adidt.xsa.topology.ConverterInstance attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.irq">irq (adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.is_fmcdaq2_design">is_fmcdaq2_design() (adidt.xsa.topology.XsaTopology method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.is_fmcdaq3_design">is_fmcdaq3_design() (adidt.xsa.topology.XsaTopology method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.is_rx">is_rx (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.is_sysref">is_sysref (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.jesd">jesd (adidt.xsa.pipeline_config.PipelineConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.jesd204_inputs">jesd204_inputs (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.jesd204_inputs">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.jesd204_inputs">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.jesd204_inputs">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.jesd204_inputs">(adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.jesd204_inputs">(adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.jesd204_link_ids">jesd204_link_ids (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.jesd204_link_ids">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.jesd204_link_ids">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.jesd204_max_sysref_hz">jesd204_max_sysref_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.jesd204_max_sysref_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.jesd204_rx">jesd204_rx (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.jesd204_sysref_provider">jesd204_sysref_provider (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.jesd204_top_device">jesd204_top_device (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.jesd204_top_device">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.jesd204_top_device">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.jesd204_tx">jesd204_tx (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance">Jesd204Instance (class in adidt.xsa.topology)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext">Jesd204OverlayContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.jesd_l">jesd_l (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.jesd_label">jesd_label (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.jesd_link_ids">jesd_link_ids (adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.jesd_link_mode">jesd_link_mode (adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.jesd_link_mode">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.jesd_link_offset">jesd_link_offset (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.jesd_m">jesd_m (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.jesd_s">jesd_s (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdConfig">JesdConfig (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams">JesdLinkParams (class in adidt.xsa.board_configs)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.jrx0_physical_lane_mapping">jrx0_physical_lane_mapping (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.jrx1_physical_lane_mapping">jrx1_physical_lane_mapping (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.jtx0_logical_lane_mapping">jtx0_logical_lane_mapping (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.jtx1_logical_lane_mapping">jtx1_logical_lane_mapping (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.K">K (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.k">k (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.k">(adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.L">L (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.l">l (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.label">label (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.label">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.label">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.label">(adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.label">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.label">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.label">(adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.label">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Jesd204OverlayContext.label">(adidt.xsa.template_contexts.Jesd204OverlayContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.label">(adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.layout.layout">layout (class in adidt.boards.layout)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.link_clk">link_clk (adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.link_id">link_id (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.DtsLinter.lint">lint() (adidt.xsa.dts_lint.DtsLinter method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.DtsLinter.lint_file">lint_file() (adidt.xsa.dts_lint.DtsLinter method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic">LintDiagnostic (class in adidt.xsa.dts_lint)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.M">M (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.m">m (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.make_ints">make_ints() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.make_ints">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.make_ints">(adidt.boards.daq2.daq2 method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.map_clocks_to_board_layout">map_clocks_to_board_layout() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.map_clocks_to_board_layout">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.map_clocks_to_board_layout">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.map_clocks_to_board_layout">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.map_clocks_to_board_layout">(adidt.boards.daq2.daq2 method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.map_jesd_structs">map_jesd_structs() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.map_jesd_structs">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.map_jesd_structs">(adidt.boards.daq2.daq2 method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.map_jesd_subclass">map_jesd_subclass() (adidt.boards.layout.layout method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.builders.BoardBuilder.matches">matches() (adidt.xsa.builders.BoardBuilder method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.merger.DtsMerger.merge">merge() (adidt.xsa.merger.DtsMerger method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic.message">message (adidt.xsa.dts_lint.LintDiagnostic attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.misc_clk_hz">misc_clk_hz (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="api/core.html#module-adidt">adidt</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards">adidt.boards</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.ad9081_fmc">adidt.boards.ad9081_fmc</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.ad9084_fmc">adidt.boards.ad9084_fmc</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_fmc">adidt.boards.adrv9009_fmc</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_pcbz">adidt.boards.adrv9009_pcbz</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.adrv9009_zu11eg">adidt.boards.adrv9009_zu11eg</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.daq2">adidt.boards.daq2</a>
+</li>
+        <li><a href="api/boards.html#module-adidt.boards.layout">adidt.boards.layout</a>
+</li>
+        <li><a href="api/model.html#module-adidt.model.components">adidt.model.components</a>
+</li>
+        <li><a href="api/model.html#module-adidt.model.contexts">adidt.model.contexts</a>
+</li>
+        <li><a href="api/model.html#module-adidt.model.renderer">adidt.model.renderer</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts">adidt.parts</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.ad9523_1">adidt.parts.ad9523_1</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.ad9528">adidt.parts.ad9528</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.ad9545">adidt.parts.ad9545</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.adrv9009">adidt.parts.adrv9009</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.clock_dt">adidt.parts.clock_dt</a>
+</li>
+        <li><a href="api/parts.html#module-adidt.parts.hmc7044">adidt.parts.hmc7044</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa">adidt.xsa</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.board_configs">adidt.xsa.board_configs</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.builders">adidt.xsa.builders</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.dts_lint">adidt.xsa.dts_lint</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.exceptions">adidt.xsa.exceptions</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.merger">adidt.xsa.merger</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.node_builder">adidt.xsa.node_builder</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.pipeline">adidt.xsa.pipeline</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.pipeline_config">adidt.xsa.pipeline_config</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.sdtgen">adidt.xsa.sdtgen</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.template_contexts">adidt.xsa.template_contexts</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.topology">adidt.xsa.topology</a>
+</li>
+        <li><a href="api/xsa.html#module-adidt.xsa.visualizer">adidt.xsa.visualizer</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    NAME
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-xsa-profile-show-arg-NAME">adidtc-xsa-profile-show command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.name">name (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.topology.ClkgenInstance.name">(adidt.xsa.topology.ClkgenInstance attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance.name">(adidt.xsa.topology.ConverterInstance attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.name">(adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic.node">node (adidt.xsa.dts_lint.LintDiagnostic attribute)</a>
+</li>
+      <li>
+    NODE_NAME
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-NODE_NAME">adidtc-prop command line option</a>
+</li>
+        <li><a href="cli.html#cmdoption-adidtc-props-arg-NODE_NAME">adidtc-props command line option</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    NODE_TYPE
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-jif-arg-NODE_TYPE">adidtc-jif command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.node_builder.NodeBuilder">NodeBuilder (class in adidt.xsa.node_builder)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.Np">Np (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.np">np (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.Jesd204Instance.num_lanes">num_lanes (adidt.xsa.topology.Jesd204Instance attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="O">O</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.oscin_buffer_mode">oscin_buffer_mode (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.oscin_buffer_mode">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.out_clk_select">out_clk_select (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.out_clock_id">out_clock_id (adidt.parts.ad9545.ad9545_dt attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ClkgenInstance.output_clks">output_clks (adidt.xsa.topology.ClkgenInstance attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.output_filename">output_filename (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.output_filename">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.output_filename">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.output_filename">(adidt.boards.adrv9009_pcbz.adrv9009_pcbz attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.output_filename">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.output_filename">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.output_filename">(adidt.boards.layout.layout attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.output_mux_modes">output_mux_modes (adidt.parts.hmc7044.hmc7044_dt attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.output_set_rate">output_set_rate() (adidt.parts.ad9545.ad9545_dt method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.ParityError">ParityError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaParser.parse">parse() (adidt.xsa.topology.XsaParser method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaParser.parse_hwh_map">parse_hwh_map() (adidt.xsa.topology.XsaParser method)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.parse_profile">parse_profile() (adidt.boards.adrv9009_pcbz.adrv9009_pcbz method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.parse_profile">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg method)</a>
+</li>
+        <li><a href="api/parts.html#adidt.parts.ad9528.parse_profile">(in module adidt.parts.ad9528)</a>
+</li>
+        <li><a href="api/parts.html#adidt.parts.adrv9009.parse_profile">(in module adidt.parts.adrv9009)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.parse_talInit">parse_talInit() (adidt.boards.adrv9009_pcbz.adrv9009_pcbz method)</a>
+
+      <ul>
+        <li><a href="api/parts.html#adidt.parts.adrv9009.parse_talInit">(in module adidt.parts.adrv9009)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pfd1_max_freq_hz">pfd1_max_freq_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pfd1_max_freq_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig">PipelineConfig (class in adidt.xsa.pipeline_config)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.pl_fifo_enable">pl_fifo_enable (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.platform">platform (adidt.boards.layout.layout attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.layout.layout.platform_config">platform_config (adidt.boards.layout.layout attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.PLATFORM_CONFIGS">PLATFORM_CONFIGS (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.PLATFORM_CONFIGS">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.PLATFORM_CONFIGS">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.PLATFORM_CONFIGS">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll1_charge_pump_ua">pll1_charge_pump_ua (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll1_charge_pump_ua">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll1_clkin_frequencies">pll1_clkin_frequencies (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll1_clkin_frequencies">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll1_loop_bandwidth_hz">pll1_loop_bandwidth_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll1_loop_bandwidth_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll1_ref_autorevert">pll1_ref_autorevert (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll1_ref_autorevert">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll1_ref_prio_ctrl">pll1_ref_prio_ctrl (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll1_ref_prio_ctrl">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pll2_output_hz">pll2_output_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pll2_output_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.pll_clock_id">pll_clock_id (adidt.parts.ad9545.ad9545_dt attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.pll_set_rate">pll_set_rate() (adidt.parts.ad9545.ad9545_dt method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.SignalConnection.producers">producers (adidt.xsa.topology.SignalConnection attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.profile">profile (adidt.boards.adrv9009_pcbz.adrv9009_pcbz attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.profile">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.ProfileError">ProfileError</a>
+</li>
+      <li>
+    PROP
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-PROP">adidtc-prop command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.ClkgenContext.ps_clk_index">ps_clk_index (adidt.xsa.template_contexts.ClkgenContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.ClkgenContext.ps_clk_label">ps_clk_label (adidt.xsa.template_contexts.ClkgenContext attribute)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.pulse_gen_modes">pulse_gen_modes (adidt.parts.hmc7044.hmc7044_dt attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.pulse_generator_mode">pulse_generator_mode (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.pulse_generator_mode">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.raw_channels">raw_channels (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li>
+    RD
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-sd-move-arg-RD">adidtc-sd-move command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/model.html#adidt.model.renderer.BoardModelRenderer.render">render() (adidt.model.renderer.BoardModelRenderer method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.reset_gpio">reset_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.reset_gpio">(adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic.rule">rule (adidt.xsa.dts_lint.LintDiagnostic attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline.XsaPipeline.run">run() (adidt.xsa.pipeline.XsaPipeline method)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.sdtgen.SdtgenRunner.run">(adidt.xsa.sdtgen.SdtgenRunner method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdConfig.rx">rx (adidt.xsa.board_configs.JesdConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.rx1_enable_gpio">rx1_enable_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.rx2_enable_gpio">rx2_enable_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.rx_a_link_id">rx_a_link_id (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.rx_b_device_clk_index">rx_b_device_clk_index (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.rx_b_link_id">rx_b_link_id (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.rx_device_clk_index">rx_device_clk_index (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.rx_device_clk_label">rx_device_clk_label (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.rx_link_id">rx_link_id (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.rx_os_link_id">rx_os_link_id (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.rx_os_octets_per_frame">rx_os_octets_per_frame (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.rx_out_clk_select">rx_out_clk_select (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.rx_sys_clk_select">rx_sys_clk_select (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdLinkParams.S">S (adidt.xsa.board_configs.JesdLinkParams attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.sampl_clk_name">sampl_clk_name (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.sampl_clk_ref">sampl_clk_ref (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.sampling_frequency_hz">sampling_frequency_hz (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.SdtgenError">SdtgenError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.SdtgenNotFoundError">SdtgenNotFoundError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.sdtgen.SdtgenRunner">SdtgenRunner (class in adidt.xsa.sdtgen)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.set_clock_node">set_clock_node() (adidt.parts.ad9545.ad9545_dt method)</a>
+
+      <ul>
+        <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.set_clock_node">(adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+        <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.set_clock_node">(adidt.parts.hmc7044.hmc7044_dt method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/parts.html#adidt.parts.ad9523_1.ad9523_1_dt.set_dt_node_from_config">set_dt_node_from_config() (adidt.parts.ad9523_1.ad9523_1_dt method)</a>
+
+      <ul>
+        <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.set_dt_node_from_config">(adidt.parts.ad9545.ad9545_dt method)</a>
+</li>
+        <li><a href="api/parts.html#adidt.parts.adrv9009.adrv9009_dt.set_dt_node_from_config">(adidt.parts.adrv9009.adrv9009_dt method)</a>
+</li>
+        <li><a href="api/parts.html#adidt.parts.hmc7044.hmc7044_dt.set_dt_node_from_config">(adidt.parts.hmc7044.hmc7044_dt method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/parts.html#adidt.parts.ad9545.ad9545_dt.set_source_priorities_from_config">set_source_priorities_from_config() (adidt.parts.ad9545.ad9545_dt method)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.set_vcxo">set_vcxo() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.setter">setter() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.dts_lint.LintDiagnostic.severity">severity (adidt.xsa.dts_lint.LintDiagnostic attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.side_b_separate_tpl">side_b_separate_tpl (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.SignalConnection.signal">signal (adidt.xsa.topology.SignalConnection attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology.signal_connections">signal_connections (adidt.xsa.topology.XsaTopology attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.SignalConnection">SignalConnection (class in adidt.xsa.topology)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.builders.BoardBuilder.skip_ip_types">skip_ip_types() (adidt.xsa.builders.BoardBuilder method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.builders.BoardBuilder.skips_generic_jesd">skips_generic_jesd() (adidt.xsa.builders.BoardBuilder method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9172BoardConfig.spi_bus">spi_bus (adidt.xsa.board_configs.AD9172BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.spi_bus">(adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ2BoardConfig.spi_bus">(adidt.xsa.board_configs.FMCDAQ2BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.board_configs.FMCDAQ3BoardConfig.spi_bus">(adidt.xsa.board_configs.FMCDAQ3BoardConfig attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance.spi_bus">(adidt.xsa.topology.ConverterInstance attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.ConverterInstance.spi_cs">spi_cs (adidt.xsa.topology.ConverterInstance attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9144Context.spi_max_hz">spi_max_hz (adidt.xsa.template_contexts.Ad9144Context attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9152Context.spi_max_hz">(adidt.xsa.template_contexts.Ad9152Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9172DeviceContext.spi_max_hz">(adidt.xsa.template_contexts.Ad9172DeviceContext attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.spi_max_hz">(adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.spi_max_hz">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.spi_max_hz">(adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.spi_max_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext.spibus_label">spibus_label (adidt.xsa.template_contexts.TplCoreContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044ChannelContext.startup_mode_dynamic">startup_mode_dynamic (adidt.xsa.template_contexts.Hmc7044ChannelContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.subclass">subclass (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.sync_pin_mode">sync_pin_mode (adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.sys_clk_select">sys_clk_select (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.sysref_provider">sysref_provider (adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.sysref_req_gpio">sysref_req_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.sysref_timer_divider">sysref_timer_divider (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.sysref_timer_divider">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.template_filename">template_filename (adidt.boards.ad9081_fmc.ad9081_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.template_filename">(adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.template_filename">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_pcbz.adrv9009_pcbz.template_filename">(adidt.boards.adrv9009_pcbz.adrv9009_pcbz attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg.template_filename">(adidt.boards.adrv9009_zu11eg.adrv9009_zu11eg attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.template_filename">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.template_filename">(adidt.boards.layout.layout attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.to_board_model">to_board_model() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.to_board_model">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.to_board_model">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.to_board_model">(adidt.boards.daq2.daq2 method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.to_board_model">(adidt.boards.layout.layout method)</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline_config.PipelineConfig.to_dict">to_dict() (adidt.xsa.pipeline_config.PipelineConfig method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.TplCoreContext">TplCoreContext (class in adidt.xsa.template_contexts)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.transceiver">transceiver (adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.trx_cs">trx_cs (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.trx_profile_props">trx_profile_props (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.trx_reset_gpio">trx_reset_gpio (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.trx_spi_max_frequency">trx_spi_max_frequency (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.trx_sysref_req_gpio">trx_sysref_req_gpio (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.JesdConfig.tx">tx (adidt.xsa.board_configs.JesdConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.tx1_enable_gpio">tx1_enable_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9081BoardConfig.tx2_enable_gpio">tx2_enable_gpio (adidt.xsa.board_configs.AD9081BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.tx_a_link_id">tx_a_link_id (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.tx_b_device_clk_index">tx_b_device_clk_index (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.tx_b_link_id">tx_b_link_id (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.tx_device_clk_index">tx_device_clk_index (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ClockConfig.tx_device_clk_label">tx_device_clk_label (adidt.xsa.board_configs.ClockConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.tx_link_id">tx_link_id (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.ADRV9009BoardConfig.tx_octets_per_frame">tx_octets_per_frame (adidt.xsa.board_configs.ADRV9009BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.tx_out_clk_select">tx_out_clk_select (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.tx_sys_clk_select">tx_sys_clk_select (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/parts.html#adidt.parts.clock_dt.clock_dt.update_existing_clock_node">update_existing_clock_node() (adidt.parts.clock_dt.clock_dt method)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.use_div40">use_div40 (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.AdxcvrContext.use_lpm_enable">use_lpm_enable (adidt.xsa.template_contexts.AdxcvrContext attribute)</a>
+</li>
+      <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.use_plugin_mode">use_plugin_mode (adidt.boards.ad9084_fmc.ad9084_fmc attribute)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.use_plugin_mode">(adidt.boards.adrv9009_fmc.adrv9009_fmc attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.use_plugin_mode">(adidt.boards.daq2.daq2 attribute)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.use_plugin_mode">(adidt.boards.layout.layout attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9680Context.use_spi_3wire">use_spi_3wire (adidt.xsa.template_contexts.Ad9680Context attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/boards.html#adidt.boards.ad9081_fmc.ad9081_fmc.validate_and_default_fpga_config">validate_and_default_fpga_config() (adidt.boards.ad9081_fmc.ad9081_fmc method)</a>
+
+      <ul>
+        <li><a href="api/boards.html#adidt.boards.ad9084_fmc.ad9084_fmc.validate_and_default_fpga_config">(adidt.boards.ad9084_fmc.ad9084_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.adrv9009_fmc.adrv9009_fmc.validate_and_default_fpga_config">(adidt.boards.adrv9009_fmc.adrv9009_fmc method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.daq2.daq2.validate_and_default_fpga_config">(adidt.boards.daq2.daq2 method)</a>
+</li>
+        <li><a href="api/boards.html#adidt.boards.layout.layout.validate_and_default_fpga_config">(adidt.boards.layout.layout method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    VALUE
+
+      <ul>
+        <li><a href="cli.html#cmdoption-adidtc-prop-arg-VALUE">adidtc-prop command line option</a>
+</li>
+      </ul></li>
+      <li><a href="api/xsa.html#adidt.xsa.board_configs.AD9084BoardConfig.vcxo_hz">vcxo_hz (adidt.xsa.board_configs.AD9084BoardConfig attribute)</a>
+
+      <ul>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9523Context.vcxo_hz">(adidt.xsa.template_contexts.Ad9523Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Ad9528Context.vcxo_hz">(adidt.xsa.template_contexts.Ad9528Context attribute)</a>
+</li>
+        <li><a href="api/xsa.html#adidt.xsa.template_contexts.Hmc7044Context.vcxo_hz">(adidt.xsa.template_contexts.Hmc7044Context attribute)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="X">X</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.exceptions.XsaParseError">XsaParseError</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaParser">XsaParser (class in adidt.xsa.topology)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api/xsa.html#adidt.xsa.pipeline.XsaPipeline">XsaPipeline (class in adidt.xsa.pipeline)</a>
+</li>
+      <li><a href="api/xsa.html#adidt.xsa.topology.XsaTopology">XsaTopology (class in adidt.xsa.topology)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <div></div>
+    <div></div>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The adidt/templates/xsa/ directory contains Jinja2 templates that render individual DTS nodes for ADI components.  Each template produces one SPI device child node, one AXI overlay node, or a pair of related nodes." name="description" />
+
+    <title>XSA Template Reference &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="Boards Module" href="boards.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">XSA Template Reference</a><ul>
+<li><a class="reference internal" href="#high-speed-data-converters-jesd204">High-Speed Data Converters (JESD204)</a></li>
+<li><a class="reference internal" href="#high-speed-dacs-non-jesd">High-Speed DACs (Non-JESD)</a></li>
+<li><a class="reference internal" href="#frequency-synthesizers-plls">Frequency Synthesizers (PLLs)</a></li>
+<li><a class="reference internal" href="#clock-generators-and-distributors">Clock Generators and Distributors</a></li>
+<li><a class="reference internal" href="#rf-front-end-components">RF Front-End Components</a></li>
+<li><a class="reference internal" href="#data-acquisition">Data Acquisition</a></li>
+<li><a class="reference internal" href="#fpga-axi-peripherals">FPGA AXI Peripherals</a></li>
+<li><a class="reference internal" href="#utility-templates">Utility Templates</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="boards.html">Boards Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">API Reference</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="xsa-template-reference">
+<h1>XSA Template Reference<a class="headerlink" href="#xsa-template-reference" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/</span></code> directory contains Jinja2 templates that render
+individual DTS nodes for ADI components.  Each template produces one SPI
+device child node, one AXI overlay node, or a pair of related nodes.</p>
+<p>Templates are rendered by <code class="docutils literal notranslate"><span class="pre">NodeBuilder._render(name,</span> <span class="pre">context)</span></code> where
+<em>context</em> is a dict (or dataclass with <code class="docutils literal notranslate"><span class="pre">as_dict()</span></code>) whose keys match the
+Jinja2 variables in the template.  See <a class="reference internal" href="../xsa_developer.html"><span class="doc">XSA Pipeline — Developer Guide</span></a> for the
+template composition architecture.</p>
+<p>Templates marked <strong>UNTESTED</strong> were generated from Linux kernel devicetree
+bindings and have not been validated on hardware.</p>
+<section id="high-speed-data-converters-jesd204">
+<h2>High-Speed Data Converters (JESD204)<a class="headerlink" href="#high-speed-data-converters-jesd204" title="Link to this heading"></a></h2>
+<p>These templates render SPI device nodes for ADI data converters that use
+JESD204B or JESD204C serial data interfaces.  They include <code class="docutils literal notranslate"><span class="pre">jesd204-device</span></code>
+properties and link to the JESD204 FSM framework.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9081_mxfe.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9081</span></code></p></td>
+<td><p>AD9081 MxFE with full TX DAC / RX ADC sub-tree, JESD204 link config, and converter-select properties.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9084.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9084</span></code></p></td>
+<td><p>AD9084 dual-link converter with firmware loading, lane mappings, HSCI, and side-B TPL support.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9088.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9088</span></code></p></td>
+<td><p>AD9088 (AD9084 driver variant) MxFE with clock provider outputs and JESD204 link configuration.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9083.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9083</span></code></p></td>
+<td><p>AD9083 8-channel ADC with JESD204B/C support and NCO/decimation configuration.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad916x.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9161</span></code> through <code class="docutils literal notranslate"><span class="pre">adi,ad9166</span></code></p></td>
+<td><p>AD916x wideband DAC family with JESD204 transport parameters and interpolation setting.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9680.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9680</span></code></p></td>
+<td><p>AD9680 ADC with optional SPI 3-wire mode, 1 or 3 clock inputs, and JESD204 link properties.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9144.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9144</span></code></p></td>
+<td><p>AD9144 DAC with clock reference and JESD204 link properties.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9152.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9152</span></code></p></td>
+<td><p>AD9152 DAC (FMCDAQ3) with JESD link mode and SPI CPOL/CPHA.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9172.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9172</span></code></p></td>
+<td><p>AD9172 DAC with interpolation, link mode, and clock output divider.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9009.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adrv9009</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,adrv9025</span></code></p></td>
+<td><p>ADRV9009/9025 RF transceiver with optional dual-chip FMComms8 layout.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9467.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9467</span></code> and variants</p></td>
+<td><p>AD9467/AD9265/AD9434/AD9643/AD9649/AD9652 high-speed ADC family.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9739a.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9739a</span></code></p></td>
+<td><p>AD9739a RF DAC with configurable full-scale current.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="high-speed-dacs-non-jesd">
+<h2>High-Speed DACs (Non-JESD)<a class="headerlink" href="#high-speed-dacs-non-jesd" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9739a.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9739a</span></code></p></td>
+<td><p>AD9739a RF DAC with configurable full-scale current output.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="frequency-synthesizers-plls">
+<h2>Frequency Synthesizers (PLLs)<a class="headerlink" href="#frequency-synthesizers-plls" title="Link to this heading"></a></h2>
+<p>These templates render SPI device nodes for PLL frequency synthesizers.
+Most are clock providers (<code class="docutils literal notranslate"><span class="pre">#clock-cells</span></code>) whose outputs feed converter
+device clocks or FPGA reference clocks.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adf4382.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adf4382</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,adf4382a</span></code></p></td>
+<td><p>Microwave wideband PLL with charge pump, power-up frequency, and 3-wire SPI support.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adf4377.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adf4377</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,adf4378</span></code></p></td>
+<td><p>Microwave PLL with muxout selection and GPIO enable pins.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adf4371.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adf4371</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,adf4372</span></code></p></td>
+<td><p>Wideband PLL with multi-channel output, charge pump tuning, and mute-till-lock.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adf4350.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adf4350</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,adf4351</span></code></p></td>
+<td><p>Wideband PLL with channel spacing, output power, and extensive PLL tuning properties.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adf4030.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adf4030</span></code></p></td>
+<td><p>10-channel precision synchronizer with per-channel delay and VCO/BSYNC configuration.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="clock-generators-and-distributors">
+<h2>Clock Generators and Distributors<a class="headerlink" href="#clock-generators-and-distributors" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hmc7044.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,hmc7044</span></code></p></td>
+<td><p>HMC7044 clock distribution IC with PLL1/PLL2 configuration, up to 14 output channels, JESD204 sysref provider, and GPI/GPO controls.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9523_1.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9523-1</span></code></p></td>
+<td><p>AD9523-1 clock generator (FMCDAQ2) with 8 channels and optional GPIO lines.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9528.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9528</span></code></p></td>
+<td><p>AD9528 clock generator (FMCDAQ3) with signal-source and sysref channel properties.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9528_1.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9528</span></code></p></td>
+<td><p>AD9528-1 variant (ADRV9009 standard path) with ADRV9009-specific PLL properties.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9545.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9545</span></code></p></td>
+<td><p>AD9545 quad-input DPLL network clock with reference frequency and optional crystal/doubler modes.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ltc6952.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ltc6952</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,ltc6953</span></code></p></td>
+<td><p>LTC6952 ultralow-jitter clock distribution with per-channel divider, digital delay, and analog delay.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="rf-front-end-components">
+<h2>RF Front-End Components<a class="headerlink" href="#rf-front-end-components" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">admv1013.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,admv1013</span></code></p></td>
+<td><p>Microwave upconverter with IQ/IF input mode, quad SE mode, and detector enable.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">admv1014.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,admv1014</span></code></p></td>
+<td><p>Microwave downconverter with IQ/IF input mode, P1dB compensation, and detector enable.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adrf6780.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adrf6780</span></code></p></td>
+<td><p>Microwave upconverter with LO enable/doubler/PPF, IQ/IF mode selection, and VGA buffer control.  Clock provider.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adar1000.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adar1000</span></code></p></td>
+<td><p>X/Ku band beamformer with multi-device sub-nodes.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="data-acquisition">
+<h2>Data Acquisition<a class="headerlink" href="#data-acquisition" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad7768.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad7768</span></code> / <code class="docutils literal notranslate"><span class="pre">adi,ad7768-4</span></code></p></td>
+<td><p>8-/4-channel 24-bit sigma-delta ADC with DMA and configurable data lines.  <strong>UNTESTED.</strong></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adaq8092.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,adaq8092</span></code></p></td>
+<td><p>Dual-channel 14-bit 105 MSPS DAQ module.  <strong>UNTESTED.</strong></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="fpga-axi-peripherals">
+<h2>FPGA AXI Peripherals<a class="headerlink" href="#fpga-axi-peripherals" title="Link to this heading"></a></h2>
+<p>These templates render overlay nodes for FPGA IP cores in the Vivado
+block design.  They add ADI-specific properties to nodes that <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code>
+already defined with Xilinx generic compatible strings.</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+<col style="width: 55.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Compatible</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clkgen.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,axi-clkgen-2.00.a</span></code></p></td>
+<td><p>AXI clock generator overlay with clock output names.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adxcvr.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,axi-adxcvr-1.0</span></code></p></td>
+<td><p>GT transceiver overlay with PLL select, clock references, and optional LPM enable.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">jesd204_overlay.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,axi-jesd204-rx-1.0</span></code> / <code class="docutils literal notranslate"><span class="pre">-tx-</span></code></p></td>
+<td><p>JESD204 controller overlay with framing parameters and JESD204 input chain.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jesd204_fsm.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,axi-jesd204-rx-1.0</span></code> / <code class="docutils literal notranslate"><span class="pre">-tx-</span></code></p></td>
+<td><p>Generic JESD204 FSM overlay used by the generic rendering path.  Tested.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tpl_core.tmpl</span></code></p></td>
+<td><p>(varies by board)</p></td>
+<td><p>Transport protocol layer core overlay with DMA link and converter association.  Tested.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081.tmpl</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">adi,ad9081</span></code></p></td>
+<td><p>AXI AD9081 MxFE PL core overlay.  Tested.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="utility-templates">
+<h2>Utility Templates<a class="headerlink" href="#utility-templates" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 26.7%" />
+<col style="width: 73.3%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">_jesd_macros.tmpl</span></code></p></td>
+<td><p>Jinja2 macros for JESD204 device properties (<code class="docutils literal notranslate"><span class="pre">jesd204-device</span></code>, <code class="docutils literal notranslate"><span class="pre">#jesd204-cells</span></code>, <code class="docutils literal notranslate"><span class="pre">jesd204-inputs</span></code>).  Imported by other templates.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="boards.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Boards Module</a>
+    <div></div>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

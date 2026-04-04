@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This page provides documentation for our command line tools." name="description" />
+
+    <title>Command Line Interface &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api/index.html" />
+    <link rel="prev" title="XSA Pipeline — Developer Guide" href="xsa_developer.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Command Line Interface</a><ul>
+<li><a class="reference internal" href="#cli-reference">CLI Reference</a><ul>
+<li><a class="reference internal" href="#adidtc">adidtc</a><ul>
+<li><a class="reference internal" href="#adidtc-deps">deps</a></li>
+<li><a class="reference internal" href="#adidtc-gen-dts">gen-dts</a></li>
+<li><a class="reference internal" href="#adidtc-jif">jif</a></li>
+<li><a class="reference internal" href="#adidtc-kuiper-boards">kuiper-boards</a></li>
+<li><a class="reference internal" href="#adidtc-profile2dt">profile2dt</a></li>
+<li><a class="reference internal" href="#adidtc-prop">prop</a></li>
+<li><a class="reference internal" href="#adidtc-props">props</a></li>
+<li><a class="reference internal" href="#adidtc-sd-move">sd-move</a></li>
+<li><a class="reference internal" href="#adidtc-sd-remote-copy">sd-remote-copy</a></li>
+<li><a class="reference internal" href="#adidtc-xsa-profile-show">xsa-profile-show</a></li>
+<li><a class="reference internal" href="#adidtc-xsa-profiles">xsa-profiles</a></li>
+<li><a class="reference internal" href="#adidtc-xsa2dt">xsa2dt</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="board_class_workflow.html">Device Tree Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/ad9081_device_tree_generation.html">AD9081 Device Tree Generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">BoardModel: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="parts.html">Part Layers</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="creating_templates.html">Creating Templates from Kernel Bindings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Command Line Interface</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/parts.html">Parts Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/boards.html">Boards Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/templates.html">XSA Template Reference</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="command-line-interface">
+<h1>Command Line Interface<a class="headerlink" href="#command-line-interface" title="Link to this heading"></a></h1>
+<p>This page provides documentation for our command line tools.</p>
+<section id="cli-reference">
+<h2>CLI Reference<a class="headerlink" href="#cli-reference" title="Link to this heading"></a></h2>
+<section id="adidtc">
+<h3>adidtc<a class="headerlink" href="#adidtc" title="Link to this heading"></a></h3>
+<p>ADI device tree utility</p>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>COMMAND<span class="w"> </span><span class="o">[</span>ARGS<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-nc">
+<span id="cmdoption-adidtc-no-color"></span><span class="sig-name descname"><span class="pre">-nc</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--no-color</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-nc" title="Link to this definition"></a></dt>
+<dd><p>Disable formatting</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-b">
+<span id="cmdoption-adidtc-board"></span><span class="sig-name descname"><span class="pre">-b</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--board</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;board&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-b" title="Link to this definition"></a></dt>
+<dd><p>Set board configuration</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'adrv9009_pcbz'</span></code></p>
+</dd>
+<dt class="field-even">Options<span class="colon">:</span></dt>
+<dd class="field-even"><p>ad9081_fmc | adrv9009_pcbz | adrv9009_zu11eg | daq2</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-c">
+<span id="cmdoption-adidtc-context"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--context</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;context&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-c" title="Link to this definition"></a></dt>
+<dd><p>Set context</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'local_sysfs'</span></code></p>
+</dd>
+<dt class="field-even">Options<span class="colon">:</span></dt>
+<dd class="field-even"><p>local_file | local_sd | local_sysfs | remote_sysfs | remote_sd</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-i">
+<span id="cmdoption-adidtc-ip"></span><span class="sig-name descname"><span class="pre">-i</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--ip</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;ip&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-i" title="Link to this definition"></a></dt>
+<dd><p>Set ip used by remote contexts</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'192.168.2.1'</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-u">
+<span id="cmdoption-adidtc-username"></span><span class="sig-name descname"><span class="pre">-u</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--username</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;username&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-u" title="Link to this definition"></a></dt>
+<dd><p>Set username used by remote SSH sessions (default is root)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'root'</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-w">
+<span id="cmdoption-adidtc-password"></span><span class="sig-name descname"><span class="pre">-w</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--password</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;password&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-w" title="Link to this definition"></a></dt>
+<dd><p>Set password used by remote SSH sessions (default is analog)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'analog'</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-a">
+<span id="cmdoption-adidtc-arch"></span><span class="sig-name descname"><span class="pre">-a</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--arch</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;arch&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-a" title="Link to this definition"></a></dt>
+<dd><p>Set target architecture which will set the target DT. auto with determine from running system</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'auto'</span></code></p>
+</dd>
+<dt class="field-even">Options<span class="colon">:</span></dt>
+<dd class="field-even"><p>arm | arm64 | auto</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-f">
+<span id="cmdoption-adidtc-filepath"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--filepath</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filepath&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-f" title="Link to this definition"></a></dt>
+<dd><p>Path of the target devicetree blob to be used in local_file mode (default is devicetree.dtb)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'devicetree.dtb'</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<section id="adidtc-deps">
+<h4>deps<a class="headerlink" href="#adidtc-deps" title="Link to this heading"></a></h4>
+<p>Analyze device tree dependencies</p>
+<div class="line-block">
+<div class="line">DT_FILE  - Path to device tree source file (.dts, .dtsi)</div>
+</div>
+<dl class="simple">
+<dt>Examples:</dt><dd><dl class="simple">
+<dt>View dependency tree:</dt><dd><p>adidtc deps system.dts</p>
+</dd>
+<dt>Export to GraphViz and generate image:</dt><dd><p>adidtc deps system.dts –format dot -o deps.dot
+dot -Tpng deps.dot -o deps.png</p>
+</dd>
+<dt>Export to JSON with missing dependencies:</dt><dd><p>adidtc deps system.dts –format json –show-missing -o deps.json</p>
+</dd>
+<dt>Limit depth of tree display:</dt><dd><p>adidtc deps system.dts –max-depth 3</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>deps<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>DT_FILE
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-deps-f">
+<span id="cmdoption-adidtc-deps-format"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--format</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;format&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-deps-f" title="Link to this definition"></a></dt>
+<dd><p>Output format (tree, json, or dot)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Options<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tree | json | dot</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-deps-d">
+<span id="cmdoption-adidtc-deps-max-depth"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--max-depth</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;max_depth&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-deps-d" title="Link to this definition"></a></dt>
+<dd><p>Maximum depth to display in tree format</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-deps-show-missing">
+<span id="cmdoption-adidtc-deps-hide-missing"></span><span class="sig-name descname"><span class="pre">--show-missing</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--hide-missing</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-deps-show-missing" title="Link to this definition"></a></dt>
+<dd><p>Show or hide missing dependencies</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-deps-o">
+<span id="cmdoption-adidtc-deps-output"></span><span class="sig-name descname"><span class="pre">-o</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;output&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-deps-o" title="Link to this definition"></a></dt>
+<dd><p>Output file (for json/dot formats)</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-deps-arg-DT_FILE">
+<span class="sig-name descname"><span class="pre">DT_FILE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-deps-arg-DT_FILE" title="Link to this definition"></a></dt>
+<dd><p>Required argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-gen-dts">
+<h4>gen-dts<a class="headerlink" href="#adidtc-gen-dts" title="Link to this heading"></a></h4>
+<p>Generate device tree source from a board class and config.</p>
+<div class="line-block">
+<div class="line">Uses the BoardModel workflow: config → to_board_model() → render → DTS.</div>
+<div class="line">Supports all board classes with to_board_model().</div>
+</div>
+<div class="line-block">
+<div class="line">Examples:</div>
+<div class="line-block">
+<div class="line">Generate DTS for FMCDAQ2 on ZCU102:</div>
+<div class="line-block">
+<div class="line">adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json</div>
+</div>
+</div>
+</div>
+<blockquote>
+<div><dl class="simple">
+<dt>Generate DTS for AD9081 FMC on VPK180:</dt><dd><p>adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json</p>
+</dd>
+<dt>Generate and compile to DTB:</dt><dd><p>adidtc gen-dts -b adrv9009_fmc -p zcu102 -c cfg.json –compile</p>
+</dd>
+<dt>Custom output path:</dt><dd><p>adidtc gen-dts -b daq2 -p zc706 -c cfg.json -o custom.dts</p>
+</dd>
+</dl>
+</div></blockquote>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>gen-dts<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-b">
+<span id="cmdoption-adidtc-gen-dts-board"></span><span class="sig-name descname"><span class="pre">-b</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--board</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;board&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-b" title="Link to this definition"></a></dt>
+<dd><p><strong>Required</strong> Board class to use for generation</p>
+<dl class="field-list simple">
+<dt class="field-odd">Options<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ad9081_fmc | ad9082_fmc | ad9083_fmc | ad9084_fmc | adrv9002_fmc | adrv9008_fmc | adrv9009_fmc | adrv9025_fmc | adrv937x_fmc | daq2 | fmcomms_fmc</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-p">
+<span id="cmdoption-adidtc-gen-dts-platform"></span><span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--platform</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;platform&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-p" title="Link to this definition"></a></dt>
+<dd><p><strong>Required</strong> Target platform (e.g., zcu102, vpk180, zc706, vcu118)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-c">
+<span id="cmdoption-adidtc-gen-dts-config"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--config</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;config&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-c" title="Link to this definition"></a></dt>
+<dd><p><strong>Required</strong> Path to JSON configuration file</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-k">
+<span id="cmdoption-adidtc-gen-dts-kernel-path"></span><span class="sig-name descname"><span class="pre">-k</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--kernel-path</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;kernel_path&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-k" title="Link to this definition"></a></dt>
+<dd><p>Path to Linux kernel source tree (overrides LINUX_KERNEL_PATH env var)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-o">
+<span id="cmdoption-adidtc-gen-dts-output"></span><span class="sig-name descname"><span class="pre">-o</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;output&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-o" title="Link to this definition"></a></dt>
+<dd><p>Output DTS file path</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-gen-dts-compile">
+<span class="sig-name descname"><span class="pre">--compile</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-gen-dts-compile" title="Link to this definition"></a></dt>
+<dd><p>Compile DTS to DTB using dtc</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-jif">
+<h4>jif<a class="headerlink" href="#adidtc-jif" title="Link to this heading"></a></h4>
+<p>JIF supported updates of DT</p>
+<div class="line-block">
+<div class="line">NODE_TYPE      - Type of device the configuration is to address</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>jif<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">{</span>clock<span class="p">|</span>converter<span class="p">|</span>system<span class="p">|</span>fpga<span class="o">}</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-jif-r">
+<span id="cmdoption-adidtc-jif-reboot"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reboot</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-jif-r" title="Link to this definition"></a></dt>
+<dd><p>Reboot boards after successful write</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-jif-f">
+<span id="cmdoption-adidtc-jif-filename"></span><span class="sig-name descname"><span class="pre">-f</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--filename</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;filename&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-jif-f" title="Link to this definition"></a></dt>
+<dd><p>Name of json file to import with JIF config</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-jif-arg-NODE_TYPE">
+<span class="sig-name descname"><span class="pre">NODE_TYPE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-jif-arg-NODE_TYPE" title="Link to this definition"></a></dt>
+<dd><p>Required argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-kuiper-boards">
+<h4>kuiper-boards<a class="headerlink" href="#adidtc-kuiper-boards" title="Link to this heading"></a></h4>
+<p>List Kuiper 2023-R2 supported boards and their status.</p>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>kuiper-boards<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-kuiper-boards-s">
+<span id="cmdoption-adidtc-kuiper-boards-status"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--status</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;status&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-kuiper-boards-s" title="Link to this definition"></a></dt>
+<dd><p>Filter by support status</p>
+<dl class="field-list simple">
+<dt class="field-odd">Options<span class="colon">:</span></dt>
+<dd class="field-odd"><p>all | full | profile_only | unsupported</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-kuiper-boards-json-output">
+<span class="sig-name descname"><span class="pre">--json-output</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-kuiper-boards-json-output" title="Link to this definition"></a></dt>
+<dd><p>Output raw JSON</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-profile2dt">
+<h4>profile2dt<a class="headerlink" href="#adidtc-profile2dt" title="Link to this heading"></a></h4>
+<p>Generate devicetree from Profile Configuration Wizard files</p>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>profile2dt<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-profile2dt-p">
+<span id="cmdoption-adidtc-profile2dt-profile"></span><span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--profile</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;profile&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-profile2dt-p" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-profile2dt-c">
+<span id="cmdoption-adidtc-profile2dt-config"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--config</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;config&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-profile2dt-c" title="Link to this definition"></a></dt>
+<dd><p>path to talise_config.c</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-prop">
+<h4>prop<a class="headerlink" href="#adidtc-prop" title="Link to this heading"></a></h4>
+<p>Get and set device tree properties</p>
+<div class="line-block">
+<div class="line">NODE_NAME      - Name of node to address</div>
+<div class="line">PROP           - Name property to get/set</div>
+<div class="line">VALUE          - Value to write to property of node</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>prop<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">[</span>NODE_NAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>PROP<span class="o">]</span><span class="w"> </span><span class="o">[</span>VALUE<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-r">
+<span id="cmdoption-adidtc-prop-reboot"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reboot</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-r" title="Link to this definition"></a></dt>
+<dd><p>Reboot boards after successful write</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-cp">
+<span id="cmdoption-adidtc-prop-compat"></span><span class="sig-name descname"><span class="pre">-cp</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--compat</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-cp" title="Link to this definition"></a></dt>
+<dd><p>Use node name to check against compatible id of node during search</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-ch">
+<span id="cmdoption-adidtc-prop-children"></span><span class="sig-name descname"><span class="pre">-ch</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--children</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-ch" title="Link to this definition"></a></dt>
+<dd><p>Show properties of child nodes 1 level down</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-arg-NODE_NAME">
+<span class="sig-name descname"><span class="pre">NODE_NAME</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-arg-NODE_NAME" title="Link to this definition"></a></dt>
+<dd><p>Optional argument</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-arg-PROP">
+<span class="sig-name descname"><span class="pre">PROP</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-arg-PROP" title="Link to this definition"></a></dt>
+<dd><p>Optional argument</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-prop-arg-VALUE">
+<span class="sig-name descname"><span class="pre">VALUE</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-prop-arg-VALUE" title="Link to this definition"></a></dt>
+<dd><p>Optional argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-props">
+<h4>props<a class="headerlink" href="#adidtc-props" title="Link to this heading"></a></h4>
+<p>Get and set device tree properties</p>
+<div class="line-block">
+<div class="line">NODE_NAME      - Name of node(s) to address</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>props<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">[</span>NODE_NAME<span class="o">]</span>...
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-props-cp">
+<span id="cmdoption-adidtc-props-compat"></span><span class="sig-name descname"><span class="pre">-cp</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--compat</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-props-cp" title="Link to this definition"></a></dt>
+<dd><p>Use node name to check against compatible id of node during search. This is only used for the first node</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-props-r">
+<span id="cmdoption-adidtc-props-reboot"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reboot</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-props-r" title="Link to this definition"></a></dt>
+<dd><p>Reboot boards after successful write</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-props-p">
+<span id="cmdoption-adidtc-props-prop"></span><span class="sig-name descname"><span class="pre">-p</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--prop</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;prop&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-props-p" title="Link to this definition"></a></dt>
+<dd><p>Property of node to read to set</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-props-v">
+<span id="cmdoption-adidtc-props-value"></span><span class="sig-name descname"><span class="pre">-v</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--value</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;value&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-props-v" title="Link to this definition"></a></dt>
+<dd><p>Value to set property to</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-props-arg-NODE_NAME">
+<span class="sig-name descname"><span class="pre">NODE_NAME</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-props-arg-NODE_NAME" title="Link to this definition"></a></dt>
+<dd><p>Optional argument(s)</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-sd-move">
+<h4>sd-move<a class="headerlink" href="#adidtc-sd-move" title="Link to this heading"></a></h4>
+<p>Move files on existing SD card</p>
+<div class="line-block">
+<div class="line">REFERENCE_DESIGN  - Name of reference design folder on SD card</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>sd-move<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">[</span>RD<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-move-r">
+<span id="cmdoption-adidtc-sd-move-reboot"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reboot</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-move-r" title="Link to this definition"></a></dt>
+<dd><p>Reboot boards after successful write</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-move-s">
+<span id="cmdoption-adidtc-sd-move-show"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--show</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-move-s" title="Link to this definition"></a></dt>
+<dd><p>Print commands as run</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-move-d">
+<span id="cmdoption-adidtc-sd-move-dry-run"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--dry-run</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-move-d" title="Link to this definition"></a></dt>
+<dd><p>Dryrun, do not run commands</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-move-arg-RD">
+<span class="sig-name descname"><span class="pre">RD</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-move-arg-RD" title="Link to this definition"></a></dt>
+<dd><p>Optional argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-sd-remote-copy">
+<h4>sd-remote-copy<a class="headerlink" href="#adidtc-sd-remote-copy" title="Link to this heading"></a></h4>
+<p>Copy local boot files to remote existing SD card</p>
+<div class="line-block">
+<div class="line">FILES  - List of files to copy (comma separated)</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>sd-remote-copy<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span><span class="o">[</span>FILES<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-remote-copy-r">
+<span id="cmdoption-adidtc-sd-remote-copy-reboot"></span><span class="sig-name descname"><span class="pre">-r</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--reboot</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-remote-copy-r" title="Link to this definition"></a></dt>
+<dd><p>Reboot boards after successful write</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-remote-copy-s">
+<span id="cmdoption-adidtc-sd-remote-copy-show"></span><span class="sig-name descname"><span class="pre">-s</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--show</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-remote-copy-s" title="Link to this definition"></a></dt>
+<dd><p>Print commands as run</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-remote-copy-d">
+<span id="cmdoption-adidtc-sd-remote-copy-dry-run"></span><span class="sig-name descname"><span class="pre">-d</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--dry-run</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-remote-copy-d" title="Link to this definition"></a></dt>
+<dd><p>Dryrun, do not run commands</p>
+</dd></dl>
+
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-sd-remote-copy-arg-FILES">
+<span class="sig-name descname"><span class="pre">FILES</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-sd-remote-copy-arg-FILES" title="Link to this definition"></a></dt>
+<dd><p>Optional argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-xsa-profile-show">
+<h4>xsa-profile-show<a class="headerlink" href="#adidtc-xsa-profile-show" title="Link to this heading"></a></h4>
+<p>Show one built-in XSA board profile as JSON.</p>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa-profile-show<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span><span class="w"> </span>NAME
+</pre></div>
+</div>
+<p class="rubric">Arguments</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa-profile-show-arg-NAME">
+<span class="sig-name descname"><span class="pre">NAME</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-xsa-profile-show-arg-NAME" title="Link to this definition"></a></dt>
+<dd><p>Required argument</p>
+</dd></dl>
+
+</section>
+<section id="adidtc-xsa-profiles">
+<h4>xsa-profiles<a class="headerlink" href="#adidtc-xsa-profiles" title="Link to this heading"></a></h4>
+<p>List available built-in XSA board profiles.</p>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa-profiles<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+</section>
+<section id="adidtc-xsa2dt">
+<h4>xsa2dt<a class="headerlink" href="#adidtc-xsa2dt" title="Link to this heading"></a></h4>
+<p>Generate ADI device tree from Vivado XSA file</p>
+<div class="line-block">
+<div class="line">Invokes sdtgen against the XSA, detects ADI IPs, generates JESD204</div>
+<div class="line">FSM-compatible nodes, and produces overlay (.dtso), merged (.dts), and</div>
+<div class="line">interactive HTML visualization report.</div>
+</div>
+<div class="line-block">
+<div class="line">Requires sdtgen (lopper); if it is not on PATH, the runner will try</div>
+<div class="line">to discover and source a local Vitis/Vivado settings script.</div>
+<div class="line">Install from: <a class="icon link reference external" href="https://github.com/devicetree-org/lopper" target="_blank">https://github.com/devicetree-org/lopper</a></div>
+</div>
+<div class="line-block">
+<div class="line">Examples:</div>
+<div class="line-block">
+<div class="line">adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json</div>
+<div class="line">adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out –timeout 180</div>
+<div class="line">adidtc xsa2dt -x design_1.xsa -c cfg.json –profile ad9081_zcu102</div>
+<div class="line">adidtc xsa2dt -x design_1.xsa -c cfg.json –reference-dts ref.dts</div>
+</div>
+</div>
+<p class="rubric">Usage</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span><span class="o">[</span>OPTIONS<span class="o">]</span>
+</pre></div>
+</div>
+<p class="rubric">Options</p>
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-x">
+<span id="cmdoption-adidtc-xsa2dt-xsa"></span><span class="sig-name descname"><span class="pre">-x</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--xsa</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;xsa&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-x" title="Link to this definition"></a></dt>
+<dd><p><strong>Required</strong> Path to Vivado .xsa file</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-c">
+<span id="cmdoption-adidtc-xsa2dt-config"></span><span class="sig-name descname"><span class="pre">-c</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--config</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;config&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-c" title="Link to this definition"></a></dt>
+<dd><p><strong>Required</strong> Path to pyadi-jif JSON configuration file</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-o">
+<span id="cmdoption-adidtc-xsa2dt-output"></span><span class="sig-name descname"><span class="pre">-o</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--output</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;output&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-o" title="Link to this definition"></a></dt>
+<dd><p>Output directory</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">'./generated'</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-t">
+<span id="cmdoption-adidtc-xsa2dt-timeout"></span><span class="sig-name descname"><span class="pre">-t</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--timeout</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;timeout&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-t" title="Link to this definition"></a></dt>
+<dd><p>sdtgen subprocess timeout in seconds</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">120</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-profile">
+<span class="sig-name descname"><span class="pre">--profile</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;profile&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-profile" title="Link to this definition"></a></dt>
+<dd><p>Optional board profile name (for example: ad9081_zcu102, adrv9009_zcu102)</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-reference-dts">
+<span class="sig-name descname"><span class="pre">--reference-dts</span></span><span class="sig-prename descclassname"> <span class="pre">&lt;reference_dts&gt;</span></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-reference-dts" title="Link to this definition"></a></dt>
+<dd><p>Optional reference DTS root file used to generate parity reports</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-strict-parity">
+<span class="sig-name descname"><span class="pre">--strict-parity</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-strict-parity" title="Link to this definition"></a></dt>
+<dd><p>Fail when manifest parity reports missing required roles</p>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-lint">
+<span id="cmdoption-adidtc-xsa2dt-no-lint"></span><span class="sig-name descname"><span class="pre">--lint</span></span><span class="sig-prename descclassname"></span><span class="sig-prename descclassname"><span class="pre">,</span> </span><span class="sig-name descname"><span class="pre">--no-lint</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-lint" title="Link to this definition"></a></dt>
+<dd><p>Run structural DTS linter on generated output</p>
+<dl class="field-list simple">
+<dt class="field-odd">Default<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="std option">
+<dt class="sig sig-object std" id="cmdoption-adidtc-xsa2dt-strict-lint">
+<span class="sig-name descname"><span class="pre">--strict-lint</span></span><span class="sig-prename descclassname"></span><a class="headerlink" href="#cmdoption-adidtc-xsa2dt-strict-lint" title="Link to this definition"></a></dt>
+<dd><p>Fail when DTS linter finds errors (implies –lint)</p>
+</dd></dl>
+
+</section>
+</section>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="xsa_developer.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">XSA Pipeline — Developer Guide</a>
+    <a href="api/index.html" title="Next document (Alt+Shift+RightArrow)" class="next">API Reference</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
