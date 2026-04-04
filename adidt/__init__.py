@@ -13,6 +13,8 @@ from adidt.boards.ad9084_fmc import ad9084_fmc as ad9084_fmc
 from adidt.boards.adrv9009_fmc import adrv9009_fmc as adrv9009_fmc
 from adidt.boards.adrv9009_zu11eg import adrv9009_zu11eg as adrv9009_zu11eg
 from adidt.boards.ad9082_fmc import ad9082_fmc as ad9082_fmc
+from adidt.boards.ad9083_fmc import ad9083_fmc as ad9083_fmc
+from adidt.boards.adrv9008_fmc import adrv9008_fmc as adrv9008_fmc
 from adidt.boards.adrv9025_fmc import adrv9025_fmc as adrv9025_fmc
 from adidt.boards.adrv9009_pcbz import adrv9009_pcbz as adrv9009_pcbz
 from adidt.boards.rpi import rpi as rpi

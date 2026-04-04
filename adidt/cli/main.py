@@ -603,7 +603,9 @@ _BOARD_CLASSES = {
     "daq2": ("adidt.boards.daq2", "daq2"),
     "ad9081_fmc": ("adidt.boards.ad9081_fmc", "ad9081_fmc"),
     "ad9082_fmc": ("adidt.boards.ad9082_fmc", "ad9082_fmc"),
+    "ad9083_fmc": ("adidt.boards.ad9083_fmc", "ad9083_fmc"),
     "ad9084_fmc": ("adidt.boards.ad9084_fmc", "ad9084_fmc"),
+    "adrv9008_fmc": ("adidt.boards.adrv9008_fmc", "adrv9008_fmc"),
     "adrv9009_fmc": ("adidt.boards.adrv9009_fmc", "adrv9009_fmc"),
     "adrv9025_fmc": ("adidt.boards.adrv9025_fmc", "adrv9025_fmc"),
 }

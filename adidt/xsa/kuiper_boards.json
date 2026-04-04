@@ -24,7 +24,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": "ad9083_zcu102",
-      "board_class": null,
+      "board_class": "ad9083_fmc",
       "builder": null,
       "status": "profile_only"
     },
@@ -42,7 +42,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": "adrv9008_zcu102",
-      "board_class": null,
+      "board_class": "adrv9008_fmc",
       "builder": "ADRV9009Builder",
       "status": "profile_only"
     },
@@ -133,7 +133,7 @@
       "platform": "zc706",
       "arch": "arm",
       "profile": "adrv9008_zc706",
-      "board_class": null,
+      "board_class": "adrv9008_fmc",
       "builder": "ADRV9009Builder",
       "status": "profile_only"
     },
