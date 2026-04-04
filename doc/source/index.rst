@@ -39,7 +39,7 @@ and their support status.
      - Platforms
      - HW Validated
    * - AD9081 / AD9082 / AD9083 (MxFE)
-     - ZCU102, ZC706, Versal
+     - ZCU102, ZC706, VPK180
      - ZCU102 ✓
    * - AD9084
      - VCU118, VPK180
