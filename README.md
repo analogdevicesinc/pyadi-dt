@@ -1,5 +1,5 @@
 <p align="center">
-<img src="doc/source/_static/pyadi-dt_w_300.png" alt="pyadi-dt logo" width="300">
+<img src="doc/source/_static/media/pyadi-dt_w_300.png" alt="pyadi-dt logo" width="300">
 </p>
 
 <h3 align="center">Device Tree Generation for Analog Devices Hardware</h3>
