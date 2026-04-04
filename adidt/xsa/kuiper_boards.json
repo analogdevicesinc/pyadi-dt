@@ -15,7 +15,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": "ad9082_zcu102",
-      "board_class": null,
+      "board_class": "ad9082_fmc",
       "builder": "AD9081Builder",
       "status": "profile_only"
     },
@@ -70,7 +70,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": "adrv9025_zcu102",
-      "board_class": null,
+      "board_class": "adrv9025_fmc",
       "builder": "ADRV9009Builder",
       "status": "profile_only"
     },
