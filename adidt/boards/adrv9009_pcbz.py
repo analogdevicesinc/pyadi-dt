@@ -117,7 +117,7 @@ class adrv9009_pcbz(layout):
         talInit = adrv9009.parse_talInit(filename)
         self.jesd204 = talInit["jesd204Settings"]
 
-    def gen_dt_preprocess(self):
+    def gen_dt_preprocess(self, **kwargs):  # type: ignore[override]
         """Build the Jinja2 template context from parsed clock and transceiver profiles."""
         return {
             "pll1": self.clock_profile["pll1"],

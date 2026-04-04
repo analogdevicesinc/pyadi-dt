@@ -595,6 +595,7 @@ class ADRV9009Builder:
                     "\t\t};\n"
                 )
             else:
+                assert ad9528_vcxo_freq is not None
                 clock_ctx = build_ad9528_1_ctx(
                     label=clock_chip_label,
                     cs=clk_cs,
