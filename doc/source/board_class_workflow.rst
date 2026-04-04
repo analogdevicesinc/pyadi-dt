@@ -7,7 +7,7 @@ overlays directly from Python using the ``BoardModel`` API.
 
 This guide walks through the simplest case — an ADIS16495 IMU on a
 Raspberry Pi — then shows how the same approach scales to more complex
-boards with clock chips, JESD204 links, and FPGA transceivers. It is recommened to follow the XSA workflow if you are using Vivado, but it is not required. See :doc:`xsa_workflow` for more information.
+boards with clock chips, JESD204 links, and FPGA transceivers. It is recommened to follow the XSA workflow if you are using Vivado, but it is not required. See :doc:`xsa` for more information.
 
 .. contents:: Contents
    :local:
