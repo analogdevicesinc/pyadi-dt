@@ -26,6 +26,17 @@ external dependencies) built with D3.js.  It contains five panels:
 5. **JESD204 Data Path** — D3.js diagram showing JESD RX/TX cores,
    converters, and data flow connections with lane count annotations
 
+Example report layout
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   block-beta
+     columns 2
+     A["DTS Node Tree\n(searchable)"] B["XSA Match Coverage\n(stats)"]
+     C["Clock Topology\n(D3.js SVG)"] D["JESD204 Data Path\n(D3.js SVG)"]
+     E["Details: Parsed Topology / Clock References / JESD Paths"]:2
+
 Generating from Python
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -65,7 +76,58 @@ Two output formats are always written:
   ``dot`` is on PATH
 - **D2** (``.d2``) — rendered to SVG automatically if ``d2`` is on PATH
 
-Nodes are color-coded:
+Example: FMCDAQ2 clock tree
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following diagram shows the clock distribution for an FMCDAQ2 design
+(AD9523-1 clock + AD9680 ADC + AD9144 DAC):
+
+.. mermaid::
+
+   flowchart LR
+     subgraph PS["Processing System"]
+       zynqmp_clk["zynqmp_clk\n(PS clock)"]
+     end
+
+     subgraph CLK["Clock Chip"]
+       clk0_ad9523["clk0_ad9523\n(AD9523-1)"]
+     end
+
+     subgraph JESD["JESD204 Links"]
+       jesd_rx["axi_ad9680_jesd204_rx"]
+       jesd_tx["axi_ad9144_jesd204_tx"]
+     end
+
+     subgraph XCVR["GT Transceivers"]
+       xcvr_rx["axi_ad9680_adxcvr"]
+       xcvr_tx["axi_ad9144_adxcvr"]
+     end
+
+     subgraph CONV["Converters"]
+       adc["adc0_ad9680\n(AD9680 ADC)"]
+       dac["dac0_ad9144\n(AD9144 DAC)"]
+     end
+
+     zynqmp_clk -->|s_axi_aclk| jesd_rx
+     zynqmp_clk -->|s_axi_aclk| jesd_tx
+     clk0_ad9523 -->|adc_clk| adc
+     clk0_ad9523 -->|adc_sysref| adc
+     clk0_ad9523 -->|dac_clk| dac
+     clk0_ad9523 -->|conv| xcvr_rx
+     clk0_ad9523 -->|conv| xcvr_tx
+     xcvr_rx -->|device_clk| jesd_rx
+     xcvr_rx -->|lane_clk| jesd_rx
+     xcvr_tx -->|device_clk| jesd_tx
+     xcvr_tx -->|lane_clk| jesd_tx
+
+     style PS fill:#7a3800,color:#fff
+     style CLK fill:#1a3d5c,color:#fff
+     style JESD fill:#1a4a20,color:#fff
+     style XCVR fill:#4a1a5c,color:#fff
+     style CONV fill:#5c1a1a,color:#fff
+
+Node color coding
+~~~~~~~~~~~~~~~~~~
 
 .. list-table::
    :widths: 30 20 50
@@ -81,7 +143,7 @@ Nodes are color-coded:
      - Blue
      - ``hmc7044``, ``ad9523``, ``ad9528``
    * - Transceiver (XCVR)
-     - Orange
+     - Purple
      - ``axi_ad9081_adxcvr_rx``
    * - JESD204
      - Green
@@ -93,13 +155,53 @@ Nodes are color-coded:
      - Gray
      - ``axi_ad9081_rx_dma``
 
-Edges are color-coded by clock name:
+Edge color coding
+~~~~~~~~~~~~~~~~~~
 
-- ``device_clk`` — blue
-- ``lane_clk`` — green
-- ``conv`` — orange
-- ``sampl_clk`` — purple
-- ``s_axi_aclk`` — gray dashed
+.. list-table::
+   :widths: 30 20 50
+   :header-rows: 1
+
+   * - Clock Name
+     - Style
+     - Meaning
+   * - ``device_clk``
+     - Blue solid
+     - Device clock from XCVR to JESD controller
+   * - ``lane_clk``
+     - Green solid
+     - Lane clock from XCVR to JESD controller
+   * - ``conv``
+     - Orange solid
+     - Reference clock from clock chip to XCVR
+   * - ``sampl_clk``
+     - Purple solid
+     - Sampling clock from PHY to TPL core
+   * - ``s_axi_aclk``
+     - Gray dashed
+     - AXI register access clock (PS → peripherals)
+
+Example DOT output
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: dot
+
+   digraph clock_topology {
+       label="fmcdaq2 — clock topology";
+       rankdir=LR;
+       node [style="filled,rounded" fontname="monospace"];
+
+       zynqmp_clk [label="zynqmp_clk" fillcolor="#7a3800"];
+       clk0_ad9523 [label="clk0_ad9523\n(ad9523-1)" fillcolor="#1a3d5c"];
+       axi_ad9680_adxcvr [label="axi_ad9680_adxcvr" fillcolor="#4a1a5c"];
+       axi_ad9680_jesd204_rx [label="axi_ad9680_jesd204_rx" fillcolor="#1a4a20"];
+       adc0_ad9680 [label="adc0_ad9680\n(ad9680)" fillcolor="#5c1a1a"];
+
+       clk0_ad9523 -> adc0_ad9680 [label="adc_clk"];
+       clk0_ad9523 -> axi_ad9680_adxcvr [label="conv"];
+       axi_ad9680_adxcvr -> axi_ad9680_jesd204_rx [label="device_clk"];
+       zynqmp_clk -> axi_ad9680_jesd204_rx [label="s_axi_aclk" style=dashed];
+   }
 
 Generating from Python
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -146,6 +248,34 @@ Checks include:
 - Missing ``compatible`` strings
 - Duplicate node labels
 
+Example lint output
+~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: json
+
+   {
+     "diagnostics": [
+       {
+         "severity": "error",
+         "rule": "unresolved-phandle",
+         "node": "&axi_adrv9009_core_rx_obs",
+         "message": "Label 'axi_adrv9009_core_rx_obs' not found in base DTS"
+       },
+       {
+         "severity": "warning",
+         "rule": "spi-cs-conflict",
+         "node": "&spi0",
+         "message": "Duplicate chip-select 0 on spi0 bus"
+       }
+     ],
+     "summary": {
+       "errors": 1,
+       "warnings": 1,
+       "info": 0,
+       "total": 2
+     }
+   }
+
 Generating from Python
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -172,9 +302,6 @@ Generating from CLI
    # Fail on lint errors
    adidtc xsa2dt -x design.xsa --profile adrv9009_zcu102 --strict-lint -o out/
 
-The diagnostics JSON file contains severity, rule, node path, and
-message for each finding.
-
 Combining all outputs
 ----------------------
 
@@ -190,13 +317,23 @@ Enable everything at once:
        emit_clock_graphs=True,
        lint=True,
    )
-   # result keys:
-   # "merged"         — merged .dts file
-   # "overlay"        — .dtso overlay file
-   # "base_dir"       — sdtgen output directory
-   # "report"         — interactive HTML report
-   # "clock_dot"      — Graphviz DOT clock tree
-   # "clock_d2"       — D2 clock tree
-   # "clock_dot_svg"  — SVG (if dot on PATH)
-   # "clock_d2_svg"   — SVG (if d2 on PATH)
-   # "diagnostics"    — lint diagnostics JSON
+
+This produces:
+
+.. mermaid::
+
+   flowchart TB
+     XSA["design.xsa"] --> Pipeline["XsaPipeline.run()"]
+     Pipeline --> DTS[".dts merged"]
+     Pipeline --> DTSO[".dtso overlay"]
+     Pipeline --> Report["_report.html\n(interactive D3.js)"]
+     Pipeline --> DOT["_clocks.dot\n+ .dot.svg"]
+     Pipeline --> D2["_clocks.d2\n+ .d2.svg"]
+     Pipeline --> Diag["_diagnostics.json"]
+
+     style DTS fill:#3a7d44,color:#fff
+     style DTSO fill:#3a7d44,color:#fff
+     style Report fill:#0067b9,color:#fff
+     style DOT fill:#c8940a,color:#fff
+     style D2 fill:#c8940a,color:#fff
+     style Diag fill:#b94000,color:#fff
