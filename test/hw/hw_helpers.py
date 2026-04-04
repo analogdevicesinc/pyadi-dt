@@ -169,6 +169,28 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         text=True,
         check=False,
     )
+    if (
+        res.returncode != 0
+        and "Label or path" in res.stderr
+        and "not found" in res.stderr
+    ):
+        # Strip unresolved overlay blocks and retry
+        if _strip_unresolved_overlays(compile_input, res.stderr):
+            res = subprocess.run(
+                [
+                    "dtc",
+                    "-I",
+                    "dts",
+                    "-O",
+                    "dtb",
+                    "-o",
+                    str(dtb_path),
+                    str(compile_input),
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
     if res.returncode != 0:
         raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
