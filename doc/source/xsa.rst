@@ -313,6 +313,11 @@ Built-in profiles
      - ZC706
      - No (supply via cfg)
      - ``ad9081_board``
+   * - ``ad9081_vpk180``
+     - AD9081 MxFE
+     - VPK180
+     - Yes (JESD204C M8/L8)
+     - ``ad9081_board``
    * - ``ad9082_zcu102``
      - AD9082 MxFE
      - ZCU102

@@ -90,7 +90,7 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 
 | Converter Family | Platforms | HW Validated |
 |---|---|---|
-| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, Versal | ZCU102 ✓ |
+| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 ✓ |
 | AD9084 | VCU118, VPK180 | |
 | ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102 ✓ |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | |
