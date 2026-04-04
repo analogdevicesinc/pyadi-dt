@@ -121,7 +121,7 @@ jobs:
           docker cp ${{env.CONTAINER_BASE_NAME}}-${{matrix.architecture}}:/workspace/${{env.APP_NAME}}/${{env.DEB_FILE_NAME}}.deb ./${{env.DEB_FILE_NAME}}.deb
 
     - name: Upload .deb artifacts to github
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{env.APP_NAME}}-${{matrix.architecture}}
         path: python3-${{env.APP_NAME}}_${{needs.identify_version.outputs.app-version}}-1_${{matrix.architecture}}.deb
@@ -156,7 +156,7 @@ jobs:
         .github/scripts/verify_install.sh
         
     - name: Upload .deb artifacts to github
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{env.APP_NAME}}-ubuntu
         path: ${{env.APP_NAME}}/python3-${{env.APP_NAME}}_${{needs.identify_version.outputs.app-version}}-1_${{env.architecture}}.deb

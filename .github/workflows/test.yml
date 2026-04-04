@@ -75,21 +75,21 @@ jobs:
         adidtc --help
 
     - name: Upload PyPI artifacts
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: pypi-distributions
         path: dist/
         retention-days: 90
 
     - name: Upload individual source distribution
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: source-distribution
         path: dist/*.tar.gz
         retention-days: 90
 
     - name: Upload individual wheel distribution
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: wheel-distribution
         path: dist/*.whl
