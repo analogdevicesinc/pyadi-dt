@@ -266,7 +266,7 @@ class ad9084_fmc(layout):
         cfg = self.validate_and_default_fpga_config(cfg)
         ccfg, adc, dac, fpga = self.map_clocks_to_board_layout(cfg)
 
-        clock_spi = self.platform_config.get("spi_bus", "spi0")
+        clock_spi: str = str(self.platform_config.get("spi_bus", "spi0"))
         converter_spi = clock_spi
 
         # --- HMC7044 clock chip ---
@@ -475,15 +475,25 @@ class ad9084_fmc(layout):
 
         jesd_links = []
         for lk in link_defs:
-            direction = lk["direction"]
-            variant = lk["variant"]
+            direction = str(lk["direction"])
+            variant = str(lk["variant"])
             is_rx = direction == "rx"
             gt_prefix = "rx" if is_rx else "tx"
 
+            # Extract typed values from link dict
+            _xcvr = str(lk["xcvr_label"])
+            _jesd = str(lk["jesd_label"])
+            _tpl = str(lk["tpl_label"])
+            _tpl_compat = str(lk["tpl_compatible"])
+            _dma = str(lk["dma_label"])
+            _link_id = int(lk["link_id"])
+            _sys_sel = int(lk["sys_sel"])
+            _out_sel = int(lk["out_sel"])
+
             xcvr_ctx = build_adxcvr_ctx(
-                label=lk["xcvr_label"],
-                sys_clk_select=lk["sys_sel"],
-                out_clk_select=lk["out_sel"],
+                label=_xcvr,
+                sys_clk_select=_sys_sel,
+                out_clk_select=_out_sel,
                 clk_ref=f"hmc7044 {fpga_refclk_channel}",
                 use_div40=False,
                 div40_clk_ref=None,
@@ -491,31 +501,30 @@ class ad9084_fmc(layout):
                     f'"{gt_prefix}{variant}_gt_clk", "{gt_prefix}{variant}_out_clk"'
                 ),
                 use_lpm_enable=False,
-                jesd204_inputs=f"hmc7044 0 {lk['link_id']}",
+                jesd204_inputs=f"hmc7044 0 {_link_id}",
                 is_rx=is_rx,
             )
 
             # JESD204 overlay context -- 4-clock format for AD9084
-            dev_label = lk["dev_clk_label"]
+            dev_label = str(lk["dev_clk_label"])
             dev_idx = lk["dev_clk_index"]
             dev_idx_str = f" {dev_idx}" if dev_idx is not None else ""
             clocks_str = (
-                f"{ps_clk_str}, <&{lk['xcvr_label']} 1>, "
-                f"<&{dev_label}{dev_idx_str}>, <&{lk['xcvr_label']} 0>"
+                f"{ps_clk_str}, <&{_xcvr} 1>, <&{dev_label}{dev_idx_str}>, <&{_xcvr} 0>"
             )
 
             f_val = rx_f if is_rx else tx_f
             k_val = rx_k if is_rx else tx_k
 
             jesd_overlay_ctx = build_jesd204_overlay_ctx(
-                label=lk["jesd_label"],
+                label=_jesd,
                 direction=direction,
                 clocks_str=clocks_str,
                 clock_names_str='"s_axi_aclk", "link_clk", "device_clk", "lane_clk"',
                 clock_output_name=None,
                 f=f_val,
                 k=k_val,
-                jesd204_inputs=f"{lk['xcvr_label']} 0 {lk['link_id']}",
+                jesd204_inputs=f"{_xcvr} 0 {_link_id}",
             )
 
             # TPL core context
@@ -527,14 +536,14 @@ class ad9084_fmc(layout):
                 sampl_clk_name = None
 
             tpl_ctx = build_tpl_core_ctx(
-                label=lk["tpl_label"],
-                compatible=lk["tpl_compatible"],
+                label=_tpl,
+                compatible=_tpl_compat,
                 direction=direction,
-                dma_label=lk["dma_label"],
+                dma_label=_dma,
                 spibus_label=ad9084_spi_label,
-                jesd_label=lk["jesd_label"],
+                jesd_label=_jesd,
                 jesd_link_offset=0,
-                link_id=lk["link_id"],
+                link_id=_link_id,
                 pl_fifo_enable=direction == "tx",
                 sampl_clk_ref=sampl_clk_ref,
                 sampl_clk_name=sampl_clk_name,
@@ -543,10 +552,10 @@ class ad9084_fmc(layout):
             jesd_links.append(
                 JesdLinkModel(
                     direction=direction,
-                    jesd_label=lk["jesd_label"],
-                    xcvr_label=lk["xcvr_label"],
-                    core_label=lk["tpl_label"],
-                    dma_label=lk["dma_label"],
+                    jesd_label=_jesd,
+                    xcvr_label=_xcvr,
+                    core_label=_tpl,
+                    dma_label=_dma,
                     link_params={"F": f_val, "K": k_val},
                     xcvr_config=xcvr_ctx,
                     jesd_overlay_config=jesd_overlay_ctx,
