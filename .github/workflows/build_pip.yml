@@ -73,6 +73,54 @@ jobs:
       run: |
         docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
+  binding-audit:
+    runs-on: ubuntu-latest
+    name: Audit ADI Bindings
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test]"
+        pip install pyyaml
+
+    - name: Clone ADI Linux kernel (bindings only)
+      run: |
+        git clone --depth 1 --filter=blob:none --sparse \
+          https://github.com/analogdevicesinc/linux.git /tmp/linux
+        cd /tmp/linux
+        git sparse-checkout set Documentation/devicetree/bindings
+
+    - name: Run binding audit
+      run: |
+        cd scripts
+        python audit_adi_bindings.py \
+          --linux-path /tmp/linux \
+          --project-root ${{ github.workspace }} \
+          --output ${{ github.workspace }}/binding_audit.json \
+          --report ${{ github.workspace }}/binding_audit.md
+
+    - name: Display audit summary
+      run: |
+        echo "## Binding Audit Report" >> $GITHUB_STEP_SUMMARY
+        cat binding_audit.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Upload audit report
+      uses: actions/upload-artifact@v5
+      with:
+        name: binding-audit-report
+        path: |
+          binding_audit.json
+          binding_audit.md
+        retention-days: 30
+
   build-package:
     needs: [python-test]
     runs-on: ubuntu-latest
