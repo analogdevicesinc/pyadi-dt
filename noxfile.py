@@ -160,3 +160,20 @@ def test_specific(session):
     if not session.posargs:
         session.error("Please provide a test file or test path")
     session.run("pytest", "-vs", *session.posargs)
+
+
+@nox.session(python="3.12")
+def security_audit(session):
+    """Audit installed dependencies for known vulnerabilities using pip-audit."""
+    session.install(".", "pip-audit")
+    session.run("pip-audit", *session.posargs)
+
+
+@nox.session(python="3.12")
+def bandit(session):
+    """Run Bandit security linter against source code."""
+    session.install("bandit[toml]")
+    session.run(
+        "bandit", "-r", "adidt/", "-c", ".bandit", "-b", ".bandit-baseline.json",
+        *session.posargs,
+    )

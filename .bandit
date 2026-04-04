@@ -1,0 +1,6 @@
+exclude_dirs:
+  - test
+  - docs
+  - .nox
+  - build
+  - dist

@@ -1,0 +1,78 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: ['**']
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    name: Dependency Audit (pip-audit)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install "." pip-audit
+
+      - name: Run pip-audit
+        run: |
+          pip-audit 2>&1 | tee audit-report.txt
+
+      - name: Add summary
+        if: always()
+        run: |
+          echo "## Dependency Audit Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat audit-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  bandit:
+    runs-on: ubuntu-latest
+    name: SAST (Bandit)
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Bandit
+        run: pip install "bandit[toml]"
+
+      - name: Run Bandit
+        run: |
+          bandit -r adidt/ -c .bandit -b .bandit-baseline.json -f json -o bandit-report.json || true
+          bandit -r adidt/ -c .bandit -b .bandit-baseline.json -f txt 2>&1 | tee bandit-report.txt
+          # Fail if bandit found new issues not in baseline
+          bandit -r adidt/ -c .bandit -b .bandit-baseline.json
+
+      - name: Add summary
+        if: always()
+        run: |
+          echo "## Bandit Security Report" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat bandit-report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bandit-report
+          path: bandit-report.json
+          retention-days: 30
