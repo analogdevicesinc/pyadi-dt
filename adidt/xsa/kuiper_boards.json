@@ -158,10 +158,10 @@
       "converter": "ad9081",
       "platform": "vpk180",
       "arch": "arm64",
-      "profile": null,
-      "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "profile": "ad9081_vpk180",
+      "board_class": "ad9081_fmc",
+      "builder": "AD9081Builder",
+      "status": "profile_only"
     },
     "versal-vpk180-reva-ad9082": {
       "converter": "ad9082",

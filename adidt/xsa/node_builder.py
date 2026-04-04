@@ -463,6 +463,8 @@ class NodeBuilder:
         if platform == "vcu118":
             # MicroBlaze/VCU118: AXI bus clock is a fixed-clock with #clock-cells = <0>
             return ("clk_bus_0", None, "axi_gpio")
+        if platform in {"vpk180", "vck190"}:
+            return ("versal_clk", 65, "gpio")
         return ("zynqmp_clk", 71, "gpio")
 
     # ------------------------------------------------------------------
