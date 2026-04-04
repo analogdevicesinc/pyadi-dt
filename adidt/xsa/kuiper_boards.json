@@ -240,7 +240,7 @@
       "platform": "zc702",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -249,7 +249,7 @@
       "platform": "zc702",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -294,7 +294,7 @@
       "platform": "zc706",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -303,7 +303,7 @@
       "platform": "zc706",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -312,7 +312,7 @@
       "platform": "zc706",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -483,7 +483,7 @@
       "platform": "zed",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -654,7 +654,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },
@@ -663,7 +663,7 @@
       "platform": "zcu102",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "fmcomms_fmc",
       "builder": null,
       "status": "unsupported"
     },

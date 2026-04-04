@@ -18,6 +18,7 @@ from adidt.boards.adrv9002_fmc import adrv9002_fmc as adrv9002_fmc
 from adidt.boards.adrv9008_fmc import adrv9008_fmc as adrv9008_fmc
 from adidt.boards.adrv9025_fmc import adrv9025_fmc as adrv9025_fmc
 from adidt.boards.adrv937x_fmc import adrv937x_fmc as adrv937x_fmc
+from adidt.boards.fmcomms_fmc import fmcomms_fmc as fmcomms_fmc
 from adidt.boards.adrv9009_pcbz import adrv9009_pcbz as adrv9009_pcbz
 from adidt.boards.rpi import rpi as rpi
 
