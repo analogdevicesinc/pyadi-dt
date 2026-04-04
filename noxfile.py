@@ -91,8 +91,7 @@ def docs_serve(session):
         "sphinx-autobuild",
     )
     session.install(".")
-    session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host",
-                "0.0.0.0")
+    session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host", "0.0.0.0")
 
 
 @nox.session(python="3.11")
@@ -109,14 +108,25 @@ def coverage(session):
     )
 
 
-@nox.session(python="3.11")
-def type_check(session):
-    """Run type checking with mypy."""
-    try:
-        session.install(".[dev]", "mypy")
-        session.run("mypy", "adidt", "--ignore-missing-imports")
-    except Exception:
-        session.warn("Type checking failed or mypy not configured")
+@nox.session(python="3.12")
+def ty(session):
+    """Run type checking with ty.
+
+    Check the core modules (model, boards, builders) for type errors.
+    Pass additional paths after '--' to check specific modules:
+        nox -s ty -- adidt/model/
+    """
+    session.install(".[dev]", "ty")
+    paths = (
+        session.posargs
+        if session.posargs
+        else [
+            "adidt/model/",
+            "adidt/boards/",
+            "adidt/xsa/builders/",
+        ]
+    )
+    session.run("ty", "check", *paths)
 
 
 @nox.session(python="3.11")
@@ -131,7 +141,8 @@ def dts_lint(session):
     """Run DTS structural linter tests."""
     session.install(".[dev]")
     session.run(
-        "pytest", "-vs",
+        "pytest",
+        "-vs",
         "test/xsa/test_dts_lint.py",
         "test/xsa/test_dts_lint_integration.py",
     )
