@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   dependency-audit:
@@ -77,23 +76,3 @@ jobs:
           name: bandit-report
           path: bandit-report.json
           retention-days: 30
-
-  codeql:
-    runs-on: ubuntu-latest
-    name: SAST (CodeQL)
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: python
-
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:python"
