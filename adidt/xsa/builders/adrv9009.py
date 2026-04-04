@@ -255,6 +255,7 @@ class ADRV9009Builder:
         # ORX JESD label AND the ORX TPL core label in the sdtgen base DTS.
         has_rx_os = bool(rx_os_jesd_label)
         if has_rx_os:
+            assert rx_os_jesd_label is not None  # narrowing for type checker
             rx_os_xcvr_label = rx_os_jesd_label.replace(
                 "_jesd_rx_axi", "_xcvr"
             ).replace("_rx_os_jesd", "_rx_os_xcvr")

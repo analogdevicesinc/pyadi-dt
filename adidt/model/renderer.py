@@ -122,10 +122,13 @@ class BoardModelRenderer:
         env = Environment(loader=FileSystemLoader(_template_dir()))
         # Register reg-formatting globals matching NodeBuilder._make_jinja_env
         cells = model.fpga_config.addr_cells if model.fpga_config else 2
-        env.globals["reg_addr"] = lambda addr: (
-            f"0x{addr:08x}" if cells == 1 else f"0x0 0x{addr:08x}"
-        )
-        env.globals["reg_size"] = lambda size: (
-            f"0x{size:x}" if cells == 1 else f"0x0 0x{size:x}"
-        )
+
+        def _reg_addr(addr: int) -> str:
+            return f"0x{addr:08x}" if cells == 1 else f"0x0 0x{addr:08x}"
+
+        def _reg_size(size: int) -> str:
+            return f"0x{size:x}" if cells == 1 else f"0x0 0x{size:x}"
+
+        env.globals["reg_addr"] = _reg_addr  # ty: ignore[invalid-assignment]
+        env.globals["reg_size"] = _reg_size  # ty: ignore[invalid-assignment]
         return env

@@ -1,8 +1,12 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 from jinja2 import Environment, FileSystemLoader
 import os
 
+from ..model.board_model import BoardModel
 from ..model.renderer import BoardModelRenderer
 
 
@@ -11,11 +15,13 @@ class layout:
 
     includes = [""]
 
-    template_filename = None
-    output_filename = None
-    use_plugin_mode = True  # Set to False for standalone DTS (not overlay)
+    template_filename: str | None = None
+    output_filename: str | None = None
+    use_plugin_mode: bool = True  # Set to False for standalone DTS (not overlay)
+    platform_config: dict = {}
+    platform: str = ""
 
-    def gen_dt_preprocess(self, **kwargs):
+    def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Pre-process template context before rendering; override to inject extra variables."""
         return kwargs
 
@@ -142,7 +148,13 @@ class layout:
         model = self.to_board_model(cfg)
         return self.gen_dt_from_model(model, config_source=config_source)
 
-    def validate_and_default_fpga_config(self, cfg):
+    def to_board_model(self, cfg: dict) -> "BoardModel":
+        """Build a BoardModel from config. Subclasses must override."""
+        raise NotImplementedError(
+            f"{type(self).__name__} does not implement to_board_model()"
+        )
+
+    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
 
         Subclasses should override to add board-specific validation.
