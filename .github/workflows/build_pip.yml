@@ -113,11 +113,21 @@ jobs:
         echo "## Binding Audit Report" >> $GITHUB_STEP_SUMMARY
         cat binding_audit.md >> $GITHUB_STEP_SUMMARY
 
+    - name: Find PR number
+      if: github.event_name == 'push'
+      id: find-pr
+      run: |
+        PR=$(gh pr list --head "${{ github.ref_name }}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+        echo "number=$PR" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ github.token }}
+
     - name: Post audit report to PR
-      if: github.event_name == 'pull_request'
+      if: github.event_name == 'pull_request' || steps.find-pr.outputs.number != ''
       uses: marocchino/sticky-pull-request-comment@v2
       with:
         header: binding-audit
+        number: ${{ github.event_name == 'pull_request' && github.event.number || steps.find-pr.outputs.number }}
         path: binding_audit.md
 
     - name: Upload audit report
