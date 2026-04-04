@@ -25,7 +25,7 @@ dependencies = [
     "Click",
     "fdt",
     "fabric",
-    "bcrypt==3.2.2",
+    "bcrypt==5.0.0",
     "rich",
     "numpy",
     "jinja2",
