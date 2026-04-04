@@ -15,7 +15,7 @@ jobs:
     name: Dependency Audit (pip-audit)
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -44,7 +44,7 @@ jobs:
     name: SAST (Bandit)
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v6
