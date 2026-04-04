@@ -1,6 +1,7 @@
 name: Build and Deploy adidt (pip)
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   APP_NAME: pyadi-dt
@@ -111,6 +112,13 @@ jobs:
       run: |
         echo "## Binding Audit Report" >> $GITHUB_STEP_SUMMARY
         cat binding_audit.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Post audit report to PR
+      if: github.event_name == 'pull_request'
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: binding-audit
+        path: binding_audit.md
 
     - name: Upload audit report
       uses: actions/upload-artifact@v5
