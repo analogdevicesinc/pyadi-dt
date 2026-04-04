@@ -99,3 +99,8 @@ addopts = "-v --ignore-glob=*_hw.py"
 markers = [
     "network: tests requiring internet downloads",
 ]
+
+[tool.ty.rules]
+# Ignore third-party import errors (missing stubs)
+unresolved-import = "ignore"
+

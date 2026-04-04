@@ -74,6 +74,33 @@ jobs:
       run: |
         docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
+  type-check:
+    runs-on: ubuntu-latest
+    name: Type Check (ty)
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test]"
+        pip install ty
+
+    - name: Run ty type checker
+      continue-on-error: true
+      run: |
+        ty check adidt/model/ adidt/boards/ adidt/xsa/builders/ 2>&1 | tee ty_report.txt
+        echo "## Type Check Report (ty)" >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+        tail -5 ty_report.txt >> $GITHUB_STEP_SUMMARY
+        echo '```' >> $GITHUB_STEP_SUMMARY
+
   binding-audit:
     runs-on: ubuntu-latest
     name: Audit ADI Bindings
