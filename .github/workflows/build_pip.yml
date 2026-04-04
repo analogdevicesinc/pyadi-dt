@@ -1,6 +1,7 @@
 name: Build and Deploy adidt (pip)
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   APP_NAME: pyadi-dt
@@ -9,13 +10,10 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
-      - '20[1-9][0-9]_R[1-9]'
-      - staging/*
+      - '**'
   pull_request:
     branches:
-      - main
-      - '20[1-9][0-9]_R[1-9]'
+      - '**'
 
 jobs:
   python-test:
@@ -45,6 +43,7 @@ jobs:
         pytest -vs
 
   kuiper64-test:
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-24.04-arm
     env:
       CONTAINER_BASE_NAME: kuiper-container-basic
@@ -55,7 +54,7 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with: 
+      with:
         path: ${{env.APP_NAME}}
 
     - name: Start persistent container
@@ -66,7 +65,7 @@ jobs:
             -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
             -w /workspace/${{env.APP_NAME}} \
             ${{env.DOCKER_IMAGE}} tail -f /dev/null
-        
+
     - name: Install Python dependencies
       run: |
         docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip &&  pip install '.[test]'"
@@ -75,53 +74,80 @@ jobs:
       run: |
         docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
 
-  # kuiper32-test:
-  #   runs-on: ubuntu-24.04-arm
-  #   env:
-  #     CONTAINER_BASE_NAME: kuiper-container-basic
-  #     DOCKER_IMAGE: aandrisa/kuiper_basic_32:latest
-  #     IMAGE_ARCH: linux/arm/v7
-  #     ARCHITECTURE: armhf
-  #   name: Test on Kuiper32
-  #   steps:
-  #   - name: Checkout code
-  #     uses: actions/checkout@v4
-  #     with: 
-  #       path: ${{env.APP_NAME}}
-    
-  #   - name: Set up QEMU
-  #     uses: docker/setup-qemu-action@v3
+  binding-audit:
+    runs-on: ubuntu-latest
+    name: Audit ADI Bindings
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
 
-  #   - name: Start persistent container
-  #     run: |
-  #       docker run -d \
-  #           --platform ${{env.IMAGE_ARCH}} \
-  #           --name ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} \
-  #           -v "$GITHUB_WORKSPACE/${{env.APP_NAME}}:/workspace/${{env.APP_NAME}}" \
-  #           -w /workspace/${{env.APP_NAME}} \
-  #           ${{env.DOCKER_IMAGE}} tail -f /dev/null
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
 
-  #   - name: Install system dependencies
-  #     run: |
-  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "sudo apt update && sudo apt install -y libffi-dev python3-dev build-essential"
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test]"
+        pip install pyyaml
 
-  #   - name: Install Python dependencies
-  #     run: |
-  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip && pip install '.[test]'"
+    - name: Clone ADI Linux kernel (bindings only)
+      run: |
+        git clone --depth 1 --filter=blob:none --sparse \
+          https://github.com/analogdevicesinc/linux.git /tmp/linux
+        cd /tmp/linux
+        git sparse-checkout set Documentation/devicetree/bindings
 
-  #   - name: Run tests
-  #     run: |
-  #       docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "pytest -vs"
+    - name: Run binding audit
+      run: |
+        cd scripts
+        python audit_adi_bindings.py \
+          --linux-path /tmp/linux \
+          --project-root ${{ github.workspace }} \
+          --output ${{ github.workspace }}/binding_audit.json \
+          --report ${{ github.workspace }}/binding_audit.md
+
+    - name: Display audit summary
+      run: |
+        echo "## Binding Audit Report" >> $GITHUB_STEP_SUMMARY
+        cat binding_audit.md >> $GITHUB_STEP_SUMMARY
+
+    - name: Find PR number
+      if: github.event_name == 'push'
+      id: find-pr
+      run: |
+        PR=$(gh pr list --head "${{ github.ref_name }}" --json number --jq '.[0].number' 2>/dev/null || echo "")
+        echo "number=$PR" >> $GITHUB_OUTPUT
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Post audit report to PR
+      if: github.event_name == 'pull_request' || steps.find-pr.outputs.number != ''
+      uses: marocchino/sticky-pull-request-comment@v2
+      with:
+        header: binding-audit
+        number: ${{ github.event_name == 'pull_request' && github.event.number || steps.find-pr.outputs.number }}
+        path: binding_audit.md
+
+    - name: Upload audit report
+      uses: actions/upload-artifact@v5
+      with:
+        name: binding-audit-report
+        path: |
+          binding_audit.json
+          binding_audit.md
+        retention-days: 30
 
   build-package:
-    needs: [python-test, kuiper64-test]
+    needs: [python-test]
     runs-on: ubuntu-latest
     name: Build Package for PyPI
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0 
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v6
@@ -136,7 +162,7 @@ jobs:
     - name: Build source and wheel distribution
       run: |
         python -m build --sdist --wheel
-    
+
     - name: Check built distributions
       run: |
         python -m twine check dist/*

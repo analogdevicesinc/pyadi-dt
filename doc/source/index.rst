@@ -27,26 +27,47 @@ Key capabilities
 Supported hardware
 ------------------
 
+The Kuiper 2023-R2 release contains **88 board projects** across Xilinx/AMD
+and Intel FPGA platforms.  Use ``adidtc kuiper-boards`` to list all boards
+and their support status.
+
 .. list-table::
-   :widths: 40 60
+   :widths: 35 30 35
    :header-rows: 1
 
    * - Converter Family
      - Platforms
+     - HW Validated
    * - AD9081 / AD9082 / AD9083 (MxFE)
-     - ZCU102, ZC706
+     - ZCU102, ZC706, Versal
+     - ZCU102 ✓
    * - AD9084
-     - VCU118
+     - VCU118, VPK180
+     -
    * - AD9172 (DAC)
      - ZCU102
+     -
    * - ADRV9009 / ADRV9025 / ADRV9008
-     - ZCU102, ZC706
+     - ZCU102, ZC706, Arria10, ZU11EG
+     - ZCU102 ✓
    * - ADRV937x / ADRV9002
-     - ZCU102, ZC706
+     - ZCU102, ZC706, Arria10, Zedboard
+     -
+   * - AD936x / FMComms2-5 (SDR)
+     - Zedboard, ZC702, ZC706, ZCU102
+     -
    * - FMCDAQ2 (AD9680 + AD9144)
-     - ZCU102, ZC706
+     - ZCU102, ZC706, Arria10
+     - ZCU102 ✓
    * - FMCDAQ3 (AD9680 + AD9152)
      - ZCU102, ZC706
+     - ZCU102 ✓
+   * - Precision ADCs (AD7768, AD9467, etc.)
+     - Zedboard
+     -
+   * - Raspberry Pi sensors
+     - RPi 3/4/5
+     -
 
 Where to start
 --------------

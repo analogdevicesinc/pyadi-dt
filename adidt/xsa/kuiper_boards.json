@@ -1,0 +1,798 @@
+{
+  "release": "2023_R2",
+  "boards": {
+    "pulsar_adc_zed": {
+      "converter": "pulsar",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_ad9081": {
+      "converter": "ad9081",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_adrv9002": {
+      "converter": "adrv9002",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_adrv9009": {
+      "converter": "adrv9009",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_adrv9025": {
+      "converter": "adrv9025",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_adrv9371": {
+      "converter": "adrv937",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_cn0506_mii": {
+      "converter": "cn0506",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_daq2": {
+      "converter": "unknown",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_arria10_socdk_fmcomms8": {
+      "converter": "fmcomms8",
+      "platform": "arria10",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_cyclone5_de10_nano_cn0540": {
+      "converter": "cn0540",
+      "platform": "cyclone5",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_cyclone5_de10_nano_cn0579_i2c": {
+      "converter": "cn0579",
+      "platform": "cyclone5",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_cyclone5_de10_nano_hps": {
+      "converter": "unknown",
+      "platform": "cyclone5",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_cyclone5_sockit_arradio": {
+      "converter": "arradio",
+      "platform": "cyclone5",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "socfpga_cyclone5_sockit_dc2677a": {
+      "converter": "dc2677a",
+      "platform": "cyclone5",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "versal-vck190-reva-ad9081": {
+      "converter": "ad9081",
+      "platform": "vck190",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "versal-vck190-reva-ad9082": {
+      "converter": "ad9082",
+      "platform": "vck190",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "versal-vck190-reva-ad9209": {
+      "converter": "ad9209",
+      "platform": "vck190",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "versal-vpk180-reva-ad9081": {
+      "converter": "ad9081",
+      "platform": "vpk180",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "versal-vpk180-reva-ad9082": {
+      "converter": "ad9082",
+      "platform": "vpk180",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-adrv9361-z7035-bob": {
+      "converter": "adrv9361",
+      "platform": "z7035",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-adrv9361-z7035-fmc": {
+      "converter": "adrv9361",
+      "platform": "z7035",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-adrv9364-z7020-bob": {
+      "converter": "adrv9364",
+      "platform": "z7020",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-coraz7s-adaq4003": {
+      "converter": "adaq4003",
+      "platform": "coraz7s",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-coraz7s-cn0540": {
+      "converter": "cn0540",
+      "platform": "coraz7s",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-coraz7s-cn0579_i2c": {
+      "converter": "cn0579",
+      "platform": "coraz7s",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc702-adv7511": {
+      "converter": "unknown",
+      "platform": "zc702",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc702-adv7511-ad9361-fmcomms5": {
+      "converter": "ad9361",
+      "platform": "zc702",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc702-adv7511-ad936x-fmcomms2-3-4": {
+      "converter": "ad936x",
+      "platform": "zc702",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad6676-fmc": {
+      "converter": "ad6676",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad9081": {
+      "converter": "ad9081",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "ad9081_zc706",
+      "board_class": "ad9081_fmc",
+      "builder": "AD9081Builder",
+      "status": "profile_only"
+    },
+    "zynq-zc706-adv7511-ad9082": {
+      "converter": "ad9082",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": "AD9081Builder",
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad9172-fmc-ebz": {
+      "converter": "ad9172",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad9361-fmcomms5": {
+      "converter": "ad9361",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad9361-fmcomms5-ext-lo-adf5355": {
+      "converter": "ad9361",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad936x-fmcomms2-3-4": {
+      "converter": "ad936x",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-ad9434-fmc-500ebz": {
+      "converter": "ad9434",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-adrv9002": {
+      "converter": "adrv9002",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "adrv9002_zc706",
+      "board_class": "adrv9002_fmc",
+      "builder": null,
+      "status": "profile_only"
+    },
+    "zynq-zc706-adv7511-adrv9008-1-2": {
+      "converter": "adrv9008",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "adrv9008_zc706",
+      "board_class": "adrv9008_fmc",
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
+    },
+    "zynq-zc706-adv7511-adrv9009": {
+      "converter": "adrv9009",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "adrv9009_zc706",
+      "board_class": "adrv9009_fmc",
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
+    },
+    "zynq-zc706-adv7511-adrv937x": {
+      "converter": "adrv937x",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "adrv937x_zc706",
+      "board_class": "adrv937x_fmc",
+      "builder": null,
+      "status": "profile_only"
+    },
+    "zynq-zc706-adv7511-cn0506-mii": {
+      "converter": "cn0506",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-cn0506-rgmii": {
+      "converter": "cn0506",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-cn0506-rmii": {
+      "converter": "cn0506",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-fmcdaq2": {
+      "converter": "fmcdaq2",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "fmcdaq2_zc706",
+      "board_class": "daq2",
+      "builder": "FMCDAQ2Builder",
+      "status": "full"
+    },
+    "zynq-zc706-adv7511-fmcdaq3-revC": {
+      "converter": "fmcdaq3",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": "fmcdaq3_zc706",
+      "board_class": null,
+      "builder": "FMCDAQ3Builder",
+      "status": "full"
+    },
+    "zynq-zc706-adv7511-fmcjesdadc1": {
+      "converter": "fmcjesdadc1",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zc706-adv7511-fmcomms11": {
+      "converter": "fmcomms11",
+      "platform": "zc706",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad4134": {
+      "converter": "ad4134",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad4630-24": {
+      "converter": "ad4630",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad7768-1-evb": {
+      "converter": "ad7768",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad7768-4-axi-adc": {
+      "converter": "ad7768",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad7768-axi-adc": {
+      "converter": "ad7768",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad9265-fmc-125ebz": {
+      "converter": "ad9265",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad936x-fmcomms2-3-4": {
+      "converter": "ad936x",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad9434-fmc-500ebz": {
+      "converter": "ad9434",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-ad9467-fmc-250ebz": {
+      "converter": "ad9467",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-adaq8092": {
+      "converter": "adaq8092",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-adrv9002": {
+      "converter": "adrv9002",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-cn0363": {
+      "converter": "cn0363",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-cn0506-mii": {
+      "converter": "cn0506",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-cn0506-rgmii": {
+      "converter": "cn0506",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-cn0506-rmii": {
+      "converter": "cn0506",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynq-zed-adv7511-cn0577": {
+      "converter": "cn0577",
+      "platform": "zed",
+      "arch": "arm",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb": {
+      "converter": "adrv9009",
+      "platform": "zu11eg",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge": {
+      "converter": "adrv9009",
+      "platform": "zu11eg",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8": {
+      "converter": "adrv9009",
+      "platform": "zu11eg",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave": {
+      "converter": "adrv9009",
+      "platform": "zu11eg",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-jupiter-sdr": {
+      "converter": "jupiter",
+      "platform": "jupiter_sdr",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-ad9081": {
+      "converter": "ad9081",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "ad9081_zcu102",
+      "board_class": "ad9081_fmc",
+      "builder": "AD9081Builder",
+      "status": "full"
+    },
+    "zynqmp-zcu102-rev10-ad9082-m4-l8": {
+      "converter": "ad9082",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "ad9082_zcu102",
+      "board_class": "ad9082_fmc",
+      "builder": "AD9081Builder",
+      "status": "profile_only"
+    },
+    "zynqmp-zcu102-rev10-ad9083-fmc-ebz": {
+      "converter": "ad9083",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "ad9083_zcu102",
+      "board_class": "ad9083_fmc",
+      "builder": null,
+      "status": "profile_only"
+    },
+    "zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4": {
+      "converter": "ad9172",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "ad9172_zcu102",
+      "board_class": null,
+      "builder": "AD9172Builder",
+      "status": "full"
+    },
+    "zynqmp-zcu102-rev10-ad9361-fmcomms5": {
+      "converter": "ad9361",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-ad936x-fmcomms2-3-4": {
+      "converter": "ad936x",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": "fmcomms_fmc",
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-ad9695": {
+      "converter": "ad9695",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-ad9783": {
+      "converter": "ad9783",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-adrv9002": {
+      "converter": "adrv9002",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-adrv9008-1-2": {
+      "converter": "adrv9008",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "adrv9008_zcu102",
+      "board_class": "adrv9008_fmc",
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
+    },
+    "zynqmp-zcu102-rev10-adrv9009": {
+      "converter": "adrv9009",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "adrv9009_zcu102",
+      "board_class": "adrv9009_fmc",
+      "builder": "ADRV9009Builder",
+      "status": "full"
+    },
+    "zynqmp-zcu102-rev10-adrv9009-fmcomms8": {
+      "converter": "adrv9009",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "adrv9009_zcu102",
+      "board_class": null,
+      "builder": "ADRV9009Builder",
+      "status": "profile_only",
+      "note": "FMComms8 dual-chip variant"
+    },
+    "zynqmp-zcu102-rev10-adrv9025": {
+      "converter": "adrv9025",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "adrv9025_zcu102",
+      "board_class": "adrv9025_fmc",
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
+    },
+    "zynqmp-zcu102-rev10-adrv937x": {
+      "converter": "adrv937x",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "adrv937x_zcu102",
+      "board_class": "adrv937x_fmc",
+      "builder": null,
+      "status": "profile_only"
+    },
+    "zynqmp-zcu102-rev10-cn0506-mii": {
+      "converter": "cn0506",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-cn0506-rgmii": {
+      "converter": "cn0506",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-cn0506-rmii": {
+      "converter": "cn0506",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    },
+    "zynqmp-zcu102-rev10-fmcdaq2": {
+      "converter": "fmcdaq2",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "fmcdaq2_zcu102",
+      "board_class": "daq2",
+      "builder": "FMCDAQ2Builder",
+      "status": "full"
+    },
+    "zynqmp-zcu102-rev10-fmcdaq3": {
+      "converter": "fmcdaq3",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": "fmcdaq3_zcu102",
+      "board_class": null,
+      "builder": "FMCDAQ3Builder",
+      "status": "full"
+    },
+    "zynqmp-zcu102-rev10-stingray": {
+      "converter": "stingray",
+      "platform": "zcu102",
+      "arch": "arm64",
+      "profile": null,
+      "board_class": null,
+      "builder": null,
+      "status": "unsupported"
+    }
+  }
+}

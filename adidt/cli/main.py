@@ -602,8 +602,15 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
 _BOARD_CLASSES = {
     "daq2": ("adidt.boards.daq2", "daq2"),
     "ad9081_fmc": ("adidt.boards.ad9081_fmc", "ad9081_fmc"),
+    "ad9082_fmc": ("adidt.boards.ad9082_fmc", "ad9082_fmc"),
+    "ad9083_fmc": ("adidt.boards.ad9083_fmc", "ad9083_fmc"),
     "ad9084_fmc": ("adidt.boards.ad9084_fmc", "ad9084_fmc"),
+    "adrv9002_fmc": ("adidt.boards.adrv9002_fmc", "adrv9002_fmc"),
+    "adrv9008_fmc": ("adidt.boards.adrv9008_fmc", "adrv9008_fmc"),
+    "fmcomms_fmc": ("adidt.boards.fmcomms_fmc", "fmcomms_fmc"),
     "adrv9009_fmc": ("adidt.boards.adrv9009_fmc", "adrv9009_fmc"),
+    "adrv9025_fmc": ("adidt.boards.adrv9025_fmc", "adrv9025_fmc"),
+    "adrv937x_fmc": ("adidt.boards.adrv937x_fmc", "adrv937x_fmc"),
 }
 
 
@@ -1100,3 +1107,57 @@ def xsa_profile_show(name):
         return
 
     click.echo(json.dumps(profile, indent=2))
+
+
+@cli.command("kuiper-boards")
+@click.option(
+    "--status",
+    "-s",
+    type=click.Choice(["all", "full", "profile_only", "unsupported"]),
+    default="all",
+    help="Filter by support status",
+)
+@click.option("--json-output", is_flag=True, help="Output raw JSON")
+def kuiper_boards(status, json_output):
+    """List Kuiper 2023-R2 supported boards and their status."""
+    manifest_path = Path(__file__).parent.parent / "xsa" / "kuiper_boards.json"
+    if not manifest_path.exists():
+        click.echo(click.style("Error: kuiper_boards.json not found", fg="red"))
+        return
+
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+
+    boards = manifest.get("boards", {})
+    if status != "all":
+        boards = {k: v for k, v in boards.items() if v.get("status") == status}
+
+    if json_output:
+        click.echo(json.dumps(boards, indent=2))
+        return
+
+    click.echo(
+        click.style(
+            f"Kuiper {manifest.get('release', '?')} — {len(boards)} boards",
+            fg="cyan",
+            bold=True,
+        )
+    )
+    click.echo()
+
+    status_colors = {
+        "full": "green",
+        "profile_only": "yellow",
+        "unsupported": "red",
+    }
+
+    for name, info in sorted(boards.items()):
+        st = info.get("status", "unknown")
+        color = status_colors.get(st, "white")
+        platform = info.get("platform", "?")
+        converter = info.get("converter", "?")
+        board_cls = info.get("board_class") or "-"
+        label = click.style(f"{st.upper():>14s}", fg=color)
+        click.echo(
+            f"  {label}  {name:<50s}  {converter:<12s}  {platform:<8s}  {board_cls}"
+        )

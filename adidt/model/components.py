@@ -50,6 +50,48 @@ def adis16495(
     )
 
 
+def adxl345(
+    spi_bus: str = "spi0",
+    cs: int = 0,
+    **kwargs,
+) -> ComponentModel:
+    """ADXL345 3-axis accelerometer.
+
+    Common kwargs: ``label``, ``spi_max_hz``, ``compatible``,
+    ``gpio_label``, ``interrupt_gpio``.
+    """
+    config = contexts.build_adxl345_ctx(cs=cs, **kwargs)
+    return ComponentModel(
+        role="accelerometer",
+        part="adxl345",
+        template="adxl345.tmpl",
+        spi_bus=spi_bus,
+        spi_cs=cs,
+        config=config,
+    )
+
+
+def ad7124(
+    spi_bus: str = "spi0",
+    cs: int = 0,
+    **kwargs,
+) -> ComponentModel:
+    """AD7124 24-bit precision ADC.
+
+    Common kwargs: ``label``, ``spi_max_hz``, ``compatible``,
+    ``gpio_label``, ``interrupt_gpio``, ``channels``.
+    """
+    config = contexts.build_ad7124_ctx(cs=cs, **kwargs)
+    return ComponentModel(
+        role="adc",
+        part="ad7124",
+        template="ad7124.tmpl",
+        spi_bus=spi_bus,
+        spi_cs=cs,
+        config=config,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Clock chips
 # ---------------------------------------------------------------------------
