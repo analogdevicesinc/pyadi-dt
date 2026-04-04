@@ -69,6 +69,23 @@ def _topo_ad9081():
     )
 
 
+def _topo_ad9081_vpk180():
+    return XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance("axi_mxfe_rx_jesd_rx_axi", 0x44A90000, 8, 0, "", "rx")
+        ],
+        jesd204_tx=[
+            Jesd204Instance("axi_mxfe_tx_jesd_tx_axi", 0x44B90000, 8, 0, "", "tx")
+        ],
+        clkgens=[],
+        signal_connections=[],
+        converters=[
+            ConverterInstance("axi_ad9081", "axi_ad9081", 0x44A00000, None, None)
+        ],
+        fpga_part="xcvp1202-vsva2785-2MP-e-S",
+    )
+
+
 _AD9081_CFG = {
     "jesd": {
         "rx": {"F": 2, "K": 32, "M": 8, "L": 4, "Np": 16, "S": 1},
@@ -86,6 +103,28 @@ _AD9081_CFG = {
     },
 }
 
+_AD9081_VPK180_CFG = {
+    "jesd": {
+        "rx": {"F": 3, "K": 256, "M": 8, "L": 8, "Np": 12, "S": 2},
+        "tx": {"F": 3, "K": 256, "M": 8, "L": 8, "Np": 12, "S": 2},
+    },
+    "ad9081": {
+        "rx_link_mode": 26,
+        "tx_link_mode": 24,
+        "adc_frequency_hz": 2000000000,
+        "dac_frequency_hz": 4000000000,
+        "rx_cddc_decimation": 1,
+        "rx_fddc_decimation": 1,
+        "tx_cduc_interpolation": 2,
+        "tx_fduc_interpolation": 1,
+    },
+}
+
+
+_PS_CLK_OVERRIDES = {
+    "ad9081_vpk180": ("versal_clk", 65, "gpio"),
+}
+
 
 @pytest.mark.parametrize(
     "name,builder_cls,topo_fn,cfg,golden_file",
@@ -98,12 +137,22 @@ _AD9081_CFG = {
             _AD9081_CFG,
             "golden_ad9081.dts",
         ),
+        (
+            "ad9081_vpk180",
+            AD9081Builder,
+            _topo_ad9081_vpk180,
+            _AD9081_VPK180_CFG,
+            "golden_ad9081_vpk180.dts",
+        ),
     ],
 )
 def test_golden_output(name, builder_cls, topo_fn, cfg, golden_file, request):
     """Verify builder output matches the golden reference file."""
     topo = topo_fn()
-    model = builder_cls().build_model(topo, cfg, "zynqmp_clk", 71, "gpio")
+    ps_clk_label, ps_clk_index, gpio_label = _PS_CLK_OVERRIDES.get(
+        name, ("zynqmp_clk", 71, "gpio")
+    )
+    model = builder_cls().build_model(topo, cfg, ps_clk_label, ps_clk_index, gpio_label)
     actual = _render_to_str(model)
 
     golden_path = HERE / golden_file

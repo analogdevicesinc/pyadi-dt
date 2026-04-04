@@ -30,6 +30,7 @@ from ..topology import XsaTopology
 _AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
     (8, 4): (17, 18),
     (4, 8): (10, 11),
+    (8, 8): (26, 24),
 }
 
 
@@ -66,6 +67,13 @@ def _converter_select_rx(rx_m: int, rx_link_mode: int) -> str:
         return (
             "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
             "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>"
+        )
+    if rx_link_mode == 26 and rx_m == 8:
+        return (
+            "<&ad9081_rx_fddc_chan0 FDDC_I>, <&ad9081_rx_fddc_chan0 FDDC_Q>, "
+            "<&ad9081_rx_fddc_chan1 FDDC_I>, <&ad9081_rx_fddc_chan1 FDDC_Q>, "
+            "<&ad9081_rx_fddc_chan4 FDDC_I>, <&ad9081_rx_fddc_chan4 FDDC_Q>, "
+            "<&ad9081_rx_fddc_chan5 FDDC_I>, <&ad9081_rx_fddc_chan5 FDDC_Q>"
         )
     if rx_m >= 8:
         return (
@@ -110,6 +118,10 @@ def _lane_map_for_mode(direction: str, lanes: int, link_mode: int) -> str:
     if direction == "tx" and link_mode == 17 and lanes == 8:
         return "0 2 7 6 1 5 4 3"
     if direction == "rx" and link_mode == 18 and lanes == 8:
+        return "2 0 7 6 5 4 3 1"
+    if direction == "tx" and link_mode == 24 and lanes == 8:
+        return "0 2 7 6 1 5 4 3"
+    if direction == "rx" and link_mode == 26 and lanes == 8:
         return "2 0 7 6 5 4 3 1"
     if direction == "tx" and link_mode == 9 and lanes == 4:
         return "0 2 7 7 1 7 7 3"

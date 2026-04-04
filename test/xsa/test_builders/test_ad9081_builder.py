@@ -21,6 +21,23 @@ AD9081_CFG = {
     },
 }
 
+AD9081_VPK180_CFG = {
+    "jesd": {
+        "rx": {"F": 3, "K": 256, "M": 8, "L": 8, "Np": 12, "S": 2},
+        "tx": {"F": 3, "K": 256, "M": 8, "L": 8, "Np": 12, "S": 2},
+    },
+    "ad9081": {
+        "rx_link_mode": 26,
+        "tx_link_mode": 24,
+        "adc_frequency_hz": 2000000000,
+        "dac_frequency_hz": 4000000000,
+        "rx_cddc_decimation": 1,
+        "rx_fddc_decimation": 1,
+        "tx_cduc_interpolation": 2,
+        "tx_fduc_interpolation": 1,
+    },
+}
+
 
 class TestAD9081Builder:
     def test_matches_ad9081_topology(self, topo_ad9081):
@@ -49,6 +66,50 @@ class TestAD9081Builder:
     def test_build_model_renders(self, topo_ad9081):
         model = AD9081Builder().build_model(
             topo_ad9081, AD9081_CFG, "zynqmp_clk", 71, "gpio"
+        )
+        nodes = BoardModelRenderer().render(model)
+        assert nodes["converters"]
+
+
+class TestAD9081BuilderVPK180:
+    def test_matches_vpk180_topology(self, topo_ad9081_vpk180):
+        assert AD9081Builder().matches(topo_ad9081_vpk180, AD9081_VPK180_CFG)
+
+    def test_build_model_vpk180_has_versal_clk(self, topo_ad9081_vpk180):
+        model = AD9081Builder().build_model(
+            topo_ad9081_vpk180, AD9081_VPK180_CFG, "versal_clk", 65, "gpio"
+        )
+        assert model.fpga_config.ps_clk_label == "versal_clk"
+        assert model.fpga_config.ps_clk_index == 65
+
+    def test_build_model_vpk180_addr_cells(self, topo_ad9081_vpk180):
+        model = AD9081Builder().build_model(
+            topo_ad9081_vpk180, AD9081_VPK180_CFG, "versal_clk", 65, "gpio"
+        )
+        assert model.fpga_config.addr_cells == 2
+
+    def test_build_model_vpk180_platform(self, topo_ad9081_vpk180):
+        model = AD9081Builder().build_model(
+            topo_ad9081_vpk180, AD9081_VPK180_CFG, "versal_clk", 65, "gpio"
+        )
+        assert model.platform == "vpk180"
+
+    def test_build_model_vpk180_m8_l8(self, topo_ad9081_vpk180):
+        model = AD9081Builder().build_model(
+            topo_ad9081_vpk180, AD9081_VPK180_CFG, "versal_clk", 65, "gpio"
+        )
+        rx_link = model.get_jesd_link("rx")
+        tx_link = model.get_jesd_link("tx")
+        assert rx_link is not None
+        assert tx_link is not None
+        assert rx_link.link_params["L"] == 8
+        assert tx_link.link_params["L"] == 8
+        assert rx_link.link_params["M"] == 8
+        assert tx_link.link_params["M"] == 8
+
+    def test_build_model_vpk180_renders(self, topo_ad9081_vpk180):
+        model = AD9081Builder().build_model(
+            topo_ad9081_vpk180, AD9081_VPK180_CFG, "versal_clk", 65, "gpio"
         )
         nodes = BoardModelRenderer().render(model)
         assert nodes["converters"]

@@ -1,0 +1,35 @@
+{
+  "name": "ad9081_vpk180",
+  "defaults": {
+    "clock": {
+      "rx_device_clk_label": "hmc7044",
+      "tx_device_clk_label": "hmc7044",
+      "hmc7044_rx_channel": 10,
+      "hmc7044_tx_channel": 6
+    },
+    "ad9081": {
+      "rx_link_id": 2,
+      "tx_link_id": 0,
+      "rx_link_mode": 26,
+      "tx_link_mode": 24,
+      "adc_frequency_hz": 2000000000,
+      "dac_frequency_hz": 4000000000,
+      "rx_cddc_decimation": 1,
+      "rx_fddc_decimation": 1,
+      "tx_cduc_interpolation": 2,
+      "tx_fduc_interpolation": 1
+    },
+    "ad9081_board": {
+      "clock_spi": "spi1",
+      "clock_cs": 0,
+      "adc_spi": "spi0",
+      "adc_cs": 0,
+      "reset_gpio": 23,
+      "sysref_req_gpio": 11,
+      "rx2_enable_gpio": 25,
+      "rx1_enable_gpio": 24,
+      "tx2_enable_gpio": 27,
+      "tx1_enable_gpio": 26
+    }
+  }
+}

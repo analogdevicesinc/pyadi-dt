@@ -142,6 +142,45 @@ def topo_ad9081():
 
 
 @pytest.fixture
+def topo_ad9081_vpk180():
+    """AD9081 MxFE topology on Versal VPK180 (8 lanes)."""
+    return XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_mxfe_rx_jesd_rx_axi",
+                base_addr=0x44A90000,
+                num_lanes=8,
+                irq=0,
+                link_clk="",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_mxfe_tx_jesd_tx_axi",
+                base_addr=0x44B90000,
+                num_lanes=8,
+                irq=0,
+                link_clk="",
+                direction="tx",
+            ),
+        ],
+        clkgens=[],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9081",
+                ip_type="axi_ad9081",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+        signal_connections=[],
+        fpga_part="xcvp1202-vsva2785-2MP-e-S",
+    )
+
+
+@pytest.fixture
 def topo_adrv9009():
     """ADRV9009 transceiver topology (no ORX)."""
     return XsaTopology(
