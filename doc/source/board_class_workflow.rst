@@ -176,8 +176,21 @@ complexity:
    # model.components: AD9523-1 clock, AD9680 ADC, AD9144 DAC
    # model.jesd_links: RX link, TX link
 
+For simpler SOM boards like the ADRV9361-Z7035 (AD9361 SDR transceiver
+on a Zynq Z-7035), the model has no JESD links or FPGA config:
+
+.. code-block:: python
+
+   from adidt.boards.adrv9361_z7035 import adrv9361_z7035
+
+   board = adrv9361_z7035(platform="bob")  # or "fmc"
+   model = board.to_board_model({})
+   # model.components: AD9361 transceiver (SPI)
+   # model.jesd_links: [] (AD9361 uses LVDS, not JESD204)
+
 See :doc:`examples/board_model_usage` for detailed examples with
-``daq2``, ``ad9081_fmc``, ``adrv9009_fmc``, and ``ad9084_fmc``.
+``daq2``, ``ad9081_fmc``, ``adrv9009_fmc``, ``ad9084_fmc``,
+``adrv9361_z7035``, and ``adrv9009_zu11eg``.
 
 For the XSA pipeline workflow (Vivado-based), see :doc:`examples/xsa_tutorial`.
 
