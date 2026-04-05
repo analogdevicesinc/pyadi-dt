@@ -46,6 +46,12 @@ pip install "git+https://github.com/analogdevicesinc/pyadi-dt.git#egg=adidt[xsa]
 adidtc xsa2dt -x design.xsa --profile ad9081_zcu102 -o out/
 ```
 
+### Generate system-user.dtsi for PetaLinux
+
+```bash
+adidtc xsa2dt -x design.xsa -c cfg.json --format petalinux --petalinux-project /path/to/project
+```
+
 ### Generate a DTS from Python (BoardModel API)
 
 ```python
