@@ -1,6 +1,6 @@
 # XSA Support Backlog (Kuiper-Derived)
 
-Last updated: 2026-03-15
+Last updated: 2026-04-05
 
 ## Scope
 
@@ -58,10 +58,10 @@ Hardware verification legend:
 | 13 | `zynq-zc706-adv7511-ad9082` | AD9082 (ZC706) | Todo | Todo | Todo | Todo | No | Todo | ZC706 variant | Todo |
 | 14 | `zynq-zc706-adv7511-fmcdaq3-revC` | FMCDAQ3 (ZC706) | WIP | WIP | WIP | Todo | No | Todo | Added `fmcdaq3_zc706` explicit profile + example; JESD/clock transport defaults in place, board SPI overlay extension pending | WIP |
 | 15 | `zynq-zc706-adv7511-fmcomms11` | FMCOMMS11 | Todo | Todo | Todo | Todo | No | Todo | Distinct mixed-signal topology | Todo |
-| 16 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb` | ADRV9009 + ZU11EG | Todo | Todo | Todo | Todo | No | Todo | Alternate carrier/clocking | Todo |
-| 17 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge` | ADRV9009 + bridge | Todo | Todo | Todo | Todo | No | Todo | Variant topology | Todo |
-| 18 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8` | ADRV9009 sync | Todo | Todo | Todo | Todo | No | Todo | Multi-device sync path | Todo |
-| 19 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave` | ADRV9009 + xmicrowave | Todo | Todo | Todo | Todo | No | Todo | External RF front-end integration | Todo |
+| 16 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb` | ADRV9009 + ZU11EG | Done | Todo | Done | Done | No | Todo | Board class `adrv9009_zu11eg`, unit + HW tests added | WIP |
+| 17 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge` | ADRV9009 + bridge | Done | Todo | Done | Done | No | Todo | Shares `adrv9009_zu11eg` board class | WIP |
+| 18 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8` | ADRV9009 sync | Done | Todo | Done | Done | No | Todo | Shares `adrv9009_zu11eg` board class | WIP |
+| 19 | `zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave` | ADRV9009 + xmicrowave | Done | Todo | Done | Done | No | Todo | Shares `adrv9009_zu11eg` board class | WIP |
 | 20 | `zynqmp-zcu102-rev10-stingray` | Stingray | Todo | Todo | Todo | Todo | No | Todo | Custom project-specific mapping | Todo |
 
 ## Deferred (No XSA Found in 2023_r2 Nested Tar)

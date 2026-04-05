@@ -19,7 +19,16 @@ from adidt.utils.parsers import DTDependencyParser
     "-b",
     default="adrv9009_pcbz",
     help="Set board configuration",
-    type=click.Choice(["ad9081_fmc", "adrv9009_pcbz", "adrv9009_zu11eg", "daq2"]),
+    type=click.Choice(
+        [
+            "ad9081_fmc",
+            "adrv9009_pcbz",
+            "adrv9009_zu11eg",
+            "adrv9361_z7035",
+            "adrv9364_z7020",
+            "daq2",
+        ]
+    ),
     show_default=True,
 )
 @click.option(
