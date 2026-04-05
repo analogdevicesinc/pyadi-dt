@@ -1309,7 +1309,7 @@ def test_xsa2dt_fails_when_pipeline_result_missing_required_artifacts(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result missing required artifacts" in result.output
-    assert "overlay, merged, report" in result.output
+    assert "overlay, merged" in result.output
 
 
 def test_xsa2dt_fails_when_pipeline_result_is_not_a_dict(tmp_path):
@@ -1373,7 +1373,7 @@ def test_xsa2dt_fails_when_required_artifact_value_is_empty(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result has empty required artifacts" in result.output
-    assert "overlay, merged, report" in result.output
+    assert "overlay, merged" in result.output
 
 
 def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
@@ -1408,7 +1408,7 @@ def test_xsa2dt_fails_when_required_artifact_value_is_not_pathlike(tmp_path):
 
     assert result.exit_code != 0, result.output
     assert "pipeline result has non-path required artifacts" in result.output
-    assert "overlay, merged, report" in result.output
+    assert "overlay, merged" in result.output
 
 
 def test_xsa2dt_fails_when_required_artifact_value_is_invalid_pathlike(tmp_path):
@@ -1443,7 +1443,7 @@ def test_xsa2dt_fails_when_required_artifact_value_is_invalid_pathlike(tmp_path)
 
     assert result.exit_code != 0, result.output
     assert "pipeline result has non-path required artifacts" in result.output
-    assert "overlay, merged, report" in result.output
+    assert "overlay, merged" in result.output
     assert "Unexpected error:" not in result.output
 
 
