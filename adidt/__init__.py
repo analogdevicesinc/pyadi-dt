@@ -20,6 +20,8 @@ from adidt.boards.adrv9025_fmc import adrv9025_fmc as adrv9025_fmc
 from adidt.boards.adrv937x_fmc import adrv937x_fmc as adrv937x_fmc
 from adidt.boards.fmcomms_fmc import fmcomms_fmc as fmcomms_fmc
 from adidt.boards.adrv9009_pcbz import adrv9009_pcbz as adrv9009_pcbz
+from adidt.boards.adrv9361_z7035 import adrv9361_z7035 as adrv9361_z7035
+from adidt.boards.adrv9364_z7020 import adrv9364_z7020 as adrv9364_z7020
 from adidt.boards.rpi import rpi as rpi
 
 from adidt.model.board_model import BoardModel as BoardModel

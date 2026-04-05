@@ -50,11 +50,17 @@ and their support status.
    * - ADRV9009 / ADRV9025 / ADRV9008
      - ZCU102, ZC706, Arria10, ZU11EG
      - ZCU102 ✓
+   * - ADRV9009-ZU11EG (SOM)
+     - ADRV2CRR-FMC carrier
+     -
    * - ADRV937x / ADRV9002
      - ZCU102, ZC706, Arria10, Zedboard
      -
    * - AD936x / FMComms2-5 (SDR)
      - Zedboard, ZC702, ZC706, ZCU102
+     -
+   * - ADRV9361-Z7035 / ADRV9364-Z7020 (SOM)
+     - BOB, FMC carriers
      -
    * - FMCDAQ2 (AD9680 + AD9144)
      - ZCU102, ZC706, Arria10

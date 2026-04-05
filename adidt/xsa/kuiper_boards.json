@@ -177,7 +177,7 @@
       "platform": "z7035",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9361_z7035",
       "builder": null,
       "status": "unsupported"
     },
@@ -186,7 +186,7 @@
       "platform": "z7035",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9361_z7035",
       "builder": null,
       "status": "unsupported"
     },
@@ -195,7 +195,7 @@
       "platform": "z7020",
       "arch": "arm",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9364_z7020",
       "builder": null,
       "status": "unsupported"
     },
@@ -573,7 +573,7 @@
       "platform": "zu11eg",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9009_zu11eg",
       "builder": null,
       "status": "unsupported"
     },
@@ -582,7 +582,7 @@
       "platform": "zu11eg",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9009_zu11eg",
       "builder": null,
       "status": "unsupported"
     },
@@ -591,7 +591,7 @@
       "platform": "zu11eg",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9009_zu11eg",
       "builder": null,
       "status": "unsupported"
     },
@@ -600,7 +600,7 @@
       "platform": "zu11eg",
       "arch": "arm64",
       "profile": null,
-      "board_class": null,
+      "board_class": "adrv9009_zu11eg",
       "builder": null,
       "status": "unsupported"
     },
