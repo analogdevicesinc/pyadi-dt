@@ -1,6 +1,9 @@
 ADI Device Tree Utilities
 =========================
 
+.. caution::
+  pyadi-dt is still under development and may not be stable. Feedback is welcome.
+
 **pyadi-dt** is a Python library and CLI for generating, inspecting, and
 managing Linux device trees for **Analog Devices** hardware — data converters,
 clock distribution ICs, RF transceivers, and FPGA-based JESD204 data paths.
