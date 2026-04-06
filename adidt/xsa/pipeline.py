@@ -36,6 +36,7 @@ class XsaPipeline:
         emit_clock_graphs: bool = False,
         lint: bool = False,
         strict_lint: bool = False,
+        output_format: str = "default",
     ) -> dict[str, Path]:
         """Run the full pipeline.
 
@@ -67,6 +68,10 @@ class XsaPipeline:
             strict_lint: When ``True``, raise
                 :class:`~adidt.xsa.exceptions.DtsLintError` if the linter
                 finds any errors.  Implies ``lint=True``.
+            output_format: ``"default"`` produces the standard overlay +
+                merged outputs.  ``"petalinux"`` additionally generates a
+                ``system-user.dtsi`` and ``device-tree.bbappend`` suitable
+                for dropping into a PetaLinux project.
 
         Returns:
             Dict always containing ``"base_dir"``, ``"overlay"``, and
@@ -111,13 +116,30 @@ class XsaPipeline:
 
         base_dts = base_dts_path.read_text()
         nodes = NodeBuilder().build(topology, cfg_merged)
-        _, merged_content = DtsMerger().merge(base_dts, nodes, output_dir, name)
+        overlay_content, merged_content = DtsMerger().merge(
+            base_dts, nodes, output_dir, name
+        )
 
         result: dict[str, Path] = {
             "base_dir": base_dir,
             "overlay": output_dir / f"{name}.dtso",
             "merged": output_dir / f"{name}.dts",
         }
+
+        if output_format == "petalinux":
+            from .petalinux import PetalinuxFormatter
+
+            formatter = PetalinuxFormatter()
+            plat = topology.inferred_platform()
+            dtsi = formatter.format_system_user_dtsi(overlay_content, platform=plat)
+            dtsi_path = output_dir / "system-user.dtsi"
+            dtsi_path.write_text(dtsi)
+            result["system_user_dtsi"] = dtsi_path
+
+            bbappend = formatter.generate_bbappend()
+            bbappend_path = output_dir / "device-tree.bbappend"
+            bbappend_path.write_text(bbappend)
+            result["bbappend"] = bbappend_path
 
         if emit_report:
             HtmlVisualizer().generate(

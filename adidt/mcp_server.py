@@ -25,6 +25,7 @@ def generate_devicetree(
     strict_parity: bool = False,
     lint: bool = False,
     strict_lint: bool = False,
+    output_format: str = "default",
 ) -> Dict[str, Any]:
     """Generate a devicetree from a Vivado XSA archive.
 
@@ -81,6 +82,7 @@ def generate_devicetree(
             strict_parity=strict_parity,
             lint=lint,
             strict_lint=strict_lint,
+            output_format=output_format,
         )
         serialized = {k: str(v) for k, v in result.items()}
 

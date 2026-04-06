@@ -21,7 +21,7 @@
 - **BoardModel API** — Build, edit, and render device tree overlays programmatically
 - **88 Kuiper boards** — Full manifest of ADI Kuiper 2023-R2 supported boards
 - **RPi support** — Generate overlays for ADI sensors on Raspberry Pi (ADIS16495, ADXL345, AD7124, etc.)
-- **12 board classes** — DAQ2, AD9081–AD9084, ADRV9002–ADRV9025, ADRV937x, FMComms, RPi
+- **15 board classes** — DAQ2, AD9081–AD9084, ADRV9002–ADRV9025, ADRV937x, ADRV9361-Z7035, ADRV9364-Z7020, FMComms, RPi
 - **Component factories** — Pre-configured factories for 12+ ADI devices
 - **Visualization** — Interactive HTML reports, clock-tree diagrams (DOT/D2), DTS linter
 - **Hardware validated** — FMCDAQ2, FMCDAQ3, AD9081, ADRV9009 on ZCU102
@@ -44,6 +44,12 @@ pip install "git+https://github.com/analogdevicesinc/pyadi-dt.git#egg=adidt[xsa]
 
 ```bash
 adidtc xsa2dt -x design.xsa --profile ad9081_zcu102 -o out/
+```
+
+### Generate system-user.dtsi for PetaLinux
+
+```bash
+adidtc xsa2dt -x design.xsa -c cfg.json --format petalinux --petalinux-project /path/to/project
 ```
 
 ### Generate a DTS from Python (BoardModel API)
@@ -93,7 +99,9 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 | AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 ✓ |
 | AD9084 | VCU118, VPK180 | |
 | ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102 ✓ |
+| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | |
 | FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 ✓ |
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 | ZCU102 ✓ |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi | |

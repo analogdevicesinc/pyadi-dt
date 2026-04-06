@@ -74,3 +74,19 @@ ADRV9009 ZU11EG
    :members:
    :undoc-members:
    :show-inheritance:
+
+ADRV9361 Z7035
+~~~~~~~~~~~~~~
+
+.. automodule:: adidt.boards.adrv9361_z7035
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ADRV9364 Z7020
+~~~~~~~~~~~~~~
+
+.. automodule:: adidt.boards.adrv9364_z7020
+   :members:
+   :undoc-members:
+   :show-inheritance:

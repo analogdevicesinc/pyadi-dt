@@ -19,7 +19,16 @@ from adidt.utils.parsers import DTDependencyParser
     "-b",
     default="adrv9009_pcbz",
     help="Set board configuration",
-    type=click.Choice(["ad9081_fmc", "adrv9009_pcbz", "adrv9009_zu11eg", "daq2"]),
+    type=click.Choice(
+        [
+            "ad9081_fmc",
+            "adrv9009_pcbz",
+            "adrv9009_zu11eg",
+            "adrv9361_z7035",
+            "adrv9364_z7020",
+            "daq2",
+        ]
+    ),
     show_default=True,
 )
 @click.option(
@@ -808,6 +817,20 @@ def gen_dts(ctx, board, platform, config, kernel_path, output, compile):
     is_flag=True,
     help="Fail when DTS linter finds errors (implies --lint)",
 )
+@click.option(
+    "--format",
+    "output_format",
+    type=click.Choice(["default", "petalinux"]),
+    default="default",
+    show_default=True,
+    help="Output format. 'petalinux' generates system-user.dtsi and device-tree.bbappend",
+)
+@click.option(
+    "--petalinux-project",
+    type=click.Path(exists=True, file_okay=False),
+    default=None,
+    help="PetaLinux project directory. When set with --format petalinux, copies system-user.dtsi into the project",
+)
 @click.pass_context
 def xsa2dt(
     ctx,
@@ -820,6 +843,8 @@ def xsa2dt(
     strict_parity,
     lint,
     strict_lint,
+    output_format,
+    petalinux_project,
 ):
     """Generate ADI device tree from Vivado XSA file
 
@@ -839,6 +864,8 @@ def xsa2dt(
       adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
       adidtc xsa2dt -x design_1.xsa -c cfg.json --profile ad9081_zcu102
       adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux
+      adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux --petalinux-project /path/to/project
     """
     try:
         from adidt.xsa.pipeline import XsaPipeline
@@ -874,12 +901,13 @@ def xsa2dt(
             strict_parity=strict_parity,
             lint=lint,
             strict_lint=strict_lint,
+            output_format=output_format,
         )
         if not isinstance(result, dict):
             raise click.ClickException(
                 f"pipeline returned invalid result type: {type(result).__name__}"
             )
-        required_artifacts = ("overlay", "merged", "report")
+        required_artifacts = ("overlay", "merged")
         missing_required = [key for key in required_artifacts if key not in result]
         if missing_required:
             missing_joined = ", ".join(missing_required)
@@ -917,7 +945,47 @@ def xsa2dt(
         click.echo(click.style("Done!", fg="green", bold=True))
         click.echo(f"  Overlay:  {result['overlay']}")
         click.echo(f"  Merged:   {result['merged']}")
-        click.echo(f"  Report:   {result['report']}")
+        if "report" in result:
+            click.echo(f"  Report:   {result['report']}")
+
+        if "system_user_dtsi" in result:
+            click.echo(f"  system-user.dtsi: {result['system_user_dtsi']}")
+            click.echo(f"  bbappend:         {result['bbappend']}")
+
+            if petalinux_project:
+                from adidt.xsa.petalinux import validate_petalinux_project
+
+                proj = Path(petalinux_project)
+                validate_petalinux_project(proj)
+
+                dt_files = (
+                    proj
+                    / "project-spec"
+                    / "meta-user"
+                    / "recipes-bsp"
+                    / "device-tree"
+                    / "files"
+                )
+                dt_recipe = dt_files.parent
+
+                # Back up existing system-user.dtsi
+                dest_dtsi = dt_files / "system-user.dtsi"
+                if dest_dtsi.exists():
+                    import shutil
+
+                    bak = dt_files / "system-user.dtsi.bak"
+                    shutil.copy2(dest_dtsi, bak)
+                    click.echo(f"  Backed up existing system-user.dtsi to {bak}")
+
+                import shutil
+
+                shutil.copy2(result["system_user_dtsi"], dest_dtsi)
+                shutil.copy2(result["bbappend"], dt_recipe / "device-tree.bbappend")
+                click.echo(
+                    click.style(
+                        f"  Installed into PetaLinux project: {proj}", fg="green"
+                    )
+                )
 
         def _path_or_none(value, label):
             if value is None:

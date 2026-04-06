@@ -426,6 +426,59 @@ Or call the pipeline directly from Python:
    # SVG paths are present only when the rendering tool is installed:
    # results["clock_dot_svg"], results["clock_d2_svg"]
 
+PetaLinux integration
+---------------------
+
+The XSA pipeline can generate a PetaLinux-ready ``system-user.dtsi``
+that drops directly into a PetaLinux project.
+
+From the CLI:
+
+.. code-block:: bash
+
+   # Generate system-user.dtsi alongside normal outputs
+   adidtc xsa2dt -x design.xsa -c cfg.json --format petalinux -o out/
+
+   # Generate and install into a PetaLinux project
+   adidtc xsa2dt -x design.xsa -c cfg.json --format petalinux \
+       --petalinux-project /path/to/myproject
+
+From Python:
+
+.. code-block:: python
+
+   results = XsaPipeline().run(
+       xsa_path=Path("design.xsa"),
+       cfg=cfg,
+       output_dir=Path("out/"),
+       output_format="petalinux",
+   )
+   print(results["system_user_dtsi"])  # Path to system-user.dtsi
+   print(results["bbappend"])          # Path to device-tree.bbappend
+
+The formatter:
+
+- Strips the ``/dts-v1/;`` and ``/plugin/;`` overlay header
+- Prepends ``#include "system-conf.dtsi"`` (PetaLinux 2020.1+)
+- Rewrites ``&amba`` to ``&amba_pl`` for ZynqMP platforms (matching
+  PetaLinux DTG conventions)
+- Generates a minimal ``device-tree.bbappend`` recipe override
+
+Copy both files into your PetaLinux project:
+
+.. code-block:: text
+
+   myproject/
+   └── project-spec/
+       └── meta-user/
+           └── recipes-bsp/
+               └── device-tree/
+                   ├── device-tree.bbappend
+                   └── files/
+                       └── system-user.dtsi
+
+Then rebuild: ``petalinux-build -c device-tree``.
+
 Python API
 ----------
 
