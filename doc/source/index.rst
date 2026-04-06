@@ -84,6 +84,8 @@ Where to start
   walkthrough of Vivado XSA-based generation.
 - **Non-XSA workflow?** See :doc:`board_class_workflow` for generating
   device trees without Vivado (Raspberry Pi, Intel FPGA, custom boards).
+- **PetaLinux?** See :doc:`petalinux` for generating ``system-user.dtsi``
+  files from XSA archives.
 - **BoardModel API?** See :doc:`api/model` for the unified board model,
   renderer, and context builders.
 - **Adding a new board?** See :doc:`xsa_developer` for the pipeline
@@ -107,6 +109,7 @@ Table of contents
    quickstart
    board_class_workflow
    xsa
+   petalinux
    visualization
    examples
    access
