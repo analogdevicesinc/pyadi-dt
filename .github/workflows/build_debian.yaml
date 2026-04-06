@@ -89,7 +89,7 @@ jobs:
         path: ${{env.APP_NAME}}
         
     - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      uses: docker/setup-qemu-action@v4
 
     - name: Start persistent container
       run: |
