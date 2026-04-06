@@ -125,4 +125,5 @@ Table of contents
    :caption: Reference
 
    cli
+   mcp_server
    api/index

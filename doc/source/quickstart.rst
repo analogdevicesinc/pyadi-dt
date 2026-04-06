@@ -154,5 +154,6 @@ Next steps
   (Raspberry Pi, Intel FPGA, custom boards)
 - :doc:`examples/xsa_adijif_tutorial` — Derive JESD parameters with
   ``pyadi-jif`` before running the XSA pipeline
+- :doc:`mcp_server` — Use pyadi-dt tools from Claude or Cursor via MCP
 - :doc:`api/model` — BoardModel API reference
 - :doc:`xsa_developer` — Pipeline architecture and adding new boards
