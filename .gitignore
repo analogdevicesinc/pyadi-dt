@@ -131,3 +131,6 @@ dmypy.json
 .worktrees/
 .worktrees/
 test/hw/output/
+
+# Labgrid yamls
+lg_*
