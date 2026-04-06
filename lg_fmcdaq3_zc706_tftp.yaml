@@ -1,0 +1,48 @@
+targets:
+  main:
+    features:
+      - fmcdaq3
+      - zc706
+    resources:
+      TFTPServerResource:
+        address: '10.0.0.156'
+        port: 3069
+        root: /var/lib/tftpboot
+      KuiperRelease:
+        release_version: '2023_R2_P1'
+        cache_path: /tmp/kuiper_cache
+        BOOTBIN_path: 'release:zynq-zc706-adv7511-fmcdaq3-revC/BOOT.BIN'
+      NetworkService:
+        address: 10.0.0.23
+        username: root
+        password: analog
+      RawSerialPort:
+        port: /dev/ttyUSB0
+        speed: 115200
+      VesyncOutlet:
+        outlet_names: 'Apollo'
+        username: 'travisfcollins@gmail.com'
+        password: 'Nohtyv-2fotza-gopgaj'
+
+    drivers:
+      TFTPServerDriver: {}
+      KuiperDLDriver: {}
+      SerialDriver: {}
+      VesyncPowerDriver: {}
+      ADIShellDriver:
+        prompt: 'root@.*'
+        login_prompt: 'analog login: '
+        username: 'root'
+        password: 'analog'
+      BootFPGASoCTFTP:
+        wait_for_linux_prompt_timeout: 120
+        reached_linux_marker: '@analog'
+        # Zynq-7000 U-Boot settings
+        uboot_prompt: 'Zynq>.*'
+        kernel_image_name: 'uImage'
+        dtb_image_name: 'devicetree.dtb'
+        boot_cmd: 'bootm'
+        kernel_addr: '0x3000000'
+        dtb_addr: '0x2A00000'
+        bootargs: 'console=ttyPS0,115200 root=/dev/mmcblk0p2 rw earlycon rootfstype=ext4 rootwait clk_ignore_unused cpuidle.off=1'
+      SSHDriver: {}

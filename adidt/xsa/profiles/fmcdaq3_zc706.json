@@ -10,7 +10,7 @@
       "clock_spi_max_frequency": 10000000,
       "adc_spi_max_frequency": 10000000,
       "dac_spi_max_frequency": 10000000,
-      "gpio_controller": "gpio",
+      "gpio_controller": "gpio0",
       "clk_status0_gpio": 54,
       "clk_status1_gpio": 55,
       "dac_txen_gpio": 60,

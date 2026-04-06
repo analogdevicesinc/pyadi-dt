@@ -15,7 +15,7 @@ platforms:
   zynq:
     arch: arm
     cross_compile: arm-linux-gnueabihf-
-    defconfig: adi_zynq_defconfig
+    defconfig: zynq_xcomm_adv7511_defconfig
     kernel_target: zImage
     dtb_path: arch/arm/boot/dts
     kernel_image_path: arch/arm/boot/zImage
