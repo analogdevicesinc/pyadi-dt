@@ -264,6 +264,11 @@ class SdtgenRunner:
 
     _CHOSEN_RE = re.compile(r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL)
 
+    _ZYNQ_ROOT_COMPAT_RE = re.compile(
+        r'^(\s*compatible\s*=\s*)"xlnx,zc7\d+"\s*;',
+        re.MULTILINE,
+    )
+
     def _normalize_cpu_and_interrupt_nodes(self, text: str) -> str:
         """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup."""
         normalized = self._CPU_CLUSTER_RE.sub(r"\1cpus\2", text)
@@ -278,6 +283,9 @@ class SdtgenRunner:
         normalized = self._GEM3_ADDR_RE.sub(self._ensure_gem3_props, normalized)
         normalized = self._MEMORY_NODE_RE.sub(self._filter_memory_node, normalized)
         normalized = self._CHOSEN_RE.sub(self._ensure_earlycon, normalized)
+        # Zynq-7000: sdtgen emits board-specific compatible (e.g. "xlnx,zc706")
+        # but the kernel machine descriptor requires "xlnx,zynq-7000".
+        normalized = self._ZYNQ_ROOT_COMPAT_RE.sub(r'\1"xlnx,zynq-7000";', normalized)
         return normalized
 
     def _ensure_sdhci1_props(self, match: re.Match[str]) -> str:
@@ -298,7 +306,9 @@ class SdtgenRunner:
             updated += "\n\t\tiommus = <&smmu 0x877>;"
         return f"{head}{updated}{tail}"
 
-    _DDR_COMPAT_RE = re.compile(r"xlnx,(?:psu-ddr-1\.0|ddr4-[\d.]+)")
+    _DDR_COMPAT_RE = re.compile(
+        r"xlnx,(?:ps7-ddr-[\d.]+[a-z]?|psu-ddr-1\.0|ddr4-[\d.]+)"
+    )
     _MEM_REG_4CELL_RE = re.compile(
         r"^(\s*reg\s*=\s*<)0x0\s+(0x[0-9a-fA-F]+)\s+0x0\s+(0x[0-9a-fA-F]+)(>.*)$",
         re.MULTILINE,
