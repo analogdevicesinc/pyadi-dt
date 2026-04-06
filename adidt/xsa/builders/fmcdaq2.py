@@ -89,7 +89,7 @@ class FMCDAQ2Builder:
         dac_jesd_label = str(board_cfg.get("dac_jesd_label", "axi_ad9144_jesd204_tx"))
         adc_jesd_link_id = board_int("adc_jesd_link_id", 0)
         dac_jesd_link_id = board_int("dac_jesd_link_id", 0)
-        gpio_controller = str(board_cfg.get("gpio_controller", "gpio0"))
+        gpio_controller = str(board_cfg.get("gpio_controller", gpio_label))
         adc_device_clk_idx = board_int("adc_device_clk_idx", 13)
         adc_sysref_clk_idx = board_int("adc_sysref_clk_idx", 5)
         adc_xcvr_ref_clk_idx = board_int("adc_xcvr_ref_clk_idx", 4)
