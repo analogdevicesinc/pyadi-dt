@@ -20,12 +20,12 @@
       "adc_powerdown_gpio": 57,
       "adc_fastdetect_a_gpio": 58,
       "adc_fastdetect_b_gpio": 59,
-      "adc_core_label": "axi_ad9680_core",
-      "dac_core_label": "axi_ad9144_core",
-      "adc_xcvr_label": "axi_ad9680_adxcvr",
-      "dac_xcvr_label": "axi_ad9144_adxcvr",
-      "adc_jesd_label": "axi_ad9680_jesd204_rx",
-      "dac_jesd_label": "axi_ad9144_jesd204_tx",
+      "adc_core_label": "axi_ad9680_tpl_adc_tpl_core",
+      "dac_core_label": "axi_ad9144_tpl_dac_tpl_core",
+      "adc_xcvr_label": "axi_ad9680_xcvr",
+      "dac_xcvr_label": "axi_ad9144_xcvr",
+      "adc_jesd_label": "axi_ad9680_jesd_rx_axi",
+      "dac_jesd_label": "axi_ad9144_jesd_tx_axi",
       "adc_jesd_link_id": 0,
       "dac_jesd_link_id": 0
     }

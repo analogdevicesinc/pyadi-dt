@@ -244,10 +244,12 @@ class SdtgenRunner:
 
     def _build_cmd(self, xsa_path: Path, output_dir: Path, use_eval: bool) -> list[str]:
         """Return the sdtgen command list for either legacy ``-s/-d`` or modern ``-eval`` mode."""
+        xsa_abs = xsa_path.resolve()
+        out_abs = output_dir.resolve()
         if not use_eval:
-            return [self.binary, "-s", str(xsa_path), "-d", str(output_dir)]
+            return [self.binary, "-s", str(xsa_abs), "-d", str(out_abs)]
         eval_script = (
-            f"sdtgen set_dt_param -xsa {{{xsa_path}}} -dir {{{output_dir}}}; "
+            f"sdtgen set_dt_param -xsa {{{xsa_abs}}} -dir {{{out_abs}}}; "
             "sdtgen generate_sdt"
         )
         return [self.binary, "-eval", eval_script]
