@@ -38,6 +38,29 @@ def _section_comment(title: str, indent: str = "\t") -> str:
     return f"{indent}/* --- {title} --- */"
 
 
+# Matches a freestanding node definition:  <ws>label: node-name@addr {
+_FREESTANDING_NODE_RE = re.compile(
+    r"^(?P<indent>[ \t]*)(?P<label>[a-zA-Z_]\w*)\s*:\s*[a-zA-Z_][\w,-]*(?:@[0-9A-Fa-fx]+)?\s*\{",
+    re.MULTILINE,
+)
+
+
+def _to_label_ref(node: str) -> str:
+    """Convert a freestanding node definition to an ``&label`` reference.
+
+    Transforms ``label: node-name@addr {`` → ``&label {`` so the node
+    overlays the existing base DTS entry instead of creating a duplicate.
+    Lines that are section comments or already use ``&label`` syntax are
+    returned unchanged.
+    """
+    m = _FREESTANDING_NODE_RE.match(node)
+    if not m:
+        return node
+    label = m.group("label")
+    # Replace only the first line (the node header)
+    return node[: m.start()] + f"&{label} {{" + node[m.end() :]
+
+
 def _file_header(name: str, kind: str) -> str:
     """Return a multi-line DTS file header block comment.
 
@@ -167,7 +190,10 @@ class DtsMerger:
         if bus and bus_lines:
             lines += [f"&{bus} {{"] + bus_lines + ["};"]
         elif bus_lines:
-            lines += bus_lines
+            # No bus label found: convert freestanding definitions to &label
+            # references so they overlay the existing base DTS nodes instead
+            # of creating duplicate top-level definitions.
+            lines += [_to_label_ref(n) for n in bus_lines]
         lines += top_lines
         return "\n".join(lines) + "\n"
 

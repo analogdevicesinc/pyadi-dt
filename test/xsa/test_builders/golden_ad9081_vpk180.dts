@@ -117,7 +117,8 @@
 				adi,driver-mode = <2>;
 				adi,jesd204-sysref-chan;
 			};
-		};	};
+		};
+	};
 	&spi0 {
 		status = "okay";
 		#address-cells = <1>;
@@ -239,7 +240,8 @@
 					};
 				};
 			};
-		};	};
+		};
+	};
 	&axi_mxfe_rx_dma {
 		/delete-property/ compatible;
 		compatible = "adi,axi-dmac-1.00.a";

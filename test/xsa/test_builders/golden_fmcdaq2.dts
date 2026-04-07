@@ -166,7 +166,8 @@
 			jesd204-inputs = <&axi_ad9144_core 1 0>;
 			adi,subclass = <1>;
 			adi,interpolation = <1>;
-		};	};
+		};
+	};
 	&axi_ad9680_dma {
 		/delete-property/ compatible;
 		compatible = "adi,axi-dmac-1.00.a";

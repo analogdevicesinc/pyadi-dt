@@ -92,6 +92,8 @@ class BoardModelRenderer:
     @staticmethod
     def _wrap_spi_bus(label: str, children: str) -> str:
         """Wrap pre-rendered child node strings in an ``&label`` overlay."""
+        if not children.endswith("\n"):
+            children += "\n"
         return (
             f"\t&{label} {{\n"
             '\t\tstatus = "okay";\n'
