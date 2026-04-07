@@ -1,5 +1,7 @@
 """Nox configuration for running tests and tasks with uv backend."""
 
+import shutil
+
 import nox
 
 # Use uv for faster package installations
@@ -145,6 +147,50 @@ def dts_lint(session):
         "-vs",
         "test/xsa/test_dts_lint.py",
         "test/xsa/test_dts_lint_integration.py",
+    )
+
+
+@nox.session(python="3.11")
+def dtc_compile(session):
+    """Compile generated DTS files with dtc to catch syntax errors.
+
+    Requires dtc on PATH or at a known PetaLinux sysroots location.
+    Skips gracefully if dtc is not available.
+    """
+    session.install(".[dev]")
+    session.run("pytest", "-vs", "test/xsa/test_dtc_compile.py", *session.posargs)
+
+
+@nox.session(python="3.11")
+def petalinux_build(session):
+    """Run full PetaLinux build integration tests.
+
+    Requires PetaLinux tools on PATH and XSA file via env vars.
+
+    Usage (native):
+        PETALINUX_XSA=/path/to/design.xsa nox -s petalinux_build
+
+    Usage (container — handles all host dependencies):
+        PETALINUX_XSA=/path/to/design.xsa docker/run-petalinux-tests.sh
+
+    Environment variables:
+        PETALINUX_XSA:      Path to XSA file (required)
+        PETALINUX_TEMPLATE: PetaLinux template (default: zynqMP)
+        PETALINUX_PROFILE:  pyadi-dt profile name
+        PETALINUX_VERSION:  PetaLinux version string
+    """
+    if shutil.which("petalinux-create") is None:
+        session.skip(
+            "petalinux-create not found on PATH (source PetaLinux settings.sh first)"
+        )
+    session.install(".[dev]")
+    session.run(
+        "pytest",
+        "-vs",
+        "test/hw/xsa/test_petalinux_build_hw.py",
+        "-o",
+        "addopts=",
+        *session.posargs,
     )
 
 

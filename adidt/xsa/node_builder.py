@@ -281,6 +281,8 @@ class NodeBuilder:
 
     def _wrap_spi_bus(self, label: str, children: str) -> str:
         """Wrap pre-rendered child node strings in an &label { status = "okay"; ... } overlay."""
+        if not children.endswith("\n"):
+            children += "\n"
         return (
             f"\t&{label} {{\n"
             '\t\tstatus = "okay";\n'
