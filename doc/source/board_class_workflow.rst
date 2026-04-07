@@ -207,6 +207,8 @@ supported device.  Import and use directly — no template filenames needed:
 **Simple SPI devices:**
 
 - ``components.adis16495(spi_bus, cs, ...)`` — ADIS16495/16497 IMU
+- ``components.adxl345(spi_bus, cs, ...)`` — ADXL345 3-axis accelerometer
+- ``components.ad7124(spi_bus, cs, ...)`` — AD7124 24-bit precision ADC
 
 **Clock chips:**
 
@@ -229,3 +231,20 @@ supported device.  Import and use directly — no template filenames needed:
 Each factory accepts device-specific keyword arguments (forwarded to the
 underlying context builder).  See :doc:`api/model` for the full API
 reference.
+
+CLI shortcut
+~~~~~~~~~~~~~
+
+The ``gen-dts`` command provides a CLI equivalent to the Python workflow
+above — no script needed:
+
+.. code-block:: bash
+
+   adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
+
+   # Generate and compile to DTB in one step
+   adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json --compile
+
+This runs the board class's ``to_board_model()`` → ``BoardModelRenderer``
+pipeline and writes the DTS (and optionally DTB) to disk.  See :doc:`cli`
+for all ``gen-dts`` options.
