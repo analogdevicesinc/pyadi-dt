@@ -405,6 +405,50 @@ config needed.  Profiles with **"No"** require JESD parameters to be supplied
 via the ``cfg`` dict, typically from a ``pyadi-jif`` solver or manual
 configuration.
 
+Profile discovery
+~~~~~~~~~~~~~~~~~~
+
+Use the CLI to browse profiles without reading JSON files directly:
+
+.. code-block:: bash
+
+   adidtc xsa-profiles                   # list all available profiles
+   adidtc xsa-profile-show ad9081_zcu102  # show defaults as JSON
+
+The MCP server exposes the same data via ``list_xsa_profiles()`` and
+``show_xsa_profile()``.
+
+Reference DTS parity checking
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When migrating from a hand-written DTS or validating against a known-good
+reference (e.g. the Kuiper release DTS), the pipeline can compare the
+generated output against a reference and report missing roles, links, and
+properties.
+
+.. code-block:: bash
+
+   adidtc xsa2dt -x design.xsa -c config.json -o out/ \
+     --reference-dts zynqmp-zcu102-rev10-ad9081-m8-l4.dts
+
+This produces a ``_map.json`` and ``_coverage.json`` alongside the DTS
+output showing which driver requirements from the reference are present
+in the generated tree.
+
+Add ``--strict-parity`` to fail the pipeline when required roles or
+properties are missing — useful in CI to prevent regressions:
+
+.. code-block:: bash
+
+   adidtc xsa2dt -x design.xsa -c config.json -o out/ \
+     --reference-dts ref.dts --strict-parity
+
+The parity checker extracts a *driver manifest* from the reference DTS:
+required IIO device roles, phandle links (clocks, JESD204 inputs), and
+property values.  It then verifies each requirement against the generated
+merged DTS.  Any gaps appear in the coverage report and, with
+``--strict-parity``, raise a ``ParityError``.
+
 Or call the pipeline directly from Python:
 
 .. code-block:: python
@@ -502,6 +546,14 @@ Core classes and methods used in the XSA flow:
      - ``bool``
      - If true, raises ``ParityError`` when required roles/links/properties
        are missing/mismatched.
+
+.. tip::
+
+   The ``cfg`` argument accepts either a plain ``dict`` or a
+   ``PipelineConfig`` object.  ``PipelineConfig.from_dict(d)`` provides
+   typed access to JESD, clock, and board-specific settings with
+   auto-detection of board config keys.  See
+   :class:`~adidt.xsa.pipeline_config.PipelineConfig` in the API reference.
 
 Using adijif (pyadi-jif) With the XSA Flow
 ------------------------------------------

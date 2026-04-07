@@ -41,6 +41,13 @@ Use ``--lint`` to run the structural linter before writing output:
 
    adidtc xsa2dt -x design.xsa --profile adrv9009_zcu102 --lint -o out/
 
+Browse available profiles before running the pipeline:
+
+.. code-block:: bash
+
+   adidtc xsa-profiles                          # list all profiles
+   adidtc xsa-profile-show ad9081_zcu102         # show profile details as JSON
+
 Generate a device tree overlay from Python
 -------------------------------------------
 
@@ -93,6 +100,22 @@ to solve the clock tree and a board class to generate the DTS:
    board.output_filename = "fmcdaq2_zcu102.dts"
    board.gen_dt_from_config(conf, config_source="adijif_500msps")
 
+Generate a device tree from the CLI
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``gen-dts`` command runs the same board class workflow without writing
+a Python script:
+
+.. code-block:: bash
+
+   adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
+
+   # Generate and compile to DTB
+   adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json --compile
+
+See :doc:`board_class_workflow` for the full walkthrough and
+:doc:`cli` for all ``gen-dts`` options.
+
 Edit a BoardModel before rendering
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -132,7 +155,18 @@ Read device tree properties from a running board over SSH:
 .. image:: _static/media/props.gif
    :alt: props command demo
 
-See :doc:`access` for local sysfs, remote SSH, and SD card access modes.
+See :doc:`access` for local sysfs, remote SSH, SD card, and file-based
+access modes.
+
+Analyze device tree dependencies
+---------------------------------
+
+Visualize include dependencies and missing headers in a device tree file:
+
+.. code-block:: bash
+
+   adidtc deps overlay.dts --format tree
+   adidtc deps overlay.dts --format dot -o deps.dot   # Graphviz output
 
 Configure clocks from JSON
 ---------------------------
