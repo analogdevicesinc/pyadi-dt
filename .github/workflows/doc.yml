@@ -22,6 +22,10 @@ jobs:
         run: |
           pip install -r requirements/requirements_doc.txt
           pip install -e .
+          pip install "pyd2lang-native>=0.1.0"
+
+      - name: Compile D2 diagrams
+        run: python doc/source/_diagrams/compile_d2.py
 
       - name: Build documentation
         run: |
