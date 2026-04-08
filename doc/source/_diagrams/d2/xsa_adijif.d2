@@ -1,0 +1,47 @@
+direction: right
+
+AJ: "adijif system()\nconverter + clock + fpga model" {
+  class: sw-tool
+}
+MODE: "select JESD modes\nM/L/F/K/Np/S" {
+  class: sw-action
+}
+SOLVE: "run solve()?" {
+  shape: diamond
+  class: sw-step-amber
+}
+SCFG: "read solved clock /\nJESD outputs" {
+  class: sw-action
+}
+QCFG: "use quick mode\nsettings" {
+  class: sw-action
+}
+MAP: "map to XsaPipeline\ncfg keys" {
+  class: sw-function
+}
+PIPE2: XsaPipeline.run() {
+  class: sw-pipeline
+}
+DTS2: "merged DTS +\noverlay + report" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+DTB2: "cpp + dtc →\nsystem.dtb" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+HW2: "boot + dmesg +\njesd_status validation" {
+  class: sw-eval
+  style.fill: "#c8e6c9"
+}
+
+AJ -> MODE
+MODE -> SOLVE
+SOLVE -> SCFG: yes
+SOLVE -> QCFG: no
+SCFG -> MAP
+QCFG -> MAP
+MAP -> PIPE2
+PIPE2 -> DTS2
+DTS2 -> DTB2
+DTB2 -> HW2

@@ -1,0 +1,49 @@
+direction: right
+
+XSA: Vivado .xsa {
+  class: sw-document
+}
+
+petalinux: PetaLinux Project {
+  class: sw-container-cream
+
+  DTG: "Device Tree\nGenerator (DTG)" {
+    class: sw-action
+  }
+  BASE: "Base DTS\n(system-top.dts)" {
+    class: sw-document
+  }
+  DTSI: system-user.dtsi {
+    class: sw-document
+    style.fill: "#c8e6c9"
+  }
+  BUILD: "petalinux-build\n-c device-tree" {
+    class: sw-tool
+  }
+  DTB: system.dtb {
+    class: sw-document
+    style.fill: "#fff9c4"
+  }
+
+  DTG -> BASE
+  BASE -> BUILD
+  DTSI -> BUILD
+  BUILD -> DTB
+}
+
+pyadidt: pyadi-dt {
+  class: sw-container
+
+  PIPE: "XSA Pipeline\n(sdtgen + topology\n+ node builder)" {
+    class: sw-pipeline
+  }
+  FMT: "PetaLinux\nFormatter" {
+    class: sw-function
+  }
+
+  PIPE -> FMT
+}
+
+XSA -> petalinux.DTG
+XSA -> pyadidt.PIPE
+pyadidt.FMT -> petalinux.DTSI

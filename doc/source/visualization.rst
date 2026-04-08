@@ -29,13 +29,9 @@ external dependencies) built with D3.js.  It contains five panels:
 Example report layout
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. mermaid::
-
-   block-beta
-     columns 2
-     A["DTS Node Tree\n(searchable)"] B["XSA Match Coverage\n(stats)"]
-     C["Clock Topology\n(D3.js SVG)"] D["JESD204 Data Path\n(D3.js SVG)"]
-     E["Details: Parsed Topology / Clock References / JESD Paths"]:2
+.. image:: _diagrams/svg/viz_report_layout.svg
+   :alt: Example HTML topology report layout
+   :align: center
 
 Generating from Python
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -320,20 +316,6 @@ Enable everything at once:
 
 This produces:
 
-.. mermaid::
-
-   flowchart TB
-     XSA["design.xsa"] --> Pipeline["XsaPipeline.run()"]
-     Pipeline --> DTS[".dts merged"]
-     Pipeline --> DTSO[".dtso overlay"]
-     Pipeline --> Report["_report.html\n(interactive D3.js)"]
-     Pipeline --> DOT["_clocks.dot\n+ .dot.svg"]
-     Pipeline --> D2["_clocks.d2\n+ .d2.svg"]
-     Pipeline --> Diag["_diagnostics.json"]
-
-     style DTS fill:#3a7d44,color:#fff
-     style DTSO fill:#3a7d44,color:#fff
-     style Report fill:#0067b9,color:#fff
-     style DOT fill:#c8940a,color:#fff
-     style D2 fill:#c8940a,color:#fff
-     style Diag fill:#b94000,color:#fff
+.. image:: _diagrams/svg/viz_outputs.svg
+   :alt: XsaPipeline output artifacts
+   :align: center

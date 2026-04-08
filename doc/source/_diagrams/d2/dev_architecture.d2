@@ -1,0 +1,87 @@
+direction: down
+
+xsa: XSA Archive (.xsa) {
+  class: sw-document
+}
+cfg: "Config (JSON / PipelineConfig)" {
+  class: sw-config
+}
+
+pipeline: XsaPipeline.run() {
+  class: sw-container
+  direction: down
+
+  sdtgen: "sdtgen / lopper\nsdtgen.py" {
+    class: sw-action
+  }
+  parser: "XsaParser\ntopology.py" {
+    class: sw-action
+  }
+  profiles: "ProfileManager\nprofiles.py" {
+    class: sw-config
+  }
+  fixups: "Board Fixups\nboard_fixups.py" {
+    class: sw-action
+  }
+  nb: "NodeBuilder\nnode_builder.py" {
+    class: sw-action
+  }
+  merger: "DtsMerger\nmerger.py" {
+    class: sw-action
+  }
+
+  sdtgen -> fixups: base DTS
+  fixups -> merger
+  parser -> nb: XsaTopology
+  profiles -> nb
+  nb -> merger: node strings
+}
+
+dtso: ".dtso overlay" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+dts: ".dts merged" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+
+optional: Optional outputs {
+  class: sw-container-amber
+  direction: right
+
+  linter: "DtsLinter\ndts_lint.py" {
+    class: sw-eval
+  }
+  viz: "HtmlVisualizer\nvisualizer.py" {
+    class: sw-tool
+  }
+  clock: "ClockGraphGenerator\nclock_graph.py" {
+    class: sw-tool
+  }
+}
+
+diag: diagnostics.json {
+  class: sw-document
+}
+report: report.html {
+  class: sw-document
+}
+dot: ".dot / .d2" {
+  class: sw-document
+}
+
+xsa -> pipeline.sdtgen
+xsa -> pipeline.parser
+cfg -> pipeline.profiles
+
+pipeline.merger -> dtso
+pipeline.merger -> dts
+
+dts -> optional.linter: {style.stroke-dash: 3}
+dts -> optional.viz: {style.stroke-dash: 3}
+dts -> optional.clock: {style.stroke-dash: 3}
+
+optional.linter -> diag: {style.stroke-dash: 3}
+optional.viz -> report: {style.stroke-dash: 3}
+optional.clock -> dot: {style.stroke-dash: 3}

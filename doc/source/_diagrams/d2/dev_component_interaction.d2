@@ -1,0 +1,84 @@
+direction: down
+
+inputs: Inputs {
+  class: sw-container
+  direction: right
+
+  topo: "XsaTopology\nIP instances, addresses,\nlane counts, FPGA part" {
+    class: sw-dataset
+  }
+  cfg: "PipelineConfig | dict\nJESD params, clock routing,\nboard-specific config" {
+    class: sw-config
+  }
+}
+
+nb: NodeBuilder.build() {
+  class: sw-container
+  direction: down
+
+  platform: "A. Platform detection\ninferred_platform() → addr_cells,\nps_clk_label, gpio_label" {
+    class: sw-action
+  }
+  registry: "B. Builder registry\nfor builder in _DEFAULT_BUILDERS:\n  builder.matches(topology, cfg)" {
+    class: sw-eval
+  }
+  generic: "C. Generic rendering\nclkgen.tmpl → clkgens[]\njesd204_fsm.tmpl → jesd204_rx/tx[]" {
+    class: sw-function
+  }
+  dispatch: "D. Board builder dispatch\nbuilder.build_nodes() → converters[]" {
+    class: sw-function
+  }
+
+  platform -> registry
+  registry -> generic
+  registry -> dispatch
+}
+
+builder: "Board Builder (e.g. FMCDAQ2Builder)" {
+  class: sw-container-amber
+  direction: down
+
+  extract: "1. Extract config\ncfg dict → typed values" {
+    class: sw-action
+  }
+  model: "2. Build BoardModel\nComponentModel (clock, ADC, DAC)\nJesdLinkModel (RX, TX)" {
+    class: sw-config
+  }
+  context: "3. Build contexts\nbuild_ad9523_1_ctx() → dict\nbuild_ad9680_ctx() → dict\nbuild_ad9144_ctx() → dict" {
+    class: sw-function
+  }
+  render: "4. BoardModelRenderer.render()\nSPI grouping, template rendering,\nDMA/TPL/JESD/XCVR assembly" {
+    class: sw-function
+  }
+
+  extract -> model -> context -> render
+}
+
+merger: DtsMerger.merge() {
+  class: sw-container-green
+  direction: down
+
+  categorize: "Categorise: &overlay vs bus nodes" {
+    class: sw-eval
+  }
+  insert: Insert bus nodes into amba block {
+    class: sw-action
+  }
+  write: "Write .dtso + .dts" {
+    class: sw-action
+  }
+
+  categorize -> insert -> write
+}
+
+output: ".dtso overlay + .dts merged" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+
+inputs.topo -> nb
+inputs.cfg -> nb
+nb.dispatch -> builder
+nb.generic -> merger
+builder -> merger: node strings
+merger.write -> output

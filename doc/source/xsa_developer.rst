@@ -16,55 +16,9 @@ The XSA pipeline is composed of six loosely coupled stages.  Each stage
 operates on well-defined inputs and produces file or data-structure outputs
 that feed the next stage.
 
-.. mermaid::
-
-   flowchart TB
-      xsa["XSA Archive (.xsa)"]
-      cfg["Config (JSON / PipelineConfig)"]
-
-      subgraph pipeline ["XsaPipeline.run()"]
-         direction TB
-         sdtgen["<b>sdtgen / lopper</b><br/><i>sdtgen.py</i>"]
-         parser["<b>XsaParser</b><br/><i>topology.py</i>"]
-         profiles["<b>ProfileManager</b><br/><i>profiles.py</i>"]
-         fixups["<b>Board Fixups</b><br/><i>board_fixups.py</i>"]
-         nb["<b>NodeBuilder</b><br/><i>node_builder.py</i>"]
-         merger["<b>DtsMerger</b><br/><i>merger.py</i>"]
-      end
-
-      xsa --> sdtgen
-      xsa --> parser
-      cfg --> profiles
-      profiles --> nb
-      sdtgen --> |"base DTS"| fixups
-      fixups --> merger
-      parser --> |"XsaTopology"| nb
-      nb --> |"node strings"| merger
-
-      merger --> dtso[".dtso overlay"]
-      merger --> dts[".dts merged"]
-
-      subgraph optional ["Optional outputs"]
-         direction LR
-         linter["<b>DtsLinter</b><br/><i>dts_lint.py</i>"]
-         viz["<b>HtmlVisualizer</b><br/><i>visualizer.py</i>"]
-         clock["<b>ClockGraphGenerator</b><br/><i>clock_graph.py</i>"]
-      end
-
-      dts -.-> linter
-      dts -.-> viz
-      dts -.-> clock
-
-      linter -.-> diag["diagnostics.json"]
-      viz -.-> report["report.html"]
-      clock -.-> dot[".dot / .d2"]
-
-      style pipeline fill:#f0f4f8,stroke:#0067b9,stroke-width:2px
-      style optional fill:#fff4e0,stroke:#c8940a,stroke-width:1px
-      style xsa fill:#d6e8f7,stroke:#0067b9
-      style cfg fill:#d6e8f7,stroke:#0067b9
-      style dts fill:#e8f0e8,stroke:#3a7d44
-      style dtso fill:#e8f0e8,stroke:#3a7d44
+.. image:: _diagrams/svg/dev_architecture.svg
+   :alt: XSA Pipeline architecture stages
+   :align: center
 
 ``XsaPipeline.run()`` in ``pipeline.py`` wires all stages together and returns
 a ``dict[str, Path]`` of artifact paths.  Each stage class can also be used
@@ -78,57 +32,9 @@ It receives the topology and config, dispatches to per-board builders via
 a registry, and produces categorised DTS node strings that the merger
 assembles into the final tree.
 
-.. mermaid::
-
-   flowchart TB
-      subgraph inputs ["Inputs"]
-         direction LR
-         topo["<b>XsaTopology</b><br/>IP instances, addresses,<br/>lane counts, FPGA part"]
-         cfg["<b>PipelineConfig | dict</b><br/>JESD params, clock routing,<br/>board-specific config"]
-      end
-
-      subgraph nb ["NodeBuilder.build()"]
-         direction TB
-         platform["<b>A. Platform detection</b><br/>inferred_platform() → addr_cells,<br/>ps_clk_label, gpio_label"]
-         registry["<b>B. Builder registry</b><br/>for builder in _DEFAULT_BUILDERS:<br/>  builder.matches(topology, cfg)"]
-         generic["<b>C. Generic rendering</b><br/>clkgen.tmpl → clkgens[]<br/>jesd204_fsm.tmpl → jesd204_rx/tx[]"]
-         dispatch["<b>D. Board builder dispatch</b><br/>builder.build_nodes() → converters[]"]
-
-         platform --> registry
-         registry --> generic
-         registry --> dispatch
-      end
-
-      subgraph builder ["Board Builder (e.g. FMCDAQ2Builder)"]
-         direction TB
-         extract["1. Extract config<br/>cfg dict → typed values"]
-         model["2. Build BoardModel<br/>ComponentModel (clock, ADC, DAC)<br/>JesdLinkModel (RX, TX)"]
-         context["3. Build contexts<br/>build_ad9523_1_ctx() → dict<br/>build_ad9680_ctx() → dict<br/>build_ad9144_ctx() → dict"]
-         render["4. BoardModelRenderer.render()<br/>SPI grouping, template rendering,<br/>DMA/TPL/JESD/XCVR assembly"]
-
-         extract --> model --> context --> render
-      end
-
-      subgraph merger ["DtsMerger.merge()"]
-         direction TB
-         categorize["Categorise: &overlay vs bus nodes"]
-         insert["Insert bus nodes into amba block"]
-         write["Write .dtso + .dts"]
-         categorize --> insert --> write
-      end
-
-      topo --> nb
-      cfg --> nb
-      dispatch --> builder
-      generic --> merger
-      builder --> |"node strings"| merger
-      write --> output[".dtso overlay + .dts merged"]
-
-      style inputs fill:#d6e8f7,stroke:#0067b9,stroke-width:2px
-      style nb fill:#f0f4f8,stroke:#0067b9,stroke-width:2px
-      style builder fill:#fff4e0,stroke:#c8940a,stroke-width:2px
-      style merger fill:#e8f0e8,stroke:#3a7d44,stroke-width:2px
-      style output fill:#e8f0e8,stroke:#3a7d44
+.. image:: _diagrams/svg/dev_component_interaction.svg
+   :alt: NodeBuilder component interaction
+   :align: center
 
 The **context builder** pattern is central to how templates receive their
 data.  For every ``.tmpl`` file there is a corresponding ``_build_*_ctx()``

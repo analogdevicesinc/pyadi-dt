@@ -65,6 +65,13 @@ def format_check(session):
         session.warn("Ruff not available or format check failed")
 
 
+@nox.session(python="3.12")
+def d2_diagrams(session):
+    """Compile D2 diagram sources to SVG using pyd2lang-native."""
+    session.install("pyd2lang-native>=0.1.0")
+    session.run("python", "doc/source/_diagrams/compile_d2.py")
+
+
 @nox.session(python="3.11")
 def docs(session):
     """Build documentation with Sphinx."""
