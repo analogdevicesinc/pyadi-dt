@@ -1,0 +1,76 @@
+direction: right
+
+XSA: Vivado .xsa {
+  class: sw-document
+}
+CFG: "pyadi-jif / JSON config\nJESD + clock settings" {
+  class: sw-config
+}
+
+SDT: "sdtgen / lopper\nbase DTS artifacts" {
+  class: sw-action
+}
+HWH: "HWH parser\nADI IP topology" {
+  class: sw-action
+}
+NB: "NodeBuilder\nBoardModel construction" {
+  class: sw-action
+}
+BM: "BoardModel\neditable board description" {
+  class: sw-config
+}
+RN: "BoardModelRenderer\nADI DTS nodes" {
+  class: sw-function
+}
+MG: "DtsMerger\noverlay + merged DTS" {
+  class: sw-action
+}
+DTC: "dtc / cpp" {
+  class: sw-tool
+}
+
+DTBO: "overlay .dtso" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+DTS: "merged .dts" {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+DTB: system.dtb {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+
+diagnostics: Diagnostics {
+  class: sw-container-amber
+  REP: "HTML report\ntopology + clocks + JESD" {
+    class: sw-metric
+  }
+  CG: "ClockGraphGenerator\nclock-tree diagrams" {
+    class: sw-tool
+  }
+  DOTF: ".dot + .dot.svg" {
+    class: sw-document
+  }
+  D2F: ".d2 + .d2.svg" {
+    class: sw-document
+  }
+  CG -> DOTF
+  CG -> D2F
+}
+
+XSA -> SDT
+XSA -> HWH
+CFG -> NB
+HWH -> NB
+NB -> BM
+BM -> RN
+SDT -> MG
+RN -> MG
+MG -> DTBO
+MG -> DTS
+DTS -> DTC
+DTC -> DTB
+NB -> diagnostics.REP
+DTS -> diagnostics.CG

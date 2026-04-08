@@ -1,0 +1,63 @@
+direction: down
+
+KREL: "Kuiper release BOOT.BIN" {
+  class: sw-document
+}
+XSA2: "XSA from examples\nor Kuiper project" {
+  class: sw-document
+}
+CFG2: "board config\n(JSON or adijif-derived)" {
+  class: sw-config
+}
+
+PIPE: XsaPipeline.run() {
+  class: sw-pipeline
+}
+MDTS: merged DTS {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+COMPILE: cpp + dtc {
+  class: sw-tool
+}
+MDTB: generated system.dtb {
+  class: sw-document
+  style.fill: "#c8e6c9"
+}
+
+PYB: "ADI_XSA_BUILD_KERNEL=1 ?" {
+  shape: diamond
+  class: sw-step-amber
+}
+PBUILD: "pyadi-build\nbuild kernel image" {
+  class: sw-action
+  style.fill: "#fff4e0"
+}
+SKIP: skip kernel replacement {
+  class: sw-step-white
+}
+
+DEPLOY: KuiperDLDriver deploy {
+  class: sw-action
+}
+BOOT: boot target via labgrid {
+  class: sw-terminal
+}
+CHECK: "run checks on DUT shell\ndmesg + jesd_status + IIO devices" {
+  class: sw-eval
+  style.fill: "#c8e6c9"
+}
+
+XSA2 -> PIPE
+CFG2 -> PIPE
+PIPE -> MDTS
+MDTS -> COMPILE
+COMPILE -> MDTB
+PYB -> PBUILD: yes
+PYB -> SKIP: no
+KREL -> DEPLOY
+PBUILD -> DEPLOY
+MDTB -> DEPLOY
+SKIP -> DEPLOY
+DEPLOY -> BOOT
+BOOT -> CHECK

@@ -16,28 +16,9 @@ Overview
 
 The workflow has seven steps:
 
-.. mermaid::
-
-   flowchart TB
-     A["Linux kernel source\n(YAML/TXT bindings)"]
-     B["collect_adi_bindings.py\nParse all ADI bindings"]
-     C["audit_adi_bindings.py\nCompare against supported compatibles"]
-     D["--generate-templates\nCreate starter .tmpl stubs"]
-     E["Manual editing\nAdd properties, clocks, GPIOs"]
-     F["contexts.py\nAdd context builder function"]
-     G["components.py\nAdd factory function"]
-     H["Ready to use\nin BoardModel"]
-
-     A --> B --> C --> D --> E --> F --> G --> H
-
-     style A fill:#1a3d5c,color:#fff
-     style B fill:#3a7d44,color:#fff
-     style C fill:#3a7d44,color:#fff
-     style D fill:#c8940a,color:#fff
-     style E fill:#b94000,color:#fff
-     style F fill:#0067b9,color:#fff
-     style G fill:#0067b9,color:#fff
-     style H fill:#3a7d44,color:#fff
+.. image:: _diagrams/svg/templates_workflow.svg
+   :alt: Template creation workflow
+   :align: center
 
 Step 1: Parse kernel bindings
 ------------------------------

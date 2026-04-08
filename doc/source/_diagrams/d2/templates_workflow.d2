@@ -1,0 +1,44 @@
+direction: down
+
+A: "Linux kernel source\n(YAML/TXT bindings)" {
+  class: sw-document
+  style.fill: "#1a3d5c"
+  style.font-color: "#fff"
+}
+B: "collect_adi_bindings.py\nParse all ADI bindings" {
+  class: sw-tool
+  style.fill: "#2e7d32"
+  style.font-color: "#fff"
+}
+C: "audit_adi_bindings.py\nCompare against supported compatibles" {
+  class: sw-eval
+  style.fill: "#2e7d32"
+  style.font-color: "#fff"
+}
+D: "--generate-templates\nCreate starter .tmpl stubs" {
+  class: sw-config
+  style.fill: "#c8940a"
+  style.font-color: "#fff"
+}
+E: "Manual editing\nAdd properties, clocks, GPIOs" {
+  class: sw-action
+  style.fill: "#b94000"
+  style.font-color: "#fff"
+}
+F: "contexts.py\nAdd context builder function" {
+  class: sw-function
+  style.fill: "#0067b9"
+  style.font-color: "#fff"
+}
+G: "components.py\nAdd factory function" {
+  class: sw-function
+  style.fill: "#0067b9"
+  style.font-color: "#fff"
+}
+H: "Ready to use\nin BoardModel" {
+  class: sw-eval
+  style.fill: "#2e7d32"
+  style.font-color: "#fff"
+}
+
+A -> B -> C -> D -> E -> F -> G -> H

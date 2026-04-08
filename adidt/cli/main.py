@@ -79,7 +79,37 @@ from adidt.utils.parsers import DTDependencyParser
 )
 @click.pass_context
 def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
-    """ADI device tree utility"""
+    """ADI device tree utility for inspecting, generating, and modifying
+    Linux device trees for Analog Devices hardware.
+
+    \b
+    adidtc provides commands grouped into three workflows:
+    \b
+      Inspect    — Read and modify DT properties on live or local hardware
+                   (prop, props, deps)
+      Generate   — Produce device tree source from Vivado XSA files, board
+                   class configs, or profile wizard exports
+                   (xsa2dt, gen-dts, profile2dt, jif)
+      Manage     — List supported boards, profiles, and deploy boot files
+                   to SD cards (kuiper-boards, xsa-profiles, xsa-profile-show,
+                   sd-move, sd-remote-copy)
+
+    \b
+    Global options control how adidtc connects to the target board.  The
+    --context flag selects the access method: local_sysfs reads /proc/device-tree
+    on the current machine, remote_sysfs reads over SSH, and the sd variants
+    mount an SD card partition.  Use local_file to work on a .dtb file directly.
+
+    \b
+    Examples:
+      List all nodes on a remote board:
+        adidtc -c remote_sysfs -i 192.168.2.1 prop
+    \b
+      Generate a device tree from an XSA:
+        adidtc xsa2dt -x design.xsa -c config.json -o out/
+    \b
+      Generate DTS from a board class config:
+        adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json"""
     ctx.ensure_object(dict)
 
     ctx.obj["no_color"] = no_color
@@ -116,12 +146,45 @@ def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
 )
 @click.pass_context
 def prop(ctx, node_name, prop, value, reboot, compat, children):
-    """Get and set device tree properties
+    """Get and set device tree properties on a single node.
 
     \b
-    NODE_NAME      - Name of node to address
-    PROP           - Name property to get/set
-    VALUE          - Value to write to property of node
+    Read or write properties of a device tree node identified by name or
+    compatible string.  When called with no arguments, lists all available
+    node names (or compatible IDs with --compat).  When called with only a
+    node name, prints all properties of that node.  Add PROP to read a
+    single property, and VALUE to write it.
+
+    \b
+    NODE_NAME      - Name of node to address (omit to list all nodes)
+    PROP           - Property name to read or write (omit to list all)
+    VALUE          - Value to write; comma-separated for arrays (e.g. "1,2,3")
+
+    \b
+    Examples:
+      List all node names on the local device tree:
+        adidtc prop
+    \b
+      List all compatible IDs:
+        adidtc prop --compat
+    \b
+      Show all properties of a node by name:
+        adidtc prop axi_ad9144_jesd
+    \b
+      Show a single property value:
+        adidtc prop axi_ad9144_jesd compatible
+    \b
+      Find a node by compatible string and show its properties:
+        adidtc prop -cp adi,axi-ad9144-1.0
+    \b
+      Set a property value (integer):
+        adidtc prop axi_ad9144_jesd num-lanes 4
+    \b
+      Set a property value (comma-separated array):
+        adidtc prop axi_ad9144_jesd lane-map 0,1,2,3
+    \b
+      Read from a remote board:
+        adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
     """
     d = adidt.dt(
         dt_source=ctx.obj["context"],
@@ -212,10 +275,32 @@ def prop(ctx, node_name, prop, value, reboot, compat, children):
 )
 @click.pass_context
 def sd_move(ctx, rd, reboot, show, dry_run):
-    """Move files on existing SD card
+    """Move boot files on a remote SD card to switch reference designs.
 
     \b
-    REFERENCE_DESIGN  - Name of reference design folder on SD card
+    Swaps the active boot files (BOOT.BIN, device tree, etc.) on a remote
+    SD card to match a different reference design folder.  This is useful
+    when the SD card already contains multiple reference design directories
+    and you want to switch between them without re-flashing.
+
+    \b
+    Requires --context set to local_sd or remote_sd.  Does not work with
+    sysfs or local_file contexts.
+
+    \b
+    RD  - Name of the reference design folder on the SD card
+          (e.g. "daq2", "adrv9009")
+
+    \b
+    Examples:
+      Switch to the daq2 reference design on a remote SD card:
+        adidtc -c remote_sd -i 192.168.2.1 sd-move daq2
+    \b
+      Preview the commands without running them:
+        adidtc -c remote_sd -i 192.168.2.1 sd-move daq2 --dry-run --show
+    \b
+      Switch and reboot the board:
+        adidtc -c remote_sd -i 192.168.2.1 sd-move adrv9009 --reboot
     """
     if ctx.obj["context"] in ["remote_sysfs", "local_file", "local_sysfs"]:
         s = f"ERROR: {ctx.obj['context']} context does not apply for sd-move"
@@ -262,10 +347,34 @@ def sd_move(ctx, rd, reboot, show, dry_run):
 )
 @click.pass_context
 def sd_remote_copy(ctx, files, reboot, show, dry_run):
-    """Copy local boot files to remote existing SD card
+    """Copy local boot files to a remote SD card over the network.
 
     \b
-    FILES  - List of files to copy (comma separated)
+    Transfers one or more local files (BOOT.BIN, device tree blobs, etc.)
+    to the boot partition of a remote SD card via SSH/SCP.  Use this after
+    generating new boot artifacts to deploy them to a board without
+    physically swapping the SD card.
+
+    \b
+    Requires --context set to local_sd or remote_sd.  Does not work with
+    sysfs or local_file contexts.
+
+    \b
+    FILES  - Comma-separated list of local file paths to copy
+
+    \b
+    Examples:
+      Copy a single device tree blob:
+        adidtc -c remote_sd -i 192.168.2.1 sd-remote-copy system.dtb
+    \b
+      Copy multiple boot files:
+        adidtc -c remote_sd -i 192.168.2.1 sd-remote-copy BOOT.BIN,system.dtb,image.ub
+    \b
+      Preview the copy commands:
+        adidtc -c remote_sd -i 192.168.2.1 sd-remote-copy system.dtb --dry-run --show
+    \b
+      Copy and reboot the board:
+        adidtc -c remote_sd -i 192.168.2.1 sd-remote-copy BOOT.BIN,system.dtb --reboot
     """
     if ctx.obj["context"] in ["remote_sysfs", "local_file", "local_sysfs"]:
         s = f"ERROR: {ctx.obj['context']} context does not apply for sd-move"
@@ -319,10 +428,47 @@ def sd_remote_copy(ctx, files, reboot, show, dry_run):
 )
 @click.pass_context
 def props(ctx, node_name, compat, reboot, prop, value):
-    """Get and set device tree properties
+    """Get and set device tree properties with hierarchical node navigation.
 
     \b
-    NODE_NAME      - Name of node(s) to address
+    An enhanced version of the prop command that supports drilling down
+    through nested nodes by specifying multiple node names.  The first
+    name selects the parent node; subsequent names navigate into child
+    nodes.  This is useful for reaching deeply nested nodes without
+    typing full paths.
+
+    \b
+    NODE_NAME      - One or more node names forming a path from parent
+                     to target (omit to list all top-level nodes)
+
+    \b
+    Examples:
+      List all top-level node names:
+        adidtc props
+    \b
+      List all compatible IDs:
+        adidtc props --compat
+    \b
+      Show properties and child nodes of a parent node:
+        adidtc props axi_ad9144_jesd
+    \b
+      Drill into a child node:
+        adidtc props amba axi_ad9144_jesd
+    \b
+      Find a node by compatible ID, then drill into a child:
+        adidtc props -cp adi,axi-ad9144-1.0 lane0
+    \b
+      Read a single property from a nested node:
+        adidtc props amba axi_ad9144_jesd -p compatible
+    \b
+      Set a property value on a nested node:
+        adidtc props amba axi_ad9144_jesd -p num-lanes -v 4
+    \b
+      Set a property and reboot:
+        adidtc props amba axi_ad9144_jesd -p num-lanes -v 4 --reboot
+    \b
+      Read from a local DTB file:
+        adidtc -c local_file -f devicetree.dtb props amba spi0
     """
     d = adidt.dt(
         dt_source=ctx.obj["context"],
@@ -450,10 +596,31 @@ def props(ctx, node_name, compat, reboot, prop, value):
 )
 @click.pass_context
 def jif(ctx, node_type, reboot, filename):
-    """JIF supported updates of DT
+    """Apply pyadi-jif solver output to update device tree clock and JESD parameters.
 
     \b
-    NODE_TYPE      - Type of device the configuration is to address
+    Reads a JSON configuration file produced by pyadi-jif (the JESD Interface
+    Framework solver) and updates the corresponding device tree nodes.
+    Currently supports clock device updates (e.g. HMC7044, AD9523-1, AD9528).
+
+    \b
+    NODE_TYPE      - Type of device to configure: clock, converter, system,
+                     or fpga (only clock is currently implemented)
+
+    \b
+    Examples:
+      Apply solved clock parameters to the device tree:
+        adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json
+    \b
+      Apply clock config and reboot the board:
+        adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json --reboot
+    \b
+      Apply to a local sysfs device tree:
+        adidtc jif clock -f solved_clocks.json
+
+    \b
+    The JSON file should contain a "clock" key with "part" and device
+    parameters, as produced by pyadi-jif's solver output.
     """
     if node_type == "clock":
         d = adidt.clock(
@@ -491,7 +658,25 @@ def jif(ctx, node_type, reboot, filename):
 )
 @click.pass_context
 def profile2dt(ctx, profile, config):
-    """Generate devicetree from Profile Configuration Wizard files"""
+    """Generate a device tree from Transceiver Evaluation Software profile exports.
+
+    \b
+    Parses profile and configuration files exported from the ADI Transceiver
+    Evaluation Software (TES) Profile Configuration Wizard and generates a
+    device tree source file with the corresponding register settings.
+
+    \b
+    Currently supports the ADRV9009 board.  Requires both a --profile file
+    (the TES profile export) and a --config file (the talise_config.c
+    initialization structure).
+
+    \b
+    Examples:
+      Generate DTS from ADRV9009 profile wizard exports:
+        adidtc -b adrv9009_pcbz profile2dt --profile profile.json --config talise_config.c
+    \b
+      The output filename is determined by the board class.
+    """
     b = ctx.obj["board"]
     if b not in ["adrv9009_pcbz"]:
         print(f"board type {b} not supported")
@@ -534,24 +719,37 @@ def profile2dt(ctx, profile, config):
 )
 @click.pass_context
 def deps(ctx, dt_file, format, max_depth, show_missing, output):
-    """Analyze device tree dependencies
+    """Analyze and visualize device tree include dependencies.
+
+    \b
+    Parses a device tree source file and builds a dependency graph from
+    its #include and /include/ directives.  Detects circular dependencies,
+    missing headers, and transitive include chains.  Outputs as a tree
+    (terminal), GraphViz DOT (for diagrams), or JSON (for scripting).
 
     \b
     DT_FILE  - Path to device tree source file (.dts, .dtsi)
 
+    \b
     Examples:
-        View dependency tree:
-            adidtc deps system.dts
-
-        Export to GraphViz and generate image:
-            adidtc deps system.dts --format dot -o deps.dot
-            dot -Tpng deps.dot -o deps.png
-
-        Export to JSON with missing dependencies:
-            adidtc deps system.dts --format json --show-missing -o deps.json
-
-        Limit depth of tree display:
-            adidtc deps system.dts --max-depth 3
+      View the full dependency tree:
+        adidtc deps system.dts
+    \b
+      Limit the tree to 3 levels deep:
+        adidtc deps system.dts --max-depth 3
+    \b
+      Hide missing dependencies from the output:
+        adidtc deps system.dts --hide-missing
+    \b
+      Export to GraphViz and generate a PNG image:
+        adidtc deps system.dts --format dot -o deps.dot
+        dot -Tpng deps.dot -o deps.png
+    \b
+      Export to JSON for scripting:
+        adidtc deps system.dts --format json -o deps.json
+    \b
+      Save tree output to a file:
+        adidtc deps system.dts -o deps.txt
     """
     parser = DTDependencyParser()
 
@@ -661,25 +859,40 @@ _BOARD_CLASSES = {
 @click.option("--compile", is_flag=True, help="Compile DTS to DTB using dtc")
 @click.pass_context
 def gen_dts(ctx, board, platform, config, kernel_path, output, compile):
-    """Generate device tree source from a board class and config.
+    """Generate device tree source from a board class and JSON configuration.
 
     \b
-    Uses the BoardModel workflow: config → to_board_model() → render → DTS.
-    Supports all board classes with to_board_model().
+    Runs the BoardModel workflow: load a JSON config (typically from
+    pyadi-jif solver output), instantiate a board class, call
+    to_board_model() to build the model, then render to DTS via Jinja2
+    templates.  Optionally compiles the DTS to DTB using dtc.
+
+    \b
+    The config JSON should contain clock and JESD204 parameters as
+    produced by pyadi-jif's solver.  See the board_class_workflow
+    documentation for the expected JSON structure.
+
+    \b
+    Supported boards: daq2, ad9081_fmc, ad9082_fmc, ad9083_fmc,
+    ad9084_fmc, adrv9002_fmc, adrv9008_fmc, fmcomms_fmc, adrv9009_fmc,
+    adrv9025_fmc, adrv937x_fmc.
 
     \b
     Examples:
       Generate DTS for FMCDAQ2 on ZCU102:
         adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
-
+    \b
       Generate DTS for AD9081 FMC on VPK180:
         adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json
-
+    \b
       Generate and compile to DTB:
         adidtc gen-dts -b adrv9009_fmc -p zcu102 -c cfg.json --compile
-
+    \b
       Custom output path:
         adidtc gen-dts -b daq2 -p zc706 -c cfg.json -o custom.dts
+    \b
+      Specify a Linux kernel source tree for include paths:
+        adidtc gen-dts -b ad9081_fmc -p zcu102 -c cfg.json -k /path/to/linux
     """
     try:
         # Load configuration
@@ -846,26 +1059,60 @@ def xsa2dt(
     output_format,
     petalinux_project,
 ):
-    """Generate ADI device tree from Vivado XSA file
+    """Generate ADI device tree from a Vivado XSA file.
 
     \b
-    Invokes sdtgen against the XSA, detects ADI IPs, generates JESD204
-    FSM-compatible nodes, and produces overlay (.dtso), merged (.dts), and
-    interactive HTML visualization report.
+    Runs the full 5-stage XSA pipeline:
+      1. sdtgen  — Invoke lopper to extract a base device tree from the XSA
+      2. parse   — Detect ADI IPs and build a hardware topology
+      3. build   — Generate overlay nodes for converters, clocks, JESD links
+      4. merge   — Combine the base DTS with the generated overlay
+      5. report  — Produce an interactive HTML visualization
 
     \b
-    Requires sdtgen (lopper); if it is not on PATH, the runner will try
-    to discover and source a local Vitis/Vivado settings script.
+    The config JSON (-c) provides pyadi-jif solver output with clock
+    frequencies and JESD204 link parameters.  Optionally pass --profile
+    to use a built-in board profile (run 'adidtc xsa-profiles' to list).
+
+    \b
+    Requires sdtgen (lopper) on PATH.  If not found, the runner tries to
+    source a local Vitis/Vivado settings script automatically.
     Install from: https://github.com/devicetree-org/lopper
 
     \b
+    Output artifacts (written to -o directory):
+      *.dtso          — Generated overlay
+      *.dts           — Merged device tree source
+      *_report.html   — Interactive visualization report
+
+    \b
     Examples:
-      adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json
-      adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
-      adidtc xsa2dt -x design_1.xsa -c cfg.json --profile ad9081_zcu102
-      adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts
-      adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux
-      adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux --petalinux-project /path/to/project
+      Basic generation with a config file:
+        adidtc xsa2dt -x design_1.xsa -c ad9081_cfg.json
+    \b
+      Custom output directory and longer timeout:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json -o ./out --timeout 180
+    \b
+      Use a built-in board profile:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --profile ad9081_zcu102
+    \b
+      Compare against a reference DTS for parity checking:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts
+    \b
+      Fail if parity check finds missing required roles:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --reference-dts ref.dts --strict-parity
+    \b
+      Run the structural DTS linter on the output:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --lint
+    \b
+      Fail on lint errors:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --strict-lint
+    \b
+      Generate PetaLinux-compatible output (system-user.dtsi):
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux
+    \b
+      Generate and install into a PetaLinux project:
+        adidtc xsa2dt -x design_1.xsa -c cfg.json --format petalinux --petalinux-project /path/to/project
     """
     try:
         from adidt.xsa.pipeline import XsaPipeline
@@ -1130,7 +1377,25 @@ def xsa2dt(
 
 @cli.command("xsa-profiles")
 def xsa_profiles():
-    """List available built-in XSA board profiles."""
+    """List available built-in XSA board profiles.
+
+    \b
+    Prints the names of all built-in board profiles that can be passed to
+    the xsa2dt --profile option.  Each profile contains board-specific
+    metadata (converter type, platform, clock topology) that the XSA
+    pipeline uses to generate correct device tree nodes.
+
+    \b
+    Examples:
+      List all available profiles:
+        adidtc xsa-profiles
+    \b
+      Pipe to grep to search for a specific converter:
+        adidtc xsa-profiles | grep ad9081
+    \b
+      Show details of a specific profile:
+        adidtc xsa-profile-show ad9081_zcu102
+    """
     try:
         from adidt.xsa.profiles import ProfileManager
     except ImportError:
@@ -1155,7 +1420,28 @@ def xsa_profiles():
 @cli.command("xsa-profile-show")
 @click.argument("name", type=str)
 def xsa_profile_show(name):
-    """Show one built-in XSA board profile as JSON."""
+    """Show the full contents of a built-in XSA board profile as JSON.
+
+    \b
+    Prints the complete profile definition including converter type,
+    platform, JESD link parameters, clock topology, and any board-specific
+    overrides.  Use this to inspect a profile before passing it to xsa2dt,
+    or to create a custom profile based on an existing one.
+
+    \b
+    NAME  - Profile name (as shown by xsa-profiles)
+
+    \b
+    Examples:
+      Show the AD9081 ZCU102 profile:
+        adidtc xsa-profile-show ad9081_zcu102
+    \b
+      Save a profile to a file for customization:
+        adidtc xsa-profile-show ad9081_zcu102 > my_custom_profile.json
+    \b
+      Pretty-print with jq:
+        adidtc xsa-profile-show adrv9009_zcu102 | jq .
+    """
     try:
         from adidt.xsa.profiles import ProfileManager
         from adidt.xsa.exceptions import ProfileError
@@ -1187,7 +1473,37 @@ def xsa_profile_show(name):
 )
 @click.option("--json-output", is_flag=True, help="Output raw JSON")
 def kuiper_boards(status, json_output):
-    """List Kuiper 2023-R2 supported boards and their status."""
+    """List ADI Kuiper Linux supported boards and their device tree generation status.
+
+    \b
+    Shows all boards from the Kuiper Linux release manifest with their
+    support status for device tree generation:
+    \b
+      full           — Board class + XSA profile available; full DTS generation
+      profile_only   — XSA profile available but no board class
+      unsupported    — Not yet supported by pyadi-dt
+
+    \b
+    Each entry shows the status, board name, converter, platform, and
+    board class (if available).
+
+    \b
+    Examples:
+      List all boards:
+        adidtc kuiper-boards
+    \b
+      Show only fully supported boards:
+        adidtc kuiper-boards --status full
+    \b
+      Show boards that only have a profile:
+        adidtc kuiper-boards --status profile_only
+    \b
+      Export as JSON for scripting:
+        adidtc kuiper-boards --json-output
+    \b
+      Filter JSON output with jq:
+        adidtc kuiper-boards --json-output | jq 'to_entries[] | select(.value.status == "full")'
+    """
     manifest_path = Path(__file__).parent.parent / "xsa" / "kuiper_boards.json"
     if not manifest_path.exists():
         click.echo(click.style("Error: kuiper_boards.json not found", fg="red"))

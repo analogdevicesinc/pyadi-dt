@@ -22,38 +22,9 @@ ADI Linux driver requirements by generating the correct SPI nodes,
 clock phandle wiring, JESD204 framer/deframer configuration, and FPGA
 transceiver settings — all formatted as a drop-in ``system-user.dtsi``.
 
-.. mermaid::
-
-   flowchart LR
-       XSA["Vivado .xsa"]
-
-       subgraph petalinux ["PetaLinux Project"]
-           DTG["Device Tree\nGenerator (DTG)"]
-           BASE["Base DTS\n(system-top.dts)"]
-           DTSI["system-user.dtsi"]
-           BUILD["petalinux-build\n-c device-tree"]
-           DTB["system.dtb"]
-
-           DTG --> BASE
-           BASE --> BUILD
-           DTSI --> BUILD
-           BUILD --> DTB
-       end
-
-       subgraph pyadidt ["pyadi-dt"]
-           PIPE["XSA Pipeline\n(sdtgen + topology\n+ node builder)"]
-           FMT["PetaLinux\nFormatter"]
-           PIPE --> FMT
-       end
-
-       XSA --> DTG
-       XSA --> PIPE
-       FMT --> DTSI
-
-       style pyadidt fill:#e8f4fd,stroke:#0067b9
-       style petalinux fill:#f0f0f0,stroke:#666
-       style DTSI fill:#c8e6c9,stroke:#2e7d32
-       style DTB fill:#fff9c4,stroke:#f9a825
+.. image:: _diagrams/svg/petalinux_overview.svg
+   :alt: PetaLinux integration overview
+   :align: center
 
 What the formatter does
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -110,18 +81,9 @@ Step-by-step workflow
 The diagram below shows the complete workflow from Vivado design to
 a booted board:
 
-.. mermaid::
-
-   flowchart TD
-       A["1. Create PetaLinux project"] --> B["2. Import XSA"]
-       B --> C["3. Generate system-user.dtsi\n(pyadi-dt)"]
-       C --> D["4. Install into project"]
-       D --> E["5. Build device tree"]
-       E --> F["6. Build and package"]
-       F --> G["7. Boot and verify"]
-
-       style C fill:#e8f4fd,stroke:#0067b9
-       style D fill:#e8f4fd,stroke:#0067b9
+.. image:: _diagrams/svg/petalinux_steps.svg
+   :alt: PetaLinux step-by-step workflow
+   :align: center
 
 Step 1: Create a PetaLinux project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

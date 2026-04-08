@@ -1,0 +1,47 @@
+direction: down
+
+XSA: design.xsa {
+  class: sw-document
+}
+Pipeline: XsaPipeline.run() {
+  class: sw-pipeline
+}
+
+DTS: ".dts merged" {
+  class: sw-document
+  style.fill: "#2e7d32"
+  style.font-color: "#fff"
+}
+DTSO: ".dtso overlay" {
+  class: sw-document
+  style.fill: "#2e7d32"
+  style.font-color: "#fff"
+}
+Report: "_report.html\n(interactive D3.js)" {
+  class: sw-document
+  style.fill: "#0067b9"
+  style.font-color: "#fff"
+}
+DOT: "_clocks.dot\n+ .dot.svg" {
+  class: sw-document
+  style.fill: "#c8940a"
+  style.font-color: "#fff"
+}
+D2: "_clocks.d2\n+ .d2.svg" {
+  class: sw-document
+  style.fill: "#c8940a"
+  style.font-color: "#fff"
+}
+Diag: _diagnostics.json {
+  class: sw-document
+  style.fill: "#b94000"
+  style.font-color: "#fff"
+}
+
+XSA -> Pipeline
+Pipeline -> DTS
+Pipeline -> DTSO
+Pipeline -> Report
+Pipeline -> DOT
+Pipeline -> D2
+Pipeline -> Diag
