@@ -30,7 +30,8 @@ jobs:
             -R tfcollins/pyd2lang-native \
             -p "*${PYTHON_TAG}*manylinux*x86_64*.whl" \
             -D /tmp/wheels
-          pip install /tmp/wheels/*.whl
+          WHEEL=$(ls -v /tmp/wheels/*.whl | tail -1)
+          pip install "$WHEEL"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
