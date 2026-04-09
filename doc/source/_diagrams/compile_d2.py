@@ -33,7 +33,7 @@ def main() -> None:
         # Strip hardcoded width/height from the inner <svg id="d2-svg"> so
         # the image scales to the CSS width set in the RST directives.
         svg = re.sub(
-            r'(<svg\s+id="d2-svg"\s+)class="[^"]*"\s+width="[^"]*"\s+height="[^"]*"\s+',
+            r'(<svg\s+id="d2-svg"\s+class="[^"]*"\s+)width="[^"]*"\s+height="[^"]*"\s+',
             r"\1",
             svg,
         )
