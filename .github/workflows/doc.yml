@@ -22,7 +22,17 @@ jobs:
         run: |
           pip install -r requirements/requirements_doc.txt
           pip install -e .
-          pip install "pyd2lang-native>=0.1.0" --find-links https://github.com/tfcollins/pyd2lang-native/releases/expanded_assets/latest
+
+      - name: Install pyd2lang-native
+        run: |
+          PYTHON_TAG="cp$(python3 -c "import sys; print(f'{sys.version_info.major}{sys.version_info.minor}')")"
+          gh release download latest \
+            -R tfcollins/pyd2lang-native \
+            -p "*${PYTHON_TAG}*manylinux*x86_64*.whl" \
+            -D /tmp/wheels
+          pip install /tmp/wheels/*.whl
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Compile D2 diagrams
         run: python doc/source/_diagrams/compile_d2.py
