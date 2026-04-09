@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compile D2 diagram sources to SVG using pyd2lang-native."""
 
+import re
 from pathlib import Path
 
 import d2
@@ -29,6 +30,13 @@ def main() -> None:
         svg = d2.compile(code, library=cfg["library"], theme=cfg["theme"])
         if svg is None:
             raise RuntimeError(f"d2.compile returned None for {path.name}")
+        # Strip hardcoded width/height from the inner <svg id="d2-svg"> so
+        # the image scales to the CSS width set in the RST directives.
+        svg = re.sub(
+            r'(<svg\s+id="d2-svg"\s+)class="[^"]*"\s+width="[^"]*"\s+height="[^"]*"\s+',
+            r"\1",
+            svg,
+        )
         out = SVG_DIR / f"{name}.svg"
         out.write_text(svg)
         print(f"-> {out.name}")
