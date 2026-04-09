@@ -163,7 +163,7 @@ The hardware tests can optionally build and inject a kernel image with
 .. image:: _diagrams/svg/xsa_hw_test.svg
    :alt: Hardware testing workflow
    :align: center
-   :width: 80%
+   :width: 40%
 
 Example hardware invocation:
 
