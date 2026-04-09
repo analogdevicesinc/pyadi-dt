@@ -84,6 +84,7 @@ a booted board:
 .. image:: _diagrams/svg/petalinux_steps.svg
    :alt: PetaLinux step-by-step workflow
    :align: center
+   :width: 50%
 
 Step 1: Create a PetaLinux project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
