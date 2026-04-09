@@ -19,6 +19,7 @@ that feed the next stage.
 .. image:: _diagrams/svg/dev_architecture.svg
    :alt: XSA Pipeline architecture stages
    :align: center
+   :width: 80%
 
 ``XsaPipeline.run()`` in ``pipeline.py`` wires all stages together and returns
 a ``dict[str, Path]`` of artifact paths.  Each stage class can also be used
@@ -35,6 +36,7 @@ assembles into the final tree.
 .. image:: _diagrams/svg/dev_component_interaction.svg
    :alt: NodeBuilder component interaction
    :align: center
+   :width: 80%
 
 The **context builder** pattern is central to how templates receive their
 data.  For every ``.tmpl`` file there is a corresponding ``_build_*_ctx()``

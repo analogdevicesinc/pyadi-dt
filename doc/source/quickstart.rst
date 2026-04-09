@@ -154,6 +154,7 @@ Read device tree properties from a running board over SSH:
 
 .. image:: _static/media/props.gif
    :alt: props command demo
+   :width: 100%
 
 See :doc:`access` for local sysfs, remote SSH, SD card, and file-based
 access modes.

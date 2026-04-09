@@ -34,6 +34,7 @@ Pipeline diagram
 .. image:: _diagrams/svg/xsa_pipeline.svg
    :alt: XSA to device tree pipeline
    :align: center
+   :width: 80%
 
 
 Base DTS and Overlay Structure
@@ -162,6 +163,7 @@ The hardware tests can optionally build and inject a kernel image with
 .. image:: _diagrams/svg/xsa_hw_test.svg
    :alt: Hardware testing workflow
    :align: center
+   :width: 80%
 
 Example hardware invocation:
 
@@ -513,6 +515,7 @@ adijif integration workflow
 .. image:: _diagrams/svg/xsa_adijif.svg
    :alt: adijif integration workflow
    :align: center
+   :width: 80%
 
 adijif-to-config mapping
 ~~~~~~~~~~~~~~~~~~~~~~~~

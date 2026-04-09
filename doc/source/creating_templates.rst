@@ -19,6 +19,7 @@ The workflow has seven steps:
 .. image:: _diagrams/svg/templates_workflow.svg
    :alt: Template creation workflow
    :align: center
+   :width: 80%
 
 Step 1: Parse kernel bindings
 ------------------------------

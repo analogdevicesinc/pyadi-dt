@@ -25,6 +25,7 @@ transceiver settings — all formatted as a drop-in ``system-user.dtsi``.
 .. image:: _diagrams/svg/petalinux_overview.svg
    :alt: PetaLinux integration overview
    :align: center
+   :width: 80%
 
 What the formatter does
 ~~~~~~~~~~~~~~~~~~~~~~~

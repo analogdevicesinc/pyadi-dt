@@ -32,6 +32,7 @@ Example report layout
 .. image:: _diagrams/svg/viz_report_layout.svg
    :alt: Example HTML topology report layout
    :align: center
+   :width: 80%
 
 Generating from Python
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -319,3 +320,4 @@ This produces:
 .. image:: _diagrams/svg/viz_outputs.svg
    :alt: XsaPipeline output artifacts
    :align: center
+   :width: 80%
