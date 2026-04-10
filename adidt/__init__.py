@@ -20,8 +20,6 @@ from adidt.boards import adrv9364_z7020 as adrv9364_z7020
 from adidt.boards import daq2 as daq2
 from adidt.boards import fmcomms_fmc as fmcomms_fmc
 from adidt.boards import rpi as rpi
-from adidt.boards.adrv9009_zu11eg import adrv9009_zu11eg as adrv9009_zu11eg
-from adidt.boards.adrv9009_pcbz import adrv9009_pcbz as adrv9009_pcbz
 
 from adidt.model.board_model import BoardModel as BoardModel
 from adidt.model.renderer import BoardModelRenderer as BoardModelRenderer
