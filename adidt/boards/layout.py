@@ -21,6 +21,158 @@ class layout:
     platform_config: dict = {}
     platform: str = ""
 
+    # Subclasses that use kernel path resolution should set this.
+    DEFAULT_KERNEL_PATH: str = "./linux"
+
+    def __init__(self, platform: str | None = None, kernel_path: str | None = None):
+        """Initialize board with platform selection and optional kernel path.
+
+        If the subclass defines ``PLATFORM_CONFIGS``, the *platform* argument
+        is validated against it and used to derive template/output filenames.
+
+        Kernel-path resolution and validation only run when the selected
+        platform config contains an ``"arch"`` key (FPGA boards).  Boards
+        that don't need a kernel tree (RPi, simple SPI) can omit ``"arch"``
+        and will not be affected.
+
+        Args:
+            platform: Target platform name (must be a key in ``PLATFORM_CONFIGS``).
+            kernel_path: Explicit path to Linux kernel source tree. When
+                *None*, falls back to ``LINUX_KERNEL_PATH`` env var, then
+                ``DEFAULT_KERNEL_PATH``.
+
+        Raises:
+            ValueError: If *platform* is not in ``PLATFORM_CONFIGS``.
+            FileNotFoundError: If an explicitly-provided kernel path is
+                invalid or the required base DTS file is missing.
+        """
+        platform_configs = getattr(self, "PLATFORM_CONFIGS", None)
+
+        if platform_configs is not None and platform is not None:
+            if platform not in platform_configs:
+                supported = ", ".join(platform_configs.keys())
+                raise ValueError(
+                    f"Platform '{platform}' not supported. "
+                    f"Supported platforms: {supported}"
+                )
+
+            self.platform = platform
+            self.platform_config = platform_configs[platform]
+
+            # Derive template filename from config
+            self.template_filename = self.platform_config["template_filename"]
+
+            # Derive output filename: {ClassName}_{platform}.dts
+            class_name = type(self).__name__
+            base_name = f"{class_name}_{platform}.dts"
+            output_dir = self.platform_config.get("output_dir")
+            if output_dir is not None:
+                self.output_filename = os.path.join(output_dir, base_name)
+            else:
+                self.output_filename = base_name
+
+            # Kernel path resolution only applies when config has "arch"
+            if "arch" in self.platform_config:
+                self._kernel_path_explicit = kernel_path is not None
+                self._kernel_path_from_env = kernel_path is None and bool(
+                    os.environ.get("LINUX_KERNEL_PATH")
+                )
+
+                self.kernel_path = self._resolve_kernel_path(kernel_path)
+
+                if self._kernel_path_explicit:
+                    self._validate_kernel_path()
+                elif self._kernel_path_from_env:
+                    self._validate_kernel_path()
+                elif os.path.exists(self.kernel_path):
+                    try:
+                        self._validate_kernel_path()
+                    except FileNotFoundError:
+                        pass
+
+    def _resolve_kernel_path(self, kernel_path: str | None = None) -> str:
+        """Resolve kernel source path using 3-tier priority system.
+
+        Priority:
+        1. Argument passed to ``__init__`` (highest)
+        2. ``LINUX_KERNEL_PATH`` environment variable
+        3. ``DEFAULT_KERNEL_PATH`` class constant (lowest)
+
+        Args:
+            kernel_path: Explicit kernel path.
+
+        Returns:
+            Resolved absolute kernel path.
+        """
+        if kernel_path:
+            return os.path.abspath(kernel_path)
+
+        env_path = os.environ.get("LINUX_KERNEL_PATH")
+        if env_path:
+            return os.path.abspath(env_path)
+
+        return os.path.abspath(self.DEFAULT_KERNEL_PATH)
+
+    def _validate_kernel_path(self) -> None:
+        """Validate that kernel path exists and contains required DTS file.
+
+        Skips base DTS validation when ``base_dts_file`` is ``None`` (e.g.
+        VCU118 where the generated DTS is placed directly in the kernel tree).
+
+        Raises:
+            FileNotFoundError: If kernel path or base DTS file not found.
+        """
+        class_name = type(self).__name__
+        if not os.path.exists(self.kernel_path):
+            raise FileNotFoundError(
+                f"Kernel source path not found: {self.kernel_path}\n"
+                f"Set kernel path via:\n"
+                f"  1. Pass kernel_path parameter to {class_name}()\n"
+                f"  2. Set LINUX_KERNEL_PATH environment variable\n"
+                f"  3. Clone kernel source to {self.DEFAULT_KERNEL_PATH}"
+            )
+
+        base_dts_file = self.platform_config.get("base_dts_file")
+        if base_dts_file is None:
+            return
+
+        base_dts_path = os.path.join(self.kernel_path, base_dts_file)
+        if not os.path.exists(base_dts_path):
+            raise FileNotFoundError(
+                f"Base DTS file not found: {base_dts_path}\n"
+                f"Platform '{self.platform}' requires: {base_dts_file}"
+            )
+
+    def get_dtc_include_paths(self) -> list[str]:
+        """Get list of include paths for dtc compilation.
+
+        Returns:
+            Include paths for the ``dtc -i`` option.
+        """
+        arch = self.platform_config["arch"]
+        paths = [
+            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts"),
+            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts/xilinx"),
+            os.path.join(self.kernel_path, "include"),
+        ]
+        return paths
+
+    @staticmethod
+    def make_ints(cfg: dict, keys: list[str]) -> dict:
+        """Convert float-valued keys that are whole numbers to int in-place.
+
+        Args:
+            cfg: Configuration dict.
+            keys: Keys to convert.
+
+        Returns:
+            The same dict with whole-number floats replaced by ints.
+        """
+        for key in keys:
+            if key in cfg and isinstance(cfg[key], float) and cfg[key].is_integer():
+                cfg[key] = int(cfg[key])
+        return cfg
+
     def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Pre-process template context before rendering; override to inject extra variables."""
         return kwargs

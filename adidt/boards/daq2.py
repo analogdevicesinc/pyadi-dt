@@ -1,4 +1,3 @@
-import os
 from datetime import datetime
 from .layout import layout
 from ..model.board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
@@ -18,13 +17,6 @@ class daq2(layout):
 
     adc = "ad9680"
     dac = "ad9144"
-
-    # Generate standalone device tree, not overlay
-    # (like ad9081_fmc, adrv9009_fmc, ad9084_fmc boards)
-    use_plugin_mode = False
-
-    # Default kernel source path
-    DEFAULT_KERNEL_PATH = "./linux"
 
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
@@ -52,121 +44,9 @@ class daq2(layout):
         },
     }
 
-    template_filename = "daq2.tmpl"
-    output_filename = "daq2.dts"
-
     def __init__(self, platform="zcu102", kernel_path=None):
-        """Initialize DAQ2 board.
-
-        Args:
-            platform (str): Target platform ('zcu102')
-            kernel_path (str, optional): Path to Linux kernel source tree.
-                If None, validation is skipped for backward compatibility.
-
-        Raises:
-            ValueError: If platform is not supported
-        """
-        if platform not in self.PLATFORM_CONFIGS:
-            supported = ", ".join(self.PLATFORM_CONFIGS.keys())
-            raise ValueError(
-                f"Platform '{platform}' not supported. Supported platforms: {supported}"
-            )
-
-        self.platform = platform
-        self.platform_config = self.PLATFORM_CONFIGS[platform]
-
-        # Set template and output based on platform
-        self.template_filename = self.platform_config["template_filename"]
-        base_name = f"daq2_{platform}.dts"
-        self.output_filename = os.path.join(
-            self.platform_config["output_dir"], base_name
-        )
-
-        # Store original kernel_path argument to determine validation strategy
-        self._kernel_path_explicit = kernel_path is not None
-        self._kernel_path_from_env = kernel_path is None and bool(
-            os.environ.get("LINUX_KERNEL_PATH")
-        )
-
-        # Resolve kernel path
-        self.kernel_path = self._resolve_kernel_path(kernel_path)
-
-        # Validate kernel path based on how it was provided
-        if self._kernel_path_explicit:
-            # Explicit kernel_path argument - always validate, raise on error
-            self._validate_kernel_path()
-        elif self._kernel_path_from_env:
-            # Environment variable set - always validate, raise on error
-            self._validate_kernel_path()
-        elif os.path.exists(self.kernel_path):
-            # Default path exists - try to validate but allow failure for backward compatibility
-            try:
-                self._validate_kernel_path()
-            except FileNotFoundError:
-                # For backward compatibility with existing code that doesn't need kernel path
-                pass
-        # else: kernel path doesn't exist and wasn't explicitly requested - skip validation
-
-    def _resolve_kernel_path(self, kernel_path=None):
-        """Resolve kernel source path using 3-tier priority system.
-
-        Priority:
-        1. Argument passed to __init__ (highest)
-        2. LINUX_KERNEL_PATH environment variable
-        3. DEFAULT_KERNEL_PATH constant (lowest)
-
-        Args:
-            kernel_path (str, optional): Explicit kernel path
-
-        Returns:
-            str: Resolved kernel path
-        """
-        if kernel_path:
-            return os.path.abspath(kernel_path)
-
-        env_path = os.environ.get("LINUX_KERNEL_PATH")
-        if env_path:
-            return os.path.abspath(env_path)
-
-        return os.path.abspath(self.DEFAULT_KERNEL_PATH)
-
-    def _validate_kernel_path(self):
-        """Validate that kernel path exists and contains required DTS file.
-
-        Raises:
-            FileNotFoundError: If kernel path or base DTS file not found
-        """
-        if not os.path.exists(self.kernel_path):
-            raise FileNotFoundError(
-                f"Kernel source path not found: {self.kernel_path}\n"
-                f"Set kernel path via:\n"
-                f"  1. Pass kernel_path parameter to daq2()\n"
-                f"  2. Set LINUX_KERNEL_PATH environment variable\n"
-                f"  3. Clone kernel source to {self.DEFAULT_KERNEL_PATH}"
-            )
-
-        base_dts_path = os.path.join(
-            self.kernel_path, self.platform_config["base_dts_file"]
-        )
-        if not os.path.exists(base_dts_path):
-            raise FileNotFoundError(
-                f"Base DTS file not found: {base_dts_path}\n"
-                f"Platform '{self.platform}' requires: {self.platform_config['base_dts_file']}"
-            )
-
-    def get_dtc_include_paths(self):
-        """Get list of include paths for dtc compilation.
-
-        Returns:
-            list: Include paths for dtc -i option
-        """
-        arch = self.platform_config["arch"]
-        paths = [
-            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts"),
-            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts/xilinx"),
-            os.path.join(self.kernel_path, "include"),
-        ]
-        return paths
+        super().__init__(platform=platform, kernel_path=kernel_path)
+        self.use_plugin_mode = False
 
     def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
@@ -199,13 +79,6 @@ class daq2(layout):
         if "out_clk_select" not in cfg["fpga_dac"]:
             cfg["fpga_dac"]["out_clk_select"] = "XCVR_REFCLK_DIV2"
 
-        return cfg
-
-    def make_ints(self, cfg, keys):
-        """Convert float-valued keys that are whole numbers to int in-place."""
-        for key in keys:
-            if key in cfg and isinstance(cfg[key], float) and cfg[key].is_integer():
-                cfg[key] = int(cfg[key])
         return cfg
 
     def map_jesd_structs(self, cfg: dict) -> tuple:
