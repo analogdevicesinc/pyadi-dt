@@ -5,13 +5,13 @@ from adidt.boards import get_board, list_boards
 class TestBoardRegistry:
     def test_list_boards_returns_all(self):
         boards = list_boards()
-        assert "daq2" in boards
-        assert "ad9081_fmc" in boards
-        assert "ad9082_fmc" in boards
-        assert "adrv9009_fmc" in boards
-        assert "adrv9008_fmc" in boards
-        assert "adrv9025_fmc" in boards
-        assert "adrv937x_fmc" in boards
+        expected = {
+            "daq2", "ad9081_fmc", "ad9082_fmc", "ad9083_fmc",
+            "ad9084_fmc", "adrv9009_fmc", "adrv9008_fmc",
+            "adrv9025_fmc", "adrv937x_fmc", "fmcomms_fmc",
+            "adrv9361_z7035", "adrv9364_z7020", "rpi",
+        }
+        assert set(boards) == expected
 
     def test_get_board_returns_instance(self):
         board = get_board("daq2", platform="zcu102")
