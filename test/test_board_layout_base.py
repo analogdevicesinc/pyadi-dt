@@ -319,3 +319,40 @@ def test_fpga_config_empty_link_keys_returns_unchanged():
     result = board.validate_and_default_fpga_config(cfg)
 
     assert result == {"some_key": "some_value"}
+
+
+# ---- AD936x shared to_board_model via class-level constants ----
+
+
+class TestAD936xBoardModel:
+    def test_fmcomms_builds_ad9361_component(self):
+        from adidt.boards.fmcomms_fmc import fmcomms_fmc
+
+        board = fmcomms_fmc(platform="zed")
+        model = board.to_board_model({})
+        assert len(model.components) == 1
+        assert model.components[0].config["compatible"] == "adi,ad9361"
+        assert model.components[0].part == "ad9361"
+
+    def test_adrv9361_inherits_ad9361(self):
+        from adidt.boards.adrv9361_z7035 import adrv9361_z7035
+
+        board = adrv9361_z7035(platform="bob")
+        model = board.to_board_model({})
+        assert model.components[0].config["compatible"] == "adi,ad9361"
+
+    def test_adrv9364_uses_ad9364(self):
+        from adidt.boards.adrv9364_z7020 import adrv9364_z7020
+
+        board = adrv9364_z7020(platform="bob")
+        model = board.to_board_model({})
+        assert model.components[0].config["compatible"] == "adi,ad9364"
+        assert model.components[0].config["label"] == "ad9364_phy"
+        assert model.components[0].part == "ad9364"
+
+    def test_board_name_uses_class_name(self):
+        from adidt.boards.adrv9361_z7035 import adrv9361_z7035
+
+        board = adrv9361_z7035(platform="bob")
+        model = board.to_board_model({})
+        assert model.name == "adrv9361_z7035_bob"

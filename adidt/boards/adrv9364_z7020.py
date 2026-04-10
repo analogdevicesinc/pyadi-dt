@@ -11,11 +11,15 @@ Supported carrier:
 from __future__ import annotations
 
 from .adrv9361_z7035 import adrv9361_z7035
-from ..model.board_model import BoardModel, ComponentModel
 
 
 class adrv9364_z7020(adrv9361_z7035):
     """ADRV9364-Z7020 SOM board class."""
+
+    AD936X_COMPATIBLE = "adi,ad9364"
+    AD936X_LABEL = "ad9364_phy"
+    AD936X_DEVICE = "ad9364-phy"
+    AD936X_PART = "ad9364"
 
     PLATFORM_CONFIGS = {
         "bob": {
@@ -25,38 +29,3 @@ class adrv9364_z7020(adrv9361_z7035):
             "output_dir": "generated_dts",
         },
     }
-
-    def to_board_model(self, cfg: dict) -> BoardModel:
-        """Build a BoardModel for the ADRV9364-Z7020 SOM."""
-        spi_bus = self.platform_config["spi_bus"]
-        cs = cfg.get("cs", 0)
-
-        config = {
-            "label": "ad9364_phy",
-            "device": "ad9364-phy",
-            "compatible": cfg.get("compatible", "adi,ad9364"),
-            "cs": cs,
-            "spi_max_hz": cfg.get("spi_max_hz", 10_000_000),
-            "spi_cpol": False,
-            "spi_cpha": False,
-            "gpio_label": "gpio",
-            "interrupt_gpio": cfg.get("interrupt_gpio", None),
-            "irq_type": "IRQ_TYPE_EDGE_FALLING",
-        }
-
-        components = [
-            ComponentModel(
-                role="transceiver",
-                part="ad9364",
-                template="adis16495.tmpl",
-                spi_bus=spi_bus,
-                spi_cs=cs,
-                config=config,
-            ),
-        ]
-
-        return BoardModel(
-            name=f"adrv9364_z7020_{self.platform}",
-            platform=self.platform,
-            components=components,
-        )
