@@ -6,10 +6,19 @@ class TestBoardRegistry:
     def test_list_boards_returns_all(self):
         boards = list_boards()
         expected = {
-            "daq2", "ad9081_fmc", "ad9082_fmc", "ad9083_fmc",
-            "ad9084_fmc", "adrv9009_fmc", "adrv9008_fmc",
-            "adrv9025_fmc", "adrv937x_fmc", "fmcomms_fmc",
-            "adrv9361_z7035", "adrv9364_z7020", "rpi",
+            "daq2",
+            "ad9081_fmc",
+            "ad9082_fmc",
+            "ad9083_fmc",
+            "ad9084_fmc",
+            "adrv9009_fmc",
+            "adrv9008_fmc",
+            "adrv9025_fmc",
+            "adrv937x_fmc",
+            "fmcomms_fmc",
+            "adrv9361_z7035",
+            "adrv9364_z7020",
+            "rpi",
         }
         assert set(boards) == expected
 

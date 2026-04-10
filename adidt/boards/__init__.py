@@ -46,11 +46,15 @@ _BOARDS: dict[str, type] = {
 
 # Generate variant classes dynamically
 for _name, (_parent, _configs) in _VARIANTS.items():
-    _cls = type(_name, (_parent,), {
-        "PLATFORM_CONFIGS": _configs,
-        "__module__": "adidt.boards",
-        "__doc__": f"{_name} board — dynamic variant of {_parent.__name__}.",
-    })
+    _cls = type(
+        _name,
+        (_parent,),
+        {
+            "PLATFORM_CONFIGS": _configs,
+            "__module__": "adidt.boards",
+            "__doc__": f"{_name} board — dynamic variant of {_parent.__name__}.",
+        },
+    )
     _BOARDS[_name] = _cls
     globals()[_name] = _cls
 

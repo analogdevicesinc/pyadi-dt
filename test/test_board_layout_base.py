@@ -80,7 +80,9 @@ def test_template_filename_from_config():
 def test_output_filename_includes_class_name_and_platform():
     Cls = _make_fake_board_class()
     board = Cls(platform="zcu102")
-    assert board.output_filename == os.path.join("generated_dts", "FakeBoard_zcu102.dts")
+    assert board.output_filename == os.path.join(
+        "generated_dts", "FakeBoard_zcu102.dts"
+    )
 
 
 def test_output_dir_none_gives_bare_filename():
@@ -88,7 +90,10 @@ def test_output_dir_none_gives_bare_filename():
     Cls = _make_fake_board_class()
     board = Cls(platform="vcu118")
     assert board.output_filename == "FakeBoard_vcu118.dts"
-    assert os.sep not in board.output_filename or board.output_filename == "FakeBoard_vcu118.dts"
+    assert (
+        os.sep not in board.output_filename
+        or board.output_filename == "FakeBoard_vcu118.dts"
+    )
 
 
 # ---- Kernel path 3-tier resolution ----

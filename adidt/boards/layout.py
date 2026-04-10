@@ -329,7 +329,10 @@ class layout:
                 cfg[key] = {}
             suffix = key.replace("fpga_", "")
             default_pll_key = f"default_fpga_{suffix}_pll"
-            if "sys_clk_select" not in cfg[key] and default_pll_key in self.platform_config:
+            if (
+                "sys_clk_select" not in cfg[key]
+                and default_pll_key in self.platform_config
+            ):
                 cfg[key]["sys_clk_select"] = self.platform_config[default_pll_key]
             if "out_clk_select" not in cfg[key]:
                 cfg[key]["out_clk_select"] = self.FPGA_DEFAULT_OUT_CLK
