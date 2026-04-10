@@ -7,8 +7,7 @@ The ADRV9009 is a highly integrated RF transceiver that uses:
 - AD9528 as the clock generator
 - JESD204B for high-speed data interface
 
-This is a NEW implementation using JSON configuration (like AD9081),
-distinct from the existing profile-based implementations in adrv9009_pcbz.py.
+This is the JSON-based implementation using JSON configuration (like AD9081).
 
 Reference: linux/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
 """
