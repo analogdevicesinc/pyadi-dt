@@ -24,6 +24,11 @@ class layout:
     # Subclasses that use kernel path resolution should set this.
     DEFAULT_KERNEL_PATH: str = "./linux"
 
+    # FPGA link keys for validate_and_default_fpga_config.
+    # Subclasses set e.g. ["fpga_adc", "fpga_dac"] or ["fpga_rx", "fpga_tx", "fpga_orx"].
+    FPGA_LINK_KEYS: list[str] = []
+    FPGA_DEFAULT_OUT_CLK: str = "XCVR_REFCLK_DIV2"
+
     def __init__(self, platform: str | None = None, kernel_path: str | None = None):
         """Initialize board with platform selection and optional kernel path.
 
@@ -309,9 +314,25 @@ class layout:
     def validate_and_default_fpga_config(self, cfg: dict) -> dict:
         """Validate and apply platform defaults for FPGA configuration.
 
-        Subclasses should override to add board-specific validation.
-        The base implementation returns cfg unchanged.
+        Uses ``FPGA_LINK_KEYS`` and ``FPGA_DEFAULT_OUT_CLK`` class attributes
+        to drive default population.  For each key in ``FPGA_LINK_KEYS``:
+
+        * Ensures the key exists in *cfg* (creates an empty dict if missing).
+        * Sets ``sys_clk_select`` from ``platform_config["default_fpga_{suffix}_pll"]``
+          when not already present.
+        * Sets ``out_clk_select`` to ``FPGA_DEFAULT_OUT_CLK`` when not already present.
+
+        Returns *cfg* unchanged when ``FPGA_LINK_KEYS`` is empty (base default).
         """
+        for key in self.FPGA_LINK_KEYS:
+            if key not in cfg:
+                cfg[key] = {}
+            suffix = key.replace("fpga_", "")
+            default_pll_key = f"default_fpga_{suffix}_pll"
+            if "sys_clk_select" not in cfg[key] and default_pll_key in self.platform_config:
+                cfg[key]["sys_clk_select"] = self.platform_config[default_pll_key]
+            if "out_clk_select" not in cfg[key]:
+                cfg[key]["out_clk_select"] = self.FPGA_DEFAULT_OUT_CLK
         return cfg
 
     def map_jesd_subclass(self, name):

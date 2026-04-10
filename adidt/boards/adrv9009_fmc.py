@@ -36,6 +36,9 @@ class adrv9009_fmc(layout):
     # Transceiver
     transceiver = "ADRV9009"
 
+    FPGA_LINK_KEYS = ["fpga_rx", "fpga_tx", "fpga_orx"]
+    FPGA_DEFAULT_OUT_CLK = "XCVR_REFCLK"
+
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
         "zcu102": {
@@ -69,41 +72,6 @@ class adrv9009_fmc(layout):
     def __init__(self, platform="zcu102", kernel_path=None):
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
-
-    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
-        """Validate and apply platform defaults for FPGA configuration."""
-        if "fpga_rx" not in cfg:
-            cfg["fpga_rx"] = {}
-        if "fpga_tx" not in cfg:
-            cfg["fpga_tx"] = {}
-        if "fpga_orx" not in cfg:
-            cfg["fpga_orx"] = {}
-
-        # Apply defaults for RX
-        if "sys_clk_select" not in cfg["fpga_rx"]:
-            cfg["fpga_rx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_rx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_rx"]:
-            cfg["fpga_rx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        # Apply defaults for TX
-        if "sys_clk_select" not in cfg["fpga_tx"]:
-            cfg["fpga_tx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_tx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_tx"]:
-            cfg["fpga_tx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        # Apply defaults for ORX
-        if "sys_clk_select" not in cfg["fpga_orx"]:
-            cfg["fpga_orx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_orx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_orx"]:
-            cfg["fpga_orx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        return cfg
 
     def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from configuration.

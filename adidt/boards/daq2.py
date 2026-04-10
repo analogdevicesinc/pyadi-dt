@@ -18,6 +18,8 @@ class daq2(layout):
     adc = "ad9680"
     dac = "ad9144"
 
+    FPGA_LINK_KEYS = ["fpga_adc", "fpga_dac"]
+
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
         "zcu102": {
@@ -47,39 +49,6 @@ class daq2(layout):
     def __init__(self, platform="zcu102", kernel_path=None):
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
-
-    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
-        """Validate and apply platform defaults for FPGA configuration.
-
-        Args:
-            cfg (dict): Configuration dictionary
-
-        Returns:
-            dict: Configuration with FPGA defaults applied
-        """
-        # Apply defaults if not specified
-        if "fpga_adc" not in cfg:
-            cfg["fpga_adc"] = {}
-        if "fpga_dac" not in cfg:
-            cfg["fpga_dac"] = {}
-
-        # Apply platform defaults for ADC
-        if "sys_clk_select" not in cfg["fpga_adc"]:
-            cfg["fpga_adc"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_adc_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_adc"]:
-            cfg["fpga_adc"]["out_clk_select"] = "XCVR_REFCLK_DIV2"
-
-        # Apply platform defaults for DAC
-        if "sys_clk_select" not in cfg["fpga_dac"]:
-            cfg["fpga_dac"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_dac_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_dac"]:
-            cfg["fpga_dac"]["out_clk_select"] = "XCVR_REFCLK_DIV2"
-
-        return cfg
 
     def map_jesd_structs(self, cfg: dict) -> tuple:
         """Extract and annotate ADC and DAC JESD configuration dicts from the solver output.

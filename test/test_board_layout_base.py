@@ -224,3 +224,98 @@ def test_no_arch_key_skips_kernel_path():
     board = NoKernelBoard(platform="simple")
     assert board.platform == "simple"
     assert not hasattr(board, "kernel_path")
+
+
+# ---- validate_and_default_fpga_config (data-driven) ----
+
+
+def _make_fpga_board_class(link_keys, default_out_clk="XCVR_REFCLK_DIV2"):
+    """Build a board class with FPGA_LINK_KEYS for FPGA config testing."""
+    from adidt.boards.layout import layout
+
+    class FpgaBoard(layout):
+        FPGA_LINK_KEYS = link_keys
+        FPGA_DEFAULT_OUT_CLK = default_out_clk
+        PLATFORM_CONFIGS = {
+            "test_platform": {
+                "template_filename": "test.tmpl",
+                "base_dts_include": "test.dts",
+                "output_dir": None,
+                "default_fpga_adc_pll": "XCVR_QPLL",
+                "default_fpga_dac_pll": "XCVR_CPLL",
+                "default_fpga_rx_pll": "XCVR_CPLL",
+                "default_fpga_tx_pll": "XCVR_QPLL",
+                "default_fpga_orx_pll": "XCVR_CPLL",
+            },
+        }
+
+    return FpgaBoard
+
+
+def test_fpga_config_missing_keys_created_with_defaults():
+    """Missing fpga keys get created as empty dicts with defaults applied."""
+    Cls = _make_fpga_board_class(["fpga_adc", "fpga_dac"])
+    board = Cls(platform="test_platform")
+    cfg = {}
+    result = board.validate_and_default_fpga_config(cfg)
+
+    assert "fpga_adc" in result
+    assert "fpga_dac" in result
+    assert result["fpga_adc"]["sys_clk_select"] == "XCVR_QPLL"
+    assert result["fpga_dac"]["sys_clk_select"] == "XCVR_CPLL"
+    assert result["fpga_adc"]["out_clk_select"] == "XCVR_REFCLK_DIV2"
+    assert result["fpga_dac"]["out_clk_select"] == "XCVR_REFCLK_DIV2"
+
+
+def test_fpga_config_existing_values_preserved():
+    """Existing values are preserved (not overwritten)."""
+    Cls = _make_fpga_board_class(["fpga_adc", "fpga_dac"])
+    board = Cls(platform="test_platform")
+    cfg = {
+        "fpga_adc": {"sys_clk_select": "XCVR_QPLL1", "out_clk_select": "XCVR_REFCLK"},
+        "fpga_dac": {"sys_clk_select": "XCVR_CPLL"},
+    }
+    result = board.validate_and_default_fpga_config(cfg)
+
+    assert result["fpga_adc"]["sys_clk_select"] == "XCVR_QPLL1"
+    assert result["fpga_adc"]["out_clk_select"] == "XCVR_REFCLK"
+    assert result["fpga_dac"]["sys_clk_select"] == "XCVR_CPLL"
+    # out_clk_select was missing for dac, so default applied
+    assert result["fpga_dac"]["out_clk_select"] == "XCVR_REFCLK_DIV2"
+
+
+def test_fpga_config_adrv9009_style_keys():
+    """Works with adrv9009-style keys (fpga_rx/tx/orx)."""
+    Cls = _make_fpga_board_class(
+        ["fpga_rx", "fpga_tx", "fpga_orx"], default_out_clk="XCVR_REFCLK"
+    )
+    board = Cls(platform="test_platform")
+    cfg = {}
+    result = board.validate_and_default_fpga_config(cfg)
+
+    assert result["fpga_rx"]["sys_clk_select"] == "XCVR_CPLL"
+    assert result["fpga_tx"]["sys_clk_select"] == "XCVR_QPLL"
+    assert result["fpga_orx"]["sys_clk_select"] == "XCVR_CPLL"
+    assert result["fpga_rx"]["out_clk_select"] == "XCVR_REFCLK"
+    assert result["fpga_tx"]["out_clk_select"] == "XCVR_REFCLK"
+    assert result["fpga_orx"]["out_clk_select"] == "XCVR_REFCLK"
+
+
+def test_fpga_config_custom_default_out_clk():
+    """Works with custom FPGA_DEFAULT_OUT_CLK."""
+    Cls = _make_fpga_board_class(["fpga_adc"], default_out_clk="XCVR_REFCLK")
+    board = Cls(platform="test_platform")
+    cfg = {}
+    result = board.validate_and_default_fpga_config(cfg)
+
+    assert result["fpga_adc"]["out_clk_select"] == "XCVR_REFCLK"
+
+
+def test_fpga_config_empty_link_keys_returns_unchanged():
+    """Empty FPGA_LINK_KEYS returns cfg unchanged (base class default)."""
+    Cls = _make_fpga_board_class([])
+    board = Cls(platform="test_platform")
+    cfg = {"some_key": "some_value"}
+    result = board.validate_and_default_fpga_config(cfg)
+
+    assert result == {"some_key": "some_value"}
