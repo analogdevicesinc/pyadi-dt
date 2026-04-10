@@ -36,7 +36,6 @@ class ad9523_1_dt(clock_dt):
             if name in existing_names:
                 sn = self.get_node_by_prop(node, "adi,extended-name", name)
                 self.update_existing_clock_node(sn, config["output_clocks"][name])
-                print(f"Found: {name}")
             else:
                 reg = int(np.max(regs) + 1)
                 regs.append(reg)

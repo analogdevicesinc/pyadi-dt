@@ -16,61 +16,32 @@ class ad9545_dt(dt):
         node.append(fdt.PropWords("reg", reg))
         parent.append(node)
 
-    def pll_set_rate(self, pll_nr: int, rate: int, node: fdt.Node):
-        """Rate change for PLLs is trickier,
-        it is found in the assigned-clocks/assigned-clock-rates
-        """
-
+    def _set_assigned_clock_rate(self, clock_id_type, clock_nr, rate, node):
+        """Update the rate for a specific clock in assigned-clocks/assigned-clock-rates."""
         assigned_clocks_prop = node.get_property("assigned-clocks")
-
-        # find pll clock position in the assigned-clock-rates dt list
         clock_pos = -1
         for i in range(0, int(len(assigned_clocks_prop) / 3)):
             clock_type = assigned_clocks_prop[3 * i + 1]
             clock_address = assigned_clocks_prop[3 * i + 2]
-
-            if clock_address == pll_nr and clock_type == self.pll_clock_id:
+            if clock_address == clock_nr and clock_type == clock_id_type:
                 clock_pos = i
-
         if clock_pos == -1:
-            raise Exception("AD9545: missing PLL" + str(pll_nr) + " in assigned-clocks")
-
+            kind = "PLL" if clock_id_type == self.pll_clock_id else "output"
+            raise Exception(f"AD9545: missing {kind}{clock_nr} in assigned-clocks")
         assigned_clock_rates_prop = node.get_property("assigned-clock-rates")
         assigned_clock_rates = list(assigned_clock_rates_prop)
         assigned_clock_rates[clock_pos] = rate
-
         assigned_clock_rates_prop.clear()
         for assigned_rate in assigned_clock_rates:
             assigned_clock_rates_prop.append(int(assigned_rate))
 
-    def output_set_rate(self, output_nr: int, rate: int, node: fdt.Node):
-        """Rate change for PLLs is trickier,
-        it is found in the assigned-clocks/assigned-clock-rates
-        """
+    def pll_set_rate(self, pll_nr, rate, node):
+        """Set the rate for a PLL clock in assigned-clock-rates."""
+        self._set_assigned_clock_rate(self.pll_clock_id, pll_nr, rate, node)
 
-        assigned_clocks_prop = node.get_property("assigned-clocks")
-
-        # find pll clock position in the assigned-clock-rates dt list
-        clock_pos = -1
-        for i in range(0, int(len(assigned_clocks_prop) / 3)):
-            clock_type = assigned_clocks_prop[3 * i + 1]
-            clock_address = assigned_clocks_prop[3 * i + 2]
-
-            if clock_address == output_nr and clock_type == self.out_clock_id:
-                clock_pos = i
-
-        if clock_pos == -1:
-            raise Exception(
-                "AD9545: no output" + str(output_nr) + " in assigned-clocks"
-            )
-
-        assigned_clock_rates_prop = node.get_property("assigned-clock-rates")
-        assigned_clock_rates = list(assigned_clock_rates_prop)
-        assigned_clock_rates[clock_pos] = rate
-
-        assigned_clock_rates_prop.clear()
-        for assigned_rate in assigned_clock_rates:
-            assigned_clock_rates_prop.append(int(assigned_rate))
+    def output_set_rate(self, output_nr, rate, node):
+        """Set the rate for an output clock in assigned-clock-rates."""
+        self._set_assigned_clock_rate(self.out_clock_id, output_nr, rate, node)
 
     def set_source_priorities_from_config(self, node: fdt.Node, config: Dict):
         """Update PLL profile priority values from the JIF config for each configured PLL.

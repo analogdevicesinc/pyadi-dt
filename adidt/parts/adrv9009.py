@@ -138,14 +138,6 @@ def parse_profile(filename):
 class adrv9009_dt(dt):
     """ADRV9009 device tree map class."""
 
-    def _add_tx_profile_fields(self, node, dprofile: Dict):
-        """Add TX profile fields to device tree"""
-        ...
-
-    def _add_obs_profile_fields(self, node, dprofile: Dict):
-        """Add OBS profile fields to device tree"""
-        ...
-
     def _add_rx_profile_fields(self, node, dprofile: Dict):
         """Add RX profile fields to device tree"""
         rx = dprofile["profile"]["rx"]
