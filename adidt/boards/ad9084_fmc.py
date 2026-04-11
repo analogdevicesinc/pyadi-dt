@@ -11,7 +11,10 @@ The AD9084 is a high-performance multi-channel RF transceiver that uses:
 Reference: linux/arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9084.dts
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 from .layout import layout
 from ..model.board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
@@ -79,11 +82,11 @@ class ad9084_fmc(layout):
         },
     }
 
-    def __init__(self, platform="vpk180", kernel_path=None):
+    def __init__(self, platform: str = "vpk180", kernel_path: str | None = None) -> None:
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
 
-    def gen_dt_preprocess(self, **kwargs):
+    def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Add metadata to template rendering context.
 
         Args:

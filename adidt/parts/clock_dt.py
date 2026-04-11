@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 import fdt
 import math
 
@@ -5,7 +9,7 @@ import math
 class clock_dt:
     """Mixin with shared helpers for building clock-chip device tree nodes."""
 
-    def handle_64bit(self, prop, node, num):
+    def handle_64bit(self, prop: str, node: fdt.Node, num: int) -> None:
         """Set a DT property to num, splitting into two 32-bit words when the value exceeds 31 bits."""
         if num > 2**31:
             h = hex(int(num))
@@ -16,7 +20,7 @@ class clock_dt:
         else:
             node.set_property(prop, int(num))
 
-    def set_clock_node(self, parent, clk, name, reg):
+    def set_clock_node(self, parent: fdt.Node, clk: dict, name: str, reg: int) -> None:
         """Append a new channel subnode to parent with standard clock properties."""
         node = fdt.Node(f"channel@{reg}")
 
@@ -28,7 +32,7 @@ class clock_dt:
 
         parent.append(node)
 
-    def setter(self, node, prop_name, value):
+    def setter(self, node: fdt.Node, prop_name: str, value: int) -> None:
         """Set a property on node, appending it if it does not yet exist."""
         existing_props = [prop.name for prop in node.props]
         if prop_name not in existing_props:
@@ -36,7 +40,7 @@ class clock_dt:
         else:
             node.set_property(prop_name, value)
 
-    def update_existing_clock_node(self, node, clk):
+    def update_existing_clock_node(self, node: fdt.Node, clk: dict) -> None:
         """Update the channel-divider and driver defaults on an existing clock subnode."""
         self.setter(node, "adi,channel-divider", clk["divider"])
         props_to_set = ["adi,driver-mode", "adi,divider-phase"]
@@ -44,17 +48,17 @@ class clock_dt:
         for pts, val in zip(props_to_set, defaults_to_set):
             self.setter(node, pts, val)
 
-    def set_vcxo(self, node, vcxo):
+    def set_vcxo(self, node: fdt.Node, vcxo: int | float) -> None:
         """Set the adi,vcxo-frequency property on node, raising if the value is fractional."""
         if math.trunc(vcxo) != vcxo:
             raise Exception("Floats not supported")
         node.set_property("adi,vcxo-frequency", int(vcxo))
 
-    def get_prop_across_nodes(self, node, prop):
+    def get_prop_across_nodes(self, node: fdt.Node, prop: str) -> list:
         """Return a list of a given property's value from every direct child node."""
         return [sn.get_property(prop).value for sn in node.nodes]
 
-    def get_node_by_prop(self, parent, prop, value):
+    def get_node_by_prop(self, parent: fdt.Node, prop: str, value: Any) -> fdt.Node | bool:
         """Return the first child node of parent whose property matches value, or False."""
         for sn in parent.nodes:
             for prop in sn.props:
@@ -62,7 +66,7 @@ class clock_dt:
                     return sn
         return False
 
-    def get_used_clocks(self, node):
+    def get_used_clocks(self, node: fdt.Node) -> list[fdt.Node]:
         """Return the list of clock nodes referenced by the 'clocks' phandle property of node."""
         used_clocks = []
         clocks_prop = node.get_property("clocks")

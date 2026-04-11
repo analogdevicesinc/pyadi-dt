@@ -55,7 +55,7 @@ class rpi:
         },
     }
 
-    def __init__(self, platform: str = "rpi5"):
+    def __init__(self, platform: str = "rpi5") -> None:
         if platform not in self.PLATFORM_CONFIGS:
             supported = ", ".join(self.PLATFORM_CONFIGS.keys())
             raise ValueError(

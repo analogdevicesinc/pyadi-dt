@@ -29,7 +29,7 @@ class layout:
     FPGA_LINK_KEYS: list[str] = []
     FPGA_DEFAULT_OUT_CLK: str = "XCVR_REFCLK_DIV2"
 
-    def __init__(self, platform: str | None = None, kernel_path: str | None = None):
+    def __init__(self, platform: str | None = None, kernel_path: str | None = None) -> None:
         """Initialize board with platform selection and optional kernel path.
 
         If the subclass defines ``PLATFORM_CONFIGS``, the *platform* argument
@@ -182,7 +182,7 @@ class layout:
         """Pre-process template context before rendering; override to inject extra variables."""
         return kwargs
 
-    def gen_dt(self, **kwargs):
+    def gen_dt(self, **kwargs: Any) -> str:
         """Generate the DT file from configuration structs.
 
         Raises:
@@ -228,7 +228,7 @@ class layout:
 
         return self.output_filename
 
-    def gen_dt_from_model(self, model, config_source="board_model"):
+    def gen_dt_from_model(self, model: BoardModel, config_source: str = "board_model") -> str:
         """Render a :class:`~adidt.model.board_model.BoardModel` to a DTS file.
 
         This is the BoardModel-based alternative to :meth:`gen_dt`.  It renders
@@ -285,7 +285,7 @@ class layout:
 
         return self.output_filename
 
-    def gen_dt_from_config(self, cfg, config_source="jif_solver"):
+    def gen_dt_from_config(self, cfg: dict, config_source: str = "jif_solver") -> str:
         """Generate DTS from raw solver config via BoardModel.
 
         Convenience method that calls :meth:`to_board_model` then
@@ -338,7 +338,7 @@ class layout:
                 cfg[key]["out_clk_select"] = self.FPGA_DEFAULT_OUT_CLK
         return cfg
 
-    def map_jesd_subclass(self, name):
+    def map_jesd_subclass(self, name: str) -> int:
         """Map JESD204 subclass to integer.
 
         Args:

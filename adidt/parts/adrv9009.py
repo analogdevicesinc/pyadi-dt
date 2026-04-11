@@ -1,18 +1,19 @@
+from __future__ import annotations
+
 import xmltodict
-from typing import Dict
 from adidt.dt import dt
 from adidt.utils import profilewiz, tes
 import fdt
 import logging
 
 
-def parse_talInit(file):
+def parse_talInit(file: str) -> dict:
     """Parse a talise_config.c file and return the talInit configuration dict."""
     d = tes.parse_talise_config_c(file)
     return d.data["talInit"]
 
 
-def handle_ints(val):
+def handle_ints(val: int | float) -> int:
     """Convert a value to an unsigned 32-bit integer, correctly wrapping negatives."""
     val = int(val)
     # Handles negative numbers
@@ -56,7 +57,7 @@ def handle_channel_enable(data: dict, key: str, default: int = 0):
         raise ValueError(f"Unknown {key} value {data[key]}")
 
 
-def parse_profile(filename):
+def parse_profile(filename: str) -> dict:
     """Parse an ADRV9009 Profile Configuration Wizard file into a structured dict.
 
     Converts the ADI profile XML format to a dict with rx, tx, orx, lpbk, and
@@ -138,7 +139,7 @@ def parse_profile(filename):
 class adrv9009_dt(dt):
     """ADRV9009 device tree map class."""
 
-    def _add_rx_profile_fields(self, node, dprofile: Dict):
+    def _add_rx_profile_fields(self, node: fdt.Node, dprofile: dict) -> None:
         """Add RX profile fields to device tree"""
         rx = dprofile["profile"]["rx"]
         print(node.get_property("adi,rx-profile-rx-fir-gain_db"))
@@ -210,8 +211,8 @@ class adrv9009_dt(dt):
         # node.set_property("adi,rx-settings-rx-channels = <3>;
 
     def set_dt_node_from_config(
-        self, node: fdt.Node, config: Dict, profile: Dict, append=False
-    ):
+        self, node: fdt.Node, config: dict, profile: dict, append: bool = False
+    ) -> None:
         """Set ADRV9009 node from JIF configuration
 
         Args:

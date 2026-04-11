@@ -32,5 +32,5 @@ class adrv9361_z7035(fmcomms_fmc):
         },
     }
 
-    def __init__(self, platform: str = "bob", kernel_path: str | None = None):
+    def __init__(self, platform: str = "bob", kernel_path: str | None = None) -> None:
         super().__init__(platform=platform, kernel_path=kernel_path)

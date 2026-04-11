@@ -12,7 +12,10 @@ This is the JSON-based implementation using JSON configuration (like AD9081).
 Reference: linux/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
 """
 
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 from .layout import layout
 from ..model.board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
@@ -68,7 +71,7 @@ class adrv9009_fmc(layout):
         },
     }
 
-    def __init__(self, platform="zcu102", kernel_path=None):
+    def __init__(self, platform: str = "zcu102", kernel_path: str | None = None) -> None:
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
 
@@ -449,7 +452,7 @@ class adrv9009_fmc(layout):
             },
         )
 
-    def gen_dt_preprocess(self, **kwargs):
+    def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Add metadata to template rendering context."""
         kwargs["date"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         kwargs["platform"] = self.platform

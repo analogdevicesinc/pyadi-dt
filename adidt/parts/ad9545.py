@@ -1,4 +1,5 @@
-from typing import Dict
+from __future__ import annotations
+
 from adidt.dt import dt
 import fdt
 
@@ -9,14 +10,14 @@ class ad9545_dt(dt):
     pll_clock_id = 1
     out_clock_id = 0
 
-    def set_clock_node(self, parent, clk, name, reg):
+    def set_clock_node(self, parent: fdt.Node, clk: dict, name: str, reg: int) -> None:
         """Append a minimal output-clk subnode to parent for the given register address."""
         node = fdt.Node(f"output-clk@{reg}")
 
         node.append(fdt.PropWords("reg", reg))
         parent.append(node)
 
-    def _set_assigned_clock_rate(self, clock_id_type, clock_nr, rate, node):
+    def _set_assigned_clock_rate(self, clock_id_type: int, clock_nr: int, rate: int, node: fdt.Node) -> None:
         """Update the rate for a specific clock in assigned-clocks/assigned-clock-rates."""
         assigned_clocks_prop = node.get_property("assigned-clocks")
         clock_pos = -1
@@ -35,15 +36,15 @@ class ad9545_dt(dt):
         for assigned_rate in assigned_clock_rates:
             assigned_clock_rates_prop.append(int(assigned_rate))
 
-    def pll_set_rate(self, pll_nr, rate, node):
+    def pll_set_rate(self, pll_nr: int, rate: int, node: fdt.Node) -> None:
         """Set the rate for a PLL clock in assigned-clock-rates."""
         self._set_assigned_clock_rate(self.pll_clock_id, pll_nr, rate, node)
 
-    def output_set_rate(self, output_nr, rate, node):
+    def output_set_rate(self, output_nr: int, rate: int, node: fdt.Node) -> None:
         """Set the rate for an output clock in assigned-clock-rates."""
         self._set_assigned_clock_rate(self.out_clock_id, output_nr, rate, node)
 
-    def set_source_priorities_from_config(self, node: fdt.Node, config: Dict):
+    def set_source_priorities_from_config(self, node: fdt.Node, config: dict) -> None:
         """Update PLL profile priority values from the JIF config for each configured PLL.
 
         Args:
@@ -73,7 +74,7 @@ class ad9545_dt(dt):
                     new_priority = config[pll_name][priority_attr]
                     pll_profile_node.set_property("adi,profile-priority", new_priority)
 
-    def set_dt_node_from_config(self, node: fdt.Node, config: Dict, append=False):
+    def set_dt_node_from_config(self, node: fdt.Node, config: dict, append: bool = False) -> None:
         """Set AD9545 node from JIF configuration
 
         Args:

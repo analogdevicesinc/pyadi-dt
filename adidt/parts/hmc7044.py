@@ -1,4 +1,5 @@
-from typing import Dict
+from __future__ import annotations
+
 from adidt.dt import dt
 import fdt
 
@@ -45,7 +46,7 @@ class hmc7044_dt(dt, clock_dt):
         13: {"P": 1, "N": 0},
     }
 
-    def set_clock_node(self, parent, clk, name, reg):
+    def set_clock_node(self, parent: fdt.Node, clk: dict, name: str, reg: int) -> None:
         """Append an HMC7044 channel subnode with divider and driver settings to parent."""
         node = fdt.Node(f"channel@{reg}")
 
@@ -90,7 +91,7 @@ class hmc7044_dt(dt, clock_dt):
 
         parent.append(node)
 
-    def set_dt_node_from_config(self, node: fdt.Node, config: Dict, append=False):
+    def set_dt_node_from_config(self, node: fdt.Node, config: dict, append: bool = False) -> None:
         """Set HMC7044 node from JIF configuration
 
         Args:

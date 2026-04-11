@@ -1,4 +1,8 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
+
 from .layout import layout
 from ..model.board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
 from ..model.contexts import (
@@ -46,7 +50,7 @@ class daq2(layout):
         },
     }
 
-    def __init__(self, platform="zcu102", kernel_path=None):
+    def __init__(self, platform: str = "zcu102", kernel_path: str | None = None) -> None:
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
 
@@ -442,7 +446,7 @@ class daq2(layout):
             },
         )
 
-    def gen_dt_preprocess(self, **kwargs):
+    def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Add metadata to template rendering context.
 
         Args:

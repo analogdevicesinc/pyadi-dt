@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import xmltodict
 from adidt.utils import profilewiz
 
 
-def parse_profile(filename):
+def parse_profile(filename: str) -> dict:
     """Parse an AD9528 Profile Configuration Wizard file into a structured dict.
 
     Args:

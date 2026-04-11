@@ -1,4 +1,5 @@
-from typing import Dict
+from __future__ import annotations
+
 import fdt
 import math
 import numpy as np
@@ -10,7 +11,7 @@ class ad9523_1_dt(clock_dt):
 
     compatible_id = "adi,ad9523-1"
 
-    def set_dt_node_from_config(self, node: fdt.Node, config: Dict, append=False):
+    def set_dt_node_from_config(self, node: fdt.Node, config: dict, append: bool = False) -> None:
         """Set AD9523-1 node from JIF configuration
 
         Args:

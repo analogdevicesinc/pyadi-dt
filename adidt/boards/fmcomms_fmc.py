@@ -51,7 +51,7 @@ class fmcomms_fmc(layout):
         },
     }
 
-    def __init__(self, platform: str = "zed", kernel_path: str | None = None):
+    def __init__(self, platform: str = "zed", kernel_path: str | None = None) -> None:
         if platform not in self.PLATFORM_CONFIGS:
             supported = ", ".join(self.PLATFORM_CONFIGS.keys())
             raise ValueError(

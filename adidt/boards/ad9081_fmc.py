@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
+from typing import Any
 
 import numpy as np
 
@@ -61,7 +64,7 @@ class ad9081_fmc(layout):
         },
     }
 
-    def __init__(self, platform="zcu102", kernel_path=None):
+    def __init__(self, platform: str = "zcu102", kernel_path: str | None = None) -> None:
         super().__init__(platform=platform, kernel_path=kernel_path)
         self.use_plugin_mode = False
 
@@ -497,7 +500,7 @@ class ad9081_fmc(layout):
             },
         )
 
-    def gen_dt_preprocess(self, **kwargs):
+    def gen_dt_preprocess(self, **kwargs: Any) -> dict[str, Any]:
         """Add metadata to template rendering context.
 
         Args:
