@@ -66,6 +66,30 @@ def _make_canvas_transparent(svg: str) -> str:
     )
 
 
+def _force_dark_css(svg: str) -> str:
+    """Unwrap the ``@media (prefers-color-scheme:dark)`` block in dark SVGs.
+
+    D2 embeds both light and dark CSS rules in every SVG.  The dark rules
+    live inside ``@media screen and (prefers-color-scheme:dark){…}``.
+
+    The Sphinx theme toggles dark mode via a CSS class, **not** the
+    ``prefers-color-scheme`` media feature.  If the user's OS is in light
+    mode but the Sphinx toggle is dark, the media query never fires and
+    text/edge labels fall back to the light-theme fills (e.g. ``#0A0F25``
+    or ``#676C7E``) — nearly invisible on dark backgrounds.
+
+    Fix: strip the ``@media`` wrapper so the dark rules sit at the top
+    level and override the earlier light rules via normal CSS cascade.
+    """
+    return re.sub(
+        r"@media\s+screen\s+and\s+\(prefers-color-scheme:\s*dark\)\s*\{(.*)\}",
+        r"\1",
+        svg,
+        count=1,
+        flags=re.DOTALL,
+    )
+
+
 def main() -> None:
     SVG_DIR.mkdir(exist_ok=True)
     d2_files = sorted(D2_DIR.glob("*.d2"))
@@ -89,6 +113,8 @@ def main() -> None:
                 )
             svg = _strip_inner_svg_dimensions(svg)
             svg = _make_canvas_transparent(svg)
+            if theme == "dark":
+                svg = _force_dark_css(svg)
             out = SVG_DIR / f"{name}.{theme}.svg"
             out.write_text(svg)
             print(f"  -> {out.name}")
