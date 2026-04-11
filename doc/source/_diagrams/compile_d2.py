@@ -66,6 +66,27 @@ def _make_canvas_transparent(svg: str) -> str:
     )
 
 
+# Inline style.fill overrides in .d2 sources that don't adapt to dark mode.
+# Map each light fill to a dark equivalent that keeps the semantic meaning
+# (green = completed, amber = optional, yellow = highlighted) while ensuring
+# light text (#e5e5e5) remains readable.
+_DARK_FILL_REMAP: dict[str, str] = {
+    "#c8e6c9": "#1e3a28",  # light green  → dark green  (completed/output)
+    "#fff4e0": "#3a2e1a",  # light amber  → dark amber  (optional)
+    "#fff9c4": "#3a3518",  # light yellow → dark yellow  (highlighted)
+    "#FFFDE7": "#3a3518",  # light cream  → dark yellow  (notes)
+}
+
+
+def _remap_dark_fills(svg: str) -> str:
+    """Replace light inline fills with dark equivalents in dark SVGs."""
+    for light, dark in _DARK_FILL_REMAP.items():
+        svg = svg.replace(f'fill="{light}"', f'fill="{dark}"')
+        svg = svg.replace(f'fill="{light.lower()}"', f'fill="{dark}"')
+        svg = svg.replace(f'fill="{light.upper()}"', f'fill="{dark}"')
+    return svg
+
+
 def _force_dark_css(svg: str) -> str:
     """Unwrap the ``@media (prefers-color-scheme:dark)`` block in dark SVGs.
 
@@ -115,6 +136,7 @@ def main() -> None:
             svg = _make_canvas_transparent(svg)
             if theme == "dark":
                 svg = _force_dark_css(svg)
+                svg = _remap_dark_fills(svg)
             out = SVG_DIR / f"{name}.{theme}.svg"
             out.write_text(svg)
             print(f"  -> {out.name}")
