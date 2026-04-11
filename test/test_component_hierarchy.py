@@ -298,7 +298,9 @@ class TestBackwardCompat:
     def test_standalone_returns_typed_subclass(self):
         from adidt.model.components import ad9680
 
-        comp = ad9680(spi_bus="spi0", cs=0, clks_str="<&clk 0>", clk_names_str='"adc_clk"')
+        comp = ad9680(
+            spi_bus="spi0", cs=0, clks_str="<&clk 0>", clk_names_str='"adc_clk"'
+        )
         assert isinstance(comp, AdcComponent)
         assert isinstance(comp, ComponentModel)
 

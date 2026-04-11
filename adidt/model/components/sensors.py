@@ -16,7 +16,9 @@ class SensorComponent(ComponentModel):
     """Base class for simple SPI sensor components."""
 
     @classmethod
-    def adis16495(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> SensorComponent:
+    def adis16495(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> SensorComponent:
         """ADIS16495 6-DOF IMU."""
         config = build_adis16495_ctx(cs=cs, **kwargs)
         return cls(
@@ -29,7 +31,9 @@ class SensorComponent(ComponentModel):
         )
 
     @classmethod
-    def adxl345(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> SensorComponent:
+    def adxl345(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> SensorComponent:
         """ADXL345 3-axis accelerometer."""
         config = build_adxl345_ctx(cs=cs, **kwargs)
         return cls(
@@ -42,7 +46,9 @@ class SensorComponent(ComponentModel):
         )
 
     @classmethod
-    def ad7124(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> SensorComponent:
+    def ad7124(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> SensorComponent:
         """AD7124 24-bit precision ADC."""
         config = build_ad7124_ctx(cs=cs, **kwargs)
         return cls(

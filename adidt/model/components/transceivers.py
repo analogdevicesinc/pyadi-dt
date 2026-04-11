@@ -22,7 +22,9 @@ class TransceiverComponent(JesdDeviceMixin, ComponentModel):
     """
 
     @classmethod
-    def ad9081(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> TransceiverComponent:
+    def ad9081(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> TransceiverComponent:
         """AD9081 MxFE transceiver (combined ADC + DAC)."""
         config = build_ad9081_mxfe_ctx(cs=cs, **kwargs)
         return cls(
@@ -35,7 +37,9 @@ class TransceiverComponent(JesdDeviceMixin, ComponentModel):
         )
 
     @classmethod
-    def ad9084(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> TransceiverComponent:
+    def ad9084(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> TransceiverComponent:
         """AD9084 RX transceiver."""
         config = build_ad9084_ctx(cs=cs, **kwargs)
         return cls(
@@ -48,7 +52,9 @@ class TransceiverComponent(JesdDeviceMixin, ComponentModel):
         )
 
     @classmethod
-    def adrv9009(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> TransceiverComponent:
+    def adrv9009(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> TransceiverComponent:
         """ADRV9009 RF transceiver."""
         config = build_adrv9009_device_ctx(**kwargs)
         return cls(
@@ -61,7 +67,9 @@ class TransceiverComponent(JesdDeviceMixin, ComponentModel):
         )
 
     @classmethod
-    def ad9082(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> TransceiverComponent:
+    def ad9082(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> TransceiverComponent:
         """AD9082 MxFE transceiver (combined ADC + DAC)."""
         config = build_ad9082_ctx(cs=cs, **kwargs)
         return cls(
@@ -74,7 +82,9 @@ class TransceiverComponent(JesdDeviceMixin, ComponentModel):
         )
 
     @classmethod
-    def ad9083(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> TransceiverComponent:
+    def ad9083(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> TransceiverComponent:
         """AD9083 ADC transceiver."""
         config = build_ad9083_ctx(cs=cs, **kwargs)
         return cls(

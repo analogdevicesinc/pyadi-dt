@@ -27,7 +27,9 @@ class ClockComponent(ComponentModel):
     """
 
     @classmethod
-    def hmc7044(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def hmc7044(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """HMC7044 14-channel clock distributor."""
         config = build_hmc7044_ctx(cs=cs, **kwargs)
         return cls(
@@ -40,7 +42,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def ad9523_1(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def ad9523_1(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """AD9523-1 clock generator."""
         config = build_ad9523_1_ctx(cs=cs, **kwargs)
         return cls(
@@ -53,7 +57,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def ad9528(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def ad9528(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """AD9528 clock generator."""
         config = build_ad9528_ctx(cs=cs, **kwargs)
         return cls(
@@ -66,7 +72,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def adf4382(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def adf4382(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """ADF4382 microwave wideband synthesizer."""
         config = build_adf4382_ctx(cs=cs, **kwargs)
         return cls(
@@ -79,7 +87,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def ad9545(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def ad9545(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """AD9545 network clock generator."""
         config = build_ad9545_ctx(cs=cs, **kwargs)
         return cls(
@@ -92,7 +102,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def ltc6952(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def ltc6952(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """LTC6952 ultralow jitter clock distributor."""
         config = build_ltc6952_ctx(cs=cs, **kwargs)
         return cls(
@@ -105,7 +117,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def ltc6953(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def ltc6953(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """LTC6953 clock distribution device."""
         config = build_ltc6953_ctx(cs=cs, **kwargs)
         return cls(
@@ -118,7 +132,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def adf4371(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def adf4371(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """ADF4371 wideband synthesizer."""
         config = build_adf4371_ctx(cs=cs, **kwargs)
         return cls(
@@ -131,7 +147,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def adf4377(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def adf4377(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """ADF4377 microwave synthesizer."""
         config = build_adf4377_ctx(cs=cs, **kwargs)
         return cls(
@@ -144,7 +162,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def adf4350(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def adf4350(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """ADF4350 wideband synthesizer."""
         config = build_adf4350_ctx(cs=cs, **kwargs)
         return cls(
@@ -157,7 +177,9 @@ class ClockComponent(ComponentModel):
         )
 
     @classmethod
-    def adf4030(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> ClockComponent:
+    def adf4030(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> ClockComponent:
         """ADF4030 precision synchronizer."""
         config = build_adf4030_ctx(cs=cs, **kwargs)
         return cls(

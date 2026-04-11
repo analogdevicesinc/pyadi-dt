@@ -79,7 +79,9 @@ class AdcComponent(JesdDeviceMixin, ComponentModel):
         )
 
     @classmethod
-    def adaq8092(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> AdcComponent:
+    def adaq8092(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> AdcComponent:
         """ADAQ8092 dual-channel DAQ."""
         config = build_adaq8092_ctx(cs=cs, **kwargs)
         return cls(

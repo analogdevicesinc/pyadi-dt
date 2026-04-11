@@ -20,7 +20,9 @@ class RfFrontendComponent(ComponentModel):
     """
 
     @classmethod
-    def admv1013(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> RfFrontendComponent:
+    def admv1013(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> RfFrontendComponent:
         """ADMV1013 microwave upconverter."""
         config = build_admv1013_ctx(cs=cs, **kwargs)
         return cls(
@@ -33,7 +35,9 @@ class RfFrontendComponent(ComponentModel):
         )
 
     @classmethod
-    def admv1014(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> RfFrontendComponent:
+    def admv1014(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> RfFrontendComponent:
         """ADMV1014 microwave downconverter."""
         config = build_admv1014_ctx(cs=cs, **kwargs)
         return cls(
@@ -46,7 +50,9 @@ class RfFrontendComponent(ComponentModel):
         )
 
     @classmethod
-    def adrf6780(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> RfFrontendComponent:
+    def adrf6780(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> RfFrontendComponent:
         """ADRF6780 microwave upconverter."""
         config = build_adrf6780_ctx(cs=cs, **kwargs)
         return cls(
@@ -59,7 +65,9 @@ class RfFrontendComponent(ComponentModel):
         )
 
     @classmethod
-    def adar1000(cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any) -> RfFrontendComponent:
+    def adar1000(
+        cls, spi_bus: str = "spi0", cs: int = 0, **kwargs: Any
+    ) -> RfFrontendComponent:
         """ADAR1000 X/Ku band beamformer."""
         config = build_adar1000_ctx(cs=cs, **kwargs)
         return cls(

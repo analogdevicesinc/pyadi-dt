@@ -102,7 +102,9 @@ class TestAdf4371Ctx:
         assert ctx["mute_till_lock"] is False
 
     def test_custom_values(self):
-        ctx = build_adf4371_ctx(spi_3wire=True, mute_till_lock=True, charge_pump_microamp=900)
+        ctx = build_adf4371_ctx(
+            spi_3wire=True, mute_till_lock=True, charge_pump_microamp=900
+        )
         assert ctx["spi_3wire"] is True
         assert ctx["mute_till_lock"] is True
         assert ctx["charge_pump_microamp"] == 900
