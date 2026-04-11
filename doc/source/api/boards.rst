@@ -11,6 +11,25 @@ pyadi-jif solver configuration.  The model can be inspected and modified before
 rendering to DTS via :class:`~adidt.model.renderer.BoardModelRenderer`.
 See :doc:`model` for the full API.
 
+Board Registry
+--------------
+
+Use ``get_board()`` to create board instances by name, or ``list_boards()``
+to see all available boards:
+
+.. code-block:: python
+
+   from adidt.boards import get_board, list_boards
+
+   print(list_boards())
+   # ['ad9081_fmc', 'ad9082_fmc', ..., 'rpi']
+
+   board = get_board("daq2", platform="zcu102")
+
+Variant boards (AD9082, AD9083, ADRV9008, ADRV9025, ADRV937x) are
+dynamically generated from their parent class with overridden
+``PLATFORM_CONFIGS``.
+
 .. automodule:: adidt.boards
    :members:
    :undoc-members:
@@ -18,6 +37,10 @@ See :doc:`model` for the full API.
 
 Board Layout Base
 -----------------
+
+All board classes inherit from ``layout``, which provides shared
+``__init__``, kernel path resolution, FPGA config validation, and DTS
+rendering methods.
 
 .. automodule:: adidt.boards.layout
    :members:
@@ -59,18 +82,10 @@ ADRV9009 FMC
    :undoc-members:
    :show-inheritance:
 
-ADRV9009 PCB-Z
-~~~~~~~~~~~~~~
+FMComms (AD9361/AD9363)
+~~~~~~~~~~~~~~~~~~~~~~~
 
-.. automodule:: adidt.boards.adrv9009_pcbz
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-ADRV9009 ZU11EG
-~~~~~~~~~~~~~~~
-
-.. automodule:: adidt.boards.adrv9009_zu11eg
+.. automodule:: adidt.boards.fmcomms_fmc
    :members:
    :undoc-members:
    :show-inheritance:
@@ -87,6 +102,14 @@ ADRV9364 Z7020
 ~~~~~~~~~~~~~~
 
 .. automodule:: adidt.boards.adrv9364_z7020
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Raspberry Pi
+~~~~~~~~~~~~
+
+.. automodule:: adidt.boards.rpi
    :members:
    :undoc-members:
    :show-inheritance:
