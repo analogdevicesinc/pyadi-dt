@@ -72,14 +72,6 @@ or profile wizard exports.
       adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
       adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json --compile
 
-``profile2dt``
-   Generate DTS from Transceiver Evaluation Software profile wizard exports.
-   Currently supports ADRV9009.
-
-   .. code-block:: bash
-
-      adidtc -b adrv9009_pcbz profile2dt --profile profile.json --config talise_config.c
-
 ``jif``
    Apply pyadi-jif solver output to update clock parameters in a live device
    tree.
@@ -150,7 +142,7 @@ the target:
        ``remote_sysfs`` (SSH), ``local_sd`` / ``remote_sd`` (SD card mount),
        ``local_file`` (read a ``.dtb`` directly)
    * - ``--board`` / ``-b``
-     - ``adrv9009_pcbz``
+     - (none)
      - Board configuration for commands that need board-specific metadata
    * - ``--ip`` / ``-i``
      - ``192.168.2.1``

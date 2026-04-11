@@ -18,6 +18,12 @@ from ..model.board_model import BoardModel, ComponentModel, FpgaConfig
 class fmcomms_fmc(layout):
     """FMComms2/3/4/5 SDR board class."""
 
+    # AD936x device identity — override in subclasses for AD9364 variants
+    AD936X_COMPATIBLE = "adi,ad9361"
+    AD936X_LABEL = "ad9361_phy"
+    AD936X_DEVICE = "ad9361-phy"
+    AD936X_PART = "ad9361"
+
     PLATFORM_CONFIGS = {
         "zed": {
             "base_dts_include": "zynq-zed-adv7511.dtsi",
@@ -57,24 +63,22 @@ class fmcomms_fmc(layout):
         self.use_plugin_mode = False
 
     def to_board_model(self, cfg: dict) -> BoardModel:
-        """Build a BoardModel for AD9361/AD9363 SDR.
+        """Build a BoardModel for an AD936x SDR transceiver.
 
-        The AD9361 device tree node is simple — most configuration
+        The AD936x device tree node is simple — most configuration
         happens via IIO at runtime.  The DT just needs compatible,
         SPI, clocks, and reset GPIO.
+
+        Subclasses override AD936X_* class attributes to select the
+        correct compatible string, label, device name, and part.
         """
-        from ..model.contexts import build_adis16495_ctx  # reuse simple SPI pattern
-
         spi_bus = self.platform_config["spi_bus"]
-        compatible = cfg.get("compatible", "adi,ad9361")
         cs = cfg.get("cs", 0)
-        reset_gpio = cfg.get("reset_gpio", None)
 
-        # AD9361 is a simple SPI device at DT level
         config = {
-            "label": "ad9361_phy",
-            "device": "ad9361-phy",
-            "compatible": compatible,
+            "label": self.AD936X_LABEL,
+            "device": self.AD936X_DEVICE,
+            "compatible": cfg.get("compatible", self.AD936X_COMPATIBLE),
             "cs": cs,
             "spi_max_hz": cfg.get("spi_max_hz", 10_000_000),
             "spi_cpol": False,
@@ -87,16 +91,17 @@ class fmcomms_fmc(layout):
         components = [
             ComponentModel(
                 role="transceiver",
-                part="ad9361",
-                template="adis16495.tmpl",  # reuse simple SPI template
+                part=self.AD936X_PART,
+                template="adis16495.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=cs,
                 config=config,
             ),
         ]
 
+        board_name = type(self).__name__
         return BoardModel(
-            name=f"fmcomms_{self.platform}",
+            name=f"{board_name}_{self.platform}",
             platform=self.platform,
             components=components,
         )

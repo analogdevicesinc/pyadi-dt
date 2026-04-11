@@ -62,15 +62,6 @@ class clock_dt:
                     return sn
         return False
 
-    """ Get nodes that are pointed at by the phandles in "clocks" CCF property
-
-    Args:
-        node (fdt.Node): Device tree node of a clock
-
-    Returns:
-        A list containing all nodes refered to in the "clocks" phandle array
-    """
-
     def get_used_clocks(self, node):
         """Return the list of clock nodes referenced by the 'clocks' phandle property of node."""
         used_clocks = []

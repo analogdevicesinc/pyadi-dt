@@ -17,13 +17,11 @@ from adidt.utils.parsers import DTDependencyParser
 @click.option(
     "--board",
     "-b",
-    default="adrv9009_pcbz",
+    default="ad9081_fmc",
     help="Set board configuration",
     type=click.Choice(
         [
             "ad9081_fmc",
-            "adrv9009_pcbz",
-            "adrv9009_zu11eg",
             "adrv9361_z7035",
             "adrv9364_z7020",
             "daq2",
@@ -87,9 +85,8 @@ def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
     \b
       Inspect    — Read and modify DT properties on live or local hardware
                    (prop, props, deps)
-      Generate   — Produce device tree source from Vivado XSA files, board
-                   class configs, or profile wizard exports
-                   (xsa2dt, gen-dts, profile2dt, jif)
+      Generate   — Produce device tree source from Vivado XSA files or board
+                   class configs (xsa2dt, gen-dts, jif)
       Manage     — List supported boards, profiles, and deploy boot files
                    to SD cards (kuiper-boards, xsa-profiles, xsa-profile-show,
                    sd-move, sd-remote-copy)
@@ -641,55 +638,6 @@ def jif(ctx, node_type, reboot, filename):
 
 
 @cli.command()
-@click.option(
-    "--profile",
-    "-p",
-    default=None,
-    help="",
-    type=Path,
-)
-@click.option(
-    "--config",
-    "-c",
-    required=False,
-    default=None,
-    help="path to talise_config.c",
-    type=Path,
-)
-@click.pass_context
-def profile2dt(ctx, profile, config):
-    """Generate a device tree from Transceiver Evaluation Software profile exports.
-
-    \b
-    Parses profile and configuration files exported from the ADI Transceiver
-    Evaluation Software (TES) Profile Configuration Wizard and generates a
-    device tree source file with the corresponding register settings.
-
-    \b
-    Currently supports the ADRV9009 board.  Requires both a --profile file
-    (the TES profile export) and a --config file (the talise_config.c
-    initialization structure).
-
-    \b
-    Examples:
-      Generate DTS from ADRV9009 profile wizard exports:
-        adidtc -b adrv9009_pcbz profile2dt --profile profile.json --config talise_config.c
-    \b
-      The output filename is determined by the board class.
-    """
-    b = ctx.obj["board"]
-    if b not in ["adrv9009_pcbz"]:
-        print(f"board type {b} not supported")
-        return
-
-    board = eval(f"adidt.{b}()")
-    board.parse_profile(profile)
-    board.parse_talInit(config)
-    board.gen_dt()
-    print(f"Wrote {board.output_filename}")
-
-
-@cli.command()
 @click.argument("dt_file", type=click.Path(exists=True))
 @click.option(
     "--format",
@@ -807,17 +755,16 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
 
 
 _BOARD_CLASSES = {
-    "daq2": ("adidt.boards.daq2", "daq2"),
-    "ad9081_fmc": ("adidt.boards.ad9081_fmc", "ad9081_fmc"),
-    "ad9082_fmc": ("adidt.boards.ad9082_fmc", "ad9082_fmc"),
-    "ad9083_fmc": ("adidt.boards.ad9083_fmc", "ad9083_fmc"),
-    "ad9084_fmc": ("adidt.boards.ad9084_fmc", "ad9084_fmc"),
-    "adrv9002_fmc": ("adidt.boards.adrv9002_fmc", "adrv9002_fmc"),
-    "adrv9008_fmc": ("adidt.boards.adrv9008_fmc", "adrv9008_fmc"),
-    "fmcomms_fmc": ("adidt.boards.fmcomms_fmc", "fmcomms_fmc"),
-    "adrv9009_fmc": ("adidt.boards.adrv9009_fmc", "adrv9009_fmc"),
-    "adrv9025_fmc": ("adidt.boards.adrv9025_fmc", "adrv9025_fmc"),
-    "adrv937x_fmc": ("adidt.boards.adrv937x_fmc", "adrv937x_fmc"),
+    "daq2": ("adidt.boards", "daq2"),
+    "ad9081_fmc": ("adidt.boards", "ad9081_fmc"),
+    "ad9082_fmc": ("adidt.boards", "ad9082_fmc"),
+    "ad9083_fmc": ("adidt.boards", "ad9083_fmc"),
+    "ad9084_fmc": ("adidt.boards", "ad9084_fmc"),
+    "adrv9008_fmc": ("adidt.boards", "adrv9008_fmc"),
+    "fmcomms_fmc": ("adidt.boards", "fmcomms_fmc"),
+    "adrv9009_fmc": ("adidt.boards", "adrv9009_fmc"),
+    "adrv9025_fmc": ("adidt.boards", "adrv9025_fmc"),
+    "adrv937x_fmc": ("adidt.boards", "adrv937x_fmc"),
 }
 
 
@@ -874,7 +821,7 @@ def gen_dts(ctx, board, platform, config, kernel_path, output, compile):
 
     \b
     Supported boards: daq2, ad9081_fmc, ad9082_fmc, ad9083_fmc,
-    ad9084_fmc, adrv9002_fmc, adrv9008_fmc, fmcomms_fmc, adrv9009_fmc,
+    ad9084_fmc, adrv9008_fmc, fmcomms_fmc, adrv9009_fmc,
     adrv9025_fmc, adrv937x_fmc.
 
     \b

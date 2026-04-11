@@ -8,16 +8,6 @@ from adidt.parts.clock_dt import clock_dt
 class hmc7044_dt(dt, clock_dt):
     """HMC7044 Device tree map class."""
 
-    pulse_gen_modes = {
-        "GEN_LEVEL_SENSITIVE": 0,
-        "GEN_1_PULSE": 1,
-        "GEN_2_PULSE": 2,
-        "GEN_4_PULSE": 3,
-        "GEN_8_PULSE": 4,
-        "GEN_16_PULSE": 5,
-        "GEN_CONT_PULSE": 7,
-    }
-
     driver_modes = {
         "CML": 0,
         "LVPECL": 1,

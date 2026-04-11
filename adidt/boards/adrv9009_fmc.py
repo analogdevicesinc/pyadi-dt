@@ -7,13 +7,11 @@ The ADRV9009 is a highly integrated RF transceiver that uses:
 - AD9528 as the clock generator
 - JESD204B for high-speed data interface
 
-This is a NEW implementation using JSON configuration (like AD9081),
-distinct from the existing profile-based implementations in adrv9009_pcbz.py.
+This is the JSON-based implementation using JSON configuration (like AD9081).
 
 Reference: linux/arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009.dts
 """
 
-import os
 from datetime import datetime
 
 from .layout import layout
@@ -37,8 +35,8 @@ class adrv9009_fmc(layout):
     # Transceiver
     transceiver = "ADRV9009"
 
-    # Default kernel source path
-    DEFAULT_KERNEL_PATH = "./linux"
+    FPGA_LINK_KEYS = ["fpga_rx", "fpga_tx", "fpga_orx"]
+    FPGA_DEFAULT_OUT_CLK = "XCVR_REFCLK"
 
     # Platform-specific configurations
     PLATFORM_CONFIGS = {
@@ -70,132 +68,9 @@ class adrv9009_fmc(layout):
         },
     }
 
-    template_filename = "adrv9009_fmc_zcu102.tmpl"
-    output_filename = "adrv9009_fmc_zcu102.dts"
-    use_plugin_mode = False
-
     def __init__(self, platform="zcu102", kernel_path=None):
-        """Initialize ADRV9009 FMC board.
-
-        Args:
-            platform (str): Target platform ('zcu102' or 'zc706')
-            kernel_path (str, optional): Path to Linux kernel source tree.
-
-        Raises:
-            ValueError: If platform is not supported
-            FileNotFoundError: If kernel path is invalid (when explicitly provided)
-        """
-        if platform not in self.PLATFORM_CONFIGS:
-            supported = ", ".join(self.PLATFORM_CONFIGS.keys())
-            raise ValueError(
-                f"Platform '{platform}' not supported. Supported platforms: {supported}"
-            )
-
-        self.platform = platform
-        self.platform_config = self.PLATFORM_CONFIGS[platform]
-
-        # Set template and output based on platform
-        self.template_filename = self.platform_config["template_filename"]
-        base_name = f"adrv9009_fmc_{platform}.dts"
-        self.output_filename = os.path.join(
-            self.platform_config["output_dir"], base_name
-        )
-
-        # Store original kernel_path argument
-        self._kernel_path_explicit = kernel_path is not None
-        self._kernel_path_from_env = kernel_path is None and bool(
-            os.environ.get("LINUX_KERNEL_PATH")
-        )
-
-        # Resolve kernel path
-        self.kernel_path = self._resolve_kernel_path(kernel_path)
-
-        # Validate kernel path
-        if self._kernel_path_explicit:
-            self._validate_kernel_path()
-        elif self._kernel_path_from_env:
-            self._validate_kernel_path()
-        elif os.path.exists(self.kernel_path):
-            try:
-                self._validate_kernel_path()
-            except FileNotFoundError:
-                pass
-
-    def _resolve_kernel_path(self, kernel_path=None):
-        """Resolve kernel source path using 3-tier priority system."""
-        if kernel_path:
-            return os.path.abspath(kernel_path)
-
-        env_path = os.environ.get("LINUX_KERNEL_PATH")
-        if env_path:
-            return os.path.abspath(env_path)
-
-        return os.path.abspath(self.DEFAULT_KERNEL_PATH)
-
-    def _validate_kernel_path(self):
-        """Validate that kernel path exists and contains required DTS file."""
-        if not os.path.exists(self.kernel_path):
-            raise FileNotFoundError(
-                f"Kernel source path not found: {self.kernel_path}\n"
-                f"Set kernel path via:\n"
-                f"  1. Pass kernel_path parameter to adrv9009_fmc()\n"
-                f"  2. Set LINUX_KERNEL_PATH environment variable\n"
-                f"  3. Clone kernel source to {self.DEFAULT_KERNEL_PATH}"
-            )
-
-        base_dts_path = os.path.join(
-            self.kernel_path, self.platform_config["base_dts_file"]
-        )
-        if not os.path.exists(base_dts_path):
-            raise FileNotFoundError(
-                f"Base DTS file not found: {base_dts_path}\n"
-                f"Platform '{self.platform}' requires: {self.platform_config['base_dts_file']}"
-            )
-
-    def get_dtc_include_paths(self):
-        """Get list of include paths for dtc compilation."""
-        arch = self.platform_config["arch"]
-        paths = [
-            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts"),
-            os.path.join(self.kernel_path, f"arch/{arch}/boot/dts/xilinx"),
-            os.path.join(self.kernel_path, "include"),
-        ]
-        return paths
-
-    def validate_and_default_fpga_config(self, cfg: dict) -> dict:
-        """Validate and apply platform defaults for FPGA configuration."""
-        if "fpga_rx" not in cfg:
-            cfg["fpga_rx"] = {}
-        if "fpga_tx" not in cfg:
-            cfg["fpga_tx"] = {}
-        if "fpga_orx" not in cfg:
-            cfg["fpga_orx"] = {}
-
-        # Apply defaults for RX
-        if "sys_clk_select" not in cfg["fpga_rx"]:
-            cfg["fpga_rx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_rx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_rx"]:
-            cfg["fpga_rx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        # Apply defaults for TX
-        if "sys_clk_select" not in cfg["fpga_tx"]:
-            cfg["fpga_tx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_tx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_tx"]:
-            cfg["fpga_tx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        # Apply defaults for ORX
-        if "sys_clk_select" not in cfg["fpga_orx"]:
-            cfg["fpga_orx"]["sys_clk_select"] = self.platform_config[
-                "default_fpga_orx_pll"
-            ]
-        if "out_clk_select" not in cfg["fpga_orx"]:
-            cfg["fpga_orx"]["out_clk_select"] = "XCVR_REFCLK"
-
-        return cfg
+        super().__init__(platform=platform, kernel_path=kernel_path)
+        self.use_plugin_mode = False
 
     def to_board_model(self, cfg: dict) -> "BoardModel":
         """Build a :class:`BoardModel` from configuration.
