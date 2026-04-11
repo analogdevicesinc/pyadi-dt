@@ -29,6 +29,43 @@ def _strip_inner_svg_dimensions(svg: str) -> str:
     )
 
 
+def _make_canvas_transparent(svg: str) -> str:
+    """Make the D2 canvas background rect transparent.
+
+    D2 injects a full-size ``<rect>`` with a ``fill-N7`` CSS class as the
+    first child of the inner ``<svg>`` element.  The class maps to an opaque
+    fill (``#FFFFFF`` for light themes, ``#1E1E2E`` for DarkMauve) via an
+    inline ``<style>`` block.
+
+    We strip both the ``class`` and any ``fill`` attribute from this rect,
+    set ``fill="transparent"`` and add an inline ``style`` override so that
+    even leftover CSS rules cannot re-paint it.
+    """
+
+    def _replacer(match: re.Match[str]) -> str:
+        rect_inner = match.group(2)
+        # Replace any fill attr with transparent
+        if 'fill="' in rect_inner:
+            rect_inner = re.sub(r'fill="[^"]+"', 'fill="transparent"', rect_inner)
+        else:
+            rect_inner += ' fill="transparent"'
+        # Remove class to prevent CSS fill override
+        rect_inner = re.sub(r'\sclass="[^"]*"', "", rect_inner)
+        # Add inline style as final override
+        if 'style="' in rect_inner:
+            rect_inner = rect_inner.replace('style="', 'style="fill:transparent;')
+        else:
+            rect_inner += ' style="fill:transparent;"'
+        return match.group(1) + rect_inner + "/>"
+
+    return re.sub(
+        r'(<svg[^>]*class="d2-[^>]*>\s*<rect)([^>]+)/>',
+        _replacer,
+        svg,
+        count=1,
+    )
+
+
 def main() -> None:
     SVG_DIR.mkdir(exist_ok=True)
     d2_files = sorted(D2_DIR.glob("*.d2"))
@@ -51,6 +88,7 @@ def main() -> None:
                     f"d2.compile returned None for {path.name} (theme={theme})"
                 )
             svg = _strip_inner_svg_dimensions(svg)
+            svg = _make_canvas_transparent(svg)
             out = SVG_DIR / f"{name}.{theme}.svg"
             out.write_text(svg)
             print(f"  -> {out.name}")
