@@ -31,7 +31,14 @@ The pipeline performs five stages:
 Pipeline diagram
 ~~~~~~~~~~~~~~~~
 
-.. image:: _diagrams/svg/xsa_pipeline.svg
+.. image:: _diagrams/svg/xsa_pipeline.light.svg
+   :class: only-light
+   :alt: XSA to device tree pipeline
+   :align: center
+   :width: 80%
+
+.. image:: _diagrams/svg/xsa_pipeline.dark.svg
+   :class: only-dark
    :alt: XSA to device tree pipeline
    :align: center
    :width: 80%
@@ -160,7 +167,14 @@ Hardware Test Flow
 The hardware tests can optionally build and inject a kernel image with
 ``pyadi-build`` while still using the DTB generated from the XSA pipeline.
 
-.. image:: _diagrams/svg/xsa_hw_test.svg
+.. image:: _diagrams/svg/xsa_hw_test.light.svg
+   :class: only-light
+   :alt: Hardware testing workflow
+   :align: center
+   :width: 40%
+
+.. image:: _diagrams/svg/xsa_hw_test.dark.svg
+   :class: only-dark
    :alt: Hardware testing workflow
    :align: center
    :width: 40%
@@ -512,7 +526,14 @@ The intended integration is:
 adijif integration workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: _diagrams/svg/xsa_adijif.svg
+.. image:: _diagrams/svg/xsa_adijif.light.svg
+   :class: only-light
+   :alt: adijif integration workflow
+   :align: center
+   :width: 80%
+
+.. image:: _diagrams/svg/xsa_adijif.dark.svg
+   :class: only-dark
    :alt: adijif integration workflow
    :align: center
    :width: 80%

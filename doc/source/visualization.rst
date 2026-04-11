@@ -29,7 +29,14 @@ external dependencies) built with D3.js.  It contains five panels:
 Example report layout
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: _diagrams/svg/viz_report_layout.svg
+.. image:: _diagrams/svg/viz_report_layout.light.svg
+   :class: only-light
+   :alt: Example HTML topology report layout
+   :align: center
+   :width: 60%
+
+.. image:: _diagrams/svg/viz_report_layout.dark.svg
+   :class: only-dark
    :alt: Example HTML topology report layout
    :align: center
    :width: 60%
@@ -317,7 +324,14 @@ Enable everything at once:
 
 This produces:
 
-.. image:: _diagrams/svg/viz_outputs.svg
+.. image:: _diagrams/svg/viz_outputs.light.svg
+   :class: only-light
+   :alt: XsaPipeline output artifacts
+   :align: center
+   :width: 60%
+
+.. image:: _diagrams/svg/viz_outputs.dark.svg
+   :class: only-dark
    :alt: XsaPipeline output artifacts
    :align: center
    :width: 60%

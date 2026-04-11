@@ -16,7 +16,14 @@ Overview
 
 The workflow has seven steps:
 
-.. image:: _diagrams/svg/templates_workflow.svg
+.. image:: _diagrams/svg/templates_workflow.light.svg
+   :class: only-light
+   :alt: Template creation workflow
+   :align: center
+   :width: 30%
+
+.. image:: _diagrams/svg/templates_workflow.dark.svg
+   :class: only-dark
    :alt: Template creation workflow
    :align: center
    :width: 30%

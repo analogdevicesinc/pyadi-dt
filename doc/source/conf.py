@@ -15,6 +15,13 @@ sys.path.insert(0, str(Path(__file__).parents[2].resolve()))
 
 import adidt  # isort:skip
 
+# -- Compile D2 diagrams before build ----------------------------------------
+
+sys.path.insert(0, str(Path(__file__).parent.resolve()))
+from _diagrams.compile_d2 import main as _compile_d2  # isort:skip
+
+_compile_d2()
+
 # -- Project information -----------------------------------------------------
 
 project = "pyadi-dt"
@@ -98,6 +105,10 @@ html_theme_options = {
     "light_logo": os.path.join("media", "pyadi-dt.svg"),
     "dark_logo": os.path.join("media", "pyadi-dt_w.svg"),
 }
+
+html_css_files = [
+    "d2-theme-images.css",
+]
 
 # -- Mermaid configuration ---------------------------------------------------
 

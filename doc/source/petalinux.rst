@@ -22,7 +22,14 @@ ADI Linux driver requirements by generating the correct SPI nodes,
 clock phandle wiring, JESD204 framer/deframer configuration, and FPGA
 transceiver settings — all formatted as a drop-in ``system-user.dtsi``.
 
-.. image:: _diagrams/svg/petalinux_overview.svg
+.. image:: _diagrams/svg/petalinux_overview.light.svg
+   :class: only-light
+   :alt: PetaLinux integration overview
+   :align: center
+   :width: 80%
+
+.. image:: _diagrams/svg/petalinux_overview.dark.svg
+   :class: only-dark
    :alt: PetaLinux integration overview
    :align: center
    :width: 80%
@@ -82,7 +89,14 @@ Step-by-step workflow
 The diagram below shows the complete workflow from Vivado design to
 a booted board:
 
-.. image:: _diagrams/svg/petalinux_steps.svg
+.. image:: _diagrams/svg/petalinux_steps.light.svg
+   :class: only-light
+   :alt: PetaLinux step-by-step workflow
+   :align: center
+   :width: 30%
+
+.. image:: _diagrams/svg/petalinux_steps.dark.svg
+   :class: only-dark
    :alt: PetaLinux step-by-step workflow
    :align: center
    :width: 30%

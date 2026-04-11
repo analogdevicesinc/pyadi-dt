@@ -4,15 +4,29 @@
 import re
 from pathlib import Path
 
-import d2
+import d2 as d
 
 D2_DIR = Path(__file__).parent / "d2"
 SVG_DIR = Path(__file__).parent / "svg"
 
-# Per-file overrides; everything else defaults to library="sw", theme="light"
-DIAGRAM_CONFIG: dict[str, dict[str, str]] = {}
+DEFAULT_THEMES = ["light", "dark"]
 
-DEFAULT_CONFIG = {"library": "sw", "theme": "light"}
+# Per-file overrides; everything else defaults to library="sw" and both themes.
+# Optional keys:
+#   library: str
+#   themes: list[str]
+DIAGRAM_CONFIG: dict[str, dict[str, object]] = {}
+
+DEFAULT_CONFIG = {"library": "sw", "themes": DEFAULT_THEMES}
+
+
+def _strip_inner_svg_dimensions(svg: str) -> str:
+    """Remove hardcoded width/height from the inner D2 SVG node."""
+    return re.sub(
+        r'(<svg\s+id="d2-svg"\s+class="[^"]*"\s+)width="[^"]*"\s+height="[^"]*"\s+',
+        r"\1",
+        svg,
+    )
 
 
 def main() -> None:
@@ -24,22 +38,28 @@ def main() -> None:
 
     for path in d2_files:
         name = path.stem
-        cfg = DIAGRAM_CONFIG.get(name, DEFAULT_CONFIG)
+        cfg = DEFAULT_CONFIG | DIAGRAM_CONFIG.get(name, {})
+        library = str(cfg.get("library", "sw"))
+        themes = list(cfg.get("themes", DEFAULT_THEMES))
         code = path.read_text()
-        print(f"Compiling {path.name} (library={cfg['library']}) ... ", end="")
-        svg = d2.compile(code, library=cfg["library"], theme=cfg["theme"])
-        if svg is None:
-            raise RuntimeError(f"d2.compile returned None for {path.name}")
-        # Strip hardcoded width/height from the inner <svg id="d2-svg"> so
-        # the image scales to the CSS width set in the RST directives.
-        svg = re.sub(
-            r'(<svg\s+id="d2-svg"\s+class="[^"]*"\s+)width="[^"]*"\s+height="[^"]*"\s+',
-            r"\1",
-            svg,
-        )
-        out = SVG_DIR / f"{name}.svg"
-        out.write_text(svg)
-        print(f"-> {out.name}")
+        print(f"Compiling {path.name} (library={library}, themes={themes}) ...")
+
+        for theme in themes:
+            svg = d.compile(code, library=library, theme=theme)
+            if svg is None:
+                raise RuntimeError(
+                    f"d2.compile returned None for {path.name} (theme={theme})"
+                )
+            svg = _strip_inner_svg_dimensions(svg)
+            out = SVG_DIR / f"{name}.{theme}.svg"
+            out.write_text(svg)
+            print(f"  -> {out.name}")
+
+        # Backward compatibility for existing references.
+        if "light" in themes:
+            legacy = SVG_DIR / f"{name}.svg"
+            legacy.write_text((SVG_DIR / f"{name}.light.svg").read_text())
+            print(f"  -> {legacy.name} (alias of {name}.light.svg)")
 
     print(f"\nDone: {len(d2_files)} diagrams compiled.")
 

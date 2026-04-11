@@ -16,7 +16,14 @@ The XSA pipeline is composed of six loosely coupled stages.  Each stage
 operates on well-defined inputs and produces file or data-structure outputs
 that feed the next stage.
 
-.. image:: _diagrams/svg/dev_architecture.svg
+.. image:: _diagrams/svg/dev_architecture.light.svg
+   :class: only-light
+   :alt: XSA Pipeline architecture stages
+   :align: center
+   :width: 30%
+
+.. image:: _diagrams/svg/dev_architecture.dark.svg
+   :class: only-dark
    :alt: XSA Pipeline architecture stages
    :align: center
    :width: 30%
@@ -33,7 +40,14 @@ It receives the topology and config, dispatches to per-board builders via
 a registry, and produces categorised DTS node strings that the merger
 assembles into the final tree.
 
-.. image:: _diagrams/svg/dev_component_interaction.svg
+.. image:: _diagrams/svg/dev_component_interaction.light.svg
+   :class: only-light
+   :alt: NodeBuilder component interaction
+   :align: center
+   :width: 30%
+
+.. image:: _diagrams/svg/dev_component_interaction.dark.svg
+   :class: only-dark
    :alt: NodeBuilder component interaction
    :align: center
    :width: 30%

@@ -1,6 +1,7 @@
 """Nox configuration for running tests and tasks with uv backend."""
 
 import shutil
+from pathlib import Path
 
 import nox
 
@@ -10,6 +11,29 @@ nox.options.default_venv_backend = "uv"
 # Define Python versions to test against (from pyproject.toml)
 # PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 PYTHON_VERSIONS = ["3.10"]
+
+
+def _install_local_pyd2lang(session):
+    """Install local pyd2lang-native into the session environment.
+
+    Prefer a wheel matching the session's Python ABI tag. If no matching wheel
+    exists, fall back to local source install from sibling repository.
+    """
+    dist_dir = (Path(__file__).parent.parent / "pyd2lang-native" / "dist").resolve()
+    py_tag = f"cp{str(session.python).replace('.', '')}"
+    wheels = sorted(dist_dir.glob(f"pyd2lang_native-*-{py_tag}-*.whl"))
+
+    if wheels:
+        wheel = str(wheels[-1])
+        session.log(f"Installing local pyd2lang-native wheel: {wheel}")
+        session.install("--reinstall", "--no-deps", wheel)
+        return
+
+    session.warn(
+        f"No local pyd2lang-native wheel matching {py_tag} in {dist_dir}; "
+        "falling back to source install from ../pyd2lang-native."
+    )
+    session.install("--reinstall", "--no-deps", "../pyd2lang-native")
 
 
 @nox.session(python=PYTHON_VERSIONS)
@@ -68,7 +92,7 @@ def format_check(session):
 @nox.session(python="3.12")
 def d2_diagrams(session):
     """Compile D2 diagram sources to SVG using pyd2lang-native."""
-    session.install("pyd2lang-native>=0.1.0")
+    _install_local_pyd2lang(session)
     session.run("python", "doc/source/_diagrams/compile_d2.py")
 
 
@@ -83,6 +107,7 @@ def docs(session):
         "adi-doctools",
         "linkify-it-py",
     )
+    _install_local_pyd2lang(session)
     session.install(".")
     session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
 
@@ -98,8 +123,11 @@ def docs_serve(session):
         "adi-doctools",
         "linkify-it-py",
         "sphinx-autobuild",
+        "fdt",
+        ".[dev]",
     )
-    session.install(".")
+    _install_local_pyd2lang(session)
+    # session.install(".")
     session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host", "0.0.0.0")
 
 
