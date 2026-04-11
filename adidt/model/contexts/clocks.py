@@ -1,6 +1,7 @@
 """Clock chip context builders.
 
-Provides context builders for HMC7044, AD9523-1, AD9528, and ADF4382
+Provides context builders for HMC7044, AD9523-1, AD9528, ADF4382,
+AD9545, LTC6952, LTC6953, ADF4371, ADF4377, ADF4350, and ADF4030
 clock/PLL devices.
 """
 
@@ -352,4 +353,180 @@ def build_adf4382_ctx(
         "spi_3wire": spi_3wire,
         "charge_pump_microamp": charge_pump_microamp,
         "output_power": output_power,
+    }
+
+
+def build_ad9545_ctx(
+    *,
+    label: str = "clk0_ad9545",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    clk_names_str: str | None = None,
+    ref_frequency_hz: int | None = None,
+    freq_doubler: bool = False,
+    ref_crystal: bool = False,
+) -> dict:
+    """Build context dict for ``ad9545.tmpl``."""
+    return {
+        "label": label,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "clk_names_str": clk_names_str,
+        "ref_frequency_hz": ref_frequency_hz,
+        "freq_doubler": freq_doubler,
+        "ref_crystal": ref_crystal,
+    }
+
+
+def build_ltc6952_ctx(
+    *,
+    label: str = "clk0_ltc6952",
+    compatible_id: str = "ltc6952",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    clock_output_names_str: str | None = None,
+    vco_frequency_hz: int | None = None,
+    ref_frequency_hz: int | None = None,
+    channels: list[dict] | None = None,
+) -> dict:
+    """Build context dict for ``ltc6952.tmpl``."""
+    if channels is None:
+        channels = []
+    return {
+        "label": label,
+        "compatible_id": compatible_id,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "clock_output_names_str": clock_output_names_str,
+        "vco_frequency_hz": vco_frequency_hz,
+        "ref_frequency_hz": ref_frequency_hz,
+        "channels": channels,
+    }
+
+
+def build_ltc6953_ctx(
+    *,
+    label: str = "clk0_ltc6953",
+    compatible_id: str = "ltc6953",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    clock_output_names_str: str | None = None,
+    channels: list[dict] | None = None,
+) -> dict:
+    """Build context dict for ``ltc6953.tmpl``."""
+    if channels is None:
+        channels = []
+    return {
+        "label": label,
+        "compatible_id": compatible_id,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "clock_output_names_str": clock_output_names_str,
+        "channels": channels,
+    }
+
+
+def build_adf4371_ctx(
+    *,
+    label: str = "pll0_adf4371",
+    compatible_id: str = "adf4371",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    spi_3wire: bool = False,
+    muxout_select: int | None = None,
+    charge_pump_microamp: int | None = None,
+    mute_till_lock: bool = False,
+) -> dict:
+    """Build context dict for ``adf4371.tmpl``."""
+    return {
+        "label": label,
+        "compatible_id": compatible_id,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "spi_3wire": spi_3wire,
+        "muxout_select": muxout_select,
+        "charge_pump_microamp": charge_pump_microamp,
+        "mute_till_lock": mute_till_lock,
+    }
+
+
+def build_adf4377_ctx(
+    *,
+    label: str = "pll0_adf4377",
+    compatible_id: str = "adf4377",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    muxout_select: str | None = None,
+) -> dict:
+    """Build context dict for ``adf4377.tmpl``."""
+    return {
+        "label": label,
+        "compatible_id": compatible_id,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "muxout_select": muxout_select,
+    }
+
+
+def build_adf4350_ctx(
+    *,
+    label: str = "pll0_adf4350",
+    compatible_id: str = "adf4350",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    channel_spacing: int | None = None,
+    power_up_frequency: int | None = None,
+    output_power: int | None = None,
+    charge_pump_current: int | None = None,
+    muxout_select: int | None = None,
+) -> dict:
+    """Build context dict for ``adf4350.tmpl``."""
+    return {
+        "label": label,
+        "compatible_id": compatible_id,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "channel_spacing": channel_spacing,
+        "power_up_frequency": power_up_frequency,
+        "output_power": output_power,
+        "charge_pump_current": charge_pump_current,
+        "muxout_select": muxout_select,
+    }
+
+
+def build_adf4030_ctx(
+    *,
+    label: str = "clk0_adf4030",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    clock_output_names_str: str | None = None,
+    vco_frequency_hz: int | None = None,
+    bsync_frequency_hz: int | None = None,
+    channels: list[dict] | None = None,
+) -> dict:
+    """Build context dict for ``adf4030.tmpl``."""
+    if channels is None:
+        channels = []
+    return {
+        "label": label,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "clock_output_names_str": clock_output_names_str,
+        "vco_frequency_hz": vco_frequency_hz,
+        "bsync_frequency_hz": bsync_frequency_hz,
+        "channels": channels,
     }

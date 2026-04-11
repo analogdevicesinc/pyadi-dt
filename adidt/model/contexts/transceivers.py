@@ -1,10 +1,12 @@
 """Transceiver context builders.
 
-Provides context builders for AD9081 MxFE, AD9084, and ADRV9009/9025
-transceiver devices.
+Provides context builders for AD9081 MxFE, AD9082, AD9083, AD9084,
+and ADRV9009/9025 transceiver devices.
 """
 
 from __future__ import annotations
+
+from typing import Any
 
 
 def build_ad9081_mxfe_ctx(
@@ -173,4 +175,45 @@ def build_ad9084_ctx(
         "hsci_auto_linkup": hsci_auto_linkup,
         "link_ids": link_ids,
         "jesd204_inputs": jesd204_inputs,
+    }
+
+
+def build_ad9082_ctx(
+    *,
+    cs: int = 0,
+    **kwargs: Any,
+) -> dict:
+    """Build context dict for AD9082 (delegates to :func:`build_ad9081_mxfe_ctx`)."""
+    return build_ad9081_mxfe_ctx(cs=cs, **kwargs)
+
+
+def build_ad9083_ctx(
+    *,
+    label: str = "adc0_ad9083",
+    cs: int = 0,
+    spi_max_hz: int = 10_000_000,
+    clks_str: str | None = None,
+    clk_names_str: str | None = None,
+    adc_frequency_hz: int | None = None,
+    jesd204_top_device: int = 0,
+    jesd204_link_ids: list[int] | None = None,
+    jesd204_inputs: str = "",
+    octets_per_frame: int | None = None,
+    frames_per_multiframe: int | None = None,
+) -> dict:
+    """Build context dict for ``ad9083.tmpl``."""
+    if jesd204_link_ids is None:
+        jesd204_link_ids = [0]
+    return {
+        "label": label,
+        "cs": cs,
+        "spi_max_hz": spi_max_hz,
+        "clks_str": clks_str,
+        "clk_names_str": clk_names_str,
+        "adc_frequency_hz": adc_frequency_hz,
+        "jesd204_top_device": jesd204_top_device,
+        "jesd204_link_ids": jesd204_link_ids,
+        "jesd204_inputs": jesd204_inputs,
+        "octets_per_frame": octets_per_frame,
+        "frames_per_multiframe": frames_per_multiframe,
     }
