@@ -57,9 +57,13 @@ def board(strategy):
     yield strategy
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def built_kernel_image_zynqmp() -> Path | None:
-    """Build a Linux kernel image for ZynqMP platforms (e.g. ZCU102).
+    """Build (or fetch from cache) a Linux kernel image for ZynqMP platforms.
+
+    Session-scoped so the image is shared across all ZCU102 hw tests in
+    a single pytest run; results are also cached across runs by
+    :func:`~test.hw.hw_helpers.build_kernel_image`.
 
     Returns:
         Path to the built kernel image, or ``None`` when
@@ -68,9 +72,13 @@ def built_kernel_image_zynqmp() -> Path | None:
     return build_kernel_image("zynqmp")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def built_kernel_image_zynq() -> Path | None:
-    """Build a Linux kernel image for Zynq-7000 platforms (e.g. ZC706).
+    """Build (or fetch from cache) a Linux kernel image for Zynq-7000 platforms.
+
+    Session-scoped so the image is shared across all ZC706 hw tests in
+    a single pytest run; results are also cached across runs by
+    :func:`~test.hw.hw_helpers.build_kernel_image`.
 
     Returns:
         Path to the built kernel image, or ``None`` when

@@ -100,6 +100,22 @@ DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not i
     "no",
 }
 
+# File-based kernel cache: skip a full pyadi-build ``prepare_source`` +
+# ``build`` run when a kernel image for the same (platform, config) has
+# already been produced.  Keyed by sha256 of the 2023_R2.yaml contents
+# so editing the config invalidates the cache automatically.  Disable by
+# setting ``ADIDT_KERNEL_CACHE=0``.
+DEFAULT_KERNEL_CACHE = os.environ.get("ADIDT_KERNEL_CACHE", "1").lower() not in {
+    "0",
+    "false",
+    "no",
+}
+KERNEL_CACHE_DIR = Path(
+    os.environ.get(
+        "ADIDT_KERNEL_CACHE_DIR", str(Path.home() / ".cache" / "adidt" / "kernel")
+    )
+)
+
 
 def _strip_unresolved_overlays(dts_path: Path, stderr: str) -> bool:
     """Remove ``&label { ... };`` blocks for labels that dtc reports as missing.
@@ -447,15 +463,55 @@ def assert_jesd_links_data(
     return rx_status, tx_status
 
 
+def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:
+    """Return a short sha256 over *platform_arch* and the config file bytes."""
+    import hashlib
+
+    h = hashlib.sha256()
+    h.update(platform_arch.encode())
+    h.update(b"\0")
+    h.update(config_path.read_bytes())
+    return h.hexdigest()[:16]
+
+
+def _cached_kernel_dir(platform_arch: str, config_path: Path) -> Path:
+    """Return the per-(platform, config-hash) directory holding a cached kernel."""
+    return (
+        KERNEL_CACHE_DIR / platform_arch / _kernel_cache_key(platform_arch, config_path)
+    )
+
+
+def _find_cached_kernel(platform_arch: str, config_path: Path) -> Path | None:
+    """Return the path to a cached kernel image, preserving the original basename.
+
+    The first non-empty regular file under the cache directory is returned so
+    that the filename the boot strategy/TFTP layer consumes (``uImage``,
+    ``zImage``, ``Image``, …) matches what ``pyadi-build`` produced.
+    """
+    cache_dir = _cached_kernel_dir(platform_arch, config_path)
+    if not cache_dir.is_dir():
+        return None
+    for entry in sorted(cache_dir.iterdir()):
+        if entry.is_file() and entry.stat().st_size > 0:
+            return entry
+    return None
+
+
 def build_kernel_image(platform_arch: str) -> Path | None:
     """Build a Linux kernel image using ``pyadi-build`` for *platform_arch*.
+
+    Caches the built image under ``KERNEL_CACHE_DIR`` keyed by the SHA-256
+    of the config YAML — subsequent runs for the same (platform, config)
+    skip the pyadi-build ``prepare_source`` + ``build`` cycle entirely.
+    Set ``ADIDT_KERNEL_CACHE=0`` to force a rebuild, or
+    ``ADIDT_KERNEL_CACHE_DIR`` to relocate the cache.
 
     Args:
         platform_arch: ``"zynqmp"`` for ZynqMP / ZCU102 targets, or
             ``"zynq"`` for Zynq-7000 / ZC706 targets.
 
     Returns:
-        Path to the built kernel image, or ``None`` if
+        Path to the built (or cached) kernel image, or ``None`` if
         :data:`DEFAULT_BUILD_KERNEL` is ``False``.
 
     Raises:
@@ -466,14 +522,20 @@ def build_kernel_image(platform_arch: str) -> Path | None:
     if not DEFAULT_BUILD_KERNEL:
         return None
 
+    config_path = HERE / "2023_R2.yaml"
+    if not config_path.exists():
+        pytest.skip(f"pyadi-build config not found: {config_path}")
+
+    if DEFAULT_KERNEL_CACHE:
+        cached = _find_cached_kernel(platform_arch, config_path)
+        if cached is not None:
+            print(f"Reusing cached {platform_arch} kernel image: {cached}")
+            return cached
+
     try:
         from adibuild import BuildConfig, LinuxBuilder
     except ModuleNotFoundError as ex:
         pytest.skip(f"pyadi-build dependency missing: {ex}")
-
-    config_path = HERE / "2023_R2.yaml"
-    if not config_path.exists():
-        pytest.skip(f"pyadi-build config not found: {config_path}")
 
     config = BuildConfig.from_yaml(config_path)
     if platform_arch == "zynqmp":
@@ -499,4 +561,56 @@ def build_kernel_image(platform_arch: str) -> Path | None:
     kernel_path = Path(kernel)
     if not kernel_path.exists():
         raise RuntimeError(f"Built kernel image not found: {kernel_path}")
+
+    # Zynq-7000 U-Boot boots via ``bootm`` which requires a U-Boot-format
+    # ``uImage`` (zImage + legacy header).  pyadi-build emits a raw
+    # ``zImage``; wrap it with ``mkimage`` so the boot strategy finds the
+    # filename it expects.
+    if platform_arch == "zynq" and kernel_path.name == "zImage":
+        kernel_path = _wrap_zimage_as_uimage(kernel_path)
+
+    if DEFAULT_KERNEL_CACHE:
+        cache_dir = _cached_kernel_dir(platform_arch, config_path)
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cached = cache_dir / kernel_path.name
+        shutil.copyfile(kernel_path, cached)
+        print(f"Cached {platform_arch} kernel image: {kernel_path} -> {cached}")
+        return cached
     return kernel_path
+
+
+def _wrap_zimage_as_uimage(zimage: Path) -> Path:
+    """Wrap a Zynq-7000 ``zImage`` as a U-Boot ``uImage`` using ``mkimage``.
+
+    Load/entry use the canonical Zynq-7000 offset ``0x8000``.  The produced
+    ``uImage`` lives in the same directory as the source ``zImage``.
+    """
+    if shutil.which("mkimage") is None:
+        raise RuntimeError(
+            "mkimage not found on PATH; install u-boot-tools to build uImage"
+        )
+    uimage = zimage.with_name("uImage")
+    cmd = [
+        "mkimage",
+        "-A",
+        "arm",
+        "-O",
+        "linux",
+        "-T",
+        "kernel",
+        "-C",
+        "none",
+        "-a",
+        "0x8000",
+        "-e",
+        "0x8000",
+        "-n",
+        "Linux Kernel",
+        "-d",
+        str(zimage),
+        str(uimage),
+    ]
+    res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if res.returncode != 0:
+        raise RuntimeError(f"mkimage failed:\n{res.stdout}\n{res.stderr}")
+    return uimage
