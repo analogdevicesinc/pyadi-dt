@@ -140,7 +140,8 @@ Declarative device classes (``adidt/devices/``)
    Typed pydantic models whose fields map 1:1 to DT properties.  Each
    class owns its rendering via ``render_dt(cs=...)``; the output is a
    plain DTS string.  See :doc:`api/devices` for the full catalog and
-   the "Writing a new device" pattern.
+   :doc:`developer/authoring_devices` for the end-to-end walkthrough
+   on authoring a new device class.
 
    FPGA-side JESD IP overlays (``Adxcvr``, ``Jesd204Overlay``,
    ``TplCore``) live under ``adidt.devices.fpga_ip``.  Legacy
@@ -711,7 +712,9 @@ Step 5 — Wire into a board builder
 All builders construct a ``BoardModel`` internally by instantiating
 declarative device classes and stuffing their rendered strings into
 ``ComponentModel.rendered``.  Add the new device by writing a class
-under ``adidt/devices/`` (see :doc:`api/devices`) and wiring it in:
+under ``adidt/devices/`` (see :doc:`developer/authoring_devices` for
+the full pattern — class design, ``render_node`` hooks, and cookbook
+recipes) and wiring it in:
 
 .. code-block:: python
 

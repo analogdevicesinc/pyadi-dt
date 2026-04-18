@@ -80,8 +80,9 @@ Where to start
   walkthrough of Vivado XSA-based generation.
 - **PetaLinux?** See :doc:`petalinux` for generating ``system-user.dtsi``
   files from XSA archives.
-- **Adding a new device class?** See the "Writing a new device"
-  section of :doc:`api/devices`.
+- **Adding a new device class?** See :doc:`developer/authoring_devices`
+  for the end-to-end walkthrough — class design, rendering pipeline,
+  and cookbook recipes for clocks, converters, and eval / FPGA boards.
 - **Adding a new XSA board builder?** See :doc:`xsa_developer`.
 
 Links
@@ -111,6 +112,7 @@ Table of contents
    :maxdepth: 2
    :caption: Developer Guide
 
+   developer/index
    xsa_developer
 
 .. toctree::

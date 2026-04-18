@@ -140,20 +140,13 @@ The composition API lives in :mod:`adidt.eval`, :mod:`adidt.fpga`, and
 Writing a new device
 --------------------
 
-1. Subclass :class:`~adidt.devices.base.Device` (or a convenience base
-   like :class:`~adidt.devices.clocks.ClockDevice` /
-   :class:`~adidt.devices.converters.ConverterDevice`).
-2. Declare ``compatible``, ``dt_header``, and ``dt_flags`` as class
-   variables.
-3. Declare pydantic fields for each DT property; use ``Field(alias=...)``
-   with the DT property name.
-4. If the device has sub-nodes, add a ``dict[int, SubModel]`` field
-   annotated with :class:`DtSubnodes`.
-5. Override ``extra_dt_lines`` for coupled / phandle properties.
-6. Implement ``render_dt(cs=...)`` and ``to_component_model(...)``
-   (the convenience bases do most of this for you).
-
-See :mod:`adidt.devices.clocks.hmc7044` as the canonical full example.
+See :doc:`../developer/authoring_devices` for the full walkthrough —
+class hierarchy, end-to-end call flow from
+:meth:`adidt.system.System.generate_dts` through
+:func:`adidt.devices._dt_render.render_node`, and cookbook recipes for
+adding a new clock, converter / transceiver, or eval-board / FPGA-board
+class.  :mod:`adidt.devices.clocks.hmc7044` is the canonical full
+reference implementation.
 
 End-to-end hardware verification
 --------------------------------
