@@ -24,18 +24,27 @@ The workflow has three jobs:
   on the self-hosted runner attached to that node
   (``runs-on: [self-hosted, <matrix.node.runner_label>]``).  Tests
   run without the coordinator, against a node-local labgrid YAML
-  whose path is in the runner-level env var ``LG_DIRECT_ENV``.
-- **hw-coord** — a matrix job, one leg per available node, all
-  running on the single ``hw-coordinator`` runner.  Each leg uses the
-  committed ``env_remote_<place>.yaml`` that the manifest declares.
+  whose path is in the runner-level env var ``LG_DIRECT_ENV``.  When
+  ``LG_DIRECT_ENV`` is unset on a runner the job skips all work and
+  exits green — add the env entry in ``~/actions-runner/.env`` to
+  light up direct-mode on that node.
+- **hw-coord** — a matrix job, one leg per available node, running
+  on the **same per-node runner as hw-direct** (label
+  ``hw-<place>``).  Each leg uses the committed
+  ``env_remote_<place>.yaml`` from the manifest and talks to the
+  labgrid coordinator via ``LG_COORDINATOR`` — so pytest exercises
+  the coordinator code path while the XSA toolchain (Vivado's
+  sdtgen, xsct) and kernel build artifacts already present on the
+  per-node runner are used in place.  The ``hw-coordinator`` runner
+  itself carries only the preflight job.
 
-Every job — preflight included — gates on the ``hardware-tests``
-GitHub environment, so PRs from forks require explicit maintainer
-approval before any self-hosted runner is exercised.  (Preflight must
-also sit on a self-hosted runner to reach the private coordinator, so
-there is no way to emit skip signals ahead of the approval gate;
-fork PRs simply pause for review like any other environment-gated
-workflow.)
+Fork-PR protection is handled by GitHub Actions' built-in workflow
+approval gate rather than a custom ``environment:``.  Under *Settings
+→ Actions → General → Approval for outside collaborators*, workflows
+triggered by fork PRs require a maintainer to click "Approve and run"
+before any self-hosted runner is scheduled.  Same-repo PRs, pushes to
+``main``, and ``workflow_dispatch`` are always trusted and run
+directly.
 
 Node manifest
 -------------
@@ -177,33 +186,15 @@ Coordinator-mode tests additionally require SSH key-auth from the
 ``MassStorageDriver`` SSH-proxy path) and write access to
 ``~/.cache/adidt/kernel/`` for the kernel image cache.
 
-.. _hardware-tests-environment:
+Fork-PR approval gate
+---------------------
 
-The ``hardware-tests`` environment
-----------------------------------
-
-The environment gate protects self-hosted runners from being
-exercised by un-reviewed fork PRs.  To set it up (one-time, repo
-admin):
-
-**Via the GitHub UI** — *Settings → Environments → New environment*,
-name it ``hardware-tests``, enable *Required reviewers*, and add at
-least one maintainer.  Leave *Deployment branches* unrestricted.
-
-**Via ``gh`` CLI** — equivalent scriptable form:
-
-.. code-block:: bash
-
-   gh api -X PUT \
-     /repos/analogdevicesinc/pyadi-dt/environments/hardware-tests \
-     -f "deployment_branch_policy=null" \
-     -F "reviewers[][type]=User" \
-     -F "reviewers[][id]=$(gh api /users/<maintainer> --jq .id)"
-
-With the gate in place, a fork PR will show each hw job as
-"Waiting for approval" under the ``hardware-tests`` environment; a
-maintainer approves it from the PR page before the self-hosted
-runners are scheduled.
+Fork-PR workflows are held by GitHub's built-in approval gate
+configured at *Settings → Actions → General → Approval for outside
+collaborators*.  Pick *Require approval for first-time contributors*
+(or stricter) so fork-PR runs pause until a maintainer clicks
+*Approve and run* in the PR's Actions tab.  No custom
+``environment:`` is needed on the workflow side.
 
 Private-repo dependency access
 ------------------------------
@@ -212,7 +203,7 @@ The ``[dev]`` extras in ``pyproject.toml`` include
 ``pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git``,
 which currently points at a private repo.  For CI to ``uv pip
 install`` it, scope a fine-grained PAT to the private repo and store
-it as a secret on the ``hardware-tests`` environment.
+it as a repository secret.
 
 1. Create a fine-grained PAT at
    `<https://github.com/settings/tokens?type=beta>`_:
@@ -224,16 +215,21 @@ it as a secret on the ``hardware-tests`` environment.
      ``tfcollins/pyadi-build`` (and any other private deps).
    - *Repository permissions* → **Contents: Read-only**.
 
-2. Store it as an environment secret so only hw jobs see it:
+2. Store it at repository scope.  Fork PRs don't see repo secrets
+   until a maintainer approves via the built-in workflow approval
+   gate, so the PAT stays protected without any environment
+   indirection.
 
    .. code-block:: bash
 
+      # Repo-scoped secret — visible to trusted (non-fork) runs,
+      # and to fork-PR runs only after maintainer "Approve and run".
       gh secret set PYADI_BUILD_TOKEN \
           --repo analogdevicesinc/pyadi-dt \
-          --env hardware-tests \
           --body 'github_pat_...'
 
-   (Or via *Settings → Environments → hardware-tests → Add secret*.)
+   (Or via the GitHub UI: *Settings → Secrets and variables →
+   Actions → New repository secret*.)
 
 The install step reads ``secrets.PYADI_BUILD_TOKEN`` and exports it
 as a process-local ``GIT_CONFIG_COUNT`` / ``GIT_CONFIG_KEY_0`` /
@@ -266,6 +262,6 @@ Troubleshooting
   manifest entry.
 
 **PR from a fork never runs hw jobs.**
-  Fork PRs are held by the ``hardware-tests`` environment waiting
-  for maintainer approval; check the PR page for the *Review
-  deployments* button.
+  Fork PRs pause on GitHub's built-in workflow approval gate.
+  Open the PR's Actions tab and click *Approve and run* to release
+  the jobs.
