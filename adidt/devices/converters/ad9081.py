@@ -15,13 +15,23 @@ from .base import ConverterDevice, ConverterSide, Jesd204Settings
 
 _AD9081_RX_MODE_TABLE: dict[tuple[int, str] | int, dict[str, int]] = {
     (1, "jesd204c"): {"M": 2, "L": 1, "F": 4, "K": 32, "Np": 16, "S": 1},
-    (10, "jesd204b"): {"M": 4, "L": 4, "F": 2, "K": 32, "Np": 16, "S": 1},
+    # JTX mode 10 jesd204b on AD9081-FMCA-EBZ/ZCU102 uses M=8 (per the
+    # AD9081 API mode table and the stock Kuiper
+    # ``zynqmp-zcu102-rev10-ad9081-m8-l4`` reference DTS: the
+    # ``adi,rx-adcs`` block emits ``converters-per-device = <8>``).
+    # Using M=4 here breaks the kernel's JESD PLL lock step
+    # ("ad9081 ...: JESD PLL is not locked.") because the TPL + xcvr
+    # are programmed for fewer converters than the part's jtx actually
+    # frames.
+    (10, "jesd204b"): {"M": 8, "L": 4, "F": 4, "K": 32, "Np": 16, "S": 1},
     (18, "jesd204c"): {"M": 4, "L": 8, "F": 1, "K": 32, "Np": 16, "S": 1},
 }
 
 _AD9081_TX_MODE_TABLE: dict[tuple[int, str] | int, dict[str, int]] = {
     (1, "jesd204c"): {"M": 2, "L": 1, "F": 4, "K": 32, "Np": 16, "S": 1},
-    (9, "jesd204b"): {"M": 4, "L": 4, "F": 4, "K": 32, "Np": 16, "S": 1},
+    # JRX mode 9 jesd204b on the same FMC: M=8 per the AD9081 API
+    # mode table and the reference ``adi,tx-dacs`` block (F=4).
+    (9, "jesd204b"): {"M": 8, "L": 4, "F": 4, "K": 32, "Np": 16, "S": 1},
     (17, "jesd204c"): {"M": 4, "L": 8, "F": 2, "K": 32, "Np": 16, "S": 1},
 }
 
