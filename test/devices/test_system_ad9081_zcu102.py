@@ -73,6 +73,60 @@ def test_generate_dts_emits_expected_nodes() -> None:
     assert "spibus-connected = <&trx0_ad9081>;" in dts
 
 
+def test_ad9081_node_wires_dev_clk_to_hmc7044() -> None:
+    """AD9081 must emit ``clocks = <&hmc7044 N>`` + ``clock-names = "dev_clk"``.
+
+    Without the dev_clk reference the kernel driver fails its
+    clk_get(dev_clk) lookup at probe time and the AD9081 never
+    initializes (dmesg shows ``ad9081: probe of spi1.0 failed with
+    error -2`` / ENOENT).  Regression test for
+    :meth:`adidt.System._find_sink_reference_clock` missing matches
+    when links reference the MxFE ``adc`` / ``dac`` sides rather than
+    the parent device.
+    """
+    fmc = adidt.eval.ad9081_fmc()
+    fmc.converter.set_jesd204_mode(1, "jesd204c")
+    fmc.converter.adc.sample_rate = int(250e6)
+    fmc.converter.dac.sample_rate = int(250e6)
+    fmc.converter.adc.cddc_decimation = 4
+    fmc.converter.adc.fddc_decimation = 4
+    fmc.converter.dac.cduc_interpolation = 12
+    fmc.converter.dac.fduc_interpolation = 4
+
+    fpga = adidt.fpga.zcu102()
+    system = adidt.System(name="ad9081_zcu102_devclk", components=[fmc, fpga])
+    system.connect_spi(bus_index=0, primary=fpga.spi[0], secondary=fmc.clock.spi, cs=0)
+    system.connect_spi(
+        bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi, cs=0
+    )
+    # Wire dev_refclk (HMC7044 channel 2, per AD9081-FMC-EBZ schematic)
+    # as the sink_reference_clock on the RX link.  The adc side is the
+    # link endpoint — not the AD9081 parent — which is the scenario
+    # the old _find_sink_reference_clock missed.
+    system.add_link(
+        source=fmc.converter.adc,
+        sink=fpga.gt[0],
+        sink_reference_clock=fmc.dev_refclk,
+        sink_core_clock=fmc.core_clk_rx,
+        sink_sysref=fmc.dev_sysref,
+    )
+    system.add_link(
+        source=fpga.gt[1],
+        sink=fmc.converter.dac,
+        source_reference_clock=fmc.fpga_refclk_tx,
+        source_core_clock=fmc.core_clk_tx,
+        sink_sysref=fmc.fpga_sysref,
+    )
+
+    dts = system.generate_dts()
+    assert "clocks = <&hmc7044 2>;" in dts, (
+        "AD9081 node is missing its dev_clk reference to HMC7044 channel 2"
+    )
+    assert 'clock-names = "dev_clk";' in dts, (
+        "AD9081 node is missing the dev_clk clock-names entry"
+    )
+
+
 def test_board_model_structure() -> None:
     model = _build_system().to_board_model()
     roles = sorted(c.role for c in model.components)

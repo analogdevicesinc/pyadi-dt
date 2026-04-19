@@ -283,11 +283,28 @@ class System:
     def _find_sink_reference_clock(
         self, converter: ConverterDevice
     ) -> ClockOutput | None:
-        """Find the clock driving the converter's dev-clock input."""
+        """Find the clock driving the converter's dev-clock input.
+
+        Matches links whose endpoint is the converter itself *or*
+        either of its split sides (``adc`` / ``dac``).  For MxFE
+        devices (AD9081, AD9084, AD9082) links target the per-side
+        :class:`ConverterSide`, not the parent — comparing only
+        against the parent misses every match and the emitted DT
+        drops the ``clocks = <&hmc7044 N>`` property, which makes the
+        kernel driver's dev_clk lookup fail at probe time (ENOENT).
+        """
+        # Pydantic devices aren't hashable, so identity-compare via a list.
+        sides = [converter]
+        for side_name in ("adc", "dac"):
+            side = getattr(converter, side_name, None)
+            if side is not None:
+                sides.append(side)
         for link in self._links:
-            if link.sink is converter and link.sink_reference_clock is not None:
-                return link.sink_reference_clock
-            if link.source is converter and link.sink_reference_clock is not None:
+            if link.sink_reference_clock is None:
+                continue
+            if any(link.sink is s for s in sides) or any(
+                link.source is s for s in sides
+            ):
                 return link.sink_reference_clock
         return None
 
