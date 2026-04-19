@@ -44,6 +44,12 @@ def board(strategy):
     plugin reads ``LG_COORDINATOR`` and ``LG_ENV`` from the environment,
     which ``pytest-dotenv`` loads from ``.env``).
 
+    On teardown the board is returned to the ``powered_off`` state so
+    lab hardware is never left running between test modules or CI
+    runs.  Even if a test fails mid-transition and the strategy is in
+    a broken state, we fall back to calling ``power.off()`` directly
+    on the bound ``PowerProtocol`` driver.
+
     Args:
         strategy: Labgrid strategy fixture injected by the labgrid
             pytest plugin.
@@ -54,7 +60,43 @@ def board(strategy):
     """
     require_hw_prereqs()
     strategy.transition("powered_off")
-    yield strategy
+    try:
+        yield strategy
+    finally:
+        _teardown_power_off(strategy)
+
+
+def _teardown_power_off(strategy) -> None:
+    """Best-effort power-down of *strategy*'s board at test-module exit.
+
+    Tries the strategy's ``powered_off`` transition first (which runs
+    strategy-specific cleanup — sdmux back to host, serial detach,
+    etc.); if the state machine is broken from a prior failure, falls
+    back to driving the ``PowerProtocol`` binding directly.  Leaving
+    lab hardware energised between runs is worse than a noisy
+    teardown, so we swallow any exceptions from the fallback path
+    after logging.
+    """
+    import logging
+
+    logger = logging.getLogger(__name__)
+    try:
+        strategy.transition("powered_off")
+        logger.info("Board transitioned to powered_off at test teardown.")
+        return
+    except Exception as exc:
+        logger.warning(
+            "Strategy transition to powered_off failed at teardown: %s", exc
+        )
+    try:
+        power = getattr(strategy, "power", None)
+        if power is None:
+            return
+        strategy.target.activate(power)
+        power.off()
+        logger.info("Board powered off directly via PowerProtocol at teardown.")
+    except Exception as exc:
+        logger.error("Fallback power.off() also failed at teardown: %s", exc)
 
 
 @pytest.fixture(scope="session")
