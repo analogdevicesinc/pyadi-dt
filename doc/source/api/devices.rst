@@ -158,17 +158,39 @@ See :mod:`adidt.devices.clocks.hmc7044` as the canonical full example.
 End-to-end hardware verification
 --------------------------------
 
-Hardware tests live in ``test/hw/``.  Each exercises every stage —
+Hardware tests live in ``test/hw/``.  Each one exercises every stage —
 XSA parsing → sdtgen → DTS generation → DTB compile → labgrid boot →
-IIO + JESD204 link verification on real hardware.
+IIO + JESD204 link verification on real hardware — and covers all three
+supported boot strategies (SD-card, TFTP, and MicroBlaze/JTAG):
 
-- ``test_ad9081_zcu102_system_hw.py`` — AD9081 MxFE on ZCU102 via the
-  declarative :class:`adidt.System` path.
-- ``test_adrv9009_zcu102_hw.py`` — ADRV9009 on ZCU102 via the XSA
-  pipeline (uses :class:`~adidt.xsa.builders.adrv9009.ADRV9009Builder`).
-- ``test_adrv9371_zc706_hw.py`` — AD9371/ADRV9371 on ZC706 via the XSA
-  pipeline (uses :class:`~adidt.xsa.builders.adrv937x.ADRV937xBuilder`),
-  TFTP boot on Zynq-7000.
+.. list-table::
+   :header-rows: 1
+   :widths: 35 20 20 25
+
+   * - Test module
+     - Board + carrier
+     - Boot strategy
+     - Path
+   * - ``test_ad9081_zcu102_system_hw.py``
+     - AD9081 + ZCU102
+     - ``BootFPGASoC``
+     - Declarative :class:`adidt.System`
+   * - ``test_ad9081_zcu102_xsa_hw.py``
+     - AD9081 + ZCU102
+     - ``BootFPGASoC``
+     - :class:`~adidt.xsa.builders.ad9081.AD9081Builder`
+   * - ``test_adrv9009_zcu102_hw.py``
+     - ADRV9009 + ZCU102
+     - ``BootFPGASoC``
+     - :class:`~adidt.xsa.builders.adrv9009.ADRV9009Builder`
+   * - ``test_adrv9371_zc706_hw.py``
+     - ADRV9371 + ZC706
+     - ``BootFPGASoCTFTP``
+     - :class:`~adidt.xsa.builders.adrv937x.ADRV937xBuilder`
+   * - ``test_fmcdaq3_vcu118_hw.py``
+     - FMCDAQ3 + VCU118
+     - ``BootFabric`` (JTAG)
+     - Prebuilt simpleImage (smoke test)
 
 Tests support two connection modes, selected by ``.env`` at the project
 root (loaded via ``pytest-dotenv``):
@@ -177,6 +199,12 @@ root (loaded via ``pytest-dotenv``):
   ``LG_ENV=<env_remote_*.yaml>``.  The env YAML binds a ``RemotePlace``
   to the coordinator-published resources.
 - **Direct mode** — set ``LG_ENV=<local_yaml>`` only.
+
+Each board family has a dedicated single-target env file:
+``env_remote_mini2.yaml`` (ZCU102 + AD9081),
+``env_remote_bq.yaml`` (ZC706 + ADRV9371), and
+``env_remote_nuc.yaml`` (VCU118 + FMCDAQ3).  The combined
+``env_remote_all.yaml`` exposes all three as named targets.
 
 Example — run the ADRV9371+ZC706 test via a coordinator::
 
@@ -187,3 +215,23 @@ Example — run the ADRV9371+ZC706 test via a coordinator::
 Copy ``.env.example`` to ``.env`` for the supported variables.  The skip
 guard in each hw test module requires one of ``LG_COORDINATOR`` or
 ``LG_ENV`` to be set.
+
+Kernel image caching
+~~~~~~~~~~~~~~~~~~~~
+
+``test/hw/conftest.py`` provides session-scoped ``built_kernel_image_*``
+fixtures backed by a file-based cache keyed on the sha256 of the
+``pyadi-build`` YAML config.  First run per config builds through
+``pyadi-build`` and copies the produced kernel image into
+``~/.cache/adidt/kernel/<platform>/<hash>/<image>``; subsequent runs
+skip ``prepare_source`` + ``build`` entirely.  Zynq-7000 ``zImage`` is
+wrapped as a ``uImage`` via ``mkimage`` so ``BootFPGASoCTFTP``'s
+``tftpboot uImage`` can find the file.
+
+Control via env vars:
+
+- ``ADIDT_KERNEL_CACHE=0`` — force a rebuild.
+- ``ADIDT_KERNEL_CACHE_DIR=<path>`` — relocate the cache (default
+  ``~/.cache/adidt/kernel``).
+
+Measured: first ZC706 run ≈ 600 s; cached re-run ≈ 70 s.
