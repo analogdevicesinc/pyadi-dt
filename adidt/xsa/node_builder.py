@@ -8,6 +8,7 @@ from .builders import BoardBuilder
 from .builders.ad9081 import AD9081Builder
 from .builders.ad9084 import AD9084Builder
 from .builders.ad9172 import AD9172Builder
+from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
@@ -20,6 +21,7 @@ class NodeBuilder:
 
     _DEFAULT_BUILDERS: list[BoardBuilder] = [
         ADRV9009Builder(),
+        ADRV937xBuilder(),
         AD9081Builder(),
         AD9084Builder(),
         FMCDAQ2Builder(),
@@ -88,6 +90,11 @@ class NodeBuilder:
             # ADRV9009 builder skips its own named instances
             if self._is_adrv90xx_name(name):
                 return True
+            # ADRV937x builder skips ad9371/adrv937 named instances
+            if any(k in lower for k in ("ad9371", "adrv937")) and any(
+                isinstance(b, ADRV937xBuilder) for b in matched_builders
+            ):
+                return True
             # AD9081 builder skips mxfe-named instances
             if "mxfe" in lower and "axi_ad9081" in skip_ip_types:
                 return True
@@ -109,6 +116,10 @@ class NodeBuilder:
         for clkgen in topology.clkgens:
             if self._is_adrv90xx_name(clkgen.name) and any(
                 isinstance(b, ADRV9009Builder) for b in matched_builders
+            ):
+                continue
+            if any(k in clkgen.name.lower() for k in ("ad9371", "adrv937")) and any(
+                isinstance(b, ADRV937xBuilder) for b in matched_builders
             ):
                 continue
             result["clkgens"].append(

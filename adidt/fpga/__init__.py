@@ -8,6 +8,7 @@ list of GT lanes available for JESD204 links.
 
 from .base import FpgaBoard, SpiMaster
 from .vpk180 import vpk180
+from .zc706 import zc706
 from .zcu102 import zcu102
 
-__all__ = ["FpgaBoard", "SpiMaster", "vpk180", "zcu102"]
+__all__ = ["FpgaBoard", "SpiMaster", "vpk180", "zc706", "zcu102"]
