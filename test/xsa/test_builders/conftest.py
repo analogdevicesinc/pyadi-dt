@@ -217,3 +217,42 @@ def topo_adrv9009():
         signal_connections=[],
         fpga_part="xczu9eg-ffvb1156-2-e",
     )
+
+
+@pytest.fixture
+def topo_adrv937x():
+    """ADRV937x (AD9371) transceiver topology (no ORX)."""
+    return XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance(
+                name="axi_ad9371_rx_jesd_rx_axi",
+                base_addr=0x44A90000,
+                num_lanes=2,
+                irq=0,
+                link_clk="",
+                direction="rx",
+            ),
+        ],
+        jesd204_tx=[
+            Jesd204Instance(
+                name="axi_ad9371_tx_jesd_tx_axi",
+                base_addr=0x44B90000,
+                num_lanes=4,
+                irq=0,
+                link_clk="",
+                direction="tx",
+            ),
+        ],
+        clkgens=[],
+        converters=[
+            ConverterInstance(
+                name="axi_ad9371",
+                ip_type="axi_ad9371",
+                base_addr=0x44A00000,
+                spi_bus=None,
+                spi_cs=None,
+            ),
+        ],
+        signal_connections=[],
+        fpga_part="xc7z045ffg900-2",
+    )

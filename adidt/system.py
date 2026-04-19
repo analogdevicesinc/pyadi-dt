@@ -301,7 +301,13 @@ class System:
         if direction in self._jesd_label_overrides:
             labels["jesd_label"] = self._jesd_label_overrides[direction]
 
-        side: ConverterSide = converter.adc if is_rx else converter.dac
+        # For converters with separate ADC/DAC sides (e.g., AD9081/MxFE),
+        # use the respective side. For single transceivers (e.g., ADRV9009),
+        # use the converter directly.
+        if hasattr(converter, "adc") and hasattr(converter, "dac"):
+            side: ConverterSide = converter.adc if is_rx else converter.dac
+        else:
+            side = converter
         params = side.jesd204_settings
         link_id = int(params.link_id)
 

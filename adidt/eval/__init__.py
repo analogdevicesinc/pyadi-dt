@@ -9,6 +9,7 @@ SYSREF requests.  Users customize the remaining degrees of freedom
 
 from .ad9081_fmc import ad9081_fmc
 from .ad9084_fmc import ad9084_fmc
+from .adrv937x_fmc import adrv937x_fmc
 from .base import EvalBoard
 
-__all__ = ["EvalBoard", "ad9081_fmc", "ad9084_fmc"]
+__all__ = ["EvalBoard", "ad9081_fmc", "ad9084_fmc", "adrv937x_fmc"]

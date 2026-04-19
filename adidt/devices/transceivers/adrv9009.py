@@ -15,7 +15,7 @@ from pydantic import Field
 
 from .._dt_render import render_node
 from .._fields import DtSkip
-from ..converters.base import ConverterDevice
+from ..converters.base import ConverterDevice, Jesd204Settings
 
 
 class ADRV9009(ConverterDevice):
@@ -43,6 +43,8 @@ class ADRV9009(ConverterDevice):
     )
 
     spi_max_hz: int = Field(25_000_000, alias="spi-max-frequency")
+
+    jesd204_settings: Jesd204Settings = Field(default_factory=Jesd204Settings)
 
     # Coupled GPIO / phandle properties — rendered via extra_dt_lines.
     reset_gpio: Annotated[int | None, DtSkip()] = None

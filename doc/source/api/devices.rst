@@ -82,7 +82,11 @@ Converters / MxFE transceivers:
 
 RF transceivers:
 
-- :class:`adidt.devices.transceivers.ADRV9009` (also covers ADRV9025/9026/9029)
+- :class:`adidt.devices.transceivers.ADRV9009` — reused for ADRV9025/9026/9029
+  (Talise silicon) and for AD9371/ADRV9371 (Mykonos silicon).  The kernel
+  binding differs per chip: set ``compatible_strings=["adi,ad9371"]`` plus
+  ``node_name_base="ad9371-phy"`` for AD9371, otherwise the ADRV9009 default
+  applies.
 
 FPGA-side JESD204 IP overlays:
 
@@ -124,13 +128,14 @@ The composition API lives in :mod:`adidt.eval`, :mod:`adidt.fpga`, and
   produces a :class:`~adidt.model.BoardModel`, delegates to
   :class:`~adidt.model.renderer.BoardModelRenderer` for DTS emission.
 - :class:`adidt.eval.EvalBoard` subclasses (``ad9081_fmc``,
-  ``ad9084_fmc``) pre-wire a clock chip and a converter with the
-  schematic-level channel assignments a specific FMC expects, and
-  expose named clock-output aliases (``fmc.dev_refclk``,
+  ``ad9084_fmc``, ``adrv937x_fmc``) pre-wire a clock chip and a
+  converter with the schematic-level channel assignments a specific FMC
+  expects, and expose named clock-output aliases (``fmc.dev_refclk``,
   ``fmc.fpga_sysref``, …).
 - :class:`adidt.fpga.FpgaBoard` subclasses (``zcu102``, ``vpk180``,
-  etc.) hold platform constants: address-cells, PS clock label/index,
-  GPIO controller, SPI masters, GT lane count, default QPLL selection.
+  ``zc706``) hold platform constants: address-cells, PS clock
+  label/index, GPIO controller, SPI masters, GT lane count, default QPLL
+  selection.
 
 Writing a new device
 --------------------
@@ -153,12 +158,32 @@ See :mod:`adidt.devices.clocks.hmc7044` as the canonical full example.
 End-to-end hardware verification
 --------------------------------
 
-``test/hw/test_ad9081_zcu102_system_hw.py`` exercises every stage —
-XSA parsing → sdtgen → declarative ``System`` composition → DTS merge
-→ DTB compile → labgrid boot → IIO + JESD204 link verification on a
-real ZCU102.  Run it with::
+Hardware tests live in ``test/hw/``.  Each exercises every stage —
+XSA parsing → sdtgen → DTS generation → DTB compile → labgrid boot →
+IIO + JESD204 link verification on real hardware.
 
-   LG_ENV=/jenkins/lg_ad9081_zcu102.yaml pytest test/hw/test_ad9081_zcu102_system_hw.py
+- ``test_ad9081_zcu102_system_hw.py`` — AD9081 MxFE on ZCU102 via the
+  declarative :class:`adidt.System` path.
+- ``test_adrv9009_zcu102_hw.py`` — ADRV9009 on ZCU102 via the XSA
+  pipeline (uses :class:`~adidt.xsa.builders.adrv9009.ADRV9009Builder`).
+- ``test_adrv9371_zc706_hw.py`` — AD9371/ADRV9371 on ZC706 via the XSA
+  pipeline (uses :class:`~adidt.xsa.builders.adrv937x.ADRV937xBuilder`),
+  TFTP boot on Zynq-7000.
 
-The test is the shortest path from ``adidt.eval.ad9081_fmc`` to a
-DATA-mode JESD204 link on hardware.
+Tests support two connection modes, selected by ``.env`` at the project
+root (loaded via ``pytest-dotenv``):
+
+- **Coordinator mode** — set ``LG_COORDINATOR=<host>:<port>`` plus
+  ``LG_ENV=<env_remote_*.yaml>``.  The env YAML binds a ``RemotePlace``
+  to the coordinator-published resources.
+- **Direct mode** — set ``LG_ENV=<local_yaml>`` only.
+
+Example — run the ADRV9371+ZC706 test via a coordinator::
+
+   LG_COORDINATOR=10.0.0.41:20408 \
+   LG_ENV=env_remote_bq.yaml \
+   pytest test/hw/test_adrv9371_zc706_hw.py
+
+Copy ``.env.example`` to ``.env`` for the supported variables.  The skip
+guard in each hw test module requires one of ``LG_COORDINATOR`` or
+``LG_ENV`` to be set.

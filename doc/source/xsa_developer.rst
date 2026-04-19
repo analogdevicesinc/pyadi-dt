@@ -109,7 +109,8 @@ Key data models
 
    Current builders: ``FMCDAQ2Builder``, ``FMCDAQ3Builder``,
    ``AD9172Builder``, ``AD9081Builder``, ``AD9084Builder``,
-   ``ADRV9009Builder``.
+   ``ADRV9009Builder``, ``ADRV937xBuilder`` (AD9371 / ADRV9371 / ADRV9375
+   on ZC706 and ZCU102).
 
 ``BoardModel`` (``model/board_model.py``)
    The unified board model that all builders produce internally.  A
