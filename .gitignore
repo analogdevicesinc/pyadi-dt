@@ -135,3 +135,8 @@ test/hw/output/
 
 # Labgrid yamls
 lg_*
+# Allow committed redacted templates in the developer docs samples dir.
+!doc/source/developer/samples/lg_*.yaml.example
+
+# One-off local operator helper, never tracked.
+/setup-direct-mode.sh

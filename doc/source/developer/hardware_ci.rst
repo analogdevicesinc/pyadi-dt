@@ -205,6 +205,61 @@ the node-local labgrid YAML:
 only runs ``hw-coord`` legs, which use the committed
 ``env_remote_*.yaml`` files.)
 
+Direct-mode YAML templates
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+A node-local direct-mode YAML has the same *shape* as the coordinator
+env YAML except it declares resources + drivers in full rather than
+pointing at a ``RemotePlace``.  Because it contains host-specific
+paths (serial by-id symlinks, sdmux ID_PATH, ``MassStorageDevice``
+partition path) and credentials (VeSync account for the smart plug,
+Home Assistant tokens for ZC706's HAS outlet), **it must not be
+checked into the repo**.
+
+Two redacted templates ship in
+``doc/source/developer/samples/``:
+
+- ``lg_direct_mini2.yaml.example`` — AD9081 + ZCU102 on mini2.  Fill
+  in serial port symlink, sdmux ID_PATH, MassStorageDevice partition,
+  and VeSync credentials.
+- ``lg_direct_nuc.yaml.example`` — FMCDAQ3 + VCU118 on nuc.  Fill in
+  serial port symlink, VeSync credentials; JTAG ``root_target`` /
+  ``microblaze_target`` follow the existing exporter config at
+  ``~/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml`` on nuc.
+
+Per-node bring-up:
+
+1. Copy the template onto the runner host, rename and strip the
+   ``.example`` suffix:
+
+   .. code-block:: bash
+
+      scp doc/source/developer/samples/lg_direct_mini2.yaml.example \
+          mini2:~/ci/lg_direct.yaml
+
+2. SSH in and replace every ``<FILL>`` placeholder with the
+   host-specific value.  Cross-reference the exporter YAML already
+   on the host for serial symlinks, USB device paths, and VeSync
+   credentials.
+
+3. Point the runner at it and restart the runner service:
+
+   .. code-block:: bash
+
+      echo "LG_DIRECT_ENV=/home/$USER/ci/lg_direct.yaml" >> ~/actions-runner/.env
+      sudo ./svc.sh stop && sudo ./svc.sh start
+
+4. Trigger the workflow (``gh workflow run hardware-test.yml``) and
+   check that ``hw-direct (<place>)`` now runs the full test path
+   instead of emitting
+   ``LG_DIRECT_ENV is not set on this runner — skipping direct-mode
+   tests.``.
+
+The templates are intentionally minimal — only the drivers and
+resources each board's test actually uses — so the same bring-up
+works for both ZCU102 (SD-mux boot) and VCU118 (JTAG boot) after
+swapping the strategy / driver section.
+
 System-tool prerequisites on each hw-node runner:
 
 .. code-block:: bash

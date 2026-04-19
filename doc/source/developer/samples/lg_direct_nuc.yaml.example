@@ -1,0 +1,58 @@
+## Direct-mode labgrid env for FMCDAQ3+VCU118 attached to nuc.
+##
+## Not checked into the public repo under this exact filename — this
+## template is shipped as ``.example`` so you can copy it onto the
+## nuc runner host, fill in host-specific paths + credentials, and
+## point ``LG_DIRECT_ENV`` at it in ``~/actions-runner/.env``.
+##
+## Fields to edit are marked ``<FILL>`` below.  Reference
+## ``~/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml`` on the
+## nuc host for the current serial-port symlink and Xilinx JTAG
+## target IDs.
+
+targets:
+  main:
+    features:
+      - fmcdaq3
+      - vcu118
+
+    resources:
+      RawSerialPort:
+        port: "<FILL: /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_<SERIAL>-if01-port0>"
+        speed: 115200
+
+      XilinxDeviceJTAG:
+        root_target: 1
+        microblaze_target: 3
+        kernel_path: "/jenkins/vcu118_fmcdaq3/simpleImage.vcu118_fmcdaq3.strip"
+        bitstream_path: "/jenkins/vcu118_fmcdaq3/system_top.bit"
+
+      XilinxVivadoTool:
+        vivado_path: "/tools/Xilinx/2025.1/Vivado"
+
+      NetworkService:
+        address: "10.0.0.231"
+        username: "root"
+        password: "analog"
+
+      VesyncOutlet:
+        outlet_names: "<FILL: FPGA (Nook),Apollo>"
+        username: "<FILL: VeSync account email>"
+        password: "<FILL: VeSync account password>"
+
+    drivers:
+      SerialDriver: {}
+      XilinxJTAGDriver: {}
+      SSHDriver: {}
+      VesyncPowerDriver: {}
+      ADIShellDriver:
+        prompt: '#.*'
+        login_prompt: 'buildroot login: '
+        username: 'root'
+        password: 'analog'
+      BootFabric:
+        reached_boot_marker: 'login:'
+        trigger_dhcp_reset: true
+        wait_for_boot_timeout: 700
+        debug_write_boot_log: true
+        power_off_delay: 30

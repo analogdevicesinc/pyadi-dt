@@ -1,0 +1,69 @@
+## Direct-mode labgrid env for AD9081+ZCU102 attached to mini2.
+##
+## Not checked into the public repo under this exact filename — this
+## template is shipped as ``.example`` so you can copy it onto the
+## mini2 runner host, fill in host-specific paths + credentials, and
+## point ``LG_DIRECT_ENV`` at it in ``~/actions-runner/.env``.
+##
+## Fields to edit for each fresh deployment are marked ``<FILL>``
+## below.  The values are the same ones the coordinator exporter YAML
+## uses on the same machine (``~/dev/lg-coordinator/lg_ad9081_zcu102_mini2_exporter.yaml``);
+## reference that file for the current serial-port symlink and sdmux ID_PATH.
+
+targets:
+  main:
+    features:
+      - ad9081
+      - zcu102
+
+    resources:
+      RawSerialPort:
+        port: "<FILL: /dev/serial/by-id/usb-Silicon_Labs_CP2108_Quad_USB_to_UART_Bridge_Controller_<SERIAL>-if00-port0>"
+        speed: 115200
+
+      USBMassStorage:
+        match:
+          ID_PATH: "<FILL: pci-0000:00:14.0-usb-0:14.1.1:1.0-scsi-0:0:0:0>"
+          SUBSYSTEM: "block"
+
+      USBSDMuxDevice: {}
+
+      MassStorageDevice:
+        path: "<FILL: /dev/disk/by-partuuid/a22286d2-01>"
+
+      NetworkService:
+        address: "10.0.0.23"
+        username: "root"
+        password: "analog"
+
+      VesyncOutlet:
+        outlet_names: "<FILL: Apollo>"
+        username: "<FILL: VeSync account email>"
+        password: "<FILL: VeSync account password>"
+
+      KuiperRelease:
+        release_version: "2023_R2_P1"
+        cache_path: "/tmp/kuiper_cache"
+        kernel_path: "release:zynqmp-common/Image"
+        BOOTBIN_path: "release:zynqmp-zcu102-rev10-ad9081/m8_l4/BOOT.BIN"
+        device_tree_path: "release:zynqmp-zcu102-rev10-ad9081/m8_l4/system.dtb"
+
+    drivers:
+      SerialDriver: {}
+      USBSDMuxDriver: {}
+      VesyncPowerDriver: {}
+      KuiperDLDriver: {}
+      MassStorageDriver: {}
+      SSHDriver: {}
+      ADIShellDriver:
+        prompt: 'root@.*'
+        login_prompt: 'analog login: '
+        username: 'root'
+        password: 'analog'
+      BootFPGASoC:
+        reached_linux_marker: 'analog'
+        wait_for_linux_prompt_timeout: 180
+        # Pre-emptive cold-cycle + silent-serial retry come from
+        # adi-labgrid-plugins (no extra knobs needed here; leave
+        # kernel_banner_retries at the default 1).
+        debug_write_boot_log: true
