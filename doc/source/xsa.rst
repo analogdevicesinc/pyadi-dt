@@ -356,6 +356,11 @@ Built-in profiles
      - ZC706
      - Yes
      - ``fmcdaq3_board``
+   * - ``fmcdaq3_vcu118``
+     - FMCDAQ3
+     - VCU118 (MicroBlaze)
+     - Yes
+     - ``fmcdaq3_board``
 
 Profiles with **"JESD in Profile = Yes"** include default JESD framing
 parameters (F, K, M, L, Np, S) and can be used with ``cfg={}`` — no user
@@ -601,11 +606,15 @@ Auto-selection also covers FMCDAQ2 variants:
 
 FMCDAQ3 variants are available via explicit profiles:
 
-- ``fmcdaq3_zcu102``
-- ``fmcdaq3_zc706``
+- ``fmcdaq3_zcu102`` (ZynqMP / ZCU102)
+- ``fmcdaq3_zc706`` (Zynq-7000 / ZC706)
+- ``fmcdaq3_vcu118`` (MicroBlaze / VCU118)
 
 Current FMCDAQ3 support focuses on JESD/clock transport defaults and artifact
 generation; board-specific SPI device overlay content remains to be extended.
+The VCU118 variant ships with a coordinator-based boot smoke test
+(``test/hw/test_fmcdaq3_vcu118_hw.py``) that drives the prebuilt Kuiper
+``simpleImage.vcu118_fmcdaq3.strip`` over JTAG via ``BootFabric``.
 
 ADRV family profile variants include:
 

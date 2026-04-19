@@ -1,0 +1,56 @@
+{
+  "name": "fmcdaq3_vcu118",
+  "defaults": {
+    "fmcdaq3_board": {
+      "spi_bus": "axi_spi",
+      "clock_cs": 0,
+      "adc_cs": 2,
+      "dac_cs": 1,
+      "clock_vcxo_hz": 100000000,
+      "clock_spi_max_frequency": 10000000,
+      "adc_spi_max_frequency": 10000000,
+      "dac_spi_max_frequency": 10000000,
+      "gpio_controller": "axi_gpio",
+      "adc_dma_label": "axi_ad9680_dma",
+      "dac_dma_label": "axi_ad9152_dma",
+      "adc_core_label": "axi_ad9680_tpl_core_adc_tpl_core",
+      "dac_core_label": "axi_ad9152_tpl_core_dac_tpl_core",
+      "adc_xcvr_label": "axi_ad9680_xcvr",
+      "dac_xcvr_label": "axi_ad9152_xcvr",
+      "adc_jesd_label": "axi_ad9680_jesd_rx_axi",
+      "dac_jesd_label": "axi_ad9152_jesd_tx_axi",
+      "adc_jesd_link_id": 0,
+      "dac_jesd_link_id": 0,
+      "adc_device_clk_idx": 13,
+      "adc_xcvr_ref_clk_idx": 9,
+      "adc_sampling_frequency_hz": 1233333333,
+      "dac_device_clk_idx": 2,
+      "dac_xcvr_ref_clk_idx": 4,
+      "ad9152_jesd_link_mode": 4
+    },
+    "clock": {
+      "rx_device_clk_label": "clkgen",
+      "tx_device_clk_label": "clkgen",
+      "rx_device_clk_index": 0,
+      "tx_device_clk_index": 0
+    },
+    "jesd": {
+      "rx": {
+        "F": 1,
+        "K": 32,
+        "M": 2,
+        "L": 4,
+        "Np": 16,
+        "S": 1
+      },
+      "tx": {
+        "F": 1,
+        "K": 32,
+        "M": 2,
+        "L": 4,
+        "Np": 16,
+        "S": 1
+      }
+    }
+  }
+}
