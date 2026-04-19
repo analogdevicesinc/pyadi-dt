@@ -116,8 +116,18 @@ def _solve_ad9081_config(vcxo_hz: int = DEFAULT_VCXO_HZ) -> dict:
 
 
 def _configure_converter(fmc, cfg: dict) -> None:
-    """Apply solver-resolved JESD + datapath values to the AD9081 device."""
-    fmc.converter.set_jesd204_mode(cfg["rx_mode"], cfg["rx_class"])
+    """Apply solver-resolved JESD + datapath values to the AD9081 device.
+
+    AD9081 uses *different* jesd204b link modes for the ADC (RX, jtx)
+    and DAC (TX, jrx) sides — see the per-side ``MODE_TABLE`` in
+    :mod:`adidt.devices.converters.ad9081`.  Applying the same mode to
+    both sides via ``converter.set_jesd204_mode`` leaves the DAC
+    mode-table lookup empty and L=0, which makes the kernel driver
+    fail at ``adi_ad9081_device_startup_tx_or_nco_test`` with
+    ``jesd_param->jesd_l == 0``.  Set each side individually instead.
+    """
+    fmc.converter.adc.set_jesd204_mode(cfg["rx_mode"], cfg["rx_class"])
+    fmc.converter.dac.set_jesd204_mode(cfg["tx_mode"], cfg["tx_class"])
     fmc.converter.adc.sample_rate = cfg["rx_sample_rate"]
     fmc.converter.dac.sample_rate = cfg["tx_sample_rate"]
     fmc.converter.adc.cddc_decimation = cfg["rx_cddc"]
