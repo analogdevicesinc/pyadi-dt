@@ -46,6 +46,50 @@ before any self-hosted runner is scheduled.  Same-repo PRs, pushes to
 ``main``, and ``workflow_dispatch`` are always trusted and run
 directly.
 
+Boot reliability
+----------------
+
+The ``BootFPGASoC`` strategy (used on ``mini2`` / ZCU102 and similar
+SD-mux targets) does two things to tolerate the common "silent first
+power-on" flake in CI:
+
+- **Pre-emptive cold-cycle.**  After muxing the SD card back to the
+  DUT and before the kernel-banner expect, the strategy does an
+  explicit ``power.off() → sleep 5 → power.on()``.  The prior
+  ``Status.powered_off`` transition did already toggle power, but the
+  intervening SD-mux operations (which briefly energise the SD slot
+  from the host side) can leave the board in a latched state where the
+  first ``on()`` looks applied but the board stays silent on UART.  A
+  clean cycle right before the boot window sidesteps this.
+- **One-shot retry.**  If the banner expect still times out *with
+  zero bytes captured* (board genuinely never emitted anything), the
+  strategy tears down the shell driver, power-cycles once more, and
+  re-runs the expect.  The retry only kicks in on 0-byte silence —
+  if any bytes made it through, the failure is a real boot problem
+  (wrong DTB, bad BOOT.BIN, etc.) and is raised immediately.
+
+Both behaviours are tuned by attributes on the strategy:
+
+- ``wait_for_kernel_banner_timeout`` (default 120 s) — time to wait
+  for ``Linux`` in the UART stream on each attempt.
+- ``kernel_banner_retries`` (default 1) — number of additional boot
+  attempts on zero-byte silence.
+- ``debug_write_boot_log`` (``true`` in every env yaml shipped here)
+  — dump the pexpect buffer at attempt timeout to
+  ``uart_log_kernel_banner_attempt<N>_<ts>.txt`` at the workspace
+  root.  The CI workflow's artifact step captures these so flaky
+  boots can be post-mortem'd from the Actions run page.
+
+Board power-off on teardown
+---------------------------
+
+The ``board`` fixture in ``test/hw/conftest.py`` wraps its ``yield``
+in a try/finally so that every hw test-module exits with the board
+transitioned back to ``powered_off``.  Lab hardware is never left
+energised between runs, and the fixture's fallback path calls
+``power.off()`` directly on the bound ``PowerProtocol`` driver if the
+strategy is in a broken state from a prior failure.
+
 Node manifest
 -------------
 
@@ -238,6 +282,55 @@ to ``https://x-access-token:<token>@github.com/`` for the duration
 of that step.  The secret is never written to the runner's
 ``~/.gitconfig`` so it doesn't leak to later jobs.
 
+Debug artifacts
+---------------
+
+Every hw-direct and hw-coord matrix leg uploads a workflow artifact
+named ``hw-<mode>-<place>-output`` containing, per run:
+
+- Generated ``.dts`` / pre-cpp ``.pp.dts`` / compiled ``.dtb`` from
+  the test's output directory (``test/hw/output/``).
+- ``dmesg_*.log`` snapshots taken by ``collect_dmesg``.
+- Per-attempt ``uart_log_kernel_banner_attempt<N>_<ts>.txt`` dumps
+  from failed boot attempts.
+
+Artifacts stay for 14 days.  Fast local diff against a known-good
+reference:
+
+.. code-block:: bash
+
+   gh run download <RUN_ID> -n hw-coord-mini2-output -D /tmp/artifact
+   python3 -m adidt.tools.dts_compare_cli \
+       test/devices/fixtures/ad9081_zcu102_xsa_reference.dts \
+       /tmp/artifact/ad9081_zcu102.dts
+
+See :ref:`local-dts-diff` (below) for the property-level inspection
+flow.
+
+.. _local-dts-diff:
+
+Local DT-emission parity test
+-----------------------------
+
+Most driver-probe failures on the declarative System API path today
+are visible in the generated DTS *before* anything is flashed — they
+show up as missing / wrong properties compared to the XSA pipeline's
+emission (which is known to probe on real hardware).  The parity
+test at ``test/devices/test_system_ad9081_dts_parity.py`` pins the
+System API's emitted DTS against a committed XSA reference fixture
+(``test/devices/fixtures/ad9081_zcu102_xsa_reference.dts``) over the
+full list of kernel-critical properties defined in
+``adidt.tools.dts_inspect.KERNEL_CRITICAL_KEYS``.  It runs in under
+1 s and gives a focused per-property failure when the two paths
+diverge.
+
+Regenerate the fixture when the XSA path evolves:
+
+.. code-block:: bash
+
+   gh run download <PASSING_RUN_ID> -n hw-coord-mini2-output -D /tmp/ref
+   cp /tmp/ref/ad9081_zcu102.dts test/devices/fixtures/ad9081_zcu102_xsa_reference.dts
+
 Troubleshooting
 ---------------
 
@@ -265,3 +358,18 @@ Troubleshooting
   Fork PRs pause on GitHub's built-in workflow approval gate.
   Open the PR's Actions tab and click *Approve and run* to release
   the jobs.
+
+**``hw-coord (<place>)`` takes ~120 s longer than usual.**
+  The ``BootFPGASoC`` retry path fired on a zero-byte serial timeout.
+  Check the ``uart_log_kernel_banner_attempt1_*.txt`` artifact — if
+  it's empty, the first power-on was silent (the pre-emptive
+  cold-cycle should have handled this, so getting here usually means
+  the serial exporter on the hw node is misbehaving).  Restart
+  ``ser2net`` on the exporter host.
+
+**Board left powered on after a local test run.**
+  The ``board`` fixture in ``test/hw/conftest.py`` powers the board
+  off at teardown, but if the fixture itself errored out before the
+  ``yield`` (e.g. ``require_hw_prereqs`` failed) the teardown didn't
+  run.  Manual recovery: ``labgrid-client -x <coordinator> -p <place>
+  acquire``, then ``power off`` in the labgrid shell.
