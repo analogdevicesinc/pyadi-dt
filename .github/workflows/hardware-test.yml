@@ -1,0 +1,117 @@
+name: Hardware Tests
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  COORDINATOR: 10.0.0.41:20408
+  LABGRID_PIP: 'labgrid @ git+https://github.com/tfcollins/labgrid.git@tfcollins/plugin-support'
+
+concurrency:
+  group: hw-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      available_nodes: ${{ steps.probe.outputs.available_nodes }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - id: probe
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          MANIFEST=.github/hw-nodes.json
+          HOST="${COORDINATOR%%:*}"
+          PORT="${COORDINATOR##*:}"
+          if ! timeout 10 bash -c "</dev/tcp/$HOST/$PORT" 2>/dev/null; then
+            echo "Coordinator $COORDINATOR unreachable — marking all nodes unavailable." >&2
+            echo 'available_nodes=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          pip install --quiet "$LABGRID_PIP"
+          PLACES=$(timeout 30 labgrid-client -x "$COORDINATOR" places 2>/dev/null || echo "")
+          echo "Coordinator places advertised: $PLACES" >&2
+          python - "$MANIFEST" "$PLACES" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          manifest = json.load(open(sys.argv[1]))
+          places = set(sys.argv[2].split())
+          avail = [n for n in manifest if n["place"] in places]
+          print("available_nodes=" + json.dumps(avail))
+          PY
+
+  hw-direct:
+    needs: preflight
+    if: needs.preflight.outputs.available_nodes != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
+    name: hw-direct (${{ matrix.node.place }})
+    runs-on: [self-hosted, "${{ matrix.node.runner_label }}"]
+    environment: hardware-tests
+    timeout-minutes: 40
+    concurrency:
+      group: hw-direct-${{ matrix.node.place }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install adidt + dev extras
+        run: pip install --user -e ".[dev]"
+
+      - name: Verify LG_DIRECT_ENV is set on the runner
+        run: |
+          if [ -z "${LG_DIRECT_ENV:-}" ]; then
+            echo "LG_DIRECT_ENV is not set on this runner." >&2
+            echo "Add it to ~/actions-runner/.env (see doc/source/developer/hardware_ci.rst)." >&2
+            exit 1
+          fi
+          if [ ! -f "$LG_DIRECT_ENV" ]; then
+            echo "LG_DIRECT_ENV=$LG_DIRECT_ENV does not exist." >&2
+            exit 1
+          fi
+
+      - name: Run direct-mode tests
+        env:
+          LG_ENV: ${{ env.LG_DIRECT_ENV }}
+        run: pytest -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+
+  hw-coord:
+    needs: preflight
+    if: needs.preflight.outputs.available_nodes != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
+    name: hw-coord (${{ matrix.node.place }})
+    runs-on: [self-hosted, hw-coordinator]
+    environment: hardware-tests
+    timeout-minutes: 40
+    concurrency:
+      group: hw-coord-${{ matrix.node.place }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install adidt + dev extras
+        run: pip install --user -e ".[dev]"
+
+      - name: Run coordinator-mode tests
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LG_ENV: ${{ github.workspace }}/${{ matrix.node.env_remote }}
+        run: pytest -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
