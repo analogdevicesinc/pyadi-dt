@@ -11,7 +11,6 @@ on:
 
 env:
   COORDINATOR: 10.0.0.41:20408
-  LABGRID_PIP: 'labgrid @ git+https://github.com/tfcollins/labgrid.git@tfcollins/plugin-support'
 
 concurrency:
   group: hw-${{ github.ref }}
@@ -19,19 +18,24 @@ concurrency:
 
 jobs:
   preflight:
-    runs-on: ubuntu-latest
+    # Runs on the coordinator host itself so the labgrid-client query
+    # has a route to the coordinator daemon.  GitHub-hosted runners
+    # cannot reach the private lab network.
+    runs-on: [self-hosted, hw-coordinator]
+    environment: hardware-tests
     timeout-minutes: 3
     outputs:
       available_nodes: ${{ steps.probe.outputs.available_nodes }}
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
+      - name: Bootstrap uv
+        run: bash .github/scripts/bootstrap-uv.sh
 
       - id: probe
         timeout-minutes: 2
+        env:
+          LABGRID_PIP: 'labgrid @ git+https://github.com/tfcollins/labgrid.git@tfcollins/plugin-support'
         run: |
           set -euo pipefail
           MANIFEST=.github/hw-nodes.json
@@ -42,13 +46,35 @@ jobs:
             echo 'available_nodes=[]' >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          pip install --quiet "$LABGRID_PIP"
-          PLACES=$(timeout 30 labgrid-client -x "$COORDINATOR" places 2>/dev/null || echo "")
-          echo "Coordinator places advertised: $PLACES" >&2
-          python - "$MANIFEST" "$PLACES" >> "$GITHUB_OUTPUT" <<'PY'
+          export PATH="$HOME/.local/bin:$PATH"
+          # uv-managed persistent venv for labgrid-client.  Fresh hosts
+          # build it once (~10 s); subsequent runs skip straight to
+          # the probe.
+          VENV="$HOME/.cache/adidt-ci/labgrid-venv"
+          if [[ ! -x "$VENV/bin/labgrid-client" ]]; then
+            echo "Creating labgrid venv at $VENV" >&2
+            uv venv --quiet "$VENV"
+            uv pip install --quiet --python "$VENV/bin/python" "$LABGRID_PIP"
+          fi
+          LGCLIENT="$VENV/bin/labgrid-client"
+          echo "Using labgrid-client: $LGCLIENT" >&2
+          echo "--- places output ---" >&2
+          PLACES_OUT=$(timeout 30 "$LGCLIENT" -x "$COORDINATOR" places 2>&1 || true)
+          echo "$PLACES_OUT" >&2
+          echo "--- end places output ---" >&2
+          python3 - "$MANIFEST" "$PLACES_OUT" >> "$GITHUB_OUTPUT" <<'PY'
           import json, sys
           manifest = json.load(open(sys.argv[1]))
-          places = set(sys.argv[2].split())
+          # `labgrid-client places` prints one place name per line.
+          # Any non-alphanumeric-heavy line (e.g. error banners) is
+          # filtered out by requiring each token to look like an
+          # identifier.
+          raw = sys.argv[2]
+          places = {
+              line.strip()
+              for line in raw.splitlines()
+              if line.strip() and all(c.isalnum() or c in "-_" for c in line.strip())
+          }
           avail = [n for n in manifest if n["place"] in places]
           print("available_nodes=" + json.dumps(avail))
           PY
@@ -70,8 +96,24 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install adidt + dev extras
-        run: pip install --user -e ".[dev]"
+      - name: Bootstrap uv
+        run: bash .github/scripts/bootstrap-uv.sh
+
+      - name: Install adidt into host venv
+        env:
+          PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${PYADI_BUILD_TOKEN:-}" ]]; then
+            # Route any git clone of github.com through the token.
+            # GIT_CONFIG_* env-vars are per-process and don't persist
+            # into the runner's ~/.gitconfig, so the secret isn't left
+            # behind after the step.
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="url.https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/.insteadOf"
+            export GIT_CONFIG_VALUE_0="https://github.com/"
+          fi
+          bash .github/scripts/install-adidt-venv.sh
 
       - name: Verify LG_DIRECT_ENV is set on the runner
         run: |
@@ -86,9 +128,11 @@ jobs:
           fi
 
       - name: Run direct-mode tests
-        env:
-          LG_ENV: ${{ env.LG_DIRECT_ENV }}
-        run: pytest -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+        run: |
+          set -euo pipefail
+          export LG_ENV="$LG_DIRECT_ENV"
+          "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
 
   hw-coord:
     needs: preflight
@@ -107,11 +151,26 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install adidt + dev extras
-        run: pip install --user -e ".[dev]"
+      - name: Bootstrap uv
+        run: bash .github/scripts/bootstrap-uv.sh
+
+      - name: Install adidt into host venv
+        env:
+          PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${PYADI_BUILD_TOKEN:-}" ]]; then
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="url.https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/.insteadOf"
+            export GIT_CONFIG_VALUE_0="https://github.com/"
+          fi
+          bash .github/scripts/install-adidt-venv.sh
 
       - name: Run coordinator-mode tests
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
           LG_ENV: ${{ github.workspace }}/${{ matrix.node.env_remote }}
-        run: pytest -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+        run: |
+          set -euo pipefail
+          "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}

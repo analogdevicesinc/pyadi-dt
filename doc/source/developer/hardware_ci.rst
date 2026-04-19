@@ -12,30 +12,30 @@ How it works
 
 The workflow has three jobs:
 
-- **preflight** — runs on ``ubuntu-latest``, reads the node manifest
-  (``.github/hw-nodes.json``), and queries the labgrid coordinator for
-  advertised places.  It emits a JSON array of *available* nodes as
-  the ``available_nodes`` job output.  If the coordinator is
-  unreachable the TCP probe fails fast and ``available_nodes`` is
-  ``[]`` — all downstream matrix legs then skip (green) instead of
-  hanging on a hardware that is not powered up.
+- **preflight** — runs on the ``hw-coordinator`` self-hosted runner
+  (the only host with a route to the private-lab labgrid coordinator),
+  reads the node manifest (``.github/hw-nodes.json``), and queries the
+  coordinator for advertised places.  It emits a JSON array of
+  *available* nodes as the ``available_nodes`` job output.  If the
+  coordinator is unreachable the TCP probe fails fast and
+  ``available_nodes`` is ``[]`` — all downstream matrix legs then skip
+  (green) instead of hanging on hardware that is not powered up.
 - **hw-direct** — a matrix job, one leg per available node, running
   on the self-hosted runner attached to that node
   (``runs-on: [self-hosted, <matrix.node.runner_label>]``).  Tests
   run without the coordinator, against a node-local labgrid YAML
   whose path is in the runner-level env var ``LG_DIRECT_ENV``.
 - **hw-coord** — a matrix job, one leg per available node, all
-  running on a single self-hosted runner labeled ``hw-coordinator``
-  (typically on the coordinator host itself).  Each leg uses the
+  running on the single ``hw-coordinator`` runner.  Each leg uses the
   committed ``env_remote_<place>.yaml`` that the manifest declares.
 
-Every hw leg gates on the ``hardware-tests`` GitHub environment, so
-PRs from forks require explicit maintainer approval before any
-self-hosted runner is exercised.  The ``preflight`` job deliberately
-does **not** gate on the environment — it only reads public
-information, and keeping it ungated means fork PRs still get the
-"hardware offline" skip signal instead of pausing indefinitely at the
-approval step.
+Every job — preflight included — gates on the ``hardware-tests``
+GitHub environment, so PRs from forks require explicit maintainer
+approval before any self-hosted runner is exercised.  (Preflight must
+also sit on a self-hosted runner to reach the private coordinator, so
+there is no way to emit skip signals ahead of the approval gate;
+fork PRs simply pause for review like any other environment-gated
+workflow.)
 
 Node manifest
 -------------
@@ -162,6 +162,16 @@ System-tool prerequisites on each hw-node runner:
    # For ZCU102/AD9081 (USB SD-mux mode):
    sudo apt-get install -y usbsdmux
 
+On **every** hw-node runner (including the coordinator host), the
+workflow uses `uv <https://github.com/astral-sh/uv>`_ to build two
+persistent venvs under ``~/.cache/adidt-ci/``: one for
+``labgrid-client`` on the coordinator host, and one holding an
+editable ``pip install -e ".[dev]"`` of adidt on every runner.
+``.github/scripts/bootstrap-uv.sh`` curl-installs ``uv`` into
+``~/.local/bin`` on first use, so no distro Python packaging is
+required — only ``curl`` and a working ``python3`` interpreter (both
+present on stock Debian/Ubuntu).
+
 Coordinator-mode tests additionally require SSH key-auth from the
 ``hw-coordinator`` runner to the exporter host (for the
 ``MassStorageDriver`` SSH-proxy path) and write access to
@@ -194,6 +204,43 @@ With the gate in place, a fork PR will show each hw job as
 "Waiting for approval" under the ``hardware-tests`` environment; a
 maintainer approves it from the PR page before the self-hosted
 runners are scheduled.
+
+Private-repo dependency access
+------------------------------
+
+The ``[dev]`` extras in ``pyproject.toml`` include
+``pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git``,
+which currently points at a private repo.  For CI to ``uv pip
+install`` it, scope a fine-grained PAT to the private repo and store
+it as a secret on the ``hardware-tests`` environment.
+
+1. Create a fine-grained PAT at
+   `<https://github.com/settings/tokens?type=beta>`_:
+
+   - *Token name*: ``pyadi-dt-ci-pyadi-build-read``
+   - *Resource owner*: the org/user that owns the private dependency
+     (here: ``tfcollins``)
+   - *Repository access*: **Only select repositories** → pick
+     ``tfcollins/pyadi-build`` (and any other private deps).
+   - *Repository permissions* → **Contents: Read-only**.
+
+2. Store it as an environment secret so only hw jobs see it:
+
+   .. code-block:: bash
+
+      gh secret set PYADI_BUILD_TOKEN \
+          --repo analogdevicesinc/pyadi-dt \
+          --env hardware-tests \
+          --body 'github_pat_...'
+
+   (Or via *Settings → Environments → hardware-tests → Add secret*.)
+
+The install step reads ``secrets.PYADI_BUILD_TOKEN`` and exports it
+as a process-local ``GIT_CONFIG_COUNT`` / ``GIT_CONFIG_KEY_0`` /
+``GIT_CONFIG_VALUE_0`` triple that rewrites ``https://github.com/``
+to ``https://x-access-token:<token>@github.com/`` for the duration
+of that step.  The secret is never written to the runner's
+``~/.gitconfig`` so it doesn't leak to later jobs.
 
 Troubleshooting
 ---------------
