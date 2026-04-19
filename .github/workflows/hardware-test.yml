@@ -152,6 +152,22 @@ jobs:
           "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
             -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
 
+      - name: Upload test output artifacts
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hw-direct-${{ matrix.node.place }}-output
+          path: |
+            test/hw/output/**/*.dts
+            test/hw/output/**/*.pp.dts
+            test/hw/output/**/*.dtb
+            test/hw/output/**/*.dtbo
+            test/hw/output/**/*.log
+            test/hw/output/**/uart_log_*.txt
+            uart_log_*.txt
+          if-no-files-found: ignore
+          retention-days: 14
+
   hw-coord:
     needs: preflight
     if: needs.preflight.outputs.available_nodes != '[]'
@@ -224,3 +240,19 @@ jobs:
           set -euo pipefail
           LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
           "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
+
+      - name: Upload test output artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hw-coord-${{ matrix.node.place }}-output
+          path: |
+            test/hw/output/**/*.dts
+            test/hw/output/**/*.pp.dts
+            test/hw/output/**/*.dtb
+            test/hw/output/**/*.dtbo
+            test/hw/output/**/*.log
+            test/hw/output/**/uart_log_*.txt
+            uart_log_*.txt
+          if-no-files-found: ignore
+          retention-days: 14
