@@ -181,11 +181,14 @@ def test_ad9081_zcu102_system_hw(board, built_kernel_image_zynqmp, tmp_path):
     # than the hardcoded ``axi_mxfe_*_jesd_*_axi`` convention).
     system.apply_xsa_topology(topology)
 
-    # Wire the two SPI buses.  The ZCU102 base DTS exposes spi0 / spi1.
-    system.connect_spi(bus_index=0, primary=fpga.spi[0], secondary=fmc.clock.spi, cs=0)
+    # Wire the two SPI buses.  On the AD9081-FMCA-EBZ + ZCU102, the
+    # AD9081 sits on spi0 (ff040000) and the HMC7044 on spi1 (ff050000)
+    # — swapping these causes the HMC7044 to fail its initial SPI
+    # read/write check at probe time.
     system.connect_spi(
-        bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi, cs=0
+        bus_index=0, primary=fpga.spi[0], secondary=fmc.converter.spi, cs=0
     )
+    system.connect_spi(bus_index=1, primary=fpga.spi[1], secondary=fmc.clock.spi, cs=0)
 
     # ADC → FPGA (RX).
     system.add_link(
@@ -223,11 +226,22 @@ def test_ad9081_zcu102_system_hw(board, built_kernel_image_zynqmp, tmp_path):
     )
 
     # --- 6. Compile merged DTS to DTB ---
-    dtb = out_dir / f"{merged_name}.dtb"
-    compile_dts_to_dtb(out_dir / f"{merged_name}.dts", dtb)
-    assert dtb.exists() and dtb.stat().st_size > 0, (
-        f"dtc produced empty/missing DTB: {dtb}"
+    dtb_raw = out_dir / f"{merged_name}.dtb"
+    compile_dts_to_dtb(out_dir / f"{merged_name}.dts", dtb_raw)
+    assert dtb_raw.exists() and dtb_raw.stat().st_size > 0, (
+        f"dtc produced empty/missing DTB: {dtb_raw}"
     )
+
+    # Kuiper's ZCU102 U-Boot loads ``system.dtb`` from the SD card, so
+    # stage our generated DTB with that exact basename — otherwise the
+    # boot uses a stale ``system.dtb`` left over on the card and our DT
+    # never takes effect.
+    import shutil as _shutil
+
+    staged_dir = out_dir / "sd_staging"
+    staged_dir.mkdir(parents=True, exist_ok=True)
+    dtb = staged_dir / "system.dtb"
+    _shutil.copyfile(dtb_raw, dtb)
 
     # --- 7. Deploy + boot via labgrid ---
     shell = deploy_and_boot(board, dtb, built_kernel_image_zynqmp)

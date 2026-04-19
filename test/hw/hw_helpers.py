@@ -296,6 +296,15 @@ _DMESG_BENIGN_SUBSTRINGS = (
     "cfg80211: failed to load",
     # Harmless driver-level probe deferrals re-tried later:
     "EPROBE_DEFER",
+    # ZynqMP early-boot WARNING: the kernel logs a Call trace through
+    # gic_of_init / of_irq_init because the RPU-bus interrupt-controller
+    # cannot be initialized from Linux on ZynqMP.  Always benign; the
+    # primary GIC still initializes correctly.
+    "gic_of_init",
+    "of_irq_init",
+    "irqchip_init",
+    "__primary_switched",
+    "rpu-bus/interrupt-controller",
 )
 
 # Hard-fail patterns — these indicate a genuine kernel fault.
@@ -305,7 +314,10 @@ _DMESG_FATAL_PATTERNS = (
     "Internal error:",
     "Oops:",
     "BUG:",
-    "Call trace:",
+    # ``Call trace:`` alone fires on benign WARNINGs (e.g. ZynqMP's
+    # early-boot GIC RPU-bus irq-controller init warning).  The real
+    # panic/oops signatures above already catch actual faults, so we
+    # don't rely on the trace marker.
     "SError Interrupt",
     "synchronous external abort",
     "segfault",

@@ -207,7 +207,12 @@ class AD9081Builder:
         hmc7044 = HMC7044(
             label="hmc7044",
             spi_max_hz=1_000_000,
-            pll1_clkin_frequencies=[122_880_000, 10_000_000, 0, 0],
+            # CLKIN1 = 30.72 MHz matches analogdevicesinc/linux reference
+            # ``zynqmp-zcu102-rev10-ad9081-m8-l4-vcxo122p88.dts``.  A mismatched
+            # CLKIN1 (e.g. 10 MHz) causes HMC7044's PLL1 driver to pick an R
+            # divider that makes the combined-PFD feasible across both inputs
+            # (R=1536, PFD=80 kHz) instead of honouring pfd1-max (1 MHz).
+            pll1_clkin_frequencies=[122_880_000, 30_720_000, 0, 0],
             vcxo_hz=122_880_000,
             pll2_output_hz=_pll2,
             channels=channels_map,

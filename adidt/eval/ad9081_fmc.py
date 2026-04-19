@@ -46,12 +46,16 @@ class ad9081_fmc(EvalBoard):
             cid: ClockChannel(id=cid, **spec)
             for cid, spec in _CLOCK_CHANNEL_MAP.items()
         }
+        # HMC7044 PLL2 requires an integer N = pll2_output / vcxo.  With a
+        # 122.88 MHz VCXO, N=25 → 3072 MHz puts the VCO squarely in the
+        # high band (2.95–3.55 GHz); N=24 (2949.12 MHz) sits on the band
+        # boundary and fails to lock reliably.
         self.clock = HMC7044(
             label="hmc7044",
             spi_max_hz=1_000_000,
-            pll1_clkin_frequencies=[reference_frequency, 0, 0, 0],
+            pll1_clkin_frequencies=[reference_frequency, 30_720_000, 0, 0],
             vcxo_hz=reference_frequency,
-            pll2_output_hz=reference_frequency * 24,
+            pll2_output_hz=reference_frequency * 25,
             channels=channels,
             pll1_loop_bandwidth_hz=200,
             pll1_ref_prio_ctrl="0xE1",
