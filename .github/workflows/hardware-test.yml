@@ -22,7 +22,6 @@ jobs:
     # has a route to the coordinator daemon.  GitHub-hosted runners
     # cannot reach the private lab network.
     runs-on: [self-hosted, hw-coordinator]
-    environment: hardware-tests
     timeout-minutes: 3
     outputs:
       available_nodes: ${{ steps.probe.outputs.available_nodes }}
@@ -88,7 +87,6 @@ jobs:
         node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
     name: hw-direct (${{ matrix.node.place }})
     runs-on: [self-hosted, "${{ matrix.node.runner_label }}"]
-    environment: hardware-tests
     timeout-minutes: 40
     concurrency:
       group: hw-direct-${{ matrix.node.place }}
@@ -96,10 +94,33 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Check LG_DIRECT_ENV on runner
+        id: check_direct_env
+        run: |
+          # If the runner hasn't been configured with a node-local
+          # labgrid YAML (LG_DIRECT_ENV in ~/actions-runner/.env),
+          # mark the job to skip gracefully rather than fail.  Until
+          # each node's lab owner authors its direct YAML the
+          # hw-direct leg is a no-op on that runner; the hw-coord leg
+          # still exercises the same tests via the coordinator.
+          if [ -z "${LG_DIRECT_ENV:-}" ]; then
+            echo "LG_DIRECT_ENV is not set on this runner — skipping direct-mode tests." >&2
+            echo "To enable: add LG_DIRECT_ENV=<path> to ~/actions-runner/.env" >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ ! -f "$LG_DIRECT_ENV" ]; then
+            echo "LG_DIRECT_ENV=$LG_DIRECT_ENV does not exist." >&2
+            exit 1
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
       - name: Bootstrap uv
+        if: steps.check_direct_env.outputs.skip != 'true'
         run: bash .github/scripts/bootstrap-uv.sh
 
       - name: Install adidt into host venv
+        if: steps.check_direct_env.outputs.skip != 'true'
         env:
           PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
         run: |
@@ -115,21 +136,18 @@ jobs:
           fi
           bash .github/scripts/install-adidt-venv.sh
 
-      - name: Verify LG_DIRECT_ENV is set on the runner
-        run: |
-          if [ -z "${LG_DIRECT_ENV:-}" ]; then
-            echo "LG_DIRECT_ENV is not set on this runner." >&2
-            echo "Add it to ~/actions-runner/.env (see doc/source/developer/hardware_ci.rst)." >&2
-            exit 1
-          fi
-          if [ ! -f "$LG_DIRECT_ENV" ]; then
-            echo "LG_DIRECT_ENV=$LG_DIRECT_ENV does not exist." >&2
-            exit 1
-          fi
-
       - name: Run direct-mode tests
+        if: steps.check_direct_env.outputs.skip != 'true'
         run: |
           set -euo pipefail
+          if [ -f /tools/Xilinx/2025.1/Vivado/settings64.sh ]; then
+            # Xilinx settings scripts reference PYTHONPATH/XILINX_*
+            # unconditionally; drop `set -u` while sourcing them.
+            set +u
+            # shellcheck disable=SC1091
+            source /tools/Xilinx/2025.1/Vivado/settings64.sh
+            set -u
+          fi
           export LG_ENV="$LG_DIRECT_ENV"
           "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
             -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
@@ -142,8 +160,11 @@ jobs:
       matrix:
         node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
     name: hw-coord (${{ matrix.node.place }})
-    runs-on: [self-hosted, hw-coordinator]
-    environment: hardware-tests
+    # Run on the per-node runner (same label as hw-direct) so the
+    # Xilinx toolchain (sdtgen, xsct) available there can drive the
+    # XSA pipeline.  The coordinator host (lbvm) lacks Vivado, so
+    # running pytest there silently skips every XSA-dependent test.
+    runs-on: [self-hosted, "${{ matrix.node.runner_label }}"]
     timeout-minutes: 40
     concurrency:
       group: hw-coord-${{ matrix.node.place }}
@@ -166,11 +187,40 @@ jobs:
           fi
           bash .github/scripts/install-adidt-venv.sh
 
+      - name: Acquire coordinator place
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+        run: |
+          set -euo pipefail
+          # labgrid-client is a transitive dep of adidt's dev extras,
+          # so it lands in the per-node adidt-venv.
+          LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
+          "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" acquire
+
       - name: Run coordinator-mode tests
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
           LG_ENV: ${{ github.workspace }}/${{ matrix.node.env_remote }}
         run: |
           set -euo pipefail
+          # Source Vivado settings so sdtgen / xsct / xsdb are on PATH
+          # for XSA-pipeline tests.
+          if [ -f /tools/Xilinx/2025.1/Vivado/settings64.sh ]; then
+            # Xilinx settings scripts reference PYTHONPATH/XILINX_*
+            # unconditionally; drop `set -u` while sourcing them.
+            set +u
+            # shellcheck disable=SC1091
+            source /tools/Xilinx/2025.1/Vivado/settings64.sh
+            set -u
+          fi
           "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
             -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+
+      - name: Release coordinator place
+        if: always()
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+        run: |
+          set -euo pipefail
+          LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
+          "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
