@@ -1,0 +1,37 @@
+## Env config for FMCDAQ3 + VCU118 via nuc remote place (MicroBlaze JTAG boot).
+##
+## Run:
+##   LG_COORDINATOR=10.0.0.41:20408 \
+##   LG_ENV=env_remote_nuc.yaml \
+##   pytest test/hw/test_fmcdaq3_vcu118_hw.py -v -s
+##
+## The nuc exporter publishes the prebuilt Kuiper simpleImage kernel
+## and bitstream under ``/jenkins/vcu118_fmcdaq3/`` on the nuc host, so
+## the test runner does not need a local kernel-build toolchain for the
+## baseline smoke test — it uses the paths already configured on the
+## ``XilinxDeviceJTAG`` resource.
+
+targets:
+  main:
+    features:
+      - fmcdaq3
+      - vcu118
+    resources:
+      RemotePlace:
+        name: nuc
+    drivers:
+      SerialDriver: {}
+      ADIShellDriver:
+        prompt: '#.*'
+        login_prompt: 'buildroot login: '
+        username: 'root'
+        password: 'analog'
+      XilinxJTAGDriver: {}
+      SSHDriver: {}
+      VesyncPowerDriver: {}
+      BootFabric:
+        reached_boot_marker: 'login:'
+        trigger_dhcp_reset: true
+        wait_for_boot_timeout: 700
+        debug_write_boot_log: true
+        power_off_delay: 30

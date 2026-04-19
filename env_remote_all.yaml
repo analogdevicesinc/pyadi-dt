@@ -1,0 +1,90 @@
+## Combined env that binds both the 'mini2' (SoC) and 'nuc' (Fabric) remote
+## places. Target names here become the keys in the hw_targets dict fixture;
+## test modules pick the one they need via RemotePlace.name as the key (e.g.,
+## `hw_targets["mini2"]` for the SoC suite, `hw_targets["nuc"]` for Fabric).
+##
+## Run:
+##   LG_COORDINATOR=10.0.0.41:20408 \
+##   LG_EXPORTERS_CONFIG=tests/coordinator/exporters_all.yaml \
+##   pytest tests/coordinator \
+##       --run-hardware --lg-config tests/coordinator/env_remote_all.yaml
+
+targets:
+  mini2:
+    features:
+      - ad9081
+      - zcu102
+    resources:
+      RemotePlace:
+        name: mini2
+    drivers:
+      VesyncPowerDriver: {}
+      USBSDMuxDriver: {}
+      SerialDriver: {}
+      ADIShellDriver:
+        prompt: 'root@.*'
+        login_prompt: 'analog login: '
+        username: 'root'
+        password: 'analog'
+      KuiperDLDriver: {}
+      MassStorageDriver:
+        partition: '/dev/disk/by-partuuid/a22286d2-01'
+      BootFPGASoC:
+        reached_linux_marker: 'analog'
+        wait_for_linux_prompt_timeout: 180
+        debug_write_boot_log: true
+
+  nuc:
+    resources:
+      RemotePlace:
+        name: nuc
+    drivers:
+      SerialDriver: {}
+      ADIShellDriver:
+        prompt: '#.*'
+        login_prompt: 'buildroot login: '
+        username: 'root'
+        password: 'analog'
+      XilinxJTAGDriver: {}
+      SSHDriver: {}
+      VesyncPowerDriver: {}
+      BootFabric:
+        reached_boot_marker: 'login:'
+        trigger_dhcp_reset: true
+        wait_for_boot_timeout: 700
+        debug_write_boot_log: true
+        power_off_delay: 30
+
+  bq:
+    features:
+      - adrv9371
+      - zc706
+    resources:
+      RemotePlace:
+        name: bq
+      TFTPServerResource:
+        address: 'auto'
+        port: 3069
+        root: /var/lib/tftpboot
+    drivers:
+      TFTPServerDriver: {}
+      KuiperDLDriver: {}
+      SerialDriver: {}
+      HomeAssistantPowerDriver: {}
+      SSHDriver: {}
+      ADIShellDriver:
+        prompt: 'root@.*'
+        login_prompt: 'analog login: '
+        username: 'root'
+        password: 'analog'
+      BootFPGASoCTFTP:
+        wait_for_linux_prompt_timeout: 120
+        reached_linux_marker: '@analog'
+        # Zynq-7000 U-Boot settings
+        uboot_prompt: 'Zynq>.*'
+        kernel_image_name: 'uImage'
+        dtb_image_name: 'devicetree.dtb'
+        boot_cmd: 'bootm'
+        kernel_addr: '0x3000000'
+        dtb_addr: '0x2A00000'
+        bootargs: 'console=ttyPS0,115200 root=/dev/mmcblk0p2 rw earlycon rootfstype=ext4 rootwait clk_ignore_unused cpuidle.off=1'

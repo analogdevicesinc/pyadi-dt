@@ -9,3 +9,4 @@ board builders.
    :maxdepth: 2
 
    authoring_devices
+   hardware_ci

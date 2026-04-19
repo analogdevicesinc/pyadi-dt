@@ -1,0 +1,44 @@
+## Env config for ADRV9371 + ZC706 via bq remote place (TFTP boot).
+##
+## Run:
+##   LG_COORDINATOR=10.0.0.41:20408 \
+##   LG_ENV=env_remote_bq.yaml \
+##   pytest test/hw/test_adrv9371_zc706_hw.py -v -s
+##
+## Tests must run on the `bq` host itself (or a host with the same
+## /var/lib/tftpboot root), because the TFTPServerResource is consumed
+## locally by TFTPServerDriver.
+
+targets:
+  main:
+    features:
+      - adrv9371
+      - zc706
+    resources:
+      RemotePlace:
+        name: bq
+      TFTPServerResource:
+        address: 'auto'
+        port: 3069
+        root: /var/lib/tftpboot
+    drivers:
+      TFTPServerDriver: {}
+      KuiperDLDriver: {}
+      SerialDriver: {}
+      HomeAssistantPowerDriver: {}
+      SSHDriver: {}
+      ADIShellDriver:
+        prompt: 'root@.*'
+        login_prompt: 'analog login: '
+        username: 'root'
+        password: 'analog'
+      BootFPGASoCTFTP:
+        wait_for_linux_prompt_timeout: 120
+        reached_linux_marker: '@analog'
+        uboot_prompt: 'Zynq>.*'
+        kernel_image_name: 'uImage'
+        dtb_image_name: 'devicetree.dtb'
+        boot_cmd: 'bootm'
+        kernel_addr: '0x3000000'
+        dtb_addr: '0x2A00000'
+        bootargs: 'console=ttyPS0,115200 root=/dev/mmcblk0p2 rw earlycon rootfstype=ext4 rootwait clk_ignore_unused cpuidle.off=1'
