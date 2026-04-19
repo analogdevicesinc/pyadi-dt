@@ -30,11 +30,21 @@ _AD9081_TX_MODE_TABLE: dict[tuple[int, str] | int, dict[str, int]] = {
 
 
 def ad9081_lane_map(direction: str, lanes: int, link_mode: int) -> str:
-    """Return the board-specific ``adi,logical-lane-mapping`` string."""
+    """Return the board-specific ``adi,logical-lane-mapping`` string.
+
+    ``direction`` is the host-side direction: ``"rx"`` = ADC path
+    (AD9081 JESD TX / jtx), ``"tx"`` = DAC path (AD9081 JESD RX / jrx).
+    Mapping values below come from the analogdevicesinc/linux reference
+    ``zynqmp-zcu102-rev10-ad9081-m8-l4.dts``:
+    ``adi,tx-dacs`` (jrx / DAC / host TX) uses ``link-mode = <9>`` and
+    lane mapping ``<0 2 7 7 1 7 7 3>``; ``adi,rx-adcs`` (jtx / ADC /
+    host RX) uses ``link-mode = <10>`` and ``<2 0 7 7 7 7 3 1>``.
+    """
     if direction == "tx" and link_mode in (17, 24) and lanes == 8:
         return "0 2 7 6 1 5 4 3"
     if direction == "rx" and link_mode in (18, 26) and lanes == 8:
         return "2 0 7 6 5 4 3 1"
+    # jesd204b M=8/L=4 on AD9081-FMCA-EBZ / ZCU102.
     if direction == "tx" and link_mode == 9 and lanes == 4:
         return "0 2 7 7 1 7 7 3"
     if direction == "rx" and link_mode == 10 and lanes == 4:
@@ -132,25 +142,25 @@ def _tx_dacs_block(
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
 \t\t\t\t\tadi,interpolation = <{cduc_interp}>;
-\t\t\t\t\tdac@0 {{ reg = <0>; }};
-\t\t\t\t\tdac@1 {{ reg = <1>; }};
-\t\t\t\t\tdac@2 {{ reg = <2>; }};
-\t\t\t\t\tdac@3 {{ reg = <3>; }};
+\t\t\t\t\tdac@0 {{ reg = <0>; adi,crossbar-select = <0x28>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@1 {{ reg = <1>; adi,crossbar-select = <0x29>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@2 {{ reg = <2>; adi,crossbar-select = <0x2a>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@3 {{ reg = <3>; adi,crossbar-select = <0x2b>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
 \t\t\t\t}};
 \t\t\t\tadi,channelizer-paths {{
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
 \t\t\t\t\tadi,interpolation = <{fduc_interp}>;
-\t\t\t\t\tad9081_tx_fddc_chan0: channel@0 {{ reg = <0>; }};
-\t\t\t\t\tad9081_tx_fddc_chan1: channel@1 {{ reg = <1>; }};
-\t\t\t\t\tad9081_tx_fddc_chan2: channel@2 {{ reg = <2>; }};
-\t\t\t\t\tad9081_tx_fddc_chan3: channel@3 {{ reg = <3>; }};
-\t\t\t\t\tad9081_tx_fddc_chan4: channel@4 {{ reg = <4>; }};
-\t\t\t\t\tad9081_tx_fddc_chan5: channel@5 {{ reg = <5>; }};
-\t\t\t\t\tad9081_tx_fddc_chan6: channel@6 {{ reg = <6>; }};
-\t\t\t\t\tad9081_tx_fddc_chan7: channel@7 {{ reg = <7>; }};
+\t\t\t\t\tad9081_tx_fddc_chan0: channel@0 {{ reg = <0>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan1: channel@1 {{ reg = <1>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan2: channel@2 {{ reg = <2>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan3: channel@3 {{ reg = <3>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan4: channel@4 {{ reg = <4>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan5: channel@5 {{ reg = <5>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan6: channel@6 {{ reg = <6>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_tx_fddc_chan7: channel@7 {{ reg = <7>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
 \t\t\t\t}};
-{_jesd_link_block(converter_select, lane_map, link_mode, m, f, k, l, s)}
+{_jesd_link_block(converter_select, lane_map, link_mode, m, f, k, l, s, tpl_phase_adjust=3)}
 \t\t\t}};"""
 
 
@@ -176,22 +186,22 @@ def _rx_adcs_block(
 \t\t\t\tadi,main-data-paths {{
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
-\t\t\t\t\tadc@0 {{ reg = <0>; adi,decimation = <{cddc_decim}>; }};
-\t\t\t\t\tadc@1 {{ reg = <1>; adi,decimation = <{cddc_decim}>; }};
-\t\t\t\t\tadc@2 {{ reg = <2>; adi,decimation = <{cddc_decim}>; }};
-\t\t\t\t\tadc@3 {{ reg = <3>; adi,decimation = <{cddc_decim}>; }};
+\t\t\t\t\tadc@0 {{ reg = <0>; adi,decimation = <{cddc_decim}>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; adi,nco-mixer-mode = <0>; }};
+\t\t\t\t\tadc@1 {{ reg = <1>; adi,decimation = <{cddc_decim}>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; adi,nco-mixer-mode = <0>; }};
+\t\t\t\t\tadc@2 {{ reg = <2>; adi,decimation = <{cddc_decim}>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; adi,nco-mixer-mode = <0>; }};
+\t\t\t\t\tadc@3 {{ reg = <3>; adi,decimation = <{cddc_decim}>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; adi,nco-mixer-mode = <0>; }};
 \t\t\t\t}};
 \t\t\t\tadi,channelizer-paths {{
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
-\t\t\t\t\tad9081_rx_fddc_chan0: channel@0 {{ reg = <0>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan1: channel@1 {{ reg = <1>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan2: channel@2 {{ reg = <2>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan3: channel@3 {{ reg = <3>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan4: channel@4 {{ reg = <4>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan5: channel@5 {{ reg = <5>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan6: channel@6 {{ reg = <6>; adi,decimation = <{fddc_decim}>; }};
-\t\t\t\t\tad9081_rx_fddc_chan7: channel@7 {{ reg = <7>; adi,decimation = <{fddc_decim}>; }};
+\t\t\t\t\tad9081_rx_fddc_chan0: channel@0 {{ reg = <0>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan1: channel@1 {{ reg = <1>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan2: channel@2 {{ reg = <2>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan3: channel@3 {{ reg = <3>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan4: channel@4 {{ reg = <4>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan5: channel@5 {{ reg = <5>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan6: channel@6 {{ reg = <6>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tad9081_rx_fddc_chan7: channel@7 {{ reg = <7>; adi,decimation = <{fddc_decim}>; adi,gain = <2048>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
 \t\t\t\t}};
 {_jesd_link_block(converter_select, lane_map, link_mode, m, f, k, l, s)}
 \t\t\t}};"""
@@ -206,8 +216,14 @@ def _jesd_link_block(
     k: int,
     l: int,
     s: int,
+    tpl_phase_adjust: int | None = None,
 ) -> str:
     """Inner ``adi,jesd-links { link@0 { ... }; };`` block, 4 tabs deep."""
+    tpl_line = (
+        f"\n\t\t\t\t\t\tadi,tpl-phase-adjust = <{int(tpl_phase_adjust)}>;"
+        if tpl_phase_adjust is not None
+        else ""
+    )
     return f"""\t\t\t\tadi,jesd-links {{
 \t\t\t\t\t#size-cells = <0>;
 \t\t\t\t\t#address-cells = <1>;
@@ -227,7 +243,7 @@ def _jesd_link_block(
 \t\t\t\t\t\tadi,control-bits-per-sample = <0>;
 \t\t\t\t\t\tadi,lanes-per-device = <{l}>;
 \t\t\t\t\t\tadi,samples-per-converter-per-frame = <{s}>;
-\t\t\t\t\t\tadi,high-density = <0>;
+\t\t\t\t\t\tadi,high-density = <0>;{tpl_line}
 \t\t\t\t\t}};
 \t\t\t\t}};"""
 
