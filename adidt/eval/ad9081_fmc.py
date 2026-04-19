@@ -19,15 +19,31 @@ from .base import EvalBoard
 
 
 # AD9081-FMC-EBZ schematic wiring of the HMC7044 14 outputs.
+#
+# The dividers below match the XSA builder (adidt/xsa/builders/ad9081.py)
+# and the stock Kuiper ``zynqmp-zcu102-rev10-ad9081-m8-l4`` reference DTS.
+# With PLL2 at 3000 MHz this gives:
+#
+#   - CORE_CLK_RX / DEV_REFCLK / CORE_CLK_TX  → 3000/12 = 250 MHz
+#   - FPGA_REFCLK{1,2}                        → 3000/6  = 500 MHz
+#   - DEV_SYSREF / FPGA_SYSREF                → 3000/1536 ≈ 1.953 MHz
+#
+# The dev_clk divisor in particular matters: the AD9081 internal PLL
+# needs to multiply DEV_REFCLK up to both the 4 GHz ADC clock (16x) and
+# the 12 GHz DAC clock (48x), both of which require a 250 MHz dev_clk
+# — 750 MHz (divider=4) produces 4000/750 = 5.333 which the AD9081 PLL
+# cannot lock, and 375 MHz (divider=8) makes the JESD link clock
+# disagree with the kernel's reported 250 MHz and the link stays
+# disabled.
 _CLOCK_CHANNEL_MAP: dict[int, dict] = {
-    0: {"name": "CORE_CLK_RX", "divider": 8, "driver_mode": 2, "is_sysref": False},
-    2: {"name": "DEV_REFCLK", "divider": 4, "driver_mode": 2, "is_sysref": False},
-    3: {"name": "DEV_SYSREF", "divider": 1024, "driver_mode": 2, "is_sysref": True},
-    6: {"name": "CORE_CLK_TX", "divider": 8, "driver_mode": 2, "is_sysref": False},
-    8: {"name": "FPGA_REFCLK1", "divider": 4, "driver_mode": 2, "is_sysref": False},
-    10: {"name": "CORE_CLK_RX_ALT", "divider": 8, "driver_mode": 2, "is_sysref": False},
-    12: {"name": "FPGA_REFCLK2", "divider": 4, "driver_mode": 2, "is_sysref": False},
-    13: {"name": "FPGA_SYSREF", "divider": 1024, "driver_mode": 2, "is_sysref": True},
+    0: {"name": "CORE_CLK_RX", "divider": 12, "driver_mode": 2, "is_sysref": False},
+    2: {"name": "DEV_REFCLK", "divider": 12, "driver_mode": 2, "is_sysref": False},
+    3: {"name": "DEV_SYSREF", "divider": 1536, "driver_mode": 2, "is_sysref": True},
+    6: {"name": "CORE_CLK_TX", "divider": 12, "driver_mode": 2, "is_sysref": False},
+    8: {"name": "FPGA_REFCLK1", "divider": 6, "driver_mode": 2, "is_sysref": False},
+    10: {"name": "CORE_CLK_RX_ALT", "divider": 12, "driver_mode": 2, "is_sysref": False},
+    12: {"name": "FPGA_REFCLK2", "divider": 6, "driver_mode": 2, "is_sysref": False},
+    13: {"name": "FPGA_SYSREF", "divider": 1536, "driver_mode": 2, "is_sysref": True},
 }
 
 
