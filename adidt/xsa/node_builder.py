@@ -1,12 +1,8 @@
 # adidt/xsa/node_builder.py
 """Build ADI device-driver DTS overlay nodes from an XSA topology and config."""
 
-import os
 import warnings
-from functools import cached_property
 from typing import Any
-
-from jinja2 import Environment, FileSystemLoader
 
 from .builders import BoardBuilder
 from .builders.ad9081 import AD9081Builder
@@ -65,9 +61,6 @@ class NodeBuilder:
             cfg = cfg.to_dict()
         platform = topology.inferred_platform()
         self._addr_cells = 1 if platform in self._32BIT_PLATFORMS else 2
-        # Invalidate cached Jinja env so reg_addr/reg_size pick up new cells
-        if "_env" in self.__dict__:
-            del self.__dict__["_env"]
         clock_map = self._build_clock_map(topology)
         ps_clk_label, ps_clk_index, gpio_label = self._platform_ps_labels(topology)
         result: dict[str, list[str]] = {
@@ -205,79 +198,7 @@ class NodeBuilder:
     # Utilities
     # ------------------------------------------------------------------
 
-    @staticmethod
-    def _coerce_board_int(value: Any, key_path: str) -> int:
-        """Convert *value* to int; raise ValueError with *key_path* context on failure."""
-        if isinstance(value, bool):
-            raise ValueError(f"{key_path} must be an integer, got {value!r}")
-        try:
-            return int(value)
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"{key_path} must be an integer, got {value!r}") from exc
-
-    @staticmethod
-    def _fmt_hz(hz: int) -> str:
-        """Format *hz* as a human-readable frequency string (e.g. '245.76 MHz', '768 kHz')."""
-        if hz >= 1_000_000_000:
-            s = f"{hz / 1_000_000_000:.6f}".rstrip("0").rstrip(".")
-            return f"{s} GHz"
-        if hz >= 1_000_000:
-            s = f"{hz / 1_000_000:.6f}".rstrip("0").rstrip(".")
-            return f"{s} MHz"
-        if hz >= 1_000:
-            s = f"{hz / 1_000:.3f}".rstrip("0").rstrip(".")
-            return f"{s} kHz"
-        return f"{hz} Hz"
-
-    @staticmethod
-    def _fmt_gpi_gpo(controls: list) -> str:
-        """Format a list of int/hex values as a space-separated hex string for DTS."""
-        return " ".join(f"0x{int(v):02x}" for v in controls)
-
-    # ------------------------------------------------------------------
-    # Jinja2 rendering infrastructure
-    # ------------------------------------------------------------------
-
     _addr_cells: int = 2
-
-    def _make_jinja_env(self) -> Environment:
-        """Create and return a Jinja2 Environment pointed at the XSA template directory."""
-        from .exceptions import XsaParseError
-
-        loc = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "..", "templates", "xsa"
-        )
-        if not os.path.isdir(loc):
-            raise XsaParseError(f"template directory not found: {loc}")
-        env = Environment(loader=FileSystemLoader(loc))
-        # Register reg-formatting globals used by clkgen/jesd templates.
-        # The number of address/size cells depends on the target platform
-        # (e.g. 1 for MicroBlaze, 2 for ZynqMP).
-        cells = self._addr_cells
-        env.globals["reg_addr"] = lambda addr: (
-            f"0x{addr:08x}" if cells == 1 else f"0x0 0x{addr:08x}"
-        )
-        env.globals["reg_size"] = lambda size: (
-            f"0x{size:x}" if cells == 1 else f"0x0 0x{size:x}"
-        )
-        return env
-
-    @cached_property
-    def _env(self) -> "Environment":
-        """Cached Jinja2 environment for the XSA template directory."""
-        return self._make_jinja_env()
-
-    def _render(self, template_name: str, ctx: dict | Any) -> str:
-        """Render a Jinja2 template from adidt/templates/xsa/ with the given context.
-
-        Args:
-            template_name: Template filename (e.g. ``"adxcvr.tmpl"``).
-            ctx: Context dict or a dataclass with an ``as_dict()`` method
-                (see :mod:`adidt.xsa.template_contexts`).
-        """
-        if hasattr(ctx, "as_dict"):
-            ctx = ctx.as_dict()
-        return self._env.get_template(template_name).render(ctx)
 
     def _wrap_spi_bus(self, label: str, children: str) -> str:
         """Wrap pre-rendered child node strings in an &label { status = "okay"; ... } overlay."""
@@ -392,49 +313,72 @@ class NodeBuilder:
         jesd_input_label: str,
         jesd_input_link_id: int,
         ps_clk_label: str,
-        ps_clk_index: int,
+        ps_clk_index: int | None,
     ) -> str:
-        """Render the ``jesd204_fsm.tmpl`` template for *inst* and return the DTS node string."""
+        """Render an AXI JESD204 FSM link IP DTS node."""
         from .exceptions import ConfigError
 
         for key in ("F", "K"):
             if key not in jesd_params:
                 raise ConfigError(f"jesd.{inst.direction}.{key}")
-        return self._render(
-            "jesd204_fsm.tmpl",
-            {
-                "instance": inst,
-                "jesd": jesd_params,
-                "clkgen_label": clkgen_label,
-                "device_clk_label": device_clk_label,
-                "device_clk_index": device_clk_index,
-                "jesd_input_label": jesd_input_label,
-                "jesd_input_link_id": jesd_input_link_id,
-                "ps_clk_label": ps_clk_label,
-                "ps_clk_index": ps_clk_index,
-            },
+        name = inst.name.replace("-", "_")
+        reg_addr = self._fmt_reg_addr(inst.base_addr)
+        reg_size = self._fmt_reg_size(0x1000)
+        ps_ref = (
+            f"<&{ps_clk_label} {ps_clk_index}>"
+            if ps_clk_index is not None
+            else f"<&{ps_clk_label}>"
+        )
+        irq_line = (
+            f"\t\tinterrupts = <0 {inst.irq} IRQ_TYPE_LEVEL_HIGH>;\n"
+            if inst.irq is not None
+            else ""
+        )
+        return (
+            f"\t{name}: axi-jesd204-{inst.direction}@{inst.base_addr:08x} {{\n"
+            f'\t\tcompatible = "adi,axi-jesd204-{inst.direction}-1.0";\n'
+            f"\t\treg = <{reg_addr} {reg_size}>;\n"
+            f"{irq_line}"
+            f"\t\tclocks = {ps_ref}, <&{device_clk_label} {device_clk_index}>, "
+            f"<&{jesd_input_label} 0>;\n"
+            '\t\tclock-names = "s_axi_aclk", "device_clk", "lane_clk";\n'
+            "\t\t#clock-cells = <0>;\n"
+            f'\t\tclock-output-names = "{name}_lane_clk";\n'
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{jesd_input_label} 0 {jesd_input_link_id}>;\n"
+            "\n"
+            "\t\t/* JESD204 framing: F = octets per frame per lane */\n"
+            f"\t\tadi,octets-per-frame = <{jesd_params['F']}>;\n"
+            "\t\t/* JESD204 framing: K = frames per multiframe "
+            "(subclass 1: 17\u2013256, must be multiple of 4) */\n"
+            f"\t\tadi,frames-per-multiframe = <{jesd_params['K']}>;\n"
+            "\n"
+            "\t\t#sound-dai-cells = <0>;\n"
+            "\t};"
         )
 
     def _render_converter(
         self, conv: ConverterInstance, rx_label: str, tx_label: str
     ) -> str:
-        """Render a per-IP-type Jinja2 template for *conv*; returns a comment stub if no template exists."""
-        from jinja2 import TemplateNotFound
-
-        try:
-            self._env.get_template(f"{conv.ip_type}.tmpl")
-        except TemplateNotFound:
-            return f"\t/* {conv.name}: no template for {conv.ip_type} */"
-        return self._render(
-            f"{conv.ip_type}.tmpl",
-            {
-                "instance": conv,
-                "rx_jesd_label": rx_label,
-                "tx_jesd_label": tx_label,
-                "spi_label": "spi0",
-                "spi_cs": conv.spi_cs if conv.spi_cs is not None else 0,
-            },
-        )
+        """Render a per-IP-type DTS node for *conv*; fallback to a stub comment."""
+        spi_cs = conv.spi_cs if conv.spi_cs is not None else 0
+        if conv.ip_type == "axi_ad9081":
+            return (
+                f"\t{conv.name}: ad9081@{spi_cs} {{\n"
+                f'\t\tcompatible = "adi,ad9081";\n'
+                f"\t\treg = <{spi_cs}>;\n"
+                "\t\tspi-max-frequency = <1000000>;\n"
+                "\n"
+                "\t\tjesd204-device;\n"
+                "\t\t#jesd204-cells = <2>;\n"
+                "\t\tjesd204-top-device = <0>;\n"
+                "\t\tjesd204-link-ids = <1 0>;\n"
+                "\n"
+                f"\t\tjesd204-inputs = <&{rx_label} 0 1>;\n"
+                "\t};"
+            )
+        return f"\t/* {conv.name}: no template for {conv.ip_type} */"
 
     def _render_clkgen(
         self,
@@ -442,15 +386,33 @@ class NodeBuilder:
         ps_clk_label: str,
         ps_clk_index: int,
     ) -> str:
-        """Render the ``clkgen.tmpl`` template for *inst* and return the DTS node string."""
-        return self._render(
-            "clkgen.tmpl",
-            {
-                "instance": inst,
-                "ps_clk_label": ps_clk_label,
-                "ps_clk_index": ps_clk_index,
-            },
+        """Render an AXI clkgen IP overlay node."""
+        name = inst.name.replace("-", "_")
+        reg_addr = self._fmt_reg_addr(inst.base_addr)
+        reg_size = self._fmt_reg_size(0x10000)
+        ps_ref = (
+            f"<&{ps_clk_label} {ps_clk_index}>"
+            if ps_clk_index is not None
+            else f"<&{ps_clk_label}>"
         )
+        return (
+            f"\t{name}: axi-clkgen@{inst.base_addr:08x} {{\n"
+            f'\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
+            f"\t\treg = <{reg_addr} {reg_size}>;\n"
+            "\t\t#clock-cells = <1>;\n"
+            f"\t\tclocks = {ps_ref}, {ps_ref};\n"
+            '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
+            f'\t\tclock-output-names = "{name}_0", "{name}_1";\n'
+            "\t};"
+        )
+
+    def _fmt_reg_addr(self, addr: int) -> str:
+        """Format an ``addr`` cell-array using this builder's addr-cells count."""
+        return f"0x{addr:08x}" if self._addr_cells == 1 else f"0x0 0x{addr:08x}"
+
+    def _fmt_reg_size(self, size: int) -> str:
+        """Format a ``size`` cell-array using this builder's addr-cells count."""
+        return f"0x{size:x}" if self._addr_cells == 1 else f"0x0 0x{size:x}"
 
     # ------------------------------------------------------------------
     # Platform detection

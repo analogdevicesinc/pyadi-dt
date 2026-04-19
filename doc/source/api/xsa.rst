@@ -90,14 +90,6 @@ Builders
    :undoc-members:
    :show-inheritance:
 
-Template Contexts
------------------
-
-.. automodule:: adidt.xsa.template_contexts
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 DTS Linter
 ----------
 

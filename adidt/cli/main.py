@@ -85,8 +85,8 @@ def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
     \b
       Inspect    — Read and modify DT properties on live or local hardware
                    (prop, props, deps)
-      Generate   — Produce device tree source from Vivado XSA files or board
-                   class configs (xsa2dt, gen-dts, jif)
+      Generate   — Produce device tree source from Vivado XSA files
+                   (xsa2dt)
       Manage     — List supported boards, profiles, and deploy boot files
                    to SD cards (kuiper-boards, xsa-profiles, xsa-profile-show,
                    sd-move, sd-remote-copy)
@@ -103,10 +103,7 @@ def cli(ctx, no_color, board, context, ip, username, password, arch, filepath):
         adidtc -c remote_sysfs -i 192.168.2.1 prop
     \b
       Generate a device tree from an XSA:
-        adidtc xsa2dt -x design.xsa -c config.json -o out/
-    \b
-      Generate DTS from a board class config:
-        adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json"""
+        adidtc xsa2dt -x design.xsa -c config.json -o out/"""
     ctx.ensure_object(dict)
 
     ctx.obj["no_color"] = no_color
@@ -573,71 +570,6 @@ def props(ctx, node_name, compat, reboot, prop, value):
 
 
 @cli.command()
-@click.argument(
-    "node_type",
-    required=True,
-    type=click.Choice(["clock", "converter", "system", "fpga"]),
-)
-@click.option(
-    "--reboot",
-    "-r",
-    is_flag=True,
-    help="Reboot boards after successful write",
-)
-@click.option(
-    "--filename",
-    "-f",
-    default=None,
-    help="Name of json file to import with JIF config",
-    type=click.Path(exists=True),
-)
-@click.pass_context
-def jif(ctx, node_type, reboot, filename):
-    """Apply pyadi-jif solver output to update device tree clock and JESD parameters.
-
-    \b
-    Reads a JSON configuration file produced by pyadi-jif (the JESD Interface
-    Framework solver) and updates the corresponding device tree nodes.
-    Currently supports clock device updates (e.g. HMC7044, AD9523-1, AD9528).
-
-    \b
-    NODE_TYPE      - Type of device to configure: clock, converter, system,
-                     or fpga (only clock is currently implemented)
-
-    \b
-    Examples:
-      Apply solved clock parameters to the device tree:
-        adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json
-    \b
-      Apply clock config and reboot the board:
-        adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json --reboot
-    \b
-      Apply to a local sysfs device tree:
-        adidtc jif clock -f solved_clocks.json
-
-    \b
-    The JSON file should contain a "clock" key with "part" and device
-    parameters, as produced by pyadi-jif's solver output.
-    """
-    if node_type == "clock":
-        d = adidt.clock(
-            dt_source=ctx.obj["context"],
-            ip=ctx.obj["ip"],
-            username=ctx.obj["username"],
-            password=ctx.obj["password"],
-            arch=ctx.obj["arch"],
-        )
-        import json
-
-        with open(filename, "r") as file:
-            cfg = json.load(file)
-        d.set(cfg["clock"]["part"], cfg["clock"], append=True)
-        d.update_current_dt(reboot=reboot)
-    else:
-        raise Exception("Other node types not implemented")
-
-
-@cli.command()
 @click.argument("dt_file", type=click.Path(exists=True))
 @click.option(
     "--format",
@@ -752,170 +684,6 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
             click.echo(f"JSON output written to {output}")
         else:
             click.echo(json.dumps(json_data, indent=2))
-
-
-_BOARD_CLASSES = {
-    "daq2": ("adidt.boards", "daq2"),
-    "ad9081_fmc": ("adidt.boards", "ad9081_fmc"),
-    "ad9082_fmc": ("adidt.boards", "ad9082_fmc"),
-    "ad9083_fmc": ("adidt.boards", "ad9083_fmc"),
-    "ad9084_fmc": ("adidt.boards", "ad9084_fmc"),
-    "adrv9008_fmc": ("adidt.boards", "adrv9008_fmc"),
-    "fmcomms_fmc": ("adidt.boards", "fmcomms_fmc"),
-    "adrv9009_fmc": ("adidt.boards", "adrv9009_fmc"),
-    "adrv9025_fmc": ("adidt.boards", "adrv9025_fmc"),
-    "adrv937x_fmc": ("adidt.boards", "adrv937x_fmc"),
-}
-
-
-@cli.command()
-@click.option(
-    "--board",
-    "-b",
-    required=True,
-    type=click.Choice(sorted(_BOARD_CLASSES.keys())),
-    help="Board class to use for generation",
-)
-@click.option(
-    "--platform",
-    "-p",
-    required=True,
-    help="Target platform (e.g., zcu102, vpk180, zc706, vcu118)",
-)
-@click.option(
-    "--config",
-    "-c",
-    required=True,
-    type=click.Path(exists=True),
-    help="Path to JSON configuration file",
-)
-@click.option(
-    "--kernel-path",
-    "-k",
-    default=None,
-    type=click.Path(exists=True),
-    help="Path to Linux kernel source tree (overrides LINUX_KERNEL_PATH env var)",
-)
-@click.option(
-    "--output",
-    "-o",
-    default=None,
-    type=click.Path(),
-    help="Output DTS file path",
-)
-@click.option("--compile", is_flag=True, help="Compile DTS to DTB using dtc")
-@click.pass_context
-def gen_dts(ctx, board, platform, config, kernel_path, output, compile):
-    """Generate device tree source from a board class and JSON configuration.
-
-    \b
-    Runs the BoardModel workflow: load a JSON config (typically from
-    pyadi-jif solver output), instantiate a board class, call
-    to_board_model() to build the model, then render to DTS via Jinja2
-    templates.  Optionally compiles the DTS to DTB using dtc.
-
-    \b
-    The config JSON should contain clock and JESD204 parameters as
-    produced by pyadi-jif's solver.  See the board_class_workflow
-    documentation for the expected JSON structure.
-
-    \b
-    Supported boards: daq2, ad9081_fmc, ad9082_fmc, ad9083_fmc,
-    ad9084_fmc, adrv9008_fmc, fmcomms_fmc, adrv9009_fmc,
-    adrv9025_fmc, adrv937x_fmc.
-
-    \b
-    Examples:
-      Generate DTS for FMCDAQ2 on ZCU102:
-        adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
-    \b
-      Generate DTS for AD9081 FMC on VPK180:
-        adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json
-    \b
-      Generate and compile to DTB:
-        adidtc gen-dts -b adrv9009_fmc -p zcu102 -c cfg.json --compile
-    \b
-      Custom output path:
-        adidtc gen-dts -b daq2 -p zc706 -c cfg.json -o custom.dts
-    \b
-      Specify a Linux kernel source tree for include paths:
-        adidtc gen-dts -b ad9081_fmc -p zcu102 -c cfg.json -k /path/to/linux
-    """
-    try:
-        # Load configuration
-        with open(config, "r") as f:
-            cfg = json.load(f)
-
-        # Import and instantiate the board class
-        module_path, class_name = _BOARD_CLASSES[board]
-        import importlib
-
-        mod = importlib.import_module(module_path)
-        board_cls = getattr(mod, class_name)
-        board_inst = board_cls(platform=platform, kernel_path=kernel_path)
-
-        # Override output filename if specified
-        if output:
-            board_inst.output_filename = output
-
-        # Generate DTS via BoardModel
-        output_file = board_inst.gen_dt_from_config(cfg, config_source=config)
-
-        click.echo(click.style(f"Generated DTS: {output_file}", fg="green", bold=True))
-
-        # Compile if requested
-        if compile:
-            import subprocess
-
-            dtb_file = output_file.replace(".dts", ".dtb")
-            include_paths = board_inst.get_dtc_include_paths()
-
-            # Build dtc command with include paths
-            dtc_cmd = ["dtc", "-I", "dts", "-O", "dtb"]
-            for inc_path in include_paths:
-                dtc_cmd.extend(["-i", inc_path])
-            dtc_cmd.extend(["-o", dtb_file, output_file])
-
-            click.echo("Compiling DTS to DTB...")
-            click.echo(f"Command: {' '.join(dtc_cmd)}")
-
-            try:
-                result = subprocess.run(
-                    dtc_cmd, check=True, capture_output=True, text=True
-                )
-                click.echo(
-                    click.style(f"Compiled DTB: {dtb_file}", fg="green", bold=True)
-                )
-
-                if result.stderr:
-                    click.echo(click.style("Compiler warnings:", fg="yellow"))
-                    click.echo(result.stderr)
-
-            except subprocess.CalledProcessError as e:
-                click.echo(click.style(f"Compilation failed: {e}", fg="red"))
-                if e.stderr:
-                    click.echo(click.style("Error output:", fg="red"))
-                    click.echo(e.stderr)
-                return
-            except FileNotFoundError:
-                click.echo(
-                    click.style("Error: 'dtc' compiler not found in PATH", fg="red")
-                )
-                click.echo("Please install device tree compiler (dtc)")
-                return
-
-    except FileNotFoundError as e:
-        click.echo(click.style(f"Error: {e}", fg="red"))
-        return
-    except ValueError as e:
-        click.echo(click.style(f"Error: {e}", fg="red"))
-        return
-    except Exception as e:
-        click.echo(click.style(f"Unexpected error: {e}", fg="red"))
-        import traceback
-
-        traceback.print_exc()
-        return
 
 
 @cli.command("xsa2dt")

@@ -14,25 +14,29 @@ class ComponentModel:
         role: Logical role on the board — ``"clock"``, ``"adc"``, ``"dac"``,
             or ``"transceiver"``.
         part: Part number string, e.g. ``"ad9523_1"``, ``"ad9680"``.
-        template: Jinja2 template filename used to render this component,
-            e.g. ``"ad9523_1.tmpl"``.
         spi_bus: SPI bus label, e.g. ``"spi0"``, ``"spi1"``.
         spi_cs: SPI chip-select index.
-        config: Template context dict — the same dicts that
-            :mod:`adidt.model.contexts` functions produce.
+        rendered: Pre-rendered DT node string emitted by the device's
+            :meth:`render_dt` method.  The renderer inserts this
+            verbatim into the SPI-bus group for *spi_bus*.
+        template, config: Legacy fields (Jinja2 template name + context
+            dict) kept for backwards compatibility with code that still
+            constructs ``ComponentModel`` by hand.  The current
+            renderer ignores them when ``rendered`` is set.
     """
 
     role: str
     part: str
-    template: str
     spi_bus: str
     spi_cs: int
+    rendered: str | None = None
+    template: str = ""
     config: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class JesdLinkModel:
-    """One JESD204 link (RX or TX) with its associated FPGA IP labels and config.
+    """One JESD204 link (RX or TX) with its FPGA-side IP labels and rendered overlays.
 
     Attributes:
         direction: ``"rx"`` or ``"tx"``.
@@ -42,11 +46,11 @@ class JesdLinkModel:
         dma_label: AXI DMA IP label, e.g. ``"axi_ad9680_dma"``.
         link_params: JESD framing parameters — keys ``F``, ``K``, ``M``,
             ``L``, ``Np``, ``S``.
-        xcvr_config: ADXCVR template context dict (for ``adxcvr.tmpl``).
-        jesd_overlay_config: JESD overlay template context dict
-            (for ``jesd204_overlay.tmpl``).
-        tpl_core_config: TPL core template context dict
-            (for ``tpl_core.tmpl``).
+        dma_clocks_str: Optional ``clocks`` cells-string for the DMA
+            overlay (inserted verbatim into the emitted overlay).
+        xcvr_rendered, jesd_overlay_rendered, tpl_core_rendered:
+            Pre-rendered DTS strings for the three FPGA-side IP
+            overlays.  Produced by :mod:`adidt.devices.fpga_ip`.
     """
 
     direction: str
@@ -55,10 +59,10 @@ class JesdLinkModel:
     core_label: str
     dma_label: str | None
     link_params: dict[str, int] = field(default_factory=dict)
-    xcvr_config: dict[str, Any] = field(default_factory=dict)
-    jesd_overlay_config: dict[str, Any] = field(default_factory=dict)
-    tpl_core_config: dict[str, Any] = field(default_factory=dict)
     dma_clocks_str: str | None = None
+    xcvr_rendered: str | None = None
+    jesd_overlay_rendered: str | None = None
+    tpl_core_rendered: str | None = None
 
 
 @dataclass

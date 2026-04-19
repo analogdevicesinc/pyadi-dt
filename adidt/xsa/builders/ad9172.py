@@ -15,14 +15,13 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...model.contexts import (
-    build_ad9172_device_ctx,
+from ...devices.clocks import HMC7044, ClockChannel
+from ...devices.converters import AD9172
+from ..._utils import coerce_board_int
+from ...devices.fpga_ip import (
     build_adxcvr_ctx,
-    build_hmc7044_channel_ctx,
-    build_hmc7044_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
-    coerce_board_int,
 )
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
@@ -125,49 +124,43 @@ class AD9172Builder:
             dac_core_label = str(board_cfg.get("dac_core_label", inferred_core))
 
         # --- Build HMC7044 clock context ---
-        _pll2 = hmc7044_out_freq_hz
-        channels = build_hmc7044_channel_ctx(
-            _pll2,
-            [
-                {
-                    "id": 2,
-                    "name": "DAC_CLK",
-                    "divider": 8,
-                    "driver_mode": 1,
-                    "is_sysref": False,
-                },
-                {
-                    "id": 3,
-                    "name": "DAC_SYSREF",
-                    "divider": 512,
-                    "driver_mode": 1,
-                    "is_sysref": True,
-                },
-                {
-                    "id": 12,
-                    "name": "FPGA_CLK",
-                    "divider": 8,
-                    "driver_mode": 2,
-                    "is_sysref": False,
-                },
-                {
-                    "id": 13,
-                    "name": "FPGA_SYSREF",
-                    "divider": 512,
-                    "driver_mode": 2,
-                    "is_sysref": True,
-                },
-            ],
-        )
-        hmc7044_ctx = build_hmc7044_ctx(
+        _channel_specs = [
+            {
+                "id": 2,
+                "name": "DAC_CLK",
+                "divider": 8,
+                "driver_mode": 1,
+                "is_sysref": False,
+            },
+            {
+                "id": 3,
+                "name": "DAC_SYSREF",
+                "divider": 512,
+                "driver_mode": 1,
+                "is_sysref": True,
+            },
+            {
+                "id": 12,
+                "name": "FPGA_CLK",
+                "divider": 8,
+                "driver_mode": 2,
+                "is_sysref": False,
+            },
+            {
+                "id": 13,
+                "name": "FPGA_SYSREF",
+                "divider": 512,
+                "driver_mode": 2,
+                "is_sysref": True,
+            },
+        ]
+        hmc7044 = HMC7044(
             label="hmc7044",
-            cs=clock_cs,
             spi_max_hz=clock_spi_max,
             pll1_clkin_frequencies=[hmc7044_ref_clk_hz, 0, 0, 0],
             vcxo_hz=hmc7044_vcxo_hz,
             pll2_output_hz=hmc7044_out_freq_hz,
-            clock_output_names=[f"hmc7044_out{i}" for i in range(14)],
-            channels=channels,
+            channels={spec["id"]: ClockChannel(**spec) for spec in _channel_specs},
             pll1_loop_bandwidth_hz=200,
             sysref_timer_divider=1024,
             pulse_generator_mode=0,
@@ -176,11 +169,11 @@ class AD9172Builder:
             gpi_controls=[0x00, 0x00, 0x00, 0x00],
             gpo_controls=[0x1F, 0x2B, 0x00, 0x00],
         )
+        hmc7044_rendered = hmc7044.render_dt(cs=clock_cs)
 
-        # --- Build AD9172 device context ---
-        dac_ctx = build_ad9172_device_ctx(
+        # --- Build AD9172 device ---
+        ad9172 = AD9172(
             label="dac0_ad9172",
-            cs=dac_cs,
             spi_max_hz=dac_spi_max,
             clk_ref="hmc7044 2",
             dac_rate_khz=ad9172_dac_rate_khz,
@@ -189,25 +182,26 @@ class AD9172Builder:
             channel_interpolation=ad9172_channel_interpolation,
             clock_output_divider=ad9172_clock_output_divider,
             jesd_link_ids=[0],
-            jesd204_inputs=f"{dac_core_label} 0 {dac_jesd_link_id}",
+        )
+        ad9172_rendered = ad9172.render_dt(
+            cs=dac_cs,
+            context={"jesd204_inputs": f"{dac_core_label} 0 {dac_jesd_link_id}"},
         )
 
         components = [
             ComponentModel(
                 role="clock",
                 part="hmc7044",
-                template="hmc7044.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=clock_cs,
-                config=hmc7044_ctx,
+                rendered=hmc7044_rendered,
             ),
             ComponentModel(
                 role="dac",
                 part="ad9172",
-                template="ad9172.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=dac_cs,
-                config=dac_ctx,
+                rendered=ad9172_rendered,
             ),
         ]
 
@@ -269,9 +263,9 @@ class AD9172Builder:
                 "L": tx_l,
                 "Np": tx_np,
             },
-            xcvr_config=tx_xcvr_ctx,
-            jesd_overlay_config=tx_jesd_overlay_ctx,
-            tpl_core_config=tx_tpl_ctx,
+            xcvr_rendered=tx_xcvr_ctx,
+            jesd_overlay_rendered=tx_jesd_overlay_ctx,
+            tpl_core_rendered=tx_tpl_ctx,
         )
 
         # Determine addr_cells from platform

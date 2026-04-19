@@ -61,7 +61,6 @@
 		#sound-dai-cells = <0>;
 	};
 	/* --- ADC / DAC / Transceiver PHY --- */
-
 	axi_ad9081_0: ad9081@0 {
 		compatible = "adi,ad9081";
 		reg = <0>;

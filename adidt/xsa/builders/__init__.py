@@ -26,6 +26,7 @@ class BoardBuilder(Protocol):
     """Protocol for board-family specific DTS node builders.
 
     Each builder is responsible for:
+
     - Detecting whether a given topology + config matches this board family.
     - Generating all DTS node strings for the matched design.
     - Reporting which JESD/clkgen/converter instances it handles (so the

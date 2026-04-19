@@ -6,7 +6,6 @@ This section provides examples of how to use the `pyadi-dt` library for various 
    :maxdepth: 1
    :caption: Examples
 
-examples/ad9081_device_tree_generation.md
 examples/xsa_tutorial.md
 examples/xsa_adijif_tutorial.md
 examples/xsa_ad9081_zcu102.md

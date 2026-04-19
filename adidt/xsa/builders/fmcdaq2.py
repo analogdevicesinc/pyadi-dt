@@ -14,14 +14,13 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...model.contexts import (
-    build_ad9523_1_ctx,
-    build_ad9680_ctx,
-    build_ad9144_ctx,
+from ...devices.clocks import AD9523_1, AD9523Channel
+from ...devices.converters import AD9144, AD9680
+from ..._utils import coerce_board_int, fmt_hz
+from ...devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
-    coerce_board_int,
 )
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
@@ -178,83 +177,131 @@ class FMCDAQ2Builder:
                 fastdetect_b_gpio, "fmcdaq2_board.adc_fastdetect_b_gpio"
             )
 
-        # --- Build component contexts ---
-        clock_ctx = build_ad9523_1_ctx(
+        # --- Build devices ---
+        _m1 = 1_000_000_000  # adi,pll2-m1-freq distribution frequency
+        ad9523_channel_specs = [
+            {"id": 1, "name": "DAC_CLK", "divider": 1},
+            {"id": 4, "name": "ADC_CLK_FMC", "divider": 2},
+            {"id": 5, "name": "ADC_SYSREF", "divider": 128},
+            {"id": 6, "name": "CLKD_ADC_SYSREF", "divider": 128},
+            {"id": 7, "name": "CLKD_DAC_SYSREF", "divider": 128},
+            {"id": 8, "name": "DAC_SYSREF", "divider": 128},
+            {"id": 9, "name": "FMC_DAC_REF_CLK", "divider": 2},
+            {"id": 13, "name": "ADC_CLK", "divider": 1},
+        ]
+        ad9523_channels = {
+            s["id"]: AD9523Channel(
+                id=s["id"],
+                name=s["name"],
+                divider=s["divider"],
+                freq_str=fmt_hz(_m1 // s["divider"]),
+            )
+            for s in ad9523_channel_specs
+        }
+        clock_gpio_lines = []
+        for prop, val in (
+            ("sync-gpios", sync_gpio),
+            ("status0-gpios", status0_gpio),
+            ("status1-gpios", status1_gpio),
+        ):
+            if val is not None:
+                clock_gpio_lines.append(
+                    {"prop": prop, "controller": gpio_controller, "index": int(val)}
+                )
+        ad9523 = AD9523_1(
             label="clk0_ad9523",
-            cs=clock_cs,
             spi_max_hz=clock_spi_max,
             vcxo_hz=clock_vcxo_hz,
-            gpio_controller=gpio_controller,
-            sync_gpio=sync_gpio,
-            status0_gpio=status0_gpio,
-            status1_gpio=status1_gpio,
+            channels=ad9523_channels,
         )
+        # Inject GPIO lines (device expects model objects; dicts auto-validate).
+        from ...devices.clocks.ad952x import _GpioLine
+
+        ad9523.gpio_lines = [_GpioLine(**gl) for gl in clock_gpio_lines]
+        clock_rendered = ad9523.render_dt(cs=clock_cs)
 
         adc_clks_str = (
             f"<&{adc_jesd_label}>, "
             f"<&clk0_ad9523 {adc_device_clk_idx}>, "
             f"<&clk0_ad9523 {adc_sysref_clk_idx}>"
         )
-        adc_ctx = build_ad9680_ctx(
+        adc_gpio_lines = []
+        for prop, val in (
+            ("powerdown-gpios", powerdown_gpio),
+            ("fastdetect-a-gpios", fastdetect_a_gpio),
+            ("fastdetect-b-gpios", fastdetect_b_gpio),
+        ):
+            if val is not None:
+                adc_gpio_lines.append(
+                    {"prop": prop, "controller": gpio_controller, "index": int(val)}
+                )
+        ad9680 = AD9680(
             label="adc0_ad9680",
-            cs=adc_cs,
             spi_max_hz=adc_spi_max,
-            use_spi_3wire=False,
+            m=rx_m,
+            l=rx_l,
+            f=rx_f,
+            k=rx_k,
+            np=rx_np,
+            sampling_frequency_hz=adc_sampling_frequency_hz,
             clks_str=adc_clks_str,
             clk_names_str='"jesd_adc_clk", "adc_clk", "adc_sysref"',
-            sampling_frequency_hz=adc_sampling_frequency_hz,
-            rx_m=rx_m,
-            rx_l=rx_l,
-            rx_f=rx_f,
-            rx_k=rx_k,
-            rx_np=rx_np,
-            jesd204_top_device=0,
-            jesd204_link_ids=[adc_jesd_link_id],
-            jesd204_inputs=f"{adc_core_label} 0 {adc_jesd_link_id}",
-            gpio_controller=gpio_controller,
-            powerdown_gpio=powerdown_gpio,
-            fastdetect_a_gpio=fastdetect_a_gpio,
-            fastdetect_b_gpio=fastdetect_b_gpio,
+        )
+        adc_rendered = ad9680.render_dt(
+            cs=adc_cs,
+            context={
+                "jesd204_link_ids": str(adc_jesd_link_id),
+                "jesd204_inputs": f"{adc_core_label} 0 {adc_jesd_link_id}",
+                "gpio_lines": adc_gpio_lines,
+            },
         )
 
-        dac_ctx = build_ad9144_ctx(
+        dac_gpio_lines = []
+        for prop, val in (
+            ("txen-gpios", txen_gpio),
+            ("reset-gpios", reset_gpio),
+            ("irq-gpios", irq_gpio),
+        ):
+            if val is not None:
+                dac_gpio_lines.append(
+                    {"prop": prop, "controller": gpio_controller, "index": int(val)}
+                )
+        ad9144 = AD9144(
             label="dac0_ad9144",
-            cs=dac_cs,
             spi_max_hz=dac_spi_max,
-            clk_ref=f"clk0_ad9523 {dac_device_clk_idx}",
             jesd204_top_device=1,
-            jesd204_link_ids=[dac_jesd_link_id],
-            jesd204_inputs=f"{dac_core_label} 1 {dac_jesd_link_id}",
-            gpio_controller=gpio_controller,
-            txen_gpio=txen_gpio,
-            reset_gpio=reset_gpio,
-            irq_gpio=irq_gpio,
+            clk_ref=f"clk0_ad9523 {dac_device_clk_idx}",
+        )
+        dac_rendered = ad9144.render_dt(
+            cs=dac_cs,
+            context={
+                "jesd204_link_ids": str(dac_jesd_link_id),
+                "jesd204_inputs": f"{dac_core_label} 1 {dac_jesd_link_id}",
+                "gpio_lines": dac_gpio_lines,
+            },
         )
 
         components = [
             ComponentModel(
                 role="clock",
                 part="ad9523_1",
-                template="ad9523_1.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=clock_cs,
-                config=clock_ctx,
+                rendered=clock_rendered,
             ),
             ComponentModel(
                 role="adc",
                 part="ad9680",
-                template="ad9680.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=adc_cs,
-                config=adc_ctx,
+                rendered=adc_rendered,
             ),
             ComponentModel(
                 role="dac",
                 part="ad9144",
-                template="ad9144.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=dac_cs,
-                config=dac_ctx,
+                rendered=dac_rendered,
             ),
         ]
 
@@ -314,9 +361,9 @@ class FMCDAQ2Builder:
                 "Np": rx_np,
                 "S": rx_s,
             },
-            xcvr_config=rx_xcvr_ctx,
-            jesd_overlay_config=rx_jesd_overlay_ctx,
-            tpl_core_config=rx_tpl_ctx,
+            xcvr_rendered=rx_xcvr_ctx,
+            jesd_overlay_rendered=rx_jesd_overlay_ctx,
+            tpl_core_rendered=rx_tpl_ctx,
         )
 
         # TX link (DAC)
@@ -374,9 +421,9 @@ class FMCDAQ2Builder:
                 "Np": tx_np,
                 "S": tx_s,
             },
-            xcvr_config=tx_xcvr_ctx,
-            jesd_overlay_config=tx_jesd_overlay_ctx,
-            tpl_core_config=tx_tpl_ctx,
+            xcvr_rendered=tx_xcvr_ctx,
+            jesd_overlay_rendered=tx_jesd_overlay_ctx,
+            tpl_core_rendered=tx_tpl_ctx,
         )
 
         # Determine addr_cells from platform

@@ -767,7 +767,7 @@ def test_build_fmcdaq2_zcu102_nodes(cfg):
     assert "fastdetect-b-gpios = <&gpio 114 0>;" in merged
     assert "adi,pll1-bypass-enable;" in merged
     assert "adi,pll2-m1-freq = <1000000000>;" in merged
-    assert "ad9523_0_c13:channel@13" in merged
+    assert "ad9523_0_c13: channel@13" in merged
     assert "jesd204-device;" in merged
     assert "&axi_ad9680_jesd204_rx {" in merged
     assert "&axi_ad9144_jesd204_tx {" in merged

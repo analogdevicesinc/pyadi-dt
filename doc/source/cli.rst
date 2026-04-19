@@ -16,8 +16,7 @@ Command Overview
 Commands are grouped into three workflows:
 
 Inspect device trees
-~~~~~~~~~~~~~~~~~~~~
-
+~~~~~~~~~~~~~~~~~~~~~
 Read, search, and modify device tree properties on live hardware (local or
 remote over SSH) or from a ``.dtb`` file.
 
@@ -49,8 +48,7 @@ remote over SSH) or from a ``.dtb`` file.
       adidtc deps overlay.dts --format dot -o deps.dot
 
 Generate device trees
-~~~~~~~~~~~~~~~~~~~~~
-
+~~~~~~~~~~~~~~~~~~~~~~
 Produce ``.dts`` files from Vivado XSA designs, board class + solver configs,
 or profile wizard exports.
 
@@ -81,8 +79,7 @@ or profile wizard exports.
       adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json
 
 Manage boards and profiles
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 List supported boards, browse XSA profiles, and deploy boot files.
 
 ``kuiper-boards``
