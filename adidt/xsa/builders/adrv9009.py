@@ -16,14 +16,12 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...model.contexts import (
-    build_ad9528_1_ctx,
-    build_adrv9009_device_ctx,
+from ...devices.clocks import AD9528_1, AD9528_1Channel
+from ..._utils import coerce_board_int, fmt_hz
+from ...devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
-    coerce_board_int,
-    fmt_hz,
 )
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
@@ -52,18 +50,25 @@ def _topology_instance_names(topology: XsaTopology) -> set[str]:
 
 
 def _is_fmcomms8_layout(topology_names: set[str]) -> bool:
-    """Return True if topology indicates a dual-chip FMComms8 layout."""
-    return any(
-        "tpl_core" in name.lower()
-        and "adrv9009" in name.lower()
-        and (
-            "fmc" in name.lower()
-            or "obs" in name.lower()
-            or "rx" in name.lower()
-            or "tx" in name.lower()
-        )
-        for name in topology_names
-    )
+    """Return True if topology indicates a dual-chip FMComms8 layout.
+
+    FMComms8 designs mark the observation-receiver TPL core with an
+    ``obs`` substring (for example
+    ``obs_adrv9009_fmc_tpl_core_adc_tpl_core`` or
+    ``adrv9009_tpl_core_obs_adc_tpl_core``).  Single-chip
+    ZCU102+ADRV9009 designs use ``rx_os`` on the JESD / DMA side and
+    never put ``obs`` on their TPL core, so any ADRV9009 TPL core
+    whose label carries ``obs`` reliably identifies FMComms8.
+    """
+    lowered = [n.lower() for n in topology_names]
+    for name in lowered:
+        if "fmcomms8" in name or "adrv9009-x2" in name or "adrv9009_x2" in name:
+            return True
+        if "adrv9009" in name and ("_fmc_c_" in name or "_fmc_d_" in name):
+            return True
+        if "adrv9009" in name and "tpl_core" in name and "obs" in name:
+            return True
+    return False
 
 
 def _pick_matching_label(
@@ -88,9 +93,7 @@ def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
     return "".join(f"{prefix}{line.lstrip()}\n" for line in lines)
 
 
-def _fmt_gpi_gpo(controls: list) -> str:
-    """Format a list of int/hex values as a space-separated hex string for DTS."""
-    return " ".join(f"0x{int(v):02x}" for v in controls)
+from ..._utils import fmt_gpi_gpo as _fmt_gpi_gpo  # noqa: E402
 
 
 class ADRV9009Builder:
@@ -136,23 +139,8 @@ class ADRV9009Builder:
             # The renderer produced an SPI bus with only the PHY; replace it
             # with one that includes the raw clock chip node before the PHY.
             phy_comp = model.get_component("transceiver")
-            if phy_comp and rendered["converters"]:
-                from jinja2 import Environment, FileSystemLoader
-                import os
-
-                loc = os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)),
-                    "..",
-                    "..",
-                    "templates",
-                    "xsa",
-                )
-                env = Environment(loader=FileSystemLoader(loc))
-                phy_rendered = env.get_template(phy_comp.template).render(
-                    phy_comp.config
-                )
-                spi_node = renderer._wrap_spi_bus(spi_bus, raw_clk + phy_rendered)
-                # Replace the first converter entry (the SPI bus)
+            if phy_comp and phy_comp.rendered and rendered["converters"]:
+                spi_node = renderer._wrap_spi_bus(spi_bus, raw_clk + phy_comp.rendered)
                 rendered["converters"][0] = spi_node
 
         nodes: list[str] = []
@@ -188,7 +176,7 @@ class ADRV9009Builder:
             "adrv9025" in lbl.lower() or "adrv9026" in lbl.lower() for lbl in labels
         )
         phy_family = "adrv9025" if is_adrv9025_family else "adrv9009"
-        phy_compatible = f'"adi,{phy_family}", "{phy_family}"'
+        phy_compatible_list = [f"adi,{phy_family}", phy_family]
 
         # --- Discover JESD label names from topology ---
         rx_jesd_label = next(
@@ -269,19 +257,37 @@ class ADRV9009Builder:
         has_rx_os_clkgen = has_rx_os and not is_fmcomms8
 
         # --- TPL core labels ---
-        rx_core_label = "axi_adrv9009_core_rx"
-        rx_os_core_label = "axi_adrv9009_core_rx_obs" if has_rx_os else ""
-        tx_core_label = "axi_adrv9009_core_tx"
-        if is_fmcomms8:
-            rx_core_label = _pick_matching_label(
-                labels, rx_core_label, ("adrv9009", "tpl_core", "rx", "adc")
-            )
-            rx_os_core_label = _pick_matching_label(
-                labels, rx_os_core_label, ("adrv9009", "tpl_core", "obs", "adc")
-            )
-            tx_core_label = _pick_matching_label(
-                labels, tx_core_label, ("adrv9009", "tpl_core", "tx", "dac")
-            )
+        # Prefer XSA-discovered labels; ``_pick_matching_label`` falls
+        # back to the passed default on no match.  Doing this on both
+        # paths fixes the standard ZCU102+ADRV9009 project, whose base
+        # DTS emits ``{rx,rx_os,tx}_adrv9009_tpl_core_{adc,dac}_tpl_core``
+        # rather than the legacy ``axi_adrv9009_core_{rx,rx_obs,tx}``
+        # names that were hardcoded when this builder was FMComms8-only.
+        rx_core_label = _pick_matching_label(
+            labels, "axi_adrv9009_core_rx", ("adrv9009", "tpl_core", "rx", "adc")
+        )
+        # Standard ZCU102+ADRV9009 names the observation TPL core
+        # ``rx_os_adrv9009_tpl_core_adc_tpl_core``; FMComms8 projects
+        # use ``obs`` in the label instead.  Match whichever is
+        # present in the XSA, falling back to the legacy hardcoded
+        # default only if neither is found.
+        rx_os_core_label = ""
+        if has_rx_os:
+            for tokens in (
+                ("adrv9009", "tpl_core", "rx_os", "adc"),
+                ("adrv9009", "tpl_core", "obs", "adc"),
+            ):
+                candidate = _pick_matching_label(
+                    labels, "axi_adrv9009_core_rx_obs", tokens
+                )
+                if candidate != "axi_adrv9009_core_rx_obs":
+                    rx_os_core_label = candidate
+                    break
+            if not rx_os_core_label:
+                rx_os_core_label = "axi_adrv9009_core_rx_obs"
+        tx_core_label = _pick_matching_label(
+            labels, "axi_adrv9009_core_tx", ("adrv9009", "tpl_core", "tx", "dac")
+        )
 
         # --- Board config values ---
         misc_clk_hz = int(board_cfg.get("misc_clk_hz", 245760000))
@@ -293,7 +299,7 @@ class ADRV9009Builder:
         trx_spi_max_frequency = int(board_cfg.get("trx_spi_max_frequency", 25000000))
 
         if is_fmcomms8:
-            phy_compatible = '"adrv9009-x2"'
+            phy_compatible_list = ["adrv9009-x2"]
 
         # --- Clock chip configuration ---
         raw_clock_chip_node: str | None = None
@@ -502,46 +508,39 @@ class ADRV9009Builder:
                 raw_channels_block = _build_default_hmc7044_channels(
                     hmc7044_pll2_out_freq
                 )
-            clock_output_names_str = ", ".join(
-                f'"{n}"' for n in hmc7044_clock_output_names
+            from ...devices.clocks import HMC7044
+
+            hmc7044_dev = HMC7044(
+                label=clock_chip_label,
+                spi_max_hz=10_000_000,
+                pll1_clkin_frequencies=hmc7044_pll1_clkin_freqs,
+                vcxo_hz=hmc7044_vcxo_freq,
+                pll2_output_hz=hmc7044_pll2_out_freq,
+                clock_output_names=hmc7044_clock_output_names,
+                raw_channels=raw_channels_block,
+                jesd204_sysref_provider=True,
+                jesd204_max_sysref_hz=2_000_000,
+                pll1_loop_bandwidth_hz=200,
+                pll1_ref_prio_ctrl="0x1E",
+                pll1_ref_autorevert=False,
+                sysref_timer_divider=3840,
+                pulse_generator_mode=7,
+                clkin0_buffer_mode="0x07",
+                clkin1_buffer_mode="0x09",
+                clkin2_buffer_mode="0x05",
+                clkin3_buffer_mode="0x11",
+                oscin_buffer_mode="0x15",
+                gpi_controls=hmc7044_gpi_controls,
+                gpo_controls=hmc7044_gpo_controls,
+                sync_pin_mode=1,
+                high_perf_mode_dist_enable=True,
             )
-            clock_ctx = {
-                "label": clock_chip_label,
-                "cs": clk_cs,
-                "spi_max_hz": 10000000,
-                "clkin0_ref": None,
-                "pll1_clkin_frequencies": hmc7044_pll1_clkin_freqs,
-                "vcxo_hz": hmc7044_vcxo_freq,
-                "pll2_output_hz": hmc7044_pll2_out_freq,
-                "clock_output_names_str": clock_output_names_str,
-                "jesd204_sysref_provider": True,
-                "jesd204_max_sysref_hz": 2000000,
-                "pll1_loop_bandwidth_hz": 200,
-                "pll1_ref_prio_ctrl": "0x1E",
-                "pll1_ref_autorevert": False,
-                "pll1_charge_pump_ua": None,
-                "pfd1_max_freq_hz": None,
-                "sysref_timer_divider": 3840,
-                "pulse_generator_mode": 7,
-                "clkin0_buffer_mode": "0x07",
-                "clkin1_buffer_mode": "0x09",
-                "clkin2_buffer_mode": "0x05",
-                "clkin3_buffer_mode": "0x11",
-                "oscin_buffer_mode": "0x15",
-                "gpi_controls_str": _fmt_gpi_gpo(hmc7044_gpi_controls),
-                "gpo_controls_str": _fmt_gpi_gpo(hmc7044_gpo_controls),
-                "sync_pin_mode": 1,
-                "high_perf_mode_dist_enable": True,
-                "channels": None,
-                "raw_channels": raw_channels_block,
-            }
             clock_component = ComponentModel(
                 role="clock",
                 part="hmc7044",
-                template="hmc7044.tmpl",
                 spi_bus=spi_bus,
                 spi_cs=clk_cs,
-                config=clock_ctx,
+                rendered=hmc7044_dev.render_dt(cs=clk_cs),
             )
         else:
             if custom_clock_chip_blocks:
@@ -596,47 +595,97 @@ class ADRV9009Builder:
                 )
             else:
                 assert ad9528_vcxo_freq is not None
-                clock_ctx = build_ad9528_1_ctx(
+                ch_freq = ad9528_vcxo_freq * 10 // 5
+                ad9528_1_specs = [
+                    {
+                        "id": 13,
+                        "name": "DEV_CLK",
+                        "divider": 5,
+                        "signal_source": 0,
+                        "is_sysref": False,
+                        "freq_str": fmt_hz(ch_freq),
+                    },
+                    {
+                        "id": 1,
+                        "name": "FMC_CLK",
+                        "divider": 5,
+                        "signal_source": 0,
+                        "is_sysref": False,
+                        "freq_str": fmt_hz(ch_freq),
+                    },
+                    {
+                        "id": 12,
+                        "name": "DEV_SYSREF",
+                        "divider": 5,
+                        "signal_source": 2,
+                        "is_sysref": False,
+                    },
+                    {
+                        "id": 3,
+                        "name": "FMC_SYSREF",
+                        "divider": 5,
+                        "signal_source": 2,
+                        "is_sysref": False,
+                    },
+                ]
+                ad9528 = AD9528_1(
                     label=clock_chip_label,
-                    cs=clk_cs,
                     vcxo_hz=ad9528_vcxo_freq,
+                    channels={s["id"]: AD9528_1Channel(**s) for s in ad9528_1_specs},
                 )
                 clock_component = ComponentModel(
                     role="clock",
                     part="ad9528_1",
-                    template="ad9528_1.tmpl",
                     spi_bus=spi_bus,
                     spi_cs=clk_cs,
-                    config=clock_ctx,
+                    rendered=ad9528.render_dt(cs=clk_cs),
                 )
                 raw_clock_chip_node = None
 
         # --- Build PHY device component ---
-        phy_ctx = build_adrv9009_device_ctx(
-            phy_family=phy_family,
-            phy_compatible=phy_compatible,
-            trx_cs=trx_cs,
+        from ...devices.transceivers import ADRV9009
+
+        shared_ctx: dict[str, Any] = {
+            "gpio_label": gpio_label,
+            "clocks_value": trx_clocks_value,
+            "clock_names_value": trx_clock_names_value,
+            "link_ids": trx_link_ids_value,
+            "jesd204_inputs": trx_inputs_value,
+            "profile_props": trx_profile_props,
+        }
+
+        phy_dev = ADRV9009(
+            label=f"trx0_{phy_family}",
+            node_name_base=f"{phy_family}-phy",
+            compatible_strings=phy_compatible_list,
             spi_max_hz=trx_spi_max_frequency,
-            gpio_label=gpio_label,
-            trx_reset_gpio=trx_reset_gpio,
-            trx_sysref_req_gpio=trx_sysref_req_gpio,
-            trx_clocks_value=trx_clocks_value,
-            trx_clock_names_value=trx_clock_names_value,
-            trx_link_ids_value=trx_link_ids_value,
-            trx_inputs_value=trx_inputs_value,
-            trx_profile_props_block=trx_profile_props_block,
-            is_fmcomms8=is_fmcomms8,
-            trx2_cs=trx2_cs if is_fmcomms8 else None,
-            trx2_reset_gpio=trx2_reset_gpio if is_fmcomms8 else None,
-            trx1_clocks_value=trx1_clocks_value if is_fmcomms8 else None,
+            reset_gpio=trx_reset_gpio,
+            sysref_req_gpio=trx_sysref_req_gpio,
         )
+        phy_rendered = phy_dev.render_dt(cs=trx_cs, context=shared_ctx)
+
+        if is_fmcomms8:
+            # Second chip: its own clocks, cs, reset; no sysref-req-gpios.
+            phy2_dev = ADRV9009(
+                label=f"trx1_{phy_family}",
+                node_name_base=f"{phy_family}-phy",
+                compatible_strings=[phy_family],
+                spi_max_hz=trx_spi_max_frequency,
+                reset_gpio=trx2_reset_gpio,
+                sysref_req_gpio=None,
+            )
+            phy2_ctx = dict(shared_ctx)
+            phy2_ctx["clocks_value"] = trx1_clocks_value
+            phy_rendered = (
+                phy_rendered + "\n" + phy2_dev.render_dt(cs=trx2_cs, context=phy2_ctx)
+            )
+
         phy_component = ComponentModel(
             role="transceiver",
             part=phy_family,
-            template="adrv9009.tmpl",
             spi_bus=spi_bus,
             spi_cs=trx_cs,
-            config=phy_ctx,
+            rendered=phy_rendered,
         )
 
         # --- Build component list ---
@@ -691,10 +740,8 @@ class ADRV9009Builder:
                 core_label=rx_core_label,
                 dma_label=rx_dma_label,
                 link_params={"F": rx_f, "K": rx_k},
-                jesd_overlay_config=rx_jesd_overlay_ctx,
+                jesd_overlay_rendered=rx_jesd_overlay_ctx,
                 # XCVR and TPL rendered as raw nodes
-                xcvr_config={},
-                tpl_core_config={},
             ),
             JesdLinkModel(
                 direction="tx",
@@ -703,9 +750,7 @@ class ADRV9009Builder:
                 core_label=tx_core_label,
                 dma_label=tx_dma_label,
                 link_params={"F": tx_octets_per_frame, "K": tx_k, "M": tx_m},
-                jesd_overlay_config=tx_jesd_overlay_ctx,
-                xcvr_config={},
-                tpl_core_config={},
+                jesd_overlay_rendered=tx_jesd_overlay_ctx,
             ),
         ]
 
@@ -868,9 +913,7 @@ class ADRV9009Builder:
                         "F": rx_os_octets_per_frame,
                         "K": rx_k,
                     },
-                    jesd_overlay_config=rx_os_jesd_overlay_ctx,
-                    xcvr_config={},
-                    tpl_core_config={},
+                    jesd_overlay_rendered=rx_os_jesd_overlay_ctx,
                 ),
             )
 

@@ -267,6 +267,57 @@ def require_hw_prereqs() -> None:
         pytest.skip("usbsdmux not found on PATH")
 
 
+# Known-benign ``dmesg`` lines unrelated to our ADC/DAC/JESD flow.  These
+# appear on stock Kuiper ZCU102 boots regardless of the rendered DTB and
+# would produce false positives if matched against the generic
+# panic/error patterns below.
+_DMESG_BENIGN_SUBSTRINGS = (
+    "xilinx-dp-snd-codec",
+    "regulatory.db",
+    "Direct firmware load for",
+    "failed to load firmware",
+    # Wifi/USB hotplug noise seen on some Kuiper releases:
+    "cfg80211: failed to load",
+    # Harmless driver-level probe deferrals re-tried later:
+    "EPROBE_DEFER",
+)
+
+# Hard-fail patterns — these indicate a genuine kernel fault.
+_DMESG_FATAL_PATTERNS = (
+    "Kernel panic",
+    "Unable to handle kernel",
+    "Internal error:",
+    "Oops:",
+    "BUG:",
+    "Call trace:",
+    "SError Interrupt",
+    "synchronous external abort",
+    "segfault",
+    "Kernel stack",
+    "general protection",
+    "watchdog: BUG:",
+    "soft lockup",
+    "hard LOCKUP",
+)
+
+
+def assert_no_kernel_faults(dmesg_txt: str) -> None:
+    """Fail the calling test if *dmesg_txt* contains a kernel fault.
+
+    Scans for panic/oops/BUG/SError signatures. Raises ``AssertionError``
+    with the offending lines for quick triage. Benign Kuiper boot noise
+    (audio codec probe, regulatory.db firmware, deferred probes) is
+    ignored via :data:`_DMESG_BENIGN_SUBSTRINGS`.
+    """
+    bad: list[str] = []
+    for line in dmesg_txt.splitlines():
+        if any(s in line for s in _DMESG_BENIGN_SUBSTRINGS):
+            continue
+        if any(p in line for p in _DMESG_FATAL_PATTERNS):
+            bad.append(line)
+    assert not bad, "Kernel fault(s) detected in dmesg:\n" + "\n".join(bad)
+
+
 def shell_out(shell, cmd: str) -> str:
     """Run *cmd* via an ``ADIShellDriver`` and return the output as a string.
 
@@ -283,6 +334,117 @@ def shell_out(shell, cmd: str) -> str:
     if isinstance(out, list):
         return "\n".join(out)
     return str(out)
+
+
+def acquire_xsa(
+    local_xsa: Path,
+    release: str,
+    project: str,
+    tmp_path: Path,
+) -> Path:
+    """Return *local_xsa* if it exists, otherwise download from Kuiper release."""
+    if local_xsa.exists():
+        return local_xsa
+    from test.xsa.kuiper_release import download_project_xsa
+
+    return download_project_xsa(
+        release=release,
+        project_dir=project,
+        cache_dir=tmp_path / "kuiper_cache",
+        output_dir=tmp_path / "xsa",
+    )
+
+
+def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
+    """Push DTB (+ optional kernel) via ``KuiperDLDriver`` and transition to shell.
+
+    Returns the ``ADIShellDriver`` handle.
+    """
+    kuiper = board.target.get_driver("KuiperDLDriver")
+    kuiper.get_boot_files_from_release()
+    if kernel_image is not None:
+        kuiper.add_files_to_target(kernel_image)
+    kuiper.add_files_to_target(dtb)
+    board.transition("shell")
+    return board.target.get_driver("ADIShellDriver")
+
+
+def collect_dmesg(
+    shell,
+    out_dir: Path,
+    label: str,
+    grep_pattern: str | None = None,
+) -> str:
+    """Snapshot full dmesg + err-level dmesg to ``out_dir`` and return full text.
+
+    Also prints ``ls /sys/bus/spi/devices`` and an optional
+    ``dmesg | grep -Ei <grep_pattern>`` tail for diagnostics.
+    """
+    dmesg_log = out_dir / f"dmesg_{label}.log"
+    dmesg_txt = shell_out(shell, "dmesg")
+    dmesg_log.write_text(dmesg_txt)
+
+    err_log = out_dir / f"dmesg_{label}_err.log"
+    err_log.write_text(shell_out(shell, "dmesg --level=err,warn"))
+    print(f"Saved dmesg logs: {dmesg_log} and {err_log}")
+
+    diag_cmds = ["ls /sys/bus/spi/devices"]
+    if grep_pattern:
+        diag_cmds.append(f"dmesg | grep -Ei '{grep_pattern}' | tail -n 200")
+    for cmd in diag_cmds:
+        print(f"$ {cmd}")
+        print(shell_out(shell, cmd))
+    return dmesg_txt
+
+
+def open_iio_context(shell):
+    """Return ``(iio.Context, ip_address)`` for the booted target."""
+    import iio
+
+    ip_addresses = shell.get_ip_addresses()
+    assert ip_addresses, "ADIShellDriver could not report a board IP address"
+    ip_address = str(ip_addresses[0].ip).split("/")[0]
+    print(f"Using IP address for IIO context: {ip_address}")
+    ctx = iio.Context(f"ip:{ip_address}")
+    assert ctx is not None, "Failed to create IIO context"
+    return ctx, ip_address
+
+
+def read_jesd_status(
+    shell,
+    rx_glob: str = "*.axi[_-]jesd204[_-]rx",
+    tx_glob: str = "*.axi[_-]jesd204[_-]tx",
+) -> tuple[str, str]:
+    """Return ``(rx_status, tx_status)`` from the platform-device sysfs nodes."""
+    rx_status = shell_out(
+        shell,
+        f"cat /sys/bus/platform/devices/{rx_glob}/status 2>/dev/null "
+        "| head -n 20 || true",
+    )
+    tx_status = shell_out(
+        shell,
+        f"cat /sys/bus/platform/devices/{tx_glob}/status 2>/dev/null "
+        "| head -n 20 || true",
+    )
+    return rx_status, tx_status
+
+
+def assert_jesd_links_data(
+    shell,
+    context: str = "",
+    rx_glob: str = "*.axi[_-]jesd204[_-]rx",
+    tx_glob: str = "*.axi[_-]jesd204[_-]tx",
+) -> tuple[str, str]:
+    """Read RX + TX JESD status and assert both show ``Link status: DATA``."""
+    rx_status, tx_status = read_jesd_status(shell, rx_glob, tx_glob)
+    suffix = f" ({context})" if context else ""
+    assert "Link status: DATA" in rx_status, (
+        f"RX JESD link not in DATA{suffix}:\n{rx_status}"
+    )
+    assert "Link status: DATA" in tx_status, (
+        f"TX JESD link not in DATA{suffix}:\n{tx_status}"
+    )
+    return rx_status, tx_status
 
 
 def build_kernel_image(platform_arch: str) -> Path | None:

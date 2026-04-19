@@ -106,8 +106,9 @@ def docs(session):
         "sphinxcontrib-mermaid",
         "adi-doctools",
         "linkify-it-py",
+        "pyd2lang-native>=0.1.1",
     )
-    _install_local_pyd2lang(session)
+    # _install_local_pyd2lang(session)
     session.install(".")
     session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
 
@@ -124,9 +125,10 @@ def docs_serve(session):
         "linkify-it-py",
         "sphinx-autobuild",
         "fdt",
+        "pyd2lang-native>=0.1.1",
         ".[dev]",
     )
-    _install_local_pyd2lang(session)
+    # _install_local_pyd2lang(session)
     # session.install(".")
     session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host", "0.0.0.0")
 

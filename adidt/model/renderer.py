@@ -1,23 +1,16 @@
-"""Render a :class:`BoardModel` to DTS node strings using per-component templates."""
+"""Render a :class:`BoardModel` to DTS node strings.
+
+Every component and JESD-link carries a pre-rendered DT string produced
+by the declarative device classes in :mod:`adidt.devices`.  This
+renderer is a thin assembler that groups those strings by SPI bus and
+JESD-link direction — no Jinja2 involved.
+"""
 
 from __future__ import annotations
 
-import os
 from collections import defaultdict
-from functools import lru_cache
-from typing import Any
-
-from jinja2 import Environment, FileSystemLoader
 
 from .board_model import BoardModel, JesdLinkModel
-
-
-@lru_cache(maxsize=1)
-def _template_dir() -> str:
-    """Return the XSA template directory path (cached)."""
-    return os.path.join(
-        os.path.dirname(os.path.realpath(__file__)), "..", "templates", "xsa"
-    )
 
 
 class BoardModelRenderer:
@@ -42,7 +35,6 @@ class BoardModelRenderer:
             Dict with keys ``clkgens``, ``jesd204_rx``, ``jesd204_tx``,
             ``converters``, each mapping to a list of DTS node strings.
         """
-        env = self._make_env(model)
         result: dict[str, list[str]] = {
             "clkgens": [],
             "jesd204_rx": [],
@@ -50,43 +42,31 @@ class BoardModelRenderer:
             "converters": [],
         }
 
-        # Group components by SPI bus, render each, wrap in &spi_bus overlay
+        # Group components by SPI bus, wrap in &spi_bus overlay.
         spi_groups: dict[str, list[str]] = defaultdict(list)
         for comp in model.components:
-            rendered = env.get_template(comp.template).render(comp.config)
-            spi_groups[comp.spi_bus].append(rendered)
+            if comp.rendered is None:
+                continue  # declarative devices always pre-render
+            spi_groups[comp.spi_bus].append(comp.rendered)
 
         for bus_label, children in spi_groups.items():
             children_str = "".join(children)
             result["converters"].append(self._wrap_spi_bus(bus_label, children_str))
 
-        # Render JESD links: DMA overlays, TPL cores, JESD overlays, ADXCVR
+        # JESD-link IP overlays (DMA, TPL core, JESD framing, ADXCVR).
         for link in model.jesd_links:
-            # DMA overlay (skip when dma_label is None)
             if link.dma_label is not None:
                 result["converters"].append(self._render_dma_overlay(link))
-            # TPL core (skip when config is empty — builder handles it externally)
-            if link.tpl_core_config:
-                result["converters"].append(
-                    env.get_template("tpl_core.tmpl").render(link.tpl_core_config)
-                )
-            # JESD204 overlay
-            if link.jesd_overlay_config:
-                key = f"jesd204_{link.direction}"
-                result[key].append(
-                    env.get_template("jesd204_overlay.tmpl").render(
-                        link.jesd_overlay_config
-                    )
-                )
-            # ADXCVR (skip when config is empty — builder handles it externally)
-            if link.xcvr_config:
-                result["converters"].append(
-                    env.get_template("adxcvr.tmpl").render(link.xcvr_config)
-                )
+            if link.tpl_core_rendered is not None:
+                result["converters"].append(link.tpl_core_rendered)
+            key = f"jesd204_{link.direction}"
+            if link.jesd_overlay_rendered is not None:
+                result[key].append(link.jesd_overlay_rendered)
+            if link.xcvr_rendered is not None:
+                result["converters"].append(link.xcvr_rendered)
 
-        # Append extra raw nodes (e.g., fixed clocks, HSCI overlays)
+        # Append extra raw nodes (e.g., fixed clocks, HSCI overlays).
         result["converters"].extend(model.extra_nodes)
-
         return result
 
     @staticmethod
@@ -117,20 +97,3 @@ class BoardModelRenderer:
             lines.append(f"\t\tclocks = {link.dma_clocks_str};")
         lines.append("\t};")
         return "\n".join(lines)
-
-    @staticmethod
-    def _make_env(model: BoardModel) -> Environment:
-        """Create a Jinja2 environment with model-specific reg formatting."""
-        env = Environment(loader=FileSystemLoader(_template_dir()))
-        # Register reg-formatting globals matching NodeBuilder._make_jinja_env
-        cells = model.fpga_config.addr_cells if model.fpga_config else 2
-
-        def _reg_addr(addr: int) -> str:
-            return f"0x{addr:08x}" if cells == 1 else f"0x0 0x{addr:08x}"
-
-        def _reg_size(size: int) -> str:
-            return f"0x{size:x}" if cells == 1 else f"0x0 0x{size:x}"
-
-        env.globals["reg_addr"] = _reg_addr  # ty: ignore[invalid-assignment]
-        env.globals["reg_size"] = _reg_size  # ty: ignore[invalid-assignment]
-        return env

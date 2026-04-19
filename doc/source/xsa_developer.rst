@@ -128,22 +128,24 @@ Key data models
    configs, JESD link parameters, or metadata before rendering.
 
 ``BoardModelRenderer`` (``model/renderer.py``)
-   Renders a ``BoardModel`` into the same ``dict[str, list[str]]`` that
-   ``NodeBuilder.build()`` returns.  Uses the per-component templates from
-   ``adidt/templates/xsa/``.
+   Groups the pre-rendered strings carried on a ``BoardModel``'s
+   components and JESD links, wraps each SPI-bus group in an
+   ``&spi_bus { ... };`` overlay, and returns the same
+   ``dict[str, list[str]]`` shape that ``NodeBuilder.build()`` does.
+   The renderer itself does no template lookups; every string it
+   concatenates was produced by a declarative device class.
 
-Context builders (``model/contexts.py``)
-   Standalone functions that produce template context dicts.  Each function
-   corresponds to a Jinja2 template and returns a flat dict whose keys
-   match the template variables.  These are shared by both the XSA builders
-   and the manual board-class workflow (``to_board_model()``).
+Declarative device classes (``adidt/devices/``)
+   Typed pydantic models whose fields map 1:1 to DT properties.  Each
+   class owns its rendering via ``render_dt(cs=...)``; the output is a
+   plain DTS string.  See :doc:`api/devices` for the full catalog and
+   the "Writing a new device" pattern.
 
-   Available builders: ``build_ad9523_1_ctx``, ``build_ad9528_ctx``,
-   ``build_ad9528_1_ctx``, ``build_hmc7044_ctx``, ``build_ad9680_ctx``,
-   ``build_ad9144_ctx``, ``build_ad9152_ctx``, ``build_ad9172_device_ctx``,
-   ``build_ad9081_mxfe_ctx``, ``build_adrv9009_device_ctx``,
-   ``build_ad9084_ctx``, ``build_adf4382_ctx``, ``build_adxcvr_ctx``,
-   ``build_jesd204_overlay_ctx``, ``build_tpl_core_ctx``.
+   FPGA-side JESD IP overlays (``Adxcvr``, ``Jesd204Overlay``,
+   ``TplCore``) live under ``adidt.devices.fpga_ip``.  Legacy
+   ``build_adxcvr_ctx`` / ``build_jesd204_overlay_ctx`` /
+   ``build_tpl_core_ctx`` functions are kept as thin shims that
+   construct and render the corresponding device.
 
 NodeBuilder internals
 ---------------------
@@ -656,36 +658,24 @@ by both XSA builders and manual board classes (``to_board_model()``).
 Step 3 — Write tests
 ~~~~~~~~~~~~~~~~~~~~
 
-Add tests to ``test/xsa/test_node_builder_templates.py``.  Follow TDD: write
-the test first, confirm it fails, then implement.
+Add tests under ``test/devices/`` for the device class itself (field
+semantics, rendered DTS content) and ``test/xsa/`` for the builder
+integration.  Follow TDD: write the test first, confirm it fails, then
+implement.
 
 .. code-block:: python
 
-   def test_ad_new_template_renders():
-       ctx = {
-           "label": "adc0_ad_new",
-           "cs": 0,
-           "spi_max_hz": 10_000_000,
-           "gpio_controller": "gpio",
-           "reset_gpio": 100,
-           "sampling_freq_hz": 245_760_000,
-       }
-       out = NodeBuilder()._render("ad_new.tmpl", ctx)
-       assert 'compatible = "adi,ad-new"' in out
-       assert "adc0_ad_new: ad_new@0" in out
-       assert "reset-gpios = <&gpio 100 0>" in out
-       assert "adi,sampling-frequency = <245760000>" in out
-
-   def test_ad_new_context_builder():
-       ctx = NodeBuilder()._build_ad_new_ctx(
-           cs=0,
-           spi_max_hz=10_000_000,
-           gpio_controller="gpio",
+   def test_ad_new_renders_expected_properties():
+       ad_new = ADNew(
+           label="adc0_ad_new",
            reset_gpio=100,
-           sampling_freq_hz=245_760_000,
+           sampling_frequency_hz=245_760_000,
        )
-       assert ctx["label"] == "adc0_ad_new"
-       assert ctx["reset_gpio"] == 100
+       out = ad_new.render_dt(cs=0, context={"gpio_label": "gpio"})
+       assert 'compatible = "adi,ad-new";' in out
+       assert "adc0_ad_new: ad_new@0 {" in out
+       assert "reset-gpios = <&gpio 100 0>;" in out
+       assert "adi,sampling-frequency = /bits/ 64 <245760000>;" in out
 
 Run tests:
 
@@ -717,23 +707,31 @@ Add the family to ``inferred_converter_family()`` in the priority list.
 Step 5 — Wire into a board builder
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-All builders now construct a ``BoardModel`` internally.  Add the new
-component as a ``ComponentModel`` in the builder's ``build_model()`` method:
+All builders construct a ``BoardModel`` internally by instantiating
+declarative device classes and stuffing their rendered strings into
+``ComponentModel.rendered``.  Add the new device by writing a class
+under ``adidt/devices/`` (see :doc:`api/devices`) and wiring it in:
 
 .. code-block:: python
 
    from adidt.model.board_model import ComponentModel
-   from adidt.model.contexts import build_ad_new_ctx
+   from adidt.devices.converters import ADNew
 
    # Inside the builder's build_model():
+   ad_new = ADNew(
+       label="adc0_ad_new",
+       sampling_frequency_hz=245_760_000,
+       # ... further fields match the DT properties 1:1.
+   )
    components.append(
        ComponentModel(
            role="adc",
            part="ad_new",
-           template="ad_new.tmpl",
+           template="",
            spi_bus=spi_bus,
            spi_cs=adc_cs,
-           config=build_ad_new_ctx(cs=adc_cs, sampling_freq_hz=245_760_000),
+           config={},
+           rendered=ad_new.render_dt(cs=adc_cs),
        )
    )
 
@@ -854,13 +852,13 @@ below:
        adc_cs    = int(board_cfg.get("adc_cs", 1))
        ...
 
-       # Build and render each node
-       clk_ctx = self._build_hmc7044_ctx(...)
-       adc_ctx = self._build_ad_new_ctx(...)
+       # Construct devices and collect their pre-rendered DTS strings.
+       hmc7044 = HMC7044(label="hmc7044", vcxo_hz=125_000_000, ...)
+       ad_new = ADNew(label="adc0_ad_new", ...)
 
        spi_children = (
-           self._render("hmc7044.tmpl", clk_ctx)
-           + self._render("ad_new.tmpl", adc_ctx)
+           hmc7044.render_dt(cs=clk_cs)
+           + ad_new.render_dt(cs=adc_cs)
        )
 
        nodes: list[str] = [

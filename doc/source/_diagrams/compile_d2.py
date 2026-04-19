@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compile D2 diagram sources to SVG using pyd2lang-native."""
 
+import os
 import re
 from pathlib import Path
 
@@ -112,11 +113,23 @@ def _force_dark_css(svg: str) -> str:
 
 
 def main() -> None:
+    if os.environ.get("ADIDT_SKIP_D2"):
+        print("ADIDT_SKIP_D2 set; using pre-baked SVGs.")
+        return
+
     SVG_DIR.mkdir(exist_ok=True)
     d2_files = sorted(D2_DIR.glob("*.d2"))
     if not d2_files:
         print("No .d2 files found in", D2_DIR)
         return
+
+    # The installed ``d2`` Python binding only exposes ``compile(code: str)``.
+    # If it accepts the richer (library=, theme=) signature we use it; otherwise
+    # we fall back to the bare call.
+    import inspect
+
+    sig_params = inspect.signature(d.compile).parameters
+    rich_api = "library" in sig_params and "theme" in sig_params
 
     for path in d2_files:
         name = path.stem
@@ -127,7 +140,10 @@ def main() -> None:
         print(f"Compiling {path.name} (library={library}, themes={themes}) ...")
 
         for theme in themes:
-            svg = d.compile(code, library=library, theme=theme)
+            if rich_api:
+                svg = d.compile(code, library=library, theme=theme)
+            else:
+                svg = d.compile(code)
             if svg is None:
                 raise RuntimeError(
                     f"d2.compile returned None for {path.name} (theme={theme})"

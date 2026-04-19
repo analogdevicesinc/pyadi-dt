@@ -16,15 +16,13 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...model.contexts import (
-    build_ad9084_ctx,
-    build_adf4382_ctx,
+from ...devices.clocks import ADF4382, HMC7044, ClockChannel
+from ...devices.converters import AD9084
+from ..._utils import coerce_board_int
+from ...devices.fpga_ip import (
     build_adxcvr_ctx,
-    build_hmc7044_channel_ctx,
-    build_hmc7044_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
-    coerce_board_int,
 )
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
@@ -294,97 +292,59 @@ class AD9084Builder:
                     core_label=lk["tpl_label"],
                     dma_label=lk["dma_label"],
                     link_params={"F": f_val, "K": k_val},
-                    xcvr_config=xcvr_ctx,
-                    jesd_overlay_config=jesd_overlay_ctx,
-                    tpl_core_config=tpl_ctx,
+                    xcvr_rendered=xcvr_ctx,
+                    jesd_overlay_rendered=jesd_overlay_ctx,
+                    tpl_core_rendered=tpl_ctx,
                     dma_clocks_str=ps_clk_str,
                 )
             )
 
         # --- Build HMC7044 component ---
-        hmc7044_clock_output_names = [f"hmc7044_out{i}" for i in range(14)]
-
         custom_hmc7044_blocks = board_cfg.get("hmc7044_channel_blocks")
         if custom_hmc7044_blocks:
-            raw_channels = "".join(
+            raw_channels: str | None = "".join(
                 _format_nested_block(str(block)) for block in custom_hmc7044_blocks
             )
-            hmc7044_channels = None
+            channels_map: dict[int, ClockChannel] = {}
         else:
             raw_channels = None
-            hmc7044_channels = build_hmc7044_channel_ctx(
-                pll2_output_hz,
-                board_cfg.get(
-                    "hmc7044_channels",
-                    [
-                        {
-                            "id": 1,
-                            "name": "ADF4030_REFIN",
-                            "divider": 20,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 3,
-                            "name": "ADF4030_BSYNC0",
-                            "divider": 256,
-                            "driver_mode": 2,
-                            "is_sysref": True,
-                        },
-                        {
-                            "id": 8,
-                            "name": "CORE_CLK_TX",
-                            "divider": 8,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 9,
-                            "name": "CORE_CLK_RX",
-                            "divider": 8,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 10,
-                            "name": "FPGA_REFCLK",
-                            "divider": 8,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 11,
-                            "name": "CORE_CLK_RX_B",
-                            "divider": 8,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 12,
-                            "name": "CORE_CLK_TX_B",
-                            "divider": 8,
-                            "driver_mode": 2,
-                        },
-                        {
-                            "id": 13,
-                            "name": "FPGA_SYSREF",
-                            "divider": 256,
-                            "driver_mode": 2,
-                            "is_sysref": True,
-                        },
-                    ],
-                ),
-            )
+            _default_specs = [
+                {"id": 1, "name": "ADF4030_REFIN", "divider": 20, "driver_mode": 2},
+                {
+                    "id": 3,
+                    "name": "ADF4030_BSYNC0",
+                    "divider": 256,
+                    "driver_mode": 2,
+                    "is_sysref": True,
+                },
+                {"id": 8, "name": "CORE_CLK_TX", "divider": 8, "driver_mode": 2},
+                {"id": 9, "name": "CORE_CLK_RX", "divider": 8, "driver_mode": 2},
+                {"id": 10, "name": "FPGA_REFCLK", "divider": 8, "driver_mode": 2},
+                {"id": 11, "name": "CORE_CLK_RX_B", "divider": 8, "driver_mode": 2},
+                {"id": 12, "name": "CORE_CLK_TX_B", "divider": 8, "driver_mode": 2},
+                {
+                    "id": 13,
+                    "name": "FPGA_SYSREF",
+                    "divider": 256,
+                    "driver_mode": 2,
+                    "is_sysref": True,
+                },
+            ]
+            _specs = board_cfg.get("hmc7044_channels", _default_specs)
+            channels_map = {spec["id"]: ClockChannel(**spec) for spec in _specs}
 
         adf4382_cs = board_cfg.get("adf4382_cs")
         clkin0_ref = "clkin_125" if adf4382_cs is not None else None
 
-        hmc7044_ctx = build_hmc7044_ctx(
+        hmc7044 = HMC7044(
             label="hmc7044",
-            cs=hmc7044_cs,
             spi_max_hz=int(board_cfg.get("hmc7044_spi_max_hz", 1_000_000)),
             pll1_clkin_frequencies=board_cfg.get(
                 "pll1_clkin_frequencies", [vcxo_hz, 10_000_000, 0, 0]
             ),
             vcxo_hz=vcxo_hz,
             pll2_output_hz=pll2_output_hz,
-            clock_output_names=hmc7044_clock_output_names,
-            channels=hmc7044_channels,
+            channels=channels_map,
             raw_channels=raw_channels,
             jesd204_sysref_provider=True,
             jesd204_max_sysref_hz=int(
@@ -404,6 +364,7 @@ class AD9084Builder:
             gpo_controls=board_cfg.get("gpo_controls", [0x37, 0x33, 0x00, 0x00]),
             clkin0_ref=clkin0_ref,
         )
+        hmc7044_rendered = hmc7044.render_dt(cs=hmc7044_cs)
 
         # --- Build components list ---
         # ADF4382 + HMC7044 share the same SPI bus.
@@ -414,23 +375,21 @@ class AD9084Builder:
             adf4382_freq = int(
                 clock_cfg.get("adf4382_output_frequency", 20_000_000_000)
             )
-            adf4382_ctx = build_adf4382_ctx(
+            adf4382 = ADF4382(
                 label="adf4382",
-                cs=int(adf4382_cs),
                 spi_max_hz=1_000_000,
+                spi_3wire=True,
+                power_up_frequency=adf4382_freq,
                 clks_str="<&hmc7044 1>",
                 clock_output_names_str='"adf4382_out_clk"',
-                power_up_frequency=adf4382_freq,
-                spi_3wire=True,
             )
             components.append(
                 ComponentModel(
                     role="clock_pll",
                     part="adf4382",
-                    template="adf4382.tmpl",
                     spi_bus=clock_spi,
                     spi_cs=int(adf4382_cs),
-                    config=adf4382_ctx,
+                    rendered=adf4382.render_dt(cs=int(adf4382_cs)),
                 )
             )
 
@@ -438,10 +397,9 @@ class AD9084Builder:
             ComponentModel(
                 role="clock",
                 part="hmc7044",
-                template="hmc7044.tmpl",
                 spi_bus=clock_spi,
                 spi_cs=hmc7044_cs,
-                config=hmc7044_ctx,
+                rendered=hmc7044_rendered,
             )
         )
 
@@ -457,13 +415,10 @@ class AD9084Builder:
             dev_clk_ref = f"hmc7044 {int(board_cfg.get('dev_clk_channel', 9))}"
         dev_clk_scales = board_cfg.get("dev_clk_scales")
 
-        ad9084_converter_ctx = build_ad9084_ctx(
+        ad9084 = AD9084(
             label=ad9084_spi_label,
-            cs=converter_cs,
             spi_max_hz=int(board_cfg.get("converter_spi_max_hz", 1_000_000)),
-            gpio_label=gpio_label,
             reset_gpio=reset_gpio,
-            dev_clk_ref=dev_clk_ref,
             dev_clk_scales=dev_clk_scales,
             firmware_name=firmware_name,
             subclass=board_cfg.get("subclass", 0),
@@ -474,17 +429,23 @@ class AD9084Builder:
             jtx1_logical_lane_mapping=board_cfg.get("jtx1_logical_lane_mapping"),
             hsci_label=board_cfg.get("hsci_label"),
             hsci_auto_linkup=bool(board_cfg.get("hsci_auto_linkup", False)),
-            link_ids=" ".join(all_link_ids),
-            jesd204_inputs=", ".join(tpl_inputs),
+        )
+        ad9084_rendered = ad9084.render_dt(
+            cs=converter_cs,
+            context={
+                "gpio_label": gpio_label,
+                "dev_clk_ref": dev_clk_ref,
+                "link_ids": " ".join(all_link_ids),
+                "jesd204_inputs": ", ".join(tpl_inputs),
+            },
         )
         components.append(
             ComponentModel(
                 role="transceiver",
                 part="ad9084",
-                template="ad9084.tmpl",
                 spi_bus=converter_spi,
                 spi_cs=converter_cs,
-                config=ad9084_converter_ctx,
+                rendered=ad9084_rendered,
             )
         )
 

@@ -5,8 +5,6 @@ API Reference
    :maxdepth: 2
 
    core
+   devices
    model
-   parts
    xsa
-   boards
-   templates

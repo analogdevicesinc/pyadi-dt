@@ -14,14 +14,14 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...model.contexts import (
-    build_ad9081_mxfe_ctx,
+from ...devices.clocks import HMC7044, ClockChannel
+from ...devices.converters import AD9081
+from ...devices.converters.base import Jesd204Settings
+from ..._utils import coerce_board_int
+from ...devices.fpga_ip import (
     build_adxcvr_ctx,
-    build_hmc7044_channel_ctx,
-    build_hmc7044_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
-    coerce_board_int,
 )
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
@@ -59,75 +59,6 @@ def _resolve_link_mode(
             f"(missing and could not infer for M={m}, L={lanes})"
         )
     return modes[0] if direction == "rx" else modes[1]
-
-
-def _converter_select_rx(rx_m: int, rx_link_mode: int) -> str:
-    """Return the ``adi,converter-select`` phandle list for AD9081 RX."""
-    if rx_link_mode == 18 and rx_m == 4:
-        return (
-            "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
-            "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>"
-        )
-    if rx_link_mode == 26 and rx_m == 8:
-        return (
-            "<&ad9081_rx_fddc_chan0 FDDC_I>, <&ad9081_rx_fddc_chan0 FDDC_Q>, "
-            "<&ad9081_rx_fddc_chan1 FDDC_I>, <&ad9081_rx_fddc_chan1 FDDC_Q>, "
-            "<&ad9081_rx_fddc_chan4 FDDC_I>, <&ad9081_rx_fddc_chan4 FDDC_Q>, "
-            "<&ad9081_rx_fddc_chan5 FDDC_I>, <&ad9081_rx_fddc_chan5 FDDC_Q>"
-        )
-    if rx_m >= 8:
-        return (
-            "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
-            "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, "
-            "<&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan2 1>, "
-            "<&ad9081_rx_fddc_chan3 0>, <&ad9081_rx_fddc_chan3 1>"
-        )
-    return ", ".join(
-        f"<&ad9081_rx_fddc_chan{i} 0>" for i in range(max(1, min(rx_m, 8)))
-    )
-
-
-def _converter_select_tx(tx_m: int, tx_link_mode: int) -> str:
-    """Return the ``adi,converter-select`` phandle list for AD9081 TX."""
-    if tx_link_mode == 17 and tx_m == 4:
-        return (
-            "<&ad9081_tx_fddc_chan0 0>, <&ad9081_tx_fddc_chan0 1>, "
-            "<&ad9081_tx_fddc_chan1 0>, <&ad9081_tx_fddc_chan1 1>"
-        )
-    if tx_m >= 8:
-        return (
-            "<&ad9081_tx_fddc_chan0 0>, <&ad9081_tx_fddc_chan0 1>, "
-            "<&ad9081_tx_fddc_chan1 0>, <&ad9081_tx_fddc_chan1 1>, "
-            "<&ad9081_tx_fddc_chan2 0>, <&ad9081_tx_fddc_chan2 1>, "
-            "<&ad9081_tx_fddc_chan3 0>, <&ad9081_tx_fddc_chan3 1>"
-        )
-    return ", ".join(
-        f"<&ad9081_tx_fddc_chan{i} 0>" for i in range(max(1, min(tx_m, 8)))
-    )
-
-
-def _lane_map(lanes: int) -> str:
-    """Return a space-separated 8-element lane-mapping string padded with 7."""
-    lane_count = max(1, min(lanes, 8))
-    values = list(range(lane_count)) + [7] * (8 - lane_count)
-    return " ".join(str(v) for v in values)
-
-
-def _lane_map_for_mode(direction: str, lanes: int, link_mode: int) -> str:
-    """Return the board-specific ``adi,logical-lane-mapping`` string."""
-    if direction == "tx" and link_mode == 17 and lanes == 8:
-        return "0 2 7 6 1 5 4 3"
-    if direction == "rx" and link_mode == 18 and lanes == 8:
-        return "2 0 7 6 5 4 3 1"
-    if direction == "tx" and link_mode == 24 and lanes == 8:
-        return "0 2 7 6 1 5 4 3"
-    if direction == "rx" and link_mode == 26 and lanes == 8:
-        return "2 0 7 6 5 4 3 1"
-    if direction == "tx" and link_mode == 9 and lanes == 4:
-        return "0 2 7 7 1 7 7 3"
-    if direction == "rx" and link_mode == 10 and lanes == 4:
-        return "2 0 7 7 7 7 3 1"
-    return _lane_map(lanes)
 
 
 def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
@@ -222,10 +153,6 @@ class AD9081Builder:
         tx_link_id = int(ad9081_cfg.get("tx_link_id", 0))
 
         # Converter / lane mapping
-        rx_converter_select = _converter_select_rx(rx_m, rx_link_mode)
-        tx_converter_select = _converter_select_tx(tx_m, tx_link_mode)
-        rx_lane_map = _lane_map_for_mode("rx", rx_l, rx_link_mode)
-        tx_lane_map = _lane_map_for_mode("tx", tx_l, tx_link_mode)
 
         # Board-level SPI / GPIO config
         clock_spi = str(board_cfg.get("clock_spi", "spi1"))
@@ -243,58 +170,47 @@ class AD9081Builder:
         rx_chan = int(clock_cfg.get("hmc7044_rx_channel", 10))
         tx_chan = int(clock_cfg.get("hmc7044_tx_channel", 6))
 
-        # --- HMC7044 channel configuration ---
+        # --- HMC7044 clock distributor ---
         _pll2 = 3_000_000_000
         custom_hmc7044_blocks = board_cfg.get("hmc7044_channel_blocks")
         if custom_hmc7044_blocks:
-            raw_channels = "".join(
+            raw_channels: str | None = "".join(
                 _format_nested_block(str(block)) for block in custom_hmc7044_blocks
             )
-            hmc7044_channels = None
+            channels_map: dict[int, ClockChannel] = {}
         else:
             raw_channels = None
-            hmc7044_channels = build_hmc7044_channel_ctx(
-                _pll2,
-                [
-                    {"id": 0, "name": "CORE_CLK_RX", "divider": 12, "driver_mode": 2},
-                    {"id": 2, "name": "DEV_REFCLK", "divider": 12, "driver_mode": 2},
-                    {
-                        "id": 3,
-                        "name": "DEV_SYSREF",
-                        "divider": 1536,
-                        "driver_mode": 2,
-                        "is_sysref": True,
-                    },
-                    {"id": 6, "name": "CORE_CLK_TX", "divider": 12, "driver_mode": 2},
-                    {"id": 8, "name": "FPGA_REFCLK1", "divider": 6, "driver_mode": 2},
-                    {
-                        "id": 10,
-                        "name": "CORE_CLK_RX_ALT",
-                        "divider": 12,
-                        "driver_mode": 2,
-                    },
-                    {"id": 12, "name": "FPGA_REFCLK2", "divider": 6, "driver_mode": 2},
-                    {
-                        "id": 13,
-                        "name": "FPGA_SYSREF",
-                        "divider": 1536,
-                        "driver_mode": 2,
-                        "is_sysref": True,
-                    },
-                ],
-            )
+            _channel_specs = [
+                {"id": 0, "name": "CORE_CLK_RX", "divider": 12, "driver_mode": 2},
+                {"id": 2, "name": "DEV_REFCLK", "divider": 12, "driver_mode": 2},
+                {
+                    "id": 3,
+                    "name": "DEV_SYSREF",
+                    "divider": 1536,
+                    "driver_mode": 2,
+                    "is_sysref": True,
+                },
+                {"id": 6, "name": "CORE_CLK_TX", "divider": 12, "driver_mode": 2},
+                {"id": 8, "name": "FPGA_REFCLK1", "divider": 6, "driver_mode": 2},
+                {"id": 10, "name": "CORE_CLK_RX_ALT", "divider": 12, "driver_mode": 2},
+                {"id": 12, "name": "FPGA_REFCLK2", "divider": 6, "driver_mode": 2},
+                {
+                    "id": 13,
+                    "name": "FPGA_SYSREF",
+                    "divider": 1536,
+                    "driver_mode": 2,
+                    "is_sysref": True,
+                },
+            ]
+            channels_map = {spec["id"]: ClockChannel(**spec) for spec in _channel_specs}
 
-        hmc7044_clock_output_names = [f"hmc7044_out{i}" for i in range(14)]
-
-        hmc7044_ctx = build_hmc7044_ctx(
+        hmc7044 = HMC7044(
             label="hmc7044",
-            cs=clock_cs,
             spi_max_hz=1_000_000,
             pll1_clkin_frequencies=[122_880_000, 10_000_000, 0, 0],
             vcxo_hz=122_880_000,
             pll2_output_hz=_pll2,
-            clock_output_names=hmc7044_clock_output_names,
-            channels=hmc7044_channels,
+            channels=channels_map,
             raw_channels=raw_channels,
             jesd204_sysref_provider=True,
             jesd204_max_sysref_hz=2_000_000,
@@ -311,45 +227,51 @@ class AD9081Builder:
             gpi_controls=[0x00, 0x00, 0x00, 0x00],
             gpo_controls=[0x37, 0x33, 0x00, 0x00],
         )
+        hmc7044_rendered = hmc7044.render_dt(cs=clock_cs)
 
-        # --- AD9081 MxFE device context ---
-        mxfe_ctx = build_ad9081_mxfe_ctx(
+        # --- AD9081 MxFE device ---
+        ad9081 = AD9081(
             label="trx0_ad9081",
-            cs=adc_cs,
-            gpio_label=gpio_label,
+            spi_max_hz=5_000_000,
             reset_gpio=reset_gpio,
             sysref_req_gpio=sysref_req_gpio,
-            rx2_enable_gpio=rx2_enable_gpio,
             rx1_enable_gpio=rx1_enable_gpio,
-            tx2_enable_gpio=tx2_enable_gpio,
+            rx2_enable_gpio=rx2_enable_gpio,
             tx1_enable_gpio=tx1_enable_gpio,
-            dev_clk_ref="hmc7044 2",
-            rx_core_label="rx_mxfe_tpl_core_adc_tpl_core",
-            tx_core_label="tx_mxfe_tpl_core_dac_tpl_core",
-            rx_link_id=rx_link_id,
-            tx_link_id=tx_link_id,
-            dac_frequency_hz=dac_frequency_hz,
-            tx_cduc_interpolation=tx_cduc_interpolation,
-            tx_fduc_interpolation=tx_fduc_interpolation,
-            tx_converter_select=tx_converter_select,
-            tx_lane_map=tx_lane_map,
-            tx_link_mode=tx_link_mode,
-            tx_m=tx_m,
-            tx_f=tx_f,
-            tx_k=tx_k,
-            tx_l=tx_l,
-            tx_s=tx_s,
-            adc_frequency_hz=adc_frequency_hz,
-            rx_cddc_decimation=rx_cddc_decimation,
-            rx_fddc_decimation=rx_fddc_decimation,
-            rx_converter_select=rx_converter_select,
-            rx_lane_map=rx_lane_map,
-            rx_link_mode=rx_link_mode,
-            rx_m=rx_m,
-            rx_f=rx_f,
-            rx_k=rx_k,
-            rx_l=rx_l,
-            rx_s=rx_s,
+            tx2_enable_gpio=tx2_enable_gpio,
+        )
+        ad9081.adc.converter_clock = adc_frequency_hz
+        ad9081.adc.cddc_decimation = rx_cddc_decimation
+        ad9081.adc.fddc_decimation = rx_fddc_decimation
+        ad9081.adc.jesd204_settings = Jesd204Settings(
+            jesd_mode=rx_link_mode,
+            link_id=rx_link_id,
+            M=rx_m,
+            L=rx_l,
+            F=rx_f,
+            K=rx_k,
+            S=rx_s,
+        )
+        ad9081.dac.converter_clock = dac_frequency_hz
+        ad9081.dac.cduc_interpolation = tx_cduc_interpolation
+        ad9081.dac.fduc_interpolation = tx_fduc_interpolation
+        ad9081.dac.jesd204_settings = Jesd204Settings(
+            jesd_mode=tx_link_mode,
+            link_id=tx_link_id,
+            M=tx_m,
+            L=tx_l,
+            F=tx_f,
+            K=tx_k,
+            S=tx_s,
+        )
+        ad9081_rendered = ad9081.render_dt(
+            cs=adc_cs,
+            context={
+                "gpio_label": gpio_label,
+                "dev_clk_ref": "hmc7044 2",
+                "rx_core_label": "rx_mxfe_tpl_core_adc_tpl_core",
+                "tx_core_label": "tx_mxfe_tpl_core_dac_tpl_core",
+            },
         )
 
         # --- Components ---
@@ -357,18 +279,16 @@ class AD9081Builder:
             ComponentModel(
                 role="clock",
                 part="hmc7044",
-                template="hmc7044.tmpl",
                 spi_bus=clock_spi,
                 spi_cs=clock_cs,
-                config=hmc7044_ctx,
+                rendered=hmc7044_rendered,
             ),
             ComponentModel(
                 role="transceiver",
                 part="ad9081",
-                template="ad9081_mxfe.tmpl",
                 spi_bus=adc_spi,
                 spi_cs=adc_cs,
-                config=mxfe_ctx,
+                rendered=ad9081_rendered,
             ),
         ]
 
@@ -444,9 +364,9 @@ class AD9081Builder:
                 "Np": 16,
                 "S": rx_s,
             },
-            xcvr_config=rx_xcvr_ctx,
-            jesd_overlay_config=rx_jesd_overlay_ctx,
-            tpl_core_config=rx_tpl_ctx,
+            xcvr_rendered=rx_xcvr_ctx,
+            jesd_overlay_rendered=rx_jesd_overlay_ctx,
+            tpl_core_rendered=rx_tpl_ctx,
         )
 
         # --- TX JESD link ---
@@ -505,9 +425,9 @@ class AD9081Builder:
                 "Np": 16,
                 "S": tx_s,
             },
-            xcvr_config=tx_xcvr_ctx,
-            jesd_overlay_config=tx_jesd_overlay_ctx,
-            tpl_core_config=tx_tpl_ctx,
+            xcvr_rendered=tx_xcvr_ctx,
+            jesd_overlay_rendered=tx_jesd_overlay_ctx,
+            tpl_core_rendered=tx_tpl_ctx,
         )
 
         # --- FPGA config ---

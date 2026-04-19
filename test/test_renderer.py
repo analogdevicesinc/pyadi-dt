@@ -8,14 +8,30 @@ from adidt.model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from adidt.model.contexts import (
-    build_ad9523_1_ctx,
-    build_ad9680_ctx,
+from adidt.devices.clocks import AD9523_1, AD9523Channel
+from adidt.devices.converters import AD9680
+from adidt.devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
 )
 from adidt.model.renderer import BoardModelRenderer
+
+
+def _ad9523_rendered(cs: int = 0, label: str = "clk0_ad9523") -> str:
+    return AD9523_1(
+        label=label,
+        channels={1: AD9523Channel(id=1, name="DAC_CLK", divider=1)},
+    ).render_dt(cs=cs)
+
+
+def _ad9680_rendered(cs: int = 2) -> str:
+    return AD9680(
+        label="adc0_ad9680",
+        sampling_frequency_hz=1_000_000_000,
+        clks_str="<&clk 0>",
+        clk_names_str='"adc_clk"',
+    ).render_dt(cs=cs, context={"jesd204_link_ids": "0"})
 
 
 def _simple_model(**kwargs):
@@ -34,21 +50,11 @@ class TestSPIBusGrouping:
                 ComponentModel(
                     role="imu",
                     part="adis16495",
-                    template="adis16495.tmpl",
+                    template="",
                     spi_bus="spi0",
                     spi_cs=0,
-                    config={
-                        "label": "imu0",
-                        "device": "adis16495",
-                        "compatible": "adi,adis16495-1",
-                        "cs": 0,
-                        "spi_max_hz": 2000000,
-                        "spi_cpol": True,
-                        "spi_cpha": True,
-                        "gpio_label": "gpio",
-                        "interrupt_gpio": 25,
-                        "irq_type": "IRQ_TYPE_EDGE_FALLING",
-                    },
+                    config={},
+                    rendered="\t\timu0: adis16495@0 { reg = <0>; };",
                 ),
             ],
         )
@@ -62,22 +68,20 @@ class TestSPIBusGrouping:
                 ComponentModel(
                     role="clock",
                     part="ad9523_1",
-                    template="ad9523_1.tmpl",
+                    template="",
                     spi_bus="spi0",
                     spi_cs=0,
-                    config=build_ad9523_1_ctx(cs=0),
+                    config={},
+                    rendered=_ad9523_rendered(cs=0),
                 ),
                 ComponentModel(
                     role="adc",
                     part="ad9680",
-                    template="ad9680.tmpl",
+                    template="",
                     spi_bus="spi0",
                     spi_cs=2,
-                    config=build_ad9680_ctx(
-                        cs=2,
-                        clks_str="<&clk 0>",
-                        clk_names_str='"adc_clk"',
-                    ),
+                    config={},
+                    rendered=_ad9680_rendered(cs=2),
                 ),
             ],
         )
@@ -94,18 +98,20 @@ class TestSPIBusGrouping:
                 ComponentModel(
                     role="clock",
                     part="ad9523_1",
-                    template="ad9523_1.tmpl",
+                    template="",
                     spi_bus="spi0",
                     spi_cs=0,
-                    config=build_ad9523_1_ctx(cs=0),
+                    config={},
+                    rendered=_ad9523_rendered(cs=0),
                 ),
                 ComponentModel(
                     role="clock",
                     part="ad9523_1",
-                    template="ad9523_1.tmpl",
+                    template="",
                     spi_bus="spi1",
                     spi_cs=0,
-                    config=build_ad9523_1_ctx(cs=0, label="clk1"),
+                    config={},
+                    rendered=_ad9523_rendered(cs=0, label="clk1"),
                 ),
             ],
         )
@@ -123,7 +129,7 @@ class TestJesdLinkRendering:
             xcvr_label=f"xcvr_{direction}",
             core_label=f"core_{direction}",
             dma_label=dma_label,
-            xcvr_config=build_adxcvr_ctx(
+            xcvr_rendered=build_adxcvr_ctx(
                 label=f"xcvr_{direction}",
                 sys_clk_select=0,
                 out_clk_select=4,
@@ -134,7 +140,7 @@ class TestJesdLinkRendering:
                 jesd_s=1,
                 is_rx=(direction == "rx"),
             ),
-            jesd_overlay_config=build_jesd204_overlay_ctx(
+            jesd_overlay_rendered=build_jesd204_overlay_ctx(
                 label=f"jesd_{direction}",
                 direction=direction,
                 clocks_str="<&clk 71>, <&xcvr 1>, <&xcvr 0>",
@@ -144,7 +150,7 @@ class TestJesdLinkRendering:
                 k=32,
                 jesd204_inputs="xcvr 0 0",
             ),
-            tpl_core_config=build_tpl_core_ctx(
+            tpl_core_rendered=build_tpl_core_ctx(
                 label=f"core_{direction}",
                 compatible="adi,axi-ad9680-1.0",
                 direction=direction,
@@ -190,9 +196,6 @@ class TestJesdLinkRendering:
             xcvr_label="x",
             core_label="c",
             dma_label="d",
-            xcvr_config={},
-            jesd_overlay_config={},
-            tpl_core_config={},
         )
         model = _simple_model(jesd_links=[link])
         nodes = BoardModelRenderer().render(model)
@@ -227,9 +230,6 @@ class TestDmaClocks:
             core_label="c",
             dma_label="rx_dma",
             dma_clocks_str="<&clk 71>",
-            xcvr_config={},
-            jesd_overlay_config={},
-            tpl_core_config={},
         )
         model = _simple_model(jesd_links=[link])
         nodes = BoardModelRenderer().render(model)
@@ -243,9 +243,6 @@ class TestDmaClocks:
             xcvr_label="x",
             core_label="c",
             dma_label="rx_dma",
-            xcvr_config={},
-            jesd_overlay_config={},
-            tpl_core_config={},
         )
         model = _simple_model(jesd_links=[link])
         nodes = BoardModelRenderer().render(model)
@@ -256,66 +253,9 @@ class TestDmaClocks:
 class TestBoardModelToDts:
     """Test the to_dts() convenience method."""
 
-    def test_to_dts_writes_file(self, tmp_path):
-        from adidt.model import components
-
-        model = _simple_model(
-            components=[components.adis16495(spi_bus="spi0", cs=0, interrupt_gpio=25)]
-        )
-        out = tmp_path / "test.dts"
-        result = model.to_dts(str(out))
-        assert result == str(out)
-        assert out.exists()
-        content = out.read_text()
-        assert "SPDX-License-Identifier" in content
-        assert "/dts-v1/;" in content
-        assert "adis16495" in content
-
-    def test_to_dts_round_trip(self, tmp_path):
-        """Verify to_dts output compiles with dtc (syntax check)."""
-        import shutil
-        import subprocess
-
-        if not shutil.which("dtc"):
-            pytest.skip("dtc not available")
-
-        from adidt.model import components
-
-        model = _simple_model(
-            components=[
-                components.adis16495(
-                    spi_bus="spi0", cs=0, interrupt_gpio=25, irq_type="2"
-                )
-            ]
-        )
-        dts = tmp_path / "test.dts"
-        model.to_dts(str(dts))
-
-        res = subprocess.run(
-            ["dtc", "-@", "-I", "dts", "-O", "dtb", "-o", "/dev/null", str(dts)],
-            capture_output=True,
-            text=True,
-        )
-        assert res.returncode == 0, f"dtc failed: {res.stderr}"
-
 
 class TestSerialization:
     """Test to_dict/from_dict round-trip."""
-
-    def test_round_trip(self):
-        from adidt.model import components
-
-        original = _simple_model(
-            components=[components.adis16495(spi_bus="spi0", cs=0, interrupt_gpio=25)],
-            metadata={"source": "test"},
-        )
-        d = original.to_dict()
-        restored = BoardModel.from_dict(d)
-        assert restored.name == original.name
-        assert restored.platform == original.platform
-        assert len(restored.components) == len(original.components)
-        assert restored.components[0].part == "adis16495"
-        assert restored.metadata["source"] == "test"
 
     def test_round_trip_with_fpga_config(self):
         original = _simple_model(

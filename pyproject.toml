@@ -28,8 +28,8 @@ dependencies = [
     "bcrypt==5.0.0",
     "rich",
     "numpy",
-    "jinja2",
     "xmltodict",
+    "pydantic>=2",
 ]
 
 [project.optional-dependencies]
@@ -37,6 +37,7 @@ xsa = ["lopper"]
 test = [
     "pytest",
     "pytest-asyncio",
+    "pytest-dotenv",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
     "hashable_list",
@@ -66,7 +67,7 @@ where = ["."]
 include = ["adidt*"]
 
 [tool.setuptools.package-data]
-adidt = ["templates/*.tmpl", "templates/xsa/*.tmpl", "xsa/d3_bundle.js", "xsa/profiles/*.json"]
+adidt = ["templates/*.json", "xsa/d3_bundle.js", "xsa/profiles/*.json"]
 
 [tool.ruff.lint]
 select = ["D"]
@@ -81,6 +82,7 @@ convention = "google"
 "**" = ["D"]
 
 [tool.pytest.ini_options]
+env_files = [".env"]
 testpaths = ["test"]
 norecursedirs = [
     "test/hw",

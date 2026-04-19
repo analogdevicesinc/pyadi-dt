@@ -1,20 +1,15 @@
-"""Unified board model for DTS generation.
+"""Unified board model shared by the XSA pipeline and the declarative device API.
 
-Both the manual board-class workflow and the XSA pipeline produce a
-:class:`BoardModel`, which a :class:`BoardModelRenderer` renders to DTS
-using the shared per-component Jinja2 templates.
-
-Pre-configured component factories are available in
-:mod:`adidt.model.components` for common ADI devices.
+Both paths produce a :class:`BoardModel`; a :class:`BoardModelRenderer`
+assembles it to DTS by concatenating pre-rendered component and JESD
+link strings.
 """
 
 from .board_model import BoardModel, ComponentModel, FpgaConfig, JesdLinkModel
-from . import components
 
 __all__ = [
     "BoardModel",
     "ComponentModel",
     "FpgaConfig",
     "JesdLinkModel",
-    "components",
 ]
