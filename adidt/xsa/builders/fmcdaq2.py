@@ -179,24 +179,29 @@ class FMCDAQ2Builder:
 
         # --- Build devices ---
         _m1 = 1_000_000_000  # adi,pll2-m1-freq distribution frequency
-        ad9523_channel_specs = [
-            {"id": 1, "name": "DAC_CLK", "divider": 1},
-            {"id": 4, "name": "ADC_CLK_FMC", "divider": 2},
-            {"id": 5, "name": "ADC_SYSREF", "divider": 128},
-            {"id": 6, "name": "CLKD_ADC_SYSREF", "divider": 128},
-            {"id": 7, "name": "CLKD_DAC_SYSREF", "divider": 128},
-            {"id": 8, "name": "DAC_SYSREF", "divider": 128},
-            {"id": 9, "name": "FMC_DAC_REF_CLK", "divider": 2},
-            {"id": 13, "name": "ADC_CLK", "divider": 1},
+        # Each spec tuple is (id, name, divider).  Using a typed tuple
+        # here instead of a dict-of-mixed-types keeps the `int // int`
+        # below type-checkable — a heterogeneous-value dict infers
+        # ``int | str`` for lookups and the divider expression fails
+        # ``ty check`` with ``unsupported-operator``.
+        ad9523_channel_specs: list[tuple[int, str, int]] = [
+            (1, "DAC_CLK", 1),
+            (4, "ADC_CLK_FMC", 2),
+            (5, "ADC_SYSREF", 128),
+            (6, "CLKD_ADC_SYSREF", 128),
+            (7, "CLKD_DAC_SYSREF", 128),
+            (8, "DAC_SYSREF", 128),
+            (9, "FMC_DAC_REF_CLK", 2),
+            (13, "ADC_CLK", 1),
         ]
         ad9523_channels = {
-            s["id"]: AD9523Channel(
-                id=s["id"],
-                name=s["name"],
-                divider=s["divider"],
-                freq_str=fmt_hz(_m1 // s["divider"]),
+            ch_id: AD9523Channel(
+                id=ch_id,
+                name=name,
+                divider=divider,
+                freq_str=fmt_hz(_m1 // divider),
             )
-            for s in ad9523_channel_specs
+            for ch_id, name, divider in ad9523_channel_specs
         }
         clock_gpio_lines = []
         for prop, val in (

@@ -34,7 +34,7 @@ jobs:
     - name: Run ty type checker
       continue-on-error: true
       run: |
-        ty check adidt/model/ adidt/boards/ adidt/xsa/builders/ 2>&1 | tee ty_report.txt
+        ty check adidt/model/ adidt/xsa/builders/ adidt/devices/ adidt/system.py adidt/tools/ 2>&1 | tee ty_report.txt
         echo "## Type Check Report (ty)" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY
         tail -5 ty_report.txt >> $GITHUB_STEP_SUMMARY
