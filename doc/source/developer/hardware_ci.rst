@@ -31,7 +31,7 @@ The workflow has three jobs:
 - **hw-coord** — a matrix job, one leg per available node, running
   on the **same per-node runner as hw-direct** (label
   ``hw-<place>``).  Each leg uses the committed
-  ``env_remote_<place>.yaml`` from the manifest and talks to the
+  ``test/hw/env/<place>.yaml`` from the manifest and talks to the
   labgrid coordinator via ``LG_COORDINATOR`` — so pytest exercises
   the coordinator code path while the XSA toolchain (Vivado's
   sdtgen, xsct) and kernel build artifacts already present on the
@@ -102,13 +102,13 @@ CI configuration:
      {
        "place": "bq",
        "runner_label": "hw-bq",
-       "env_remote": "env_remote_bq.yaml",
+       "env_remote": "test/hw/env/bq.yaml",
        "tests": ["test/hw/test_adrv9371_zc706_hw.py"]
      },
      {
        "place": "mini2",
        "runner_label": "hw-mini2",
-       "env_remote": "env_remote_mini2.yaml",
+       "env_remote": "test/hw/env/mini2.yaml",
        "tests": [
          "test/hw/test_ad9081_zcu102_xsa_hw.py",
          "test/hw/test_ad9081_zcu102_system_hw.py"
@@ -123,8 +123,9 @@ Field reference:
   coordinator host).
 - ``runner_label`` — the extra label on the self-hosted runner
   physically attached to the board.  Convention: ``hw-<place>``.
-- ``env_remote`` — the committed env YAML (at the repo root) used by
-  the ``hw-coord`` matrix leg.  Must use ``RemotePlace`` only — no
+- ``env_remote`` — repo-relative path to the committed env YAML
+  (conventionally ``test/hw/env/<place>.yaml``) used by the
+  ``hw-coord`` matrix leg.  Must use ``RemotePlace`` only — no
   local paths, no credentials, no serial device names.
 - ``tests`` — list of ``pytest`` targets (test files) to run for
   this node, used verbatim in both ``hw-direct`` and ``hw-coord``.
@@ -147,8 +148,8 @@ One-time setup:
 4. Put ``LG_DIRECT_ENV=/home/<user>/ci/lg_direct.yaml`` in
    ``~/actions-runner/.env`` on the runner host.  The runner picks
    this up automatically on the next job.
-5. Author a ``env_remote_<name>.yaml`` at the repo root using
-   ``RemotePlace`` only; commit it.
+5. Author a ``test/hw/env/<name>.yaml`` using ``RemotePlace`` only;
+   commit it.
 6. Append one entry to ``.github/hw-nodes.json`` with the new place,
    runner label, env_remote path, and test list.  No workflow edits
    needed.
@@ -203,7 +204,7 @@ the node-local labgrid YAML:
 
 (The ``hw-coordinator`` runner does not need ``LG_DIRECT_ENV`` — it
 only runs ``hw-coord`` legs, which use the committed
-``env_remote_*.yaml`` files.)
+``test/hw/env/*.yaml`` files.)
 
 Direct-mode YAML templates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -406,7 +407,8 @@ Troubleshooting
 
 **``hw-coord`` fails with "No such file" on the env yaml.**
   The manifest entry's ``env_remote`` path points at a file that is
-  not committed at the repo root.  Either commit the YAML or fix the
+  not committed at the listed repo-relative path (conventionally
+  ``test/hw/env/<place>.yaml``).  Either commit the YAML or fix the
   manifest entry.
 
 **PR from a fork never runs hw jobs.**

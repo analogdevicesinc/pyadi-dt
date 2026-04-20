@@ -2,7 +2,7 @@
 ##
 ## Run:
 ##   LG_COORDINATOR=10.0.0.41:20408 \
-##   LG_ENV=env_remote_mini2.yaml \
+##   LG_ENV=test/hw/env/mini2.yaml \
 ##   pytest test/hw/test_ad9081_zcu102_system_hw.py -v -s
 
 targets:

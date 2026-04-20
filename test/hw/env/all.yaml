@@ -1,13 +1,13 @@
-## Combined env that binds both the 'mini2' (SoC) and 'nuc' (Fabric) remote
-## places. Target names here become the keys in the hw_targets dict fixture;
-## test modules pick the one they need via RemotePlace.name as the key (e.g.,
-## `hw_targets["mini2"]` for the SoC suite, `hw_targets["nuc"]` for Fabric).
+## Combined env that binds the 'mini2' (SoC), 'nuc' (Fabric) and 'bq' (SoC
+## + TFTP) remote places as named targets.  Target names here become the
+## keys in the hw_targets dict fixture; test modules pick the one they
+## need via RemotePlace.name as the key (e.g., ``hw_targets["mini2"]`` for
+## the SoC suite, ``hw_targets["nuc"]`` for Fabric).
 ##
 ## Run:
 ##   LG_COORDINATOR=10.0.0.41:20408 \
-##   LG_EXPORTERS_CONFIG=tests/coordinator/exporters_all.yaml \
-##   pytest tests/coordinator \
-##       --run-hardware --lg-config tests/coordinator/env_remote_all.yaml
+##   LG_ENV=test/hw/env/all.yaml \
+##   pytest test/hw -v -s
 
 targets:
   mini2:

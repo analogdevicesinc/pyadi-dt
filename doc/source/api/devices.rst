@@ -189,20 +189,20 @@ Tests support two connection modes, selected by ``.env`` at the project
 root (loaded via ``pytest-dotenv``):
 
 - **Coordinator mode** — set ``LG_COORDINATOR=<host>:<port>`` plus
-  ``LG_ENV=<env_remote_*.yaml>``.  The env YAML binds a ``RemotePlace``
+  ``LG_ENV=<test/hw/env/*.yaml>``.  The env YAML binds a ``RemotePlace``
   to the coordinator-published resources.
 - **Direct mode** — set ``LG_ENV=<local_yaml>`` only.
 
-Each board family has a dedicated single-target env file:
-``env_remote_mini2.yaml`` (ZCU102 + AD9081),
-``env_remote_bq.yaml`` (ZC706 + ADRV9371), and
-``env_remote_nuc.yaml`` (VCU118 + FMCDAQ3).  The combined
-``env_remote_all.yaml`` exposes all three as named targets.
+Each board family has a dedicated single-target env file under
+``test/hw/env/``: ``mini2.yaml`` (ZCU102 + AD9081),
+``bq.yaml`` (ZC706 + ADRV9371), and ``nuc.yaml`` (VCU118 + FMCDAQ3).
+The combined ``test/hw/env/all.yaml`` exposes all three as named
+targets.
 
 Example — run the ADRV9371+ZC706 test via a coordinator::
 
    LG_COORDINATOR=10.0.0.41:20408 \
-   LG_ENV=env_remote_bq.yaml \
+   LG_ENV=test/hw/env/bq.yaml \
    pytest test/hw/test_adrv9371_zc706_hw.py
 
 Copy ``.env.example`` to ``.env`` for the supported variables.  The skip
