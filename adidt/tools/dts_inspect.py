@@ -103,15 +103,33 @@ _GROUPING_ANCESTORS: tuple[str, ...] = (
     "channel@13",
     "adi,tx-dacs",
     "adi,rx-adcs",
+    # Converter / transceiver top-level nodes.  ``@addr`` is stripped
+    # in ``_choose_prefix`` so ``ad9081@0`` keys as ``ad9081``.
     "ad9081",
+    "ad9084",
+    "ad9371-phy",
+    "ad9371",
+    "adrv9009-phy",
+    "adrv9009",
+    # Clock distributor / synthesizer chips.
+    "ad9523-1",
+    "ad9528-1",
+    "ad9528",
     "hmc7044",
+    # FPGA-side JESD204 IP blocks + TPL cores.
+    "axi-adxcvr",
+    "axi-clkgen",
+    "ad_ip_jesd204_tpl_adc",
+    "ad_ip_jesd204_tpl_dac",
 )
 
-# Normalise ancestor names that include a ``adi,`` prefix or ``@addr``
-# suffix to the short form used as a key prefix.
+# Normalise ancestor names to the short form used as a key prefix.
 _ANCESTOR_ALIAS: dict[str, str] = {
     "adi,tx-dacs": "tx-dacs",
     "adi,rx-adcs": "rx-adcs",
+    "ad9528-1": "ad9528",
+    "ad9371-phy": "ad9371",
+    "adrv9009-phy": "adrv9009",
 }
 
 
@@ -142,11 +160,31 @@ def extract_props(dts_text: str) -> dict[str, str]:
     rather than whatever the innermost node happens to be (e.g.
     ``link@0``).  First-occurrence wins; the base node's value is what
     the kernel sees at probe time before any ``&label`` overlays.
+
+    The parser normalises multi-node-on-one-line patterns (common in
+    merged DTS output: ``};		foo: bar@0 {``) by splitting
+    those onto separate logical lines before the line-oriented match
+    step runs.
     """
     node_stack: list[str] = []
     out: dict[str, str] = {}
 
-    for line in dts_text.splitlines():
+    # Normalise multi-brace-per-line DTS shapes so the line-oriented
+    # matchers below see one structural event per line:
+    #   ``};		foo: bar@0 {``  →  ``};\n\tfoo: bar@0 {``
+    normalised: list[str] = []
+    for raw in dts_text.splitlines():
+        # Split on ``};`` (keeping the match itself as a standalone line).
+        parts = re.split(r"(\};)", raw)
+        for part in parts:
+            if part == "":
+                continue
+            if part == "};":
+                normalised.append("};")
+            else:
+                normalised.append(part)
+
+    for line in normalised:
         stripped = line.strip()
         if not stripped:
             continue
