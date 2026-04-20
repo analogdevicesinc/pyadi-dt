@@ -46,7 +46,7 @@ set -euo pipefail
 #                 `LG_DIRECT_ENV=<path>` into `~/actions-runner/.env`
 #                 so the runner service picks it up.  Leave EMPTY for
 #                 the coordinator-host runner (hw-coord legs use the
-#                 committed env_remote_*.yaml instead) and for any
+#                 committed test/hw/env/*.yaml instead) and for any
 #                 node where the direct YAML doesn't exist yet — the
 #                 hw-direct job will then fail its explicit
 #                 LG_DIRECT_ENV guard, which is the intended loud

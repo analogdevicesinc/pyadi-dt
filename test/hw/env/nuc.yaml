@@ -2,7 +2,7 @@
 ##
 ## Run:
 ##   LG_COORDINATOR=10.0.0.41:20408 \
-##   LG_ENV=env_remote_nuc.yaml \
+##   LG_ENV=test/hw/env/nuc.yaml \
 ##   pytest test/hw/test_fmcdaq3_vcu118_hw.py -v -s
 ##
 ## The nuc exporter publishes the prebuilt Kuiper simpleImage kernel

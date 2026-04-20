@@ -16,7 +16,7 @@ whole boot-and-verify cycle through those published resources.
 LG_ENV / LG_COORDINATOR: see ``.env.example``.  Typical invocation::
 
     LG_COORDINATOR=10.0.0.41:20408 \\
-    LG_ENV=env_remote_nuc.yaml \\
+    LG_ENV=test/hw/env/nuc.yaml \\
     pytest -p no:genalyzer test/hw/test_fmcdaq3_vcu118_hw.py -v -s
 """
 
