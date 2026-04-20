@@ -2,6 +2,10 @@ name: Hardware Tests
 
 permissions:
   contents: read
+  # `dorny/test-reporter` needs to create Check Runs for the per-leg
+  # test reports; these show as individual PR checks.
+  checks: write
+  pull-requests: write
 
 on:
   push:
@@ -150,7 +154,26 @@ jobs:
           fi
           export LG_ENV="$LG_DIRECT_ENV"
           "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
-            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }} \
+            --junitxml=junit-hw-direct-${{ matrix.node.place }}.xml
+
+      - name: Publish hw-direct test results to PR
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: dorny/test-reporter@v1
+        with:
+          name: Tests (hw-direct ${{ matrix.node.place }})
+          path: junit-hw-direct-${{ matrix.node.place }}.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload JUnit XML (standalone for PR comment aggregation)
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-hw-direct-${{ matrix.node.place }}
+          path: junit-hw-direct-${{ matrix.node.place }}.xml
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload test output artifacts
         if: always() && steps.check_direct_env.outputs.skip != 'true'
@@ -165,6 +188,7 @@ jobs:
             test/hw/output/**/*.log
             test/hw/output/**/uart_log_*.txt
             uart_log_*.txt
+            junit-hw-direct-${{ matrix.node.place }}.xml
           if-no-files-found: ignore
           retention-days: 14
 
@@ -230,7 +254,8 @@ jobs:
             set -u
           fi
           "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
-            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }}
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }} \
+            --junitxml=junit-hw-coord-${{ matrix.node.place }}.xml
 
       - name: Release coordinator place
         if: always()
@@ -240,6 +265,24 @@ jobs:
           set -euo pipefail
           LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
           "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
+
+      - name: Publish hw-coord test results to PR
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Tests (hw-coord ${{ matrix.node.place }})
+          path: junit-hw-coord-${{ matrix.node.place }}.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload JUnit XML (standalone for PR comment aggregation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-hw-coord-${{ matrix.node.place }}
+          path: junit-hw-coord-${{ matrix.node.place }}.xml
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Upload test output artifacts
         if: always()
@@ -254,5 +297,25 @@ jobs:
             test/hw/output/**/*.log
             test/hw/output/**/uart_log_*.txt
             uart_log_*.txt
+            junit-hw-coord-${{ matrix.node.place }}.xml
           if-no-files-found: ignore
           retention-days: 14
+
+  publish-pr-test-summary:
+    name: PR Test Summary
+    needs: [hw-direct, hw-coord]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: junit-hw-*
+          path: junit
+          merge-multiple: true
+
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: 'junit/**/*.xml'
+          check_name: 'Hardware Test Results'
+          comment_mode: always
+          report_individual_runs: true

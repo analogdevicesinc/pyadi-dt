@@ -2,6 +2,10 @@ name: Test and Build Package
 
 permissions:
   contents: read
+  # `dorny/test-reporter` creates a GitHub Check Run per pytest
+  # matrix leg with the per-test detail from the JUnit XML.
+  checks: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -37,7 +41,44 @@ jobs:
 
     - name: Run tests with pytest
       run: |
-        pytest -vs
+        pytest -vs --junitxml=junit-py${{ matrix.python-version }}.xml
+
+    - name: Upload JUnit XML
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: junit-py${{ matrix.python-version }}
+        path: junit-py${{ matrix.python-version }}.xml
+        retention-days: 14
+        if-no-files-found: warn
+
+    - name: Publish test results to PR
+      if: always()
+      uses: dorny/test-reporter@v1
+      with:
+        name: Tests (Python ${{ matrix.python-version }})
+        path: junit-py${{ matrix.python-version }}.xml
+        reporter: java-junit
+        fail-on-error: false
+
+  publish-pr-test-summary:
+    name: PR Test Summary
+    needs: python-test
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: junit-py*
+          path: junit
+          merge-multiple: true
+
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: 'junit/**/*.xml'
+          check_name: 'Unit Test Results'
+          comment_mode: always
+          report_individual_runs: true
 
   build-package:
     needs: [python-test]
