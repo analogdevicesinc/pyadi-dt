@@ -1,24 +1,16 @@
 """Nox configuration for running tests and tasks with uv backend."""
 
-import shutil
 from pathlib import Path
 
 import nox
 
-# Use uv for faster package installations
 nox.options.default_venv_backend = "uv"
 
-# Define Python versions to test against (from pyproject.toml)
-# PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12"]
 PYTHON_VERSIONS = ["3.10"]
 
 
 def _install_local_pyd2lang(session):
-    """Install local pyd2lang-native into the session environment.
-
-    Prefer a wheel matching the session's Python ABI tag. If no matching wheel
-    exists, fall back to local source install from sibling repository.
-    """
+    """Install a local pyd2lang-native wheel (or source fallback)."""
     dist_dir = (Path(__file__).parent.parent / "pyd2lang-native" / "dist").resolve()
     py_tag = f"cp{str(session.python).replace('.', '')}"
     wheels = sorted(dist_dir.glob(f"pyd2lang_native-*-{py_tag}-*.whl"))
@@ -48,20 +40,6 @@ def tests(session):
     session.run("pytest", "-vs", *args)
 
 
-@nox.session(python=PYTHON_VERSIONS)
-def tests_remote(session):
-    """Run tests including remote board tests (requires --ip argument)."""
-    # Install the package with dev dependencies
-    session.install(".[dev]")
-
-    # Check if --ip is provided in posargs
-    if not any(arg.startswith("--ip") for arg in session.posargs):
-        session.warn("No --ip argument provided. Remote tests may be skipped.")
-
-    # Run pytest with verbose output and pass through all arguments
-    session.run("pytest", "-vs", *session.posargs)
-
-
 @nox.session(python="3.11")
 def lint(session):
     """Run linting checks with ruff."""
@@ -72,21 +50,15 @@ def lint(session):
 @nox.session(python="3.11")
 def format(session):
     """Format code with ruff."""
-    try:
-        session.install("ruff")
-        session.run("ruff", "format", "adidt", "test")
-    except Exception:
-        session.warn("Ruff not available or formatting failed")
+    session.install("ruff")
+    session.run("ruff", "format", "adidt", "test")
 
 
 @nox.session(python="3.11")
 def format_check(session):
     """Check code formatting with ruff."""
-    try:
-        session.install("ruff")
-        session.run("ruff", "format", "--check", "adidt", "test")
-    except Exception:
-        session.warn("Ruff not available or format check failed")
+    session.install("ruff")
+    session.run("ruff", "format", "--check", "adidt", "test")
 
 
 @nox.session(python="3.12")
@@ -108,7 +80,6 @@ def docs(session):
         "linkify-it-py",
         "pyd2lang-native>=0.1.1",
     )
-    # _install_local_pyd2lang(session)
     session.install(".")
     session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
 
@@ -128,8 +99,6 @@ def docs_serve(session):
         "pyd2lang-native>=0.1.1",
         ".[dev]",
     )
-    # _install_local_pyd2lang(session)
-    # session.install(".")
     session.run("sphinx-autobuild", "doc/source", "doc/build/html", "--host", "0.0.0.0")
 
 
@@ -151,7 +120,7 @@ def coverage(session):
 def ty(session):
     """Run type checking with ty.
 
-    Check the core modules (model, boards, builders) for type errors.
+    Mirrors the path list used by ``.github/workflows/type-check.yml``.
     Pass additional paths after '--' to check specific modules:
         nox -s ty -- adidt/model/
     """
@@ -161,8 +130,10 @@ def ty(session):
         if session.posargs
         else [
             "adidt/model/",
-            "adidt/boards/",
             "adidt/xsa/builders/",
+            "adidt/devices/",
+            "adidt/system.py",
+            "adidt/tools/",
         ]
     )
     session.run("ty", "check", *paths)
@@ -196,39 +167,6 @@ def dtc_compile(session):
     """
     session.install(".[dev]")
     session.run("pytest", "-vs", "test/xsa/test_dtc_compile.py", *session.posargs)
-
-
-@nox.session(python="3.11")
-def petalinux_build(session):
-    """Run full PetaLinux build integration tests.
-
-    Requires PetaLinux tools on PATH and XSA file via env vars.
-
-    Usage (native):
-        PETALINUX_XSA=/path/to/design.xsa nox -s petalinux_build
-
-    Usage (container — handles all host dependencies):
-        PETALINUX_XSA=/path/to/design.xsa docker/run-petalinux-tests.sh
-
-    Environment variables:
-        PETALINUX_XSA:      Path to XSA file (required)
-        PETALINUX_TEMPLATE: PetaLinux template (default: zynqMP)
-        PETALINUX_PROFILE:  pyadi-dt profile name
-        PETALINUX_VERSION:  PetaLinux version string
-    """
-    if shutil.which("petalinux-create") is None:
-        session.skip(
-            "petalinux-create not found on PATH (source PetaLinux settings.sh first)"
-        )
-    session.install(".[dev]")
-    session.run(
-        "pytest",
-        "-vs",
-        "test/hw/xsa/test_petalinux_build_hw.py",
-        "-o",
-        "addopts=",
-        *session.posargs,
-    )
 
 
 @nox.session(python="3.11")
