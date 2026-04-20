@@ -15,7 +15,7 @@ from typing import Any, Iterable
 from ._naming import jesd_labels, out_clk_select, sys_clk_select
 from .devices.base import ClockOutput, Device, GtLane, SpiPort
 from .devices.converters import ConverterDevice
-from .devices.converters.base import ConverterSide
+from .devices.converters.base import ConverterSide, Jesd204Settings
 from .eval.base import EvalBoard
 from .fpga.base import FpgaBoard
 from .model.board_model import (
@@ -245,12 +245,13 @@ class System:
         if not isinstance(device, ConverterDevice):
             return {}
 
-        rx_link_id = (
-            int(device.adc.jesd204_settings.link_id) if hasattr(device, "adc") else 0
-        )
-        tx_link_id = (
-            int(device.dac.jesd204_settings.link_id) if hasattr(device, "dac") else 0
-        )
+        # ``hasattr`` can't be narrowed by ty; use ``getattr`` with a
+        # default and a local null-check instead so both the runtime
+        # and type-checker see the same invariant.
+        rx_side = getattr(device, "adc", None)
+        tx_side = getattr(device, "dac", None)
+        rx_link_id = int(rx_side.jesd204_settings.link_id) if rx_side is not None else 0
+        tx_link_id = int(tx_side.jesd204_settings.link_id) if tx_side is not None else 0
 
         rx_prefix, tx_prefix = self._jesd_prefixes(device)
         rx = jesd_labels(rx_prefix, "rx")
@@ -320,12 +321,21 @@ class System:
 
         # For converters with separate ADC/DAC sides (e.g., AD9081/MxFE),
         # use the respective side. For single transceivers (e.g., ADRV9009),
-        # use the converter directly.
-        if hasattr(converter, "adc") and hasattr(converter, "dac"):
-            side: ConverterSide = converter.adc if is_rx else converter.dac
-        else:
-            side = converter
-        params = side.jesd204_settings
+        # use the converter directly.  Resolve via ``getattr`` so the
+        # type-checker sees the same optionality the runtime treats it
+        # with via ``hasattr``.
+        split_side: ConverterSide | None = getattr(
+            converter, "adc" if is_rx else "dac", None
+        )
+        # ``jesd204_settings`` is declared on ``ConverterSide`` (MxFE-style
+        # split-sided parts) and added by concrete ``ConverterDevice``
+        # subclasses like ``ADRV9009`` — not the base ``ConverterDevice``.
+        # Use ``getattr`` to stay structural and keep ty happy when the
+        # fallback path leaves us holding a ``ConverterDevice`` instance.
+        params: Jesd204Settings = getattr(
+            split_side if split_side is not None else converter,
+            "jesd204_settings",
+        )
         link_id = int(params.link_id)
 
         sys_clk = sys_clk_select(

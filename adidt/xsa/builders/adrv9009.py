@@ -666,6 +666,11 @@ class ADRV9009Builder:
 
         if is_fmcomms8:
             # Second chip: its own clocks, cs, reset; no sysref-req-gpios.
+            # ``trx2_cs`` is always an int on the is_fmcomms8 branch (see
+            # the earlier ``trx2_cs = int(board_cfg.get(...))`` assignment);
+            # narrow the type here so downstream callers of ``render_dt``
+            # see a concrete ``int``.
+            assert trx2_cs is not None
             phy2_dev = ADRV9009(
                 label=f"trx1_{phy_family}",
                 node_name_base=f"{phy_family}-phy",

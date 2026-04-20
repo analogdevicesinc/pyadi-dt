@@ -59,7 +59,12 @@ class Adxcvr(BaseModel):
             lines.append('clock-names = "conv";')
         if self.clock_output_names_str:
             lines.append(f"clock-output-names = {self.clock_output_names_str};")
-        if self.use_div40 and self.jesd_l is not None:
+        if (
+            self.use_div40
+            and self.jesd_l is not None
+            and self.jesd_m is not None
+            and self.jesd_s is not None
+        ):
             lines.append(f"adi,jesd-l = <{int(self.jesd_l)}>;")
             lines.append(f"adi,jesd-m = <{int(self.jesd_m)}>;")
             lines.append(f"adi,jesd-s = <{int(self.jesd_s)}>;")
