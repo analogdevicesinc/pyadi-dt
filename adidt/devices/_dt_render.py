@@ -109,9 +109,11 @@ def render_node(
         lines.append(f"{prop_indent}reg = <{reg}>;")
 
     # Extra per-instance lines spliced in before per-field rendering.
+    # ``# nosec B610`` — bandit's django_extra_used rule pattern-matches
+    # any ``.extra(...)`` call; here it's a callable local, not Django ORM.
     extra = getattr(model, "extra_dt_lines", None)
     if callable(extra):
-        for line in extra(context or {}):
+        for line in extra(context or {}):  # nosec B610
             lines.append(f"{prop_indent}{line}")
 
     # Per-field properties, in declaration order.
