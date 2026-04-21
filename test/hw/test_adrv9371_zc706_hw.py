@@ -36,6 +36,7 @@ from test.hw.hw_helpers import (  # noqa: E402
     DEFAULT_OUT_DIR,
     acquire_xsa,
     assert_no_kernel_faults,
+    assert_no_probe_errors,
     collect_dmesg,
     compile_dts_to_dtb,
     deploy_and_boot,
@@ -137,6 +138,7 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
         grep_pattern="ad9371|ad9528|jesd204|mykonos|probe|failed|error",
     )
     assert_no_kernel_faults(dmesg_txt)
+    assert_no_probe_errors(dmesg_txt)
     assert "ad9371" in dmesg_txt.lower() or "mykonos" in dmesg_txt.lower(), (
         "AD9371 driver probe signature not found in dmesg"
     )

@@ -35,6 +35,7 @@ from test.hw.hw_helpers import (  # noqa: E402
     acquire_xsa,
     assert_jesd_links_data,
     assert_no_kernel_faults,
+    assert_no_probe_errors,
     collect_dmesg,
     compile_dts_to_dtb,
     deploy_and_boot,
@@ -184,6 +185,7 @@ def test_ad9081_zcu102_xsa_hw(board, built_kernel_image_zynqmp, tmp_path):
 
     # --- 7. Verify: kernel probe + IIO context + JESD DATA state ---
     assert_no_kernel_faults(dmesg_txt)
+    assert_no_probe_errors(dmesg_txt)
     assert "AD9081 Rev." in dmesg_txt or "probed ADC AD9081" in dmesg_txt, (
         "AD9081 probe signature was not found in kernel dmesg output"
     )

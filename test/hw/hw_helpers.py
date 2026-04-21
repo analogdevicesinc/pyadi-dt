@@ -294,8 +294,11 @@ _DMESG_BENIGN_SUBSTRINGS = (
     "failed to load firmware",
     # Wifi/USB hotplug noise seen on some Kuiper releases:
     "cfg80211: failed to load",
-    # Harmless driver-level probe deferrals re-tried later:
+    # Harmless driver-level probe deferrals re-tried later.  The kernel
+    # surfaces these both symbolically (``-EPROBE_DEFER``) and as the
+    # raw errno (``-517``) depending on the caller.
     "EPROBE_DEFER",
+    "error -517",
     # ZynqMP early-boot WARNING: the kernel logs a Call trace through
     # gic_of_init / of_irq_init because the RPU-bus interrupt-controller
     # cannot be initialized from Linux on ZynqMP.  Always benign; the
@@ -344,6 +347,41 @@ def assert_no_kernel_faults(dmesg_txt: str) -> None:
         if any(p in line for p in _DMESG_FATAL_PATTERNS):
             bad.append(line)
     assert not bad, "Kernel fault(s) detected in dmesg:\n" + "\n".join(bad)
+
+
+# Driver-probe-failure patterns in dmesg.  These appear when a probe()
+# callback returns a negative errno other than -EPROBE_DEFER (the defer
+# path is the normal retry-until-resolved dance and is allowlisted via
+# _DMESG_BENIGN_SUBSTRINGS above).  Regex, not plain substrings —
+# ``probe of <dev> failed with error <N>`` is the canonical kernel
+# message.  Overlay-apply errors fall in the same bucket because a
+# failed overlay almost always cascades into silent probe misses.
+_DMESG_PROBE_ERROR_PATTERNS = (
+    r"probe of \S+ failed with error",
+    r"Error applying overlay",
+    r"failed to apply overlay",
+    r"Error resolving",
+)
+
+
+def assert_no_probe_errors(dmesg_txt: str) -> None:
+    """Fail the calling test if *dmesg_txt* contains driver-probe errors.
+
+    Complements :func:`assert_no_kernel_faults` — a driver can fail to
+    probe without ever producing a kernel fault (e.g. a DT overlay
+    apply error, a regulator not showing up, a phandle mismatch).
+    Reuses :data:`_DMESG_BENIGN_SUBSTRINGS` so known-benign probe
+    chatter (firmware loads, ``-EPROBE_DEFER`` retries, ZynqMP early-
+    boot warnings) does not fire.
+    """
+    compiled = [_re.compile(p) for p in _DMESG_PROBE_ERROR_PATTERNS]
+    bad: list[str] = []
+    for line in dmesg_txt.splitlines():
+        if any(s in line for s in _DMESG_BENIGN_SUBSTRINGS):
+            continue
+        if any(rx.search(line) for rx in compiled):
+            bad.append(line)
+    assert not bad, "Driver probe errors detected in dmesg:\n" + "\n".join(bad)
 
 
 def shell_out(shell, cmd: str) -> str:
