@@ -37,10 +37,12 @@ from test.hw.hw_helpers import (  # noqa: E402
     acquire_xsa,
     assert_no_kernel_faults,
     assert_no_probe_errors,
+    check_jesd_framing_plausibility,
     collect_dmesg,
     compile_dts_to_dtb,
     deploy_and_boot,
     open_iio_context,
+    parse_ilas_status,
     read_jesd_status,
     shell_out,
 )
@@ -114,6 +116,15 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
             "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
         },
     }
+
+    # Pre-flight: catch cfg typos (swapped M/L, wrong F) before we
+    # spend 60s compiling + deploying only to fail during ILAS.
+    framing_warnings = check_jesd_framing_plausibility(cfg["jesd"])
+    assert not framing_warnings, (
+        "JESD cfg is structurally inconsistent (will fail ILAS):\n  "
+        + "\n  ".join(framing_warnings)
+    )
+
     result = XsaPipeline().run(
         xsa_path=xsa_path,
         cfg=cfg,
@@ -173,6 +184,18 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     print(rx_status)
     print("=== JESD204 TX status (sysfs) ===")
     print(tx_status)
+
+    # Surface AD937x ILAS state directly — the current capture blocker
+    # manifests here as "ILAS mismatch: <mask>" with all 7 framing
+    # fields flagged.  Printed unconditionally so every run shows the
+    # exact mismatch set; flip to ``assert_ilas_aligned(dmesg_txt, …)``
+    # once the profile/HDL framing drift is closed out.
+    ilas_report = parse_ilas_status(dmesg_txt)
+    print("=== AD937x ILAS report ===")
+    print(ilas_report.summary())
+    if ilas_report.fields:
+        for name in ilas_report.fields:
+            print(f"  mismatched: {name}")
 
     # Dump TPL ADC sysfs (enable state, sampling freq, etc.) and DMA
     # controller state.  These surface the most common DMA-stall
