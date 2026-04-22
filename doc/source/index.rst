@@ -63,8 +63,11 @@ Supported hardware (declarative device layer)
      - AD9144, AD9152
      - Quad / dual DAC
    * - :class:`~adidt.devices.transceivers.ADRV9009`
-     - ADRV9009/9025/9026/9029
-     - Wideband RF transceiver (single + FMComms8 dual-chip)
+     - ADRV9009/9025/9026/9029, AD9371/9375
+     - Wideband RF transceiver — Talise (ADRV9009/25/26/29 single
+       + FMComms8 dual-chip) and Mykonos (AD9371/9375 via the
+       ADRV9371/9375-N/P eval FMCs; see :doc:`xsa` for the
+       ``adrv937x_zc706`` pipeline profile)
 
 XSA pipeline support covers the same families plus FMCDAQ2/FMCDAQ3
 composites (see :doc:`xsa`).
