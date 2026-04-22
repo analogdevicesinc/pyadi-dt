@@ -935,11 +935,12 @@ def test_pipeline_strict_parity_reports_multiple_gap_categories(
 # ---------------------------------------------------------------------------
 
 
-def test_pipeline_report_absent_by_default(xsa_path, cfg, tmp_path):
+def test_pipeline_report_present_by_default(xsa_path, cfg, tmp_path):
     with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
         result = XsaPipeline().run(xsa_path, cfg, tmp_path)
-    assert "report" not in result
+    assert "report" in result
+    assert result["report"].exists()
 
 
 def test_pipeline_emit_report_true_writes_html(xsa_path, cfg, tmp_path):
@@ -958,12 +959,14 @@ def test_pipeline_emit_report_false_does_not_write_html(xsa_path, cfg, tmp_path)
     MockVis.return_value.generate.assert_not_called()
 
 
-def test_pipeline_clock_graphs_absent_by_default(xsa_path, cfg, tmp_path):
+def test_pipeline_clock_graphs_present_by_default(xsa_path, cfg, tmp_path):
     with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
         result = XsaPipeline().run(xsa_path, cfg, tmp_path)
-    assert "clock_dot" not in result
-    assert "clock_d2" not in result
+    assert "clock_dot" in result
+    assert "clock_d2" in result
+    assert result["clock_dot"].exists()
+    assert result["clock_d2"].exists()
 
 
 def test_pipeline_emit_clock_graphs_true_writes_files(xsa_path, cfg, tmp_path):
@@ -996,8 +999,12 @@ def test_pipeline_emit_clock_graphs_false_does_not_invoke_generator(
     MockCGG.return_value.generate.assert_not_called()
 
 
-def test_pipeline_default_result_has_only_core_keys(xsa_path, cfg, tmp_path):
+def test_pipeline_default_result_has_report_and_clock_keys(xsa_path, cfg, tmp_path):
     with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
         result = XsaPipeline().run(xsa_path, cfg, tmp_path)
-    assert set(result.keys()) == {"base_dir", "overlay", "merged"}
+    # With emit_report=True and emit_clock_graphs=True as defaults, the
+    # pipeline result includes the report and clock-graph keys by default.
+    # "clock_dot_svg" / "clock_d2_svg" are only present when dot/d2 are on
+    # PATH, so they are optional here.
+    assert {"base_dir", "overlay", "merged", "report", "clock_dot", "clock_d2"} <= set(result.keys())

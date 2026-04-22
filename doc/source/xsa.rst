@@ -509,6 +509,29 @@ Core classes and methods used in the XSA flow:
      - ``bool``
      - If true, raises ``ParityError`` when required roles/links/properties
        are missing/mismatched.
+   * - ``emit_report``
+     - ``bool``
+     - When ``True`` (default), writes the ``<name>_report.html`` topology
+       report and includes ``"report"`` in the result dict.
+   * - ``emit_clock_graphs``
+     - ``bool``
+     - When ``True`` (default), writes the Graphviz ``.dot`` and D2 ``.d2``
+       clock-tree diagrams and attempts to render them to SVG when ``dot`` /
+       ``d2`` are on ``PATH``.
+   * - ``lint``
+     - ``bool``
+     - When ``True``, runs the structural DTS linter on the merged output and
+       writes a ``diagnostics`` JSON file.  Default ``False``.
+   * - ``strict_lint``
+     - ``bool``
+     - When ``True``, raises ``DtsLintError`` if the linter finds any errors.
+       Implies ``lint=True``.  Default ``False``.
+   * - ``output_format``
+     - ``str``
+     - ``"default"`` produces the standard overlay + merged DTS.
+       ``"petalinux"`` additionally writes ``system-user.dtsi`` and
+       ``device-tree.bbappend`` for drop-in use in a PetaLinux project.
+       Default ``"default"``.
 
 .. tip::
 
