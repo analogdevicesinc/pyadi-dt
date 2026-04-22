@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import pytest
@@ -390,6 +391,139 @@ def assert_no_probe_errors(dmesg_txt: str) -> None:
         if any(rx.search(line) for rx in compiled):
             bad.append(line)
     assert not bad, "Driver probe errors detected in dmesg:\n" + "\n".join(bad)
+
+
+@dataclass
+class IlasMismatch:
+    """Structured AD937x ILAS mismatch report extracted from dmesg.
+
+    Populated by :func:`parse_ilas_status`.  ``has_mismatch`` is the
+    canonical "something is wrong" signal used by
+    :func:`assert_ilas_aligned`.
+    """
+
+    deframer_status: int | None = None
+    mismatch_mask: int | None = None
+    fields: list[str] = field(default_factory=list)
+    raw_lines: list[str] = field(default_factory=list)
+
+    @property
+    def has_mismatch(self) -> bool:
+        if self.fields:
+            return True
+        if self.mismatch_mask not in (None, 0):
+            return True
+        return False
+
+    def summary(self) -> str:
+        parts: list[str] = []
+        if self.deframer_status is not None:
+            parts.append(f"deframerStatus=0x{self.deframer_status:02x}")
+        if self.mismatch_mask is not None:
+            parts.append(f"mask=0x{self.mismatch_mask:04x}")
+        if self.fields:
+            parts.append("fields=[" + ", ".join(self.fields) + "]")
+        return "; ".join(parts) or "no ILAS info"
+
+
+_ILAS_DEFRAMER_STATUS_RX = _re.compile(r"deframerStatus\s*\(0x([0-9a-fA-F]+)\)")
+_ILAS_MISMATCH_MASK_RX = _re.compile(r"ILAS mismatch[:\s]+(?:0x)?([0-9a-fA-F]+)")
+_ILAS_FIELD_RX = _re.compile(r"ILAS\s+(.+?)\s+did not match")
+
+
+def parse_ilas_status(dmesg_txt: str) -> IlasMismatch:
+    """Extract AD937x ILAS mismatch info from *dmesg_txt*.
+
+    The Mykonos driver emits lines like::
+
+        ad9371 spi1.1: deframerStatus (0x21)
+        ad9371 spi1.1: ILAS mismatch: c7f8
+        ILAS lanes per converter did not match
+        ILAS scrambling did not match
+        ...
+
+    When the deframer reports a good ILAS the mismatch / field lines
+    don't appear, so ``has_mismatch`` stays ``False``.
+    """
+    report = IlasMismatch()
+    for line in dmesg_txt.splitlines():
+        m = _ILAS_DEFRAMER_STATUS_RX.search(line)
+        if m:
+            report.deframer_status = int(m.group(1), 16)
+            report.raw_lines.append(line)
+            continue
+        m = _ILAS_MISMATCH_MASK_RX.search(line)
+        if m:
+            report.mismatch_mask = int(m.group(1), 16)
+            report.raw_lines.append(line)
+            continue
+        m = _ILAS_FIELD_RX.search(line)
+        if m:
+            report.fields.append(m.group(1).strip())
+            report.raw_lines.append(line)
+    return report
+
+
+def assert_ilas_aligned(dmesg_txt: str, context: str = "") -> None:
+    """Fail the calling test if the AD937x deframer reports an ILAS mismatch.
+
+    Use as the end-to-end gate just before :func:`assert_rx_capture_valid`:
+    when ILAS fails, the link drops to ``disabled`` and no samples flow,
+    so capture must not even be attempted.
+    """
+    report = parse_ilas_status(dmesg_txt)
+    if not report.has_mismatch:
+        return
+    suffix = f" ({context})" if context else ""
+    lines = [f"AD937x ILAS mismatch detected{suffix}: {report.summary()}"]
+    if report.fields:
+        lines.append("  Mismatched ILAS fields:")
+        lines.extend(f"    - {name}" for name in report.fields)
+    if report.raw_lines:
+        lines.append("  Raw dmesg lines:")
+        lines.extend(f"    {raw}" for raw in report.raw_lines)
+    raise AssertionError("\n".join(lines))
+
+
+def check_jesd_framing_plausibility(jesd_cfg: dict) -> list[str]:
+    """Return warnings when ``jesd_cfg`` violates the F = M*Np*S/(8*L) relation.
+
+    Only inspects the ``rx`` and ``tx`` sub-dicts of *jesd_cfg* and
+    skips sides that are missing any of M/L/F (caller decides how much
+    structure to require).  ``Np`` defaults to ``16`` and ``S`` defaults
+    to ``1`` — the standard values for ADI JESD204B/C designs.
+
+    This is a pre-flight sanity check for XSA pipeline cfg dicts: a
+    mistyped ``F`` or swapped ``M``/``L`` usually boots far enough that
+    the failure only surfaces at ILAS training, which is hard to debug
+    on hardware.  Run it at test/CLI entry so obvious cfg typos fail
+    fast with a clear message.
+    """
+    warnings: list[str] = []
+    for side in ("rx", "tx"):
+        sub = jesd_cfg.get(side)
+        if not isinstance(sub, dict):
+            continue
+        M = sub.get("M")
+        L = sub.get("L")
+        F = sub.get("F")
+        Np = sub.get("Np", 16)
+        S = sub.get("S", 1)
+        if None in (M, L, F):
+            continue
+        if L == 0 or (M * Np * S) % (8 * L) != 0:
+            warnings.append(
+                f"jesd.{side}: M*Np*S / (8*L) = {M}*{Np}*{S}/(8*{L}) is "
+                f"not an integer; F={F} cannot match."
+            )
+            continue
+        expected_F = (M * Np * S) // (8 * L)
+        if expected_F != F:
+            warnings.append(
+                f"jesd.{side}: F={F} != M*Np*S/(8*L) = "
+                f"{M}*{Np}*{S}/(8*{L}) = {expected_F}"
+            )
+    return warnings
 
 
 def shell_out(shell, cmd: str) -> str:
