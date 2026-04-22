@@ -294,8 +294,11 @@ _DMESG_BENIGN_SUBSTRINGS = (
     "failed to load firmware",
     # Wifi/USB hotplug noise seen on some Kuiper releases:
     "cfg80211: failed to load",
-    # Harmless driver-level probe deferrals re-tried later:
+    # Harmless driver-level probe deferrals re-tried later.  The kernel
+    # surfaces these both symbolically (``-EPROBE_DEFER``) and as the
+    # raw errno (``-517``) depending on the caller.
     "EPROBE_DEFER",
+    "error -517",
     # ZynqMP early-boot WARNING: the kernel logs a Call trace through
     # gic_of_init / of_irq_init because the RPU-bus interrupt-controller
     # cannot be initialized from Linux on ZynqMP.  Always benign; the
@@ -305,6 +308,14 @@ _DMESG_BENIGN_SUBSTRINGS = (
     "irqchip_init",
     "__primary_switched",
     "rpu-bus/interrupt-controller",
+    # Stock Kuiper ZynqMP (ZCU102) probes these SoC peripherals from the
+    # base DTS regardless of the overlay we merge in — the hardware is
+    # either unconfigured (no DisplayPort monitor attached) or not wired
+    # out on the board (no SATA).  Match by device-node address so a
+    # genuine regression on the same driver elsewhere still trips.
+    "ffcb0000.watchdog",  # Cadence WDT — unroutable clocks
+    "fd4a0000.display",   # ZynqMP DisplayPort — no monitor + DPMS pipe
+    "fd0c0000.ahci",      # Ceva AHCI/SATA — not routed on ZCU102
 )
 
 # Hard-fail patterns — these indicate a genuine kernel fault.
@@ -344,6 +355,41 @@ def assert_no_kernel_faults(dmesg_txt: str) -> None:
         if any(p in line for p in _DMESG_FATAL_PATTERNS):
             bad.append(line)
     assert not bad, "Kernel fault(s) detected in dmesg:\n" + "\n".join(bad)
+
+
+# Driver-probe-failure patterns in dmesg.  These appear when a probe()
+# callback returns a negative errno other than -EPROBE_DEFER (the defer
+# path is the normal retry-until-resolved dance and is allowlisted via
+# _DMESG_BENIGN_SUBSTRINGS above).  Regex, not plain substrings —
+# ``probe of <dev> failed with error <N>`` is the canonical kernel
+# message.  Overlay-apply errors fall in the same bucket because a
+# failed overlay almost always cascades into silent probe misses.
+_DMESG_PROBE_ERROR_PATTERNS = (
+    r"probe of \S+ failed with error",
+    r"Error applying overlay",
+    r"failed to apply overlay",
+    r"Error resolving",
+)
+
+
+def assert_no_probe_errors(dmesg_txt: str) -> None:
+    """Fail the calling test if *dmesg_txt* contains driver-probe errors.
+
+    Complements :func:`assert_no_kernel_faults` — a driver can fail to
+    probe without ever producing a kernel fault (e.g. a DT overlay
+    apply error, a regulator not showing up, a phandle mismatch).
+    Reuses :data:`_DMESG_BENIGN_SUBSTRINGS` so known-benign probe
+    chatter (firmware loads, ``-EPROBE_DEFER`` retries, ZynqMP early-
+    boot warnings) does not fire.
+    """
+    compiled = [_re.compile(p) for p in _DMESG_PROBE_ERROR_PATTERNS]
+    bad: list[str] = []
+    for line in dmesg_txt.splitlines():
+        if any(s in line for s in _DMESG_BENIGN_SUBSTRINGS):
+            continue
+        if any(rx.search(line) for rx in compiled):
+            bad.append(line)
+    assert not bad, "Driver probe errors detected in dmesg:\n" + "\n".join(bad)
 
 
 def shell_out(shell, cmd: str) -> str:
@@ -473,6 +519,133 @@ def assert_jesd_links_data(
         f"TX JESD link not in DATA{suffix}:\n{tx_status}"
     )
     return rx_status, tx_status
+
+
+def assert_rx_capture_valid(
+    ctx,
+    device_candidates: str | tuple[str, ...],
+    n_samples: int = 2**12,
+    min_std: float = 1.0,
+    context: str = "",
+) -> dict:
+    """Capture ``n_samples`` from an IIO device and verify data is flowing.
+
+    Covers the "IIO device probed but no samples actually arrive" failure
+    mode: the JESD204 link reports DATA, drivers probe cleanly, IIO
+    devices appear, but the DMA / JESD transport / clock path silently
+    stops delivering samples.  The buffer comes back, but every sample
+    is zero, or every sample is latched to one value.
+
+    Asserts:
+
+    - At least one RX channel is not all-zero (DMA actually transferred
+      bytes).
+    - At least one RX channel's |std| is ``>= min_std`` LSBs (samples
+      actually vary — noise floor alone clears this threshold easily,
+      but a latched converter does not).
+
+    Uses raw libiio so it works with any buffered IIO device, including
+    AD9081 designs that expose the buffered frontend as the TPL core
+    (``ad_ip_jesd204_tpl_adc``) rather than ``axi-ad9081-rx-hpc``.
+
+    Args:
+        ctx: A live ``iio.Context`` (e.g. from :func:`open_iio_context`).
+        device_candidates: IIO device name to capture from, or a tuple
+            of candidate names — the first one present on *ctx* wins.
+        n_samples: buffer depth for the capture.
+        min_std: minimum |std| across all channels, in raw-LSB units.
+        context: tag prepended to assertion-failure messages.
+
+    Returns:
+        ``dict`` mapping channel id → captured ``numpy.ndarray``.
+    """
+    import iio
+    import numpy as np
+
+    suffix = f" ({context})" if context else ""
+    candidates = (
+        (device_candidates,) if isinstance(device_candidates, str) else tuple(device_candidates)
+    )
+    all_names = sorted(d.name for d in ctx.devices if d.name)
+
+    def _has_rx_scan(d):
+        return any(c.scan_element and not c.output for c in d.channels)
+
+    dev = next((d for d in (ctx.find_device(n) for n in candidates) if d is not None), None)
+    if dev is None or not _has_rx_scan(dev):
+        # No named candidate is RX-buffered — fall back to the first
+        # *AXI DMA frontend* on the context (name starts with ``axi-`` /
+        # ``cf-`` or contains ``tpl``).  Control-plane devices like
+        # ``ad9528`` or ``ad9371-phy`` may expose scan channels too, but
+        # they aren't wired to an AXI-DMA and ``buf.refill()`` would just
+        # time out on them.
+        buffered = [
+            d
+            for d in ctx.devices
+            if d.name
+            and (d.name.startswith("axi-") or d.name.startswith("cf-") or "tpl" in d.name)
+            and _has_rx_scan(d)
+        ]
+        dev = buffered[0] if buffered else None
+    assert dev is not None, (
+        f"No RX-buffered IIO device found{suffix}. "
+        f"Tried: {list(candidates)}. Present: {all_names}"
+    )
+
+    scan_channels = [c for c in dev.channels if c.scan_element and not c.output]
+    assert scan_channels, (
+        f"No RX scan channels on {dev.name!r}{suffix}. Present: {all_names}"
+    )
+
+    print(f"rx capture{suffix}: selected IIO device {dev.name!r}")
+    buf = None
+    try:
+        for ch in scan_channels:
+            ch.enabled = True
+        buf = iio.Buffer(dev, n_samples, False)
+        try:
+            buf.refill()
+        except TimeoutError as exc:
+            raise AssertionError(
+                f"Buffer refill timed out on {dev.name!r}{suffix} — "
+                "AXI DMA is not delivering samples (JESD or DMA path "
+                "stalled).  Present devices: " + ", ".join(all_names)
+            ) from exc
+        per_channel: dict[str, np.ndarray] = {}
+        for ch in scan_channels:
+            raw = ch.read(buf)
+            # AXI ADC frontends emit signed int16 (or sign-extended
+            # int14/int12); dtype=int16 is correct for every chip this
+            # suite currently runs against.
+            per_channel[ch.id] = np.frombuffer(raw, dtype=np.int16)
+    finally:
+        if buf is not None:
+            del buf
+        for ch in scan_channels:
+            try:
+                ch.enabled = False
+            except Exception:
+                pass
+
+    nonzero = [name for name, arr in per_channel.items() if arr.any()]
+    assert nonzero, (
+        f"All channels on {dev.name!r} returned zero samples{suffix} — "
+        "JESD/DMA/clock path is likely stalled."
+    )
+
+    stds = {name: float(np.abs(arr).std()) for name, arr in per_channel.items()}
+    max_std = max(stds.values())
+    assert max_std >= min_std, (
+        f"All channels on {dev.name!r} latched to a constant value{suffix} "
+        f"(max |std|={max_std:.3g} < {min_std}) — data path stuck."
+    )
+
+    print(
+        f"rx capture{suffix}: device={dev.name}, "
+        f"{len(per_channel)} channel(s), {n_samples} samples, "
+        f"non-zero={list(nonzero)}, max |std|={max_std:.2f}"
+    )
+    return per_channel
 
 
 def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:

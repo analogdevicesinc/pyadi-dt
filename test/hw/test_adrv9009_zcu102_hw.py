@@ -38,6 +38,8 @@ from test.hw.hw_helpers import (  # noqa: E402
     acquire_xsa,
     assert_jesd_links_data,
     assert_no_kernel_faults,
+    assert_no_probe_errors,
+    assert_rx_capture_valid,
     collect_dmesg,
     compile_dts_to_dtb,
     deploy_and_boot,
@@ -214,6 +216,7 @@ def test_adrv9009_zcu102_hw(board, built_kernel_image_zynqmp, tmp_path):
 
     # --- 7. Verify: kernel probe + IIO context + JESD DATA state ---
     assert_no_kernel_faults(dmesg_txt)
+    assert_no_probe_errors(dmesg_txt)
     assert "adrv9009-phy" in dmesg_txt or "Talise" in dmesg_txt, (
         "ADRV9009 phy probe signature was not found in kernel dmesg output"
     )
@@ -237,6 +240,14 @@ def test_adrv9009_zcu102_hw(board, built_kernel_image_zynqmp, tmp_path):
     rx_status, tx_status = assert_jesd_links_data(shell, context="initial boot")
     print(f"$ cat .../axi?jesd204?rx/status\n{rx_status}")
     print(f"$ cat .../axi?jesd204?tx/status\n{tx_status}")
+
+    # --- 8b. Data-path smoke test: capture a real RX buffer. ---
+    assert_rx_capture_valid(
+        ctx,
+        ("axi-adrv9009-rx-hpc", "axi-adrv9009-rx-obs-hpc"),
+        n_samples=2**12,
+        context="adrv9009 initial boot",
+    )
 
     # --- 9. Load all four canonical Talise filter profiles ---
     # The remote libiio write path drops its TCP socket when the driver
@@ -279,5 +290,7 @@ def test_adrv9009_zcu102_hw(board, built_kernel_image_zynqmp, tmp_path):
         # relock both links before re-reading sysfs status.
         time.sleep(3.0)
         assert_jesd_links_data(shell, context=f"after {filename}")
-        assert_no_kernel_faults(shell_out(shell, "dmesg"))
+        dmesg = shell_out(shell, "dmesg")
+        assert_no_kernel_faults(dmesg)
+        assert_no_probe_errors(dmesg)
         print(f"  {filename}: RX+TX JESD DATA OK")
