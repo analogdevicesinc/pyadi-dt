@@ -62,21 +62,28 @@ or profile wizard exports.
       adidtc xsa2dt -x design.xsa -c config.json --profile ad9081_zcu102 --lint
 
 ``gen-dts``
-   Generate DTS from a board class and JSON config (pyadi-jif solver output).
-   No Vivado or XSA required.
+   Generate DTS from a board class and JSON config (optional pyadi-jif solver
+   output).  No Vivado or XSA required.  Supported ``(board, platform)``
+   combinations:
+
+   - ``ad9081_fmc`` + ``zcu102``
+   - ``ad9084_fmc`` + ``vpk180``
 
    .. code-block:: bash
 
-      adidtc gen-dts -b daq2 -p zcu102 -c solver_config.json
-      adidtc gen-dts -b ad9081_fmc -p vpk180 -c config.json --compile
+      adidtc gen-dts -b ad9081_fmc -p zcu102 -c cfg.json -o design.dts
+      adidtc gen-dts -b ad9084_fmc -p vpk180 -c cfg.json --compile
 
-``jif``
-   Apply pyadi-jif solver output to update clock parameters in a live device
-   tree.
+``jif clock``
+   Apply pyadi-jif solver output to update clock-chip channel dividers in a
+   device tree.  Supports ``local_file`` (edit a ``.dtb`` directly) and
+   ``remote_sd`` (edit the board's SD card over SSH) contexts.  The live
+   ``remote_sysfs`` path is not yet supported.
 
    .. code-block:: bash
 
-      adidtc -c remote_sysfs -i 192.168.2.1 jif clock -f solved_clocks.json
+      adidtc -c local_file -f devicetree.dtb -a arm64 jif clock -f solved.json
+      adidtc -c remote_sd -i 192.168.2.1 jif clock -f solved.json --reboot
 
 Manage boards and profiles
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

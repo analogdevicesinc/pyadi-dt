@@ -5,6 +5,8 @@ import json
 from .helpers import list_node_props, list_node_prop, list_node_subnodes
 from pathlib import Path
 from adidt.utils.parsers import DTDependencyParser
+from . import gen_dts as _gen_dts
+from . import jif as _jif
 
 
 @click.group()
@@ -1260,3 +1262,73 @@ def kuiper_boards(status, json_output):
         click.echo(
             f"  {label}  {name:<50s}  {converter:<12s}  {platform:<8s}  {board_cls}"
         )
+
+
+@cli.command("gen-dts")
+@click.option(
+    "--board",
+    "-b",
+    required=True,
+    type=str,
+    help="Board class name (e.g. ad9081_fmc, ad9084_fmc).",
+)
+@click.option(
+    "--platform",
+    "-p",
+    required=True,
+    type=str,
+    help="Platform / FPGA name (e.g. zcu102, vpk180).",
+)
+@click.option(
+    "--config",
+    "-c",
+    "config_path",
+    required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help="Path to a JSON config file (pyadi-jif solver output or board overrides).",
+)
+@click.option(
+    "--output",
+    "-o",
+    default=None,
+    type=click.Path(),
+    help="Output DTS path. Defaults to '<design_name>.dts' in the CWD.",
+)
+@click.option(
+    "--compile",
+    "compile_dtb",
+    is_flag=True,
+    help="Compile the generated DTS to .dtb using dtc (must be on PATH).",
+)
+def gen_dts_cmd(board, platform, config_path, output, compile_dtb):
+    """Generate a DTS from a board class and JSON config.
+
+    \b
+    Wires a supported ``(board, platform)`` combination through the
+    declarative ``System`` API and renders to DTS — no Vivado or XSA
+    required.  Supported combos:
+      - ad9081_fmc + zcu102
+      - ad9084_fmc + vpk180
+
+    \b
+    Examples:
+      Generate from an empty config:
+        echo '{}' > cfg.json
+        adidtc gen-dts -b ad9081_fmc -p zcu102 -c cfg.json
+    \b
+      Override sample rate and JESD mode via config:
+        adidtc gen-dts -b ad9084_fmc -p vpk180 -c cfg.json -o out/design.dts
+    \b
+      Compile to DTB in the same step (requires dtc on PATH):
+        adidtc gen-dts -b ad9081_fmc -p zcu102 -c cfg.json --compile
+    """
+    _gen_dts.run_gen_dts(
+        board=board,
+        platform=platform,
+        config_path=Path(config_path),
+        output=Path(output) if output else None,
+        compile_dtb=compile_dtb,
+    )
+
+
+_jif.register(cli)
