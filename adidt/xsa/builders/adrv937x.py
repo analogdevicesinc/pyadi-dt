@@ -16,11 +16,46 @@ from ...model.board_model import (
     JesdLinkModel,
 )
 from ...devices.clocks import AD9528_1
+from ...devices.clocks.ad952x import AD9528_1Channel, _GpioLine
 from ...devices.fpga_ip import build_jesd204_overlay_ctx
 from ...model.renderer import BoardModelRenderer
 from ..topology import XsaTopology
 
 _ADRV937X_KEYWORDS = ("ad9371", "adrv937")
+
+
+# Default Mykonos (AD9371) initial device profile — baked into the DT
+# as ``adi,*-profile-*`` / ``adi,clocks-*`` properties on
+# ``ad9371-phy@1`` when the caller doesn't supply a per-profile
+# override.
+#
+# The AD9371 driver consumes these at probe to configure the Mykonos
+# ARM before userspace ever sees the chip; the values must encode a
+# configuration whose JESD framing (M, L, F, K, Np, CS, CF) matches
+# the FPGA's compiled-in ``axi-jesd204-{tx,rx}`` overlays, otherwise
+# the deframer reports an ILAS mismatch at link-up and the TPL DMA
+# sits idle.  Because "matching" is HDL-build-specific (see the
+# ``TX_JESD_*`` / ``RX_JESD_*`` knobs in
+# ``analogdevicesinc/hdl/projects/adrv937x/zc706/README.md``), this
+# module ships an empty default and expects the per-board profile
+# JSON (e.g. ``adidt/xsa/profiles/adrv937x_zc706.json``) to supply a
+# full ``trx_profile_props`` list.  Callers without a profile JSON
+# can still override via ``board_cfg["trx_profile_props"]``.
+_DEFAULT_MYKONOS_PROFILE_PROPS: tuple[str, ...] = ()
+
+
+# AD9528 output-channel map baked into the DT so the clock distributor
+# driver configures dividers + signal sources before the Mykonos driver
+# requests ``dev_clk`` at 122.88 MHz.  Each AD9528_1Channel renders to
+# an ``adi,channels/channel@N`` subnode.  Values mirror the Kuiper
+# zc706-adrv9371 reference DT.
+def _default_ad9528_channels() -> dict[int, AD9528_1Channel]:
+    return {
+        13: AD9528_1Channel(id=13, name="DEV_CLK", divider=10, signal_source=0),
+        1: AD9528_1Channel(id=1, name="FMC_CLK", divider=10, signal_source=0),
+        12: AD9528_1Channel(id=12, name="DEV_SYSREF", divider=10, signal_source=2),
+        3: AD9528_1Channel(id=3, name="FMC_SYSREF", divider=10, signal_source=2),
+    }
 
 
 def _is_adrv937x_name(value: str) -> bool:
@@ -186,8 +221,14 @@ class ADRV937xBuilder:
         spi_bus = str(board_cfg.get("spi_bus", "spi0"))
         clk_cs = int(board_cfg.get("clk_cs", 0))
         trx_cs = int(board_cfg.get("trx_cs", 1))
-        trx_reset_gpio = int(board_cfg.get("trx_reset_gpio", 130))
-        trx_sysref_req_gpio = int(board_cfg.get("trx_sysref_req_gpio", 136))
+        # GPIO defaults match the Kuiper ``zc706-adrv9371`` reference DT
+        # (EMIO pin numbering relative to Zynq GPIO controller base=54):
+        # - AD9371 reset   = 106 (``trx_reset_gpio``)
+        # - AD9371 sysref  = 112 (``trx_sysref_req_gpio``)
+        # - AD9528 reset   = 113 (``ad9528_reset_gpio``)
+        trx_reset_gpio = int(board_cfg.get("trx_reset_gpio", 106))
+        trx_sysref_req_gpio = int(board_cfg.get("trx_sysref_req_gpio", 112))
+        ad9528_reset_gpio = int(board_cfg.get("ad9528_reset_gpio", 113))
         trx_spi_max_frequency = int(board_cfg.get("trx_spi_max_frequency", 25000000))
         ad9528_vcxo_freq = int(board_cfg.get("ad9528_vcxo_freq", 122880000))
 
@@ -208,6 +249,23 @@ class ADRV937xBuilder:
             label=clock_chip_label,
             spi_max_hz=10_000_000,
             vcxo_hz=ad9528_vcxo_freq,
+            channels=_default_ad9528_channels(),
+            gpio_lines=[
+                _GpioLine(
+                    prop="reset-gpios",
+                    controller=gpio_label,
+                    index=ad9528_reset_gpio,
+                ),
+            ],
+            # Mark AD9528 as the JESD204 topology's SYSREF provider.
+            # Without this the AD9371 driver's
+            # ``opt_post_running_stage`` callback can't find a sysref
+            # source in the jesd204 graph and rolls back with -EFAULT.
+            # Matches the Kuiper zc706-adrv9371 reference DT.
+            jesd204_sysref_provider=True,
+            jesd204_max_sysref_hz=int(
+                board_cfg.get("ad9528_jesd204_max_sysref_hz", 78125)
+            ),
         )
         clock_component = ComponentModel(
             role="clock",
@@ -234,9 +292,19 @@ class ADRV937xBuilder:
         trx_clock_names_value = (
             '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"'
         )
-        trx_link_ids_value = f"{rx_link_id} {tx_link_id}"
+        # Add the AD9528 sysref-provider link to jesd204-link-ids and
+        # jesd204-inputs so the AD9371 driver's post-running verify
+        # sees a full RX / TX / sysref topology.  Matches the working
+        # Kuiper zc706-adrv9371 reference (RX=1, TX=0, SYSREF=2).
+        ad9528_sysref_link_id = 2
+        trx_link_ids_value = f"{rx_link_id} {tx_link_id} {ad9528_sysref_link_id}"
         trx_inputs_value = (
-            f"<&{rx_xcvr_label} 0 {rx_link_id}>, <&{tx_xcvr_label} 0 {tx_link_id}>"
+            f"<&{rx_xcvr_label} 0 {rx_link_id}>, "
+            f"<&{tx_xcvr_label} 0 {tx_link_id}>, "
+            f"<&{clock_chip_label} 0 {ad9528_sysref_link_id}>"
+        )
+        profile_props = tuple(
+            board_cfg.get("trx_profile_props", _DEFAULT_MYKONOS_PROFILE_PROPS)
         )
         phy_context = {
             "gpio_label": gpio_label,
@@ -244,6 +312,7 @@ class ADRV937xBuilder:
             "clock_names_value": trx_clock_names_value,
             "link_ids": trx_link_ids_value,
             "jesd204_inputs": trx_inputs_value,
+            "profile_props": profile_props,
         }
         phy_component = ComponentModel(
             role="transceiver",
@@ -315,6 +384,15 @@ class ADRV937xBuilder:
         ]
 
         # --- Raw XCVR overlay nodes ---
+        # The ``adi,sys-clk-select = <0>`` + ``adi,out-clk-select =
+        # <3>`` + ``adi,use-lpm-enable`` triplet is required by the
+        # axi-adxcvr driver to bind — without them the platform
+        # device sits in deferred probe on this build.  Clocks are
+        # kept pointing at the clkgen (through-path) and the
+        # ``div40`` shape is preserved to minimise risk of a kernel
+        # hang (the direct-AD9528 rewire attempted in commit 607663b
+        # did match the reference DT structurally but hung the
+        # kernel post-JESD).
         rx_xcvr_node = (
             f"\t&{rx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
@@ -322,6 +400,9 @@ class ADRV937xBuilder:
             '\t\tclock-names = "conv", "div40";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "rx_gt_clk", "rx_out_clk";\n'
+            "\t\tadi,sys-clk-select = <0>;\n"
+            "\t\tadi,out-clk-select = <3>;\n"
+            "\t\tadi,use-lpm-enable;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             "\t};"
@@ -333,6 +414,9 @@ class ADRV937xBuilder:
             '\t\tclock-names = "conv", "div40";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "tx_gt_clk", "tx_out_clk";\n'
+            "\t\tadi,sys-clk-select = <0>;\n"
+            "\t\tadi,out-clk-select = <3>;\n"
+            "\t\tadi,use-lpm-enable;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             "\t};"

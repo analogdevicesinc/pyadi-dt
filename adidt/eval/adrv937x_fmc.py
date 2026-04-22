@@ -42,8 +42,8 @@ class adrv937x_fmc(EvalBoard):
             label="trx0_ad9371",
             node_name_base="ad9371-phy",
             compatible_strings=["adi,ad9371"],
-            reset_gpio=130,
-            sysref_req_gpio=136,
+            reset_gpio=106,
+            sysref_req_gpio=112,
         )
 
     def _named(self, name: str) -> ClockOutput:

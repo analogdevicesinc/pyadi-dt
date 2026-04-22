@@ -121,10 +121,20 @@ class _AD952xBase(ClockDevice):
         lines: list[str] = []
         for gl in self.gpio_lines:
             lines.append(f"{gl.prop} = <&{gl.controller} {int(gl.index)} 0>;")
+        if self.jesd204_sysref_provider:
+            lines.append("jesd204-device;")
+            lines.append("#jesd204-cells = <2>;")
+            lines.append("jesd204-sysref-provider;")
+            if self.jesd204_max_sysref_hz is not None:
+                lines.append(
+                    f"adi,jesd204-max-sysref-frequency-hz = <{int(self.jesd204_max_sysref_hz)}>;"
+                )
         return lines
 
     # Both device families share these fields:
     gpio_lines: Annotated[list[_GpioLine], DtSkip()] = Field(default_factory=list)
+    jesd204_sysref_provider: Annotated[bool, DtSkip()] = False
+    jesd204_max_sysref_hz: Annotated[int | None, DtSkip()] = None
 
 
 class AD9523_1(_AD952xBase):
