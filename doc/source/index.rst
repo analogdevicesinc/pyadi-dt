@@ -44,7 +44,7 @@ Supported hardware (declarative device layer)
    * - :class:`~adidt.devices.clocks.AD9523_1`
      - AD9523-1
      - Clock generator / divider
-   * - :class:`~adidt.devices.clocks.AD9528` / :class:`AD9528_1`
+   * - :class:`~adidt.devices.clocks.AD9528` / :class:`~adidt.devices.clocks.AD9528_1`
      - AD9528 / AD9528-1
      - Clock + SYSREF provider
    * - :class:`~adidt.devices.clocks.ADF4382`
@@ -59,7 +59,7 @@ Supported hardware (declarative device layer)
    * - :class:`~adidt.devices.converters.AD9680`
      - AD9680
      - 14-bit dual-channel ADC
-   * - :class:`~adidt.devices.converters.AD9144` / :class:`AD9152`
+   * - :class:`~adidt.devices.converters.AD9144` / :class:`~adidt.devices.converters.AD9152`
      - AD9144, AD9152
      - Quad / dual DAC
    * - :class:`~adidt.devices.transceivers.ADRV9009`
