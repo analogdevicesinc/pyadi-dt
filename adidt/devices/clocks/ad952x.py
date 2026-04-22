@@ -258,11 +258,38 @@ class AD9528_1(_AD952xBase):
     ] = Field(default_factory=dict)
 
 
+class AD9528_1_ADRV9371(AD9528_1):
+    """AD9528-1 variant tuned for the ZC706 + ADRV9371 SYSREF pattern.
+
+    Kuiper's working ``zynq-zc706-adv7511-adrv937x`` reference DT
+    configures SYSREF in continuous pattern (mode 0) and includes the
+    PLL loop-filter trims (``adi,rpole2``, ``adi,rzero``,
+    ``adi,cpole1``).  Pattern-mode 1 pulses SYSREF, which trains the
+    Mykonos deframer against an aligned but wrong window and makes
+    ``MYKONOS_jesd204bIlasCheck()`` flag every ILAS field (mask
+    ``0xc7f8``).  The base :class:`AD9528_1` keeps ``pattern-mode = 1``
+    because the ADRV9009 + ZCU102 path relies on it — don't change the
+    base class.
+    """
+
+    dt_header: ClassVar[dict[str, Any]] = {
+        **AD9528_1.dt_header,
+        "adi,sysref-pattern-mode": 0,
+        "adi,rpole2": 0,
+        "adi,rzero": 7,
+        "adi,cpole1": 2,
+    }
+    dt_flags: ClassVar[tuple[str, ...]] = tuple(
+        f for f in AD9528_1.dt_flags if f != "adi,sysref-request-enable"
+    )
+
+
 __all__ = [
     "AD9523_1",
     "AD9523Channel",
     "AD9528",
     "AD9528_1",
+    "AD9528_1_ADRV9371",
     "AD9528Channel",
     "AD9528_1Channel",
 ]

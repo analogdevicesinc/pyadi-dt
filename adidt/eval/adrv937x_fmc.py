@@ -8,7 +8,7 @@ schematic.  The channel-id map mirrors the adrv937x_zc706 XSA profile.
 from __future__ import annotations
 
 from ..devices.base import ClockOutput
-from ..devices.clocks import AD9528_1, AD9528_1Channel
+from ..devices.clocks import AD9528_1_ADRV9371, AD9528_1Channel
 from ..devices.transceivers import ADRV9009
 from .base import EvalBoard
 
@@ -31,7 +31,7 @@ class adrv937x_fmc(EvalBoard):
             cid: AD9528_1Channel(id=cid, **spec)
             for cid, spec in _CLOCK_CHANNEL_MAP.items()
         }
-        self.clock = AD9528_1(
+        self.clock = AD9528_1_ADRV9371(
             label="clk0_ad9528",
             spi_max_hz=10_000_000,
             vcxo_hz=reference_frequency,

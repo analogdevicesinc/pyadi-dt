@@ -5,6 +5,7 @@ from .ad952x import (
     AD9523Channel,
     AD9528,
     AD9528_1,
+    AD9528_1_ADRV9371,
     AD9528_1Channel,
     AD9528Channel,
 )
@@ -18,6 +19,7 @@ __all__ = [
     "AD9528",
     "AD9528Channel",
     "AD9528_1",
+    "AD9528_1_ADRV9371",
     "AD9528_1Channel",
     "ADF4382",
     "ClockChannel",
