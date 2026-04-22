@@ -35,6 +35,8 @@ from adidt.xsa.topology import XsaParser  # noqa: E402
 from test.hw.hw_helpers import (  # noqa: E402
     DEFAULT_OUT_DIR,
     acquire_xsa,
+    assert_ilas_aligned,
+    assert_jesd_links_data,
     assert_no_kernel_faults,
     assert_no_probe_errors,
     check_jesd_framing_plausibility,
@@ -185,17 +187,38 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     print("=== JESD204 TX status (sysfs) ===")
     print(tx_status)
 
-    # Surface AD937x ILAS state directly — the current capture blocker
-    # manifests here as "ILAS mismatch: <mask>" with all 7 framing
-    # fields flagged.  Printed unconditionally so every run shows the
-    # exact mismatch set; flip to ``assert_ilas_aligned(dmesg_txt, …)``
-    # once the profile/HDL framing drift is closed out.
+    # Surface AD937x ILAS state + assert it's clean.  The builder
+    # now emits the full Kuiper-matching topology (xcvrs → AD9528,
+    # phy → JESD cores, RX_OS overlay present), so every ILAS field
+    # should match and all three JESD links should reach
+    # "Link is enabled".
     ilas_report = parse_ilas_status(dmesg_txt)
     print("=== AD937x ILAS report ===")
     print(ilas_report.summary())
     if ilas_report.fields:
         for name in ilas_report.fields:
             print(f"  mismatched: {name}")
+    assert_ilas_aligned(dmesg_txt, context="adrv9371_xsa")
+    assert_jesd_links_data(shell, context="adrv9371_xsa")
+
+    # HDL compile-time framing — read the TPL ADC/DAC/OBS descriptor
+    # registers per
+    # https://analogdevicesinc.github.io/hdl/library/jesd204/ad_ip_jesd204_tpl_{adc,dac}/
+    # Descriptor 1 @ +0x240: [31:24]=F, [23:16]=S, [15:8]=L, [7:0]=M
+    # Descriptor 2 @ +0x244: [15:8]=Np, [7:0]=N
+    print("=== HDL compile-time JESD framing (TPL descriptor regs) ===")
+    print("which devmem: " + shell_out(shell, "which devmem devmem2 busybox 2>/dev/null; busybox | head -1 2>/dev/null"))
+    # Two descriptor words per TPL core: +0x240 and +0x244.
+    # Decoded layout (per ADI HDL docs):
+    #   d1[31:24]=F d1[23:16]=S d1[15:8]=L d1[7:0]=M
+    #   d2[15:8]=Np d2[7:0]=N
+    print(shell_out(shell, (
+        "for base in 0x44a00000 0x44a04000 0x44a08000; do "
+        "  echo \"--- TPL @ $base ---\"; "
+        "  busybox devmem $(printf '0x%x' $((base + 0x240))) 2>&1; "
+        "  busybox devmem $(printf '0x%x' $((base + 0x244))) 2>&1; "
+        "done"
+    )))
 
     # Dump TPL ADC sysfs (enable state, sampling freq, etc.) and DMA
     # controller state.  These surface the most common DMA-stall

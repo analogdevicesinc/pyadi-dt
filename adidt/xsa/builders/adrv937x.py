@@ -15,7 +15,7 @@ from ...model.board_model import (
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import AD9528_1
+from ...devices.clocks import AD9528_1_ADRV9371
 from ...devices.clocks.ad952x import AD9528_1Channel, _GpioLine
 from ...devices.fpga_ip import build_jesd204_overlay_ctx
 from ...model.renderer import BoardModelRenderer
@@ -173,6 +173,13 @@ class ADRV937xBuilder:
             (lbl for lbl in sorted(labels) if "_tx_jesd_tx_axi" in lbl),
             next((lbl for lbl in sorted(labels) if "_tx_jesd" in lbl), None),
         )
+        rx_os_jesd_label = next(
+            (lbl for lbl in sorted(labels) if "_rx_os_jesd_rx_axi" in lbl),
+            next(
+                (lbl for lbl in sorted(labels) if "_rx_os_jesd" in lbl),
+                None,
+            ),
+        )
         if not rx_jesd_label or not tx_jesd_label:
             return None
 
@@ -188,6 +195,29 @@ class ADRV937xBuilder:
         )
         tx_xcvr_label = tx_jesd_label.replace("_jesd_tx_axi", "_xcvr").replace(
             "_tx_jesd", "_tx_xcvr"
+        )
+        rx_os_clkgen_label = (
+            rx_os_jesd_label.replace("_jesd_rx_axi", "_clkgen").replace(
+                "_rx_os_jesd", "_rx_os_clkgen"
+            )
+            if rx_os_jesd_label
+            else None
+        )
+        rx_os_xcvr_label = (
+            rx_os_jesd_label.replace("_jesd_rx_axi", "_xcvr").replace(
+                "_rx_os_jesd", "_rx_os_xcvr"
+            )
+            if rx_os_jesd_label
+            else None
+        )
+        rx_os_core_label = _pick_matching_label(
+            labels,
+            "axi_ad9371_core_rx_obs",
+            ("ad9371", "tpl_core", "rx_os", "adc"),
+        )
+        rx_os_dma_label = next(
+            (lbl for lbl in labels if "_rx_os_dma" in lbl or "_obs_dma" in lbl),
+            None,
         )
 
         # --- TPL core labels (ZC706 sdtgen emits rx_ad9371_tpl_core_adc_tpl_core etc.) ---
@@ -234,7 +264,10 @@ class ADRV937xBuilder:
 
         rx_link_id = int(board_cfg.get("rx_link_id", 1))
         tx_link_id = int(board_cfg.get("tx_link_id", 0))
+        rx_os_link_id = int(board_cfg.get("rx_os_link_id", 2))
         tx_octets_per_frame = int(board_cfg.get("tx_octets_per_frame", 2))
+        rx_os_octets_per_frame = int(board_cfg.get("rx_os_octets_per_frame", 2))
+        rx_os_k = int(board_cfg.get("rx_os_k", 32))
 
         # JESD framing parameters (from pipeline cfg, not board_cfg)
         jesd_cfg = cfg.get("jesd", {})
@@ -245,7 +278,7 @@ class ADRV937xBuilder:
 
         # --- Clock chip (AD9528_1, single-chip path only) ---
         clock_chip_label = "clk0_ad9528"
-        ad9528_dev = AD9528_1(
+        ad9528_dev = AD9528_1_ADRV9371(
             label=clock_chip_label,
             spi_max_hz=10_000_000,
             vcxo_hz=ad9528_vcxo_freq,
@@ -286,23 +319,53 @@ class ADRV937xBuilder:
             reset_gpio=trx_reset_gpio,
             sysref_req_gpio=trx_sysref_req_gpio,
         )
-        trx_clocks_value = (
-            "<&clk0_ad9528 13>, <&clk0_ad9528 1>, <&clk0_ad9528 12>, <&clk0_ad9528 3>"
-        )
-        trx_clock_names_value = (
-            '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"'
-        )
-        # Add the AD9528 sysref-provider link to jesd204-link-ids and
-        # jesd204-inputs so the AD9371 driver's post-running verify
-        # sees a full RX / TX / sysref topology.  Matches the working
-        # Kuiper zc706-adrv9371 reference (RX=1, TX=0, SYSREF=2).
-        ad9528_sysref_link_id = 2
-        trx_link_ids_value = f"{rx_link_id} {tx_link_id} {ad9528_sysref_link_id}"
-        trx_inputs_value = (
-            f"<&{rx_xcvr_label} 0 {rx_link_id}>, "
-            f"<&{tx_xcvr_label} 0 {tx_link_id}>, "
-            f"<&{clock_chip_label} 0 {ad9528_sysref_link_id}>"
-        )
+        # JESD lane-clock references — needed so the Mykonos deframer
+        # checks its profile-derived expected framing against the actual
+        # HDL link clock instead of a silent zero fallback.  Matches
+        # the Kuiper ``zynq-zc706-adv7511-adrv937x`` reference DT.
+        if rx_os_jesd_label and rx_os_xcvr_label and rx_os_clkgen_label:
+            trx_clocks_value = (
+                f"<&{rx_jesd_label}>, <&{tx_jesd_label}>, <&{rx_os_jesd_label}>, "
+                "<&clk0_ad9528 13>, <&clk0_ad9528 1>, "
+                "<&clk0_ad9528 12>, <&clk0_ad9528 3>"
+            )
+            trx_clock_names_value = (
+                '"jesd_rx_clk", "jesd_tx_clk", "jesd_rx_os_clk", '
+                '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"'
+            )
+        else:
+            # Fallback for topologies without an RX_OBS JESD core.
+            trx_clocks_value = (
+                f"<&{rx_jesd_label}>, <&{tx_jesd_label}>, "
+                "<&clk0_ad9528 13>, <&clk0_ad9528 1>, "
+                "<&clk0_ad9528 12>, <&clk0_ad9528 3>"
+            )
+            trx_clock_names_value = (
+                '"jesd_rx_clk", "jesd_tx_clk", '
+                '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"'
+            )
+        # Match Kuiper's working topology: AD9371 → JESD cores → xcvrs
+        # → AD9528 (terminal sysref provider).  AD9371's
+        # jesd204-inputs points at the three JESD cores, not the
+        # xcvrs — the walker traverses the graph via each JESD core's
+        # own ``jesd204-inputs = <xcvr …>`` and then each xcvr's
+        # ``jesd204-inputs = <AD9528 …>``, reaching the sysref
+        # provider through the correct chain.
+        if rx_os_jesd_label and rx_os_xcvr_label:
+            trx_link_ids_value = f"{tx_link_id} {rx_link_id} {rx_os_link_id}"
+            trx_inputs_value = (
+                f"<&{rx_jesd_label} 0 {rx_link_id}>, "
+                f"<&{rx_os_jesd_label} 0 {rx_os_link_id}>, "
+                f"<&{tx_jesd_label} 0 {tx_link_id}>"
+            )
+        else:
+            ad9528_sysref_link_id = 2
+            trx_link_ids_value = f"{rx_link_id} {tx_link_id} {ad9528_sysref_link_id}"
+            trx_inputs_value = (
+                f"<&{rx_xcvr_label} 0 {rx_link_id}>, "
+                f"<&{tx_xcvr_label} 0 {tx_link_id}>, "
+                f"<&{clock_chip_label} 0 {ad9528_sysref_link_id}>"
+            )
         profile_props = tuple(
             board_cfg.get("trx_profile_props", _DEFAULT_MYKONOS_PROFILE_PROPS)
         )
@@ -339,11 +402,21 @@ class ADRV937xBuilder:
                 f"<&{rx_clkgen_label}>, <&{rx_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
-            clock_output_name=None,
+            clock_output_name="jesd_rx_lane_clk",
             f=rx_f,
             k=rx_k,
+            # JESD core → xcvr (matches Kuiper ref).
             jesd204_inputs=f"{rx_xcvr_label} 0 {rx_link_id}",
         )
+        # Converter resolution / control bits match Kuiper's working
+        # reference DT (``N=14, CS=2``), which reflects the AD9371's
+        # physical 14-bit sample + 2 control bits packed into the
+        # 16-bit serdes slot.  The HDL TPL descriptor register
+        # advertises ``N=16, CS=0`` separately (FPGA-side reporting);
+        # the ADI driver uses these DT values for the ILAS sequence
+        # it transmits, so they must match what the Mykonos deframer
+        # derives from its profile — not what the HDL TPL register
+        # advertises.
         tx_jesd_overlay = build_jesd204_overlay_ctx(
             label=tx_jesd_label,
             direction="tx",
@@ -352,7 +425,7 @@ class ADRV937xBuilder:
                 f"<&{tx_clkgen_label}>, <&{tx_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
-            clock_output_name=None,
+            clock_output_name="jesd_tx_lane_clk",
             f=tx_octets_per_frame,
             k=tx_k,
             jesd204_inputs=f"{tx_xcvr_label} 0 {tx_link_id}",
@@ -360,6 +433,40 @@ class ADRV937xBuilder:
             converters_per_device=tx_m,
             bits_per_sample=16,
             control_bits_per_sample=2,
+        )
+        # Full RX_OBS JESD overlay (compatible + jesd204-device +
+        # jesd204-inputs → rx_os_xcvr).  Now that the xcvrs chain to
+        # AD9528 via their own ``jesd204-inputs``, the topology walker
+        # reaches the sysref provider through the xcvr chain and
+        # AD9528 stays probed.
+        rx_os_jesd_overlay = (
+            build_jesd204_overlay_ctx(
+                label=rx_os_jesd_label,
+                direction="rx",
+                clocks_str=(
+                    f"<&{ps_clk_label} {ps_clk_index}>, "
+                    f"<&{rx_os_clkgen_label}>, <&{rx_os_xcvr_label} 0>"
+                ),
+                clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
+                clock_output_name="jesd_rx_os_lane_clk",
+                f=rx_os_octets_per_frame,
+                k=rx_os_k,
+                jesd204_inputs=f"{rx_os_xcvr_label} 0 {rx_os_link_id}",
+            )
+            if rx_os_jesd_label and rx_os_xcvr_label and rx_os_clkgen_label
+            else None
+        )
+        rx_os_clkgen_node = (
+            (
+                f"\t&{rx_os_clkgen_label} {{\n"
+                '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
+                "\t\t#clock-cells = <0>;\n"
+                f'\t\tclock-output-names = "{rx_os_clkgen_label}";\n'
+                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
+                "\t};"
+            )
+            if rx_os_clkgen_label
+            else None
         )
 
         jesd_links = [
@@ -384,20 +491,18 @@ class ADRV937xBuilder:
         ]
 
         # --- Raw XCVR overlay nodes ---
-        # The ``adi,sys-clk-select = <0>`` + ``adi,out-clk-select =
-        # <3>`` + ``adi,use-lpm-enable`` triplet is required by the
-        # axi-adxcvr driver to bind — without them the platform
-        # device sits in deferred probe on this build.  Clocks are
-        # kept pointing at the clkgen (through-path) and the
-        # ``div40`` shape is preserved to minimise risk of a kernel
-        # hang (the direct-AD9528 rewire attempted in commit 607663b
-        # did match the reference DT structurally but hung the
-        # kernel post-JESD).
+        # Kuiper's working reference wires all three xcvrs directly to
+        # AD9528 channel 1 (FMC_CLK) as their single ``conv`` clock
+        # and declares ``jesd204-inputs = <&AD9528 0 link_id>`` on
+        # each xcvr so the jesd204-topology walker reaches the
+        # AD9528 sysref-provider via the xcvr chain.  TX uses
+        # ``sys-clk-select = <3>`` (not 0) and omits
+        # ``adi,use-lpm-enable``.
         rx_xcvr_node = (
             f"\t&{rx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = {rx_xcvr_conv_clk_ref}, {rx_xcvr_div40_ref};\n"
-            '\t\tclock-names = "conv", "div40";\n'
+            f"\t\tclocks = <&{clock_chip_label} 1>;\n"
+            '\t\tclock-names = "conv";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "rx_gt_clk", "rx_out_clk";\n'
             "\t\tadi,sys-clk-select = <0>;\n"
@@ -405,21 +510,41 @@ class ADRV937xBuilder:
             "\t\tadi,use-lpm-enable;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {rx_link_id}>;\n"
             "\t};"
         )
         tx_xcvr_node = (
             f"\t&{tx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = {tx_xcvr_conv_clk_ref}, {tx_xcvr_div40_ref};\n"
-            '\t\tclock-names = "conv", "div40";\n'
+            f"\t\tclocks = <&{clock_chip_label} 1>;\n"
+            '\t\tclock-names = "conv";\n'
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "tx_gt_clk", "tx_out_clk";\n'
-            "\t\tadi,sys-clk-select = <0>;\n"
+            "\t\tadi,sys-clk-select = <3>;\n"
             "\t\tadi,out-clk-select = <3>;\n"
-            "\t\tadi,use-lpm-enable;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {tx_link_id}>;\n"
             "\t};"
+        )
+        rx_os_xcvr_node = (
+            (
+                f"\t&{rx_os_xcvr_label} {{\n"
+                '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
+                f"\t\tclocks = <&{clock_chip_label} 1>;\n"
+                '\t\tclock-names = "conv";\n'
+                "\t\t#clock-cells = <1>;\n"
+                '\t\tclock-output-names = "rx_os_gt_clk", "rx_os_out_clk";\n'
+                "\t\tadi,sys-clk-select = <0>;\n"
+                "\t\tadi,out-clk-select = <3>;\n"
+                "\t\tadi,use-lpm-enable;\n"
+                "\t\tjesd204-device;\n"
+                "\t\t#jesd204-cells = <2>;\n"
+                f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {rx_os_link_id}>;\n"
+                "\t};"
+            )
+            if rx_os_xcvr_label
+            else None
         )
 
         # --- TPL core first pass (compatible + dma) ---
@@ -453,6 +578,31 @@ class ADRV937xBuilder:
             f"\t\tclocks = <&{phy_label} 2>;\n"
             '\t\tclock-names = "sampl_clk";\n'
             "\t};"
+        )
+        # RX_OBS TPL core overlay — converts sdtgen's
+        # ``xlnx,ad-ip-jesd204-tpl-adc-1.0`` into the ADI observation
+        # driver (``adi,axi-ad9371-obs-1.0``) that Kuiper's reference
+        # DT uses.  Without this, the obs path stays bound to the
+        # Xilinx generic driver, Mykonos's ``ObsRxFramer`` never
+        # receives a valid link clock, and ILAS verification fails on
+        # all 9 fields (mask 0xc7f8).  Xcvr / clkgen / JESD overlays
+        # for the obs path are deliberately NOT added here — they
+        # cascade into jesd204-topology-walker conflicts with AD9528
+        # on this branch.
+        rx_os_core_overlay = (
+            (
+                f"\t&{rx_os_core_label} {{\n"
+                "\t\t/delete-property/ compatible;\n"
+                '\t\tcompatible = "adi,axi-ad9371-obs-1.0";\n'
+                f"\t\tdmas = <&{rx_os_dma_label} 0>;\n"
+                '\t\tdma-names = "rx";\n'
+                f"\t\tspibus-connected = <&{phy_label}>;\n"
+                f"\t\tclocks = <&{phy_label} 1>;\n"
+                '\t\tclock-names = "sampl_clk";\n'
+                "\t};"
+            )
+            if rx_os_core_label and rx_os_dma_label
+            else None
         )
 
         # --- Clkgen overlay nodes ---
@@ -491,6 +641,14 @@ class ADRV937xBuilder:
             rx_core_first,
             tx_core_first,
         ]
+        if rx_os_clkgen_node:
+            extra_before.append(rx_os_clkgen_node)
+        if rx_os_xcvr_node:
+            extra_before.append(rx_os_xcvr_node)
+        if rx_os_jesd_overlay:
+            extra_before.append(rx_os_jesd_overlay)
+        if rx_os_core_overlay:
+            extra_before.append(rx_os_core_overlay)
         extra_after: list[str] = [
             rx_core_second,
             tx_core_second,
