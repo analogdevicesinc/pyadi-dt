@@ -317,6 +317,12 @@ _DMESG_BENIGN_SUBSTRINGS = (
     "ffcb0000.watchdog",  # Cadence WDT — unroutable clocks
     "fd4a0000.display",   # ZynqMP DisplayPort — no monitor + DPMS pipe
     "fd0c0000.ahci",      # Ceva AHCI/SATA — not routed on ZCU102
+    # Kuiper's prebuilt ``simpleImage.vcu118_fmcdaq3`` declares a
+    # secondary AXI UART Lite at 0x41400000 whose DT entry is
+    # missing ``current-speed``; the driver probe fails with -EINVAL
+    # and this never affects the bring-up path (main UART at
+    # 0x40600000 works and drives the serial console).
+    "41400000.serial",
 )
 
 # Hard-fail patterns — these indicate a genuine kernel fault.
