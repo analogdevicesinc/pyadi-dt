@@ -136,7 +136,9 @@ Adding a new hardware node
 One-time setup:
 
 1. Stand up an exporter that registers a new place ``<name>`` with
-   the coordinator at ``10.0.0.41:20408``.  Verify with
+   the coordinator at ``10.0.0.41:20408`` — install it as a systemd
+   unit via ``scripts/labgrid-exporter/install.sh``
+   (see :ref:`exporter-systemd`).  Verify with
    ``labgrid-client -x 10.0.0.41:20408 places``.
 2. Register a new self-hosted runner with labels
    ``self-hosted,hw-<name>`` on the host physically attached to the
@@ -286,6 +288,69 @@ Coordinator-mode tests additionally require SSH key-auth from the
 ``MassStorageDriver`` SSH-proxy path) and write access to
 ``~/.cache/adidt/kernel/`` for the kernel image cache.
 
+.. _exporter-systemd:
+
+Exporter systemd service
+------------------------
+
+Each hw-node also runs a ``labgrid-exporter`` process that publishes
+its local hardware resources to the coordinator.  Production hosts
+run it as a systemd template unit — ``labgrid-exporter@<place>`` —
+installed by ``scripts/labgrid-exporter/install.sh``:
+
+.. code-block:: bash
+
+   # On the exporter host (bq, mini2, nuc, ...):
+   cd /path/to/pyadi-dt
+   sudo scripts/labgrid-exporter/install.sh <place> <exporter-yaml>
+
+   # Concrete example — nuc:
+   sudo scripts/labgrid-exporter/install.sh nuc \
+       /home/tcollins/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml
+
+The installer writes two files and enables the unit:
+
+- ``/etc/systemd/system/labgrid-exporter@.service`` — the template
+  unit.  ``User=`` is baked in at install time (defaults to
+  ``$SUDO_USER``; override with ``--user``).
+- ``/etc/default/labgrid-exporter-<place>`` — per-instance env
+  (``LG_EXPORTER_BIN``, ``LG_COORDINATOR``, ``LG_EXPORTER_NAME``,
+  ``LG_EXPORTER_YAML``, ``PATH``).
+
+Install-time options:
+
+- ``--coordinator ADDR``   — default ``10.0.0.41:20408``.
+- ``--user USER``          — default ``$SUDO_USER``.
+- ``--bin PATH``           — default auto-detected via ``command -v``
+  as the service user (picks up the
+  ``~/.local/share/uv/tools/labgrid/bin/labgrid-exporter`` that
+  ``uv tool install labgrid`` produces).
+- ``--ser2net-path DIR``   — prepend DIR to the service PATH so
+  ``labgrid-exporter`` finds the right ``ser2net`` binary (e.g.
+  ``$HOME/opt/ser2net-4.6.1/sbin``).  Omit if ``ser2net`` on the
+  system PATH is the one you want.
+- ``--no-start``           — install files but don't
+  ``enable --now``.
+
+Day-to-day operation:
+
+.. code-block:: bash
+
+   # After a yaml change:
+   sudo systemctl restart labgrid-exporter@<place>
+
+   # Live logs:
+   journalctl -u labgrid-exporter@<place> -f
+
+   # Unit status:
+   systemctl status labgrid-exporter@<place>
+
+``Restart=on-failure`` brings the exporter back after a crash, and
+``multi-user.target`` is the enable target, so the exporter also
+starts automatically after a reboot.  Re-running ``install.sh`` is
+idempotent — safe to use to pick up a new coordinator address,
+binary path, or yaml file.
+
 Fork-PR approval gate
 ---------------------
 
@@ -397,8 +462,12 @@ Troubleshooting
 
 **One node's jobs skip while others run.**
   The corresponding exporter is not advertising its place to the
-  coordinator.  SSH to that node, restart the exporter, and verify
-  the place shows up in ``labgrid-client places``.
+  coordinator.  SSH to that node and restart the unit
+  (``sudo systemctl restart labgrid-exporter@<place>`` — see
+  :ref:`exporter-systemd`), then verify the place shows up in
+  ``labgrid-client places``.  Check
+  ``journalctl -u labgrid-exporter@<place> -n 50`` if the restart
+  alone doesn't recover it.
 
 **``hw-direct`` fails with "LG_DIRECT_ENV is not set".**
   The runner's ``~/actions-runner/.env`` does not define
@@ -421,8 +490,9 @@ Troubleshooting
   Check the ``uart_log_kernel_banner_attempt1_*.txt`` artifact — if
   it's empty, the first power-on was silent (the pre-emptive
   cold-cycle should have handled this, so getting here usually means
-  the serial exporter on the hw node is misbehaving).  Restart
-  ``ser2net`` on the exporter host.
+  the serial exporter on the hw node is misbehaving).  Restart the
+  exporter — ``sudo systemctl restart labgrid-exporter@<place>`` —
+  which also respawns ``ser2net``.
 
 **Board left powered on after a local test run.**
   The ``board`` fixture in ``test/hw/conftest.py`` powers the board
