@@ -33,34 +33,48 @@ if not (os.environ.get("LG_COORDINATOR") or os.environ.get("LG_ENV")):
         allow_module_level=True,
     )
 
+from test.hw.hw_helpers import (  # noqa: E402
+    DEFAULT_OUT_DIR,
+    assert_no_kernel_faults,
+    assert_no_probe_errors,
+    assert_rx_capture_valid,
+    collect_dmesg,
+    open_iio_context,
+)
+
 
 @pytest.mark.lg_feature(["fmcdaq3", "vcu118"])
-def test_fmcdaq3_vcu118_boot_hw(target):
+def test_fmcdaq3_vcu118_boot_hw(board):
     """Boot FMCDAQ3+VCU118 with the prebuilt Kuiper image and verify IIO."""
-    shell = _boot_and_get_shell(target)
-    _assert_probed_drivers(shell)
+    out_dir = DEFAULT_OUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    board.transition("shell")
+    shell = board.target.get_driver("ADIShellDriver")
+
+    dmesg_txt = collect_dmesg(
+        shell,
+        out_dir,
+        label="fmcdaq3_vcu118",
+        grep_pattern="ad9680|ad9152|ad9528|jesd204|probe|failed|error",
+    )
+    assert_no_kernel_faults(dmesg_txt)
+    assert_no_probe_errors(dmesg_txt)
+
+    lowered = dmesg_txt.lower()
+    assert "ad9680" in lowered, "AD9680 driver messages not seen in dmesg"
+    assert "ad9152" in lowered, "AD9152 driver messages not seen in dmesg"
+
     _assert_iio_devices(shell)
 
-
-def _boot_and_get_shell(target):
-    """Drive ``BootFabric`` through ``powered_off`` → ``shell`` and return shell."""
-    strategy = target.get_driver("Strategy")
-    strategy.transition("powered_off")
-    strategy.transition("shell")
-    return target.get_driver("ADIShellDriver")
-
-
-def _assert_probed_drivers(shell) -> None:
-    """Fail unless dmesg shows AD9680 / AD9152 / AD9528 / JESD driver probes."""
-    out = shell.run_check(
-        "dmesg | grep -Ei 'ad9680|ad9152|ad9528|jesd204|fail|error' | tail -n 200; true"
+    # Data-path smoke test: capture a real AD9680 RX buffer.
+    ctx, _ = open_iio_context(shell)
+    assert_rx_capture_valid(
+        ctx,
+        ("axi-ad9680-core-lpc", "axi-ad9680-hpc", "axi-ad9680-rx-hpc"),
+        n_samples=2**12,
+        context="fmcdaq3 boot",
     )
-    dmesg = "\n".join(out) if isinstance(out, list) else str(out)
-    print("\n=== FMCDAQ3 probe-relevant dmesg ===")
-    print(dmesg)
-    print("====================================")
-    assert "ad9680" in dmesg.lower(), "AD9680 driver messages not seen in dmesg"
-    assert "ad9152" in dmesg.lower(), "AD9152 driver messages not seen in dmesg"
 
 
 def _assert_iio_devices(shell) -> None:

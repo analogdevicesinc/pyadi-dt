@@ -35,6 +35,8 @@ from test.hw.hw_helpers import (  # noqa: E402
     acquire_xsa,
     assert_jesd_links_data,
     assert_no_kernel_faults,
+    assert_no_probe_errors,
+    assert_rx_capture_valid,
     collect_dmesg,
     compile_dts_to_dtb,
     deploy_and_boot,
@@ -184,6 +186,7 @@ def test_ad9081_zcu102_xsa_hw(board, built_kernel_image_zynqmp, tmp_path):
 
     # --- 7. Verify: kernel probe + IIO context + JESD DATA state ---
     assert_no_kernel_faults(dmesg_txt)
+    assert_no_probe_errors(dmesg_txt)
     assert "AD9081 Rev." in dmesg_txt or "probed ADC AD9081" in dmesg_txt, (
         "AD9081 probe signature was not found in kernel dmesg output"
     )
@@ -210,3 +213,11 @@ def test_ad9081_zcu102_xsa_hw(board, built_kernel_image_zynqmp, tmp_path):
     )
     print(f"$ cat .../84a90000.axi?jesd204?rx/status\n{rx_status}")
     print(f"$ cat .../84b90000.axi?jesd204?tx/status\n{tx_status}")
+
+    # Data-path smoke test: capture a real buffer and verify samples flow.
+    assert_rx_capture_valid(
+        ctx,
+        ("axi-ad9081-rx-hpc", "ad_ip_jesd204_tpl_adc"),
+        n_samples=2**12,
+        context="ad9081 xsa",
+    )
