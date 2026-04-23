@@ -38,8 +38,11 @@ jobs:
             ${{env.DOCKER_IMAGE}} tail -f /dev/null
 
     - name: Install Python dependencies
+      # python3-dev is needed for docplex's sdist install path, which
+      # builds an old numpy (1.26.4) from source when no matching arm64
+      # wheel is available; without Python.h the numpy build fails.
       run: |
-        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "python3 -m pip install --upgrade pip &&  pip install '.[test]'"
+        docker exec ${{env.CONTAINER_BASE_NAME}}-${{env.ARCHITECTURE}} sh -c "apt-get update && apt-get install -y --no-install-recommends python3-dev && python3 -m pip install --upgrade pip && pip install '.[test]'"
 
     - name: Run tests
       run: |
