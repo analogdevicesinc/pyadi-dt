@@ -311,19 +311,32 @@ def test_build_adrv9009_includes_top_device_link_ids(cfg):
     assert 'clock-names = "s_axi_aclk", "device_clk", "lane_clk";' in merged
     assert "adi,octets-per-frame = <4>;" in merged
     assert "adi,converters-per-device = <8>;" in merged
-    assert 'clock-names = "conv", "div40";' in merged
+    # Single-chip ADRV9009 (AD9528-based ZC706/ZCU102) xcvrs use a single
+    # "conv" reference from AD9528 ch1, matching production.  The dual
+    # "conv" + "div40" shape is FMComms8-only (see
+    # test_build_adrv9009_fmcomms8_dual_phy).
+    assert 'clock-names = "conv";' in merged
+    assert 'clock-names = "conv", "div40";' not in merged
     assert "&misc_clk_0" in merged
     assert "clock-frequency = <245760000>;" in merged
     assert "clk0_ad9528: ad9528-1@0" in merged
     assert "adi,vcxo-freq = <122880000>;" in merged
     assert "ad9528_0_c13: channel@13" in merged
     assert 'adi,extended-name = "DEV_CLK";' in merged
+    # trx_clocks prepends the three JESD lane-clock inputs ahead of the
+    # AD9528 dev/fmc/sysref channels so the adrv9009-phy driver can
+    # resolve its "jesd_{rx,rx_os,tx}_clk" clock-names (the framework
+    # waits on these during link setup).  The AD9528-channel suffix
+    # stays in its original order.
     assert (
-        "clocks = <&clk0_ad9528 13>, <&clk0_ad9528 1>, <&clk0_ad9528 12>, <&clk0_ad9528 3>;"
+        "clocks = <&axi_adrv9009_rx_jesd_rx_axi>, <&axi_adrv9009_rx_os_jesd_rx_axi>, "
+        "<&axi_adrv9009_tx_jesd_tx_axi>, <&clk0_ad9528 13>, <&clk0_ad9528 1>, "
+        "<&clk0_ad9528 12>, <&clk0_ad9528 3>;"
         in merged
     )
     assert (
-        'clock-names = "dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk";'
+        'clock-names = "jesd_rx_clk", "jesd_rx_os_clk", "jesd_tx_clk", '
+        '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk";'
         in merged
     )
 
@@ -1044,8 +1057,14 @@ def test_build_adrv9009_applies_board_overrides(cfg):
     assert "sysref-req-gpios = <&gpio 211 0>;" in merged
     assert "adi,vcxo-freq = <100000000>;" in merged
     assert "jesd204-link-ids = <9 8 7>;" in merged
+    # The adrv9009-phy's jesd204-inputs now routes RX/RX_OS through the
+    # axi-jesd204 RX cores (not the xcvrs) and TX through the TX TPL DAC
+    # core.  This matches the Kuiper production graph and is required
+    # for the framework to walk all jesd204-devices during link setup.
     assert (
-        "jesd204-inputs = <&axi_adrv9009_rx_xcvr 0 9>, <&axi_adrv9009_rx_os_xcvr 0 8>, <&axi_adrv9009_tx_xcvr 0 7>;"
+        "jesd204-inputs = <&axi_adrv9009_rx_jesd_rx_axi 0 9>, "
+        "<&axi_adrv9009_rx_os_jesd_rx_axi 0 8>, "
+        "<&axi_adrv9009_core_tx 0 7>;"
         in merged
     )
     assert "adi,octets-per-frame = <5>;" in merged
