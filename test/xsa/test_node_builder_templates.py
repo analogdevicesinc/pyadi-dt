@@ -168,7 +168,11 @@ def test_build_adrv9009_nodes_standard_has_tx_jesd_converter_resolution():
     result = _build_adrv9009_via_builder(topology, cfg)
     text = "\n".join(result)
     assert "adi,octets-per-frame" in text
-    assert "adi,converter-resolution = <14>" in text
+    # ADRV9009 Talise DACs are 16-bit (production Kuiper DT uses
+    # converter-resolution=16 / control-bits-per-sample=0).  An earlier
+    # revision of this builder emitted 14/2 by mistake.
+    assert "adi,converter-resolution = <16>" in text
+    assert "adi,control-bits-per-sample = <0>" in text
 
 
 def test_build_adrv9009_nodes_standard_has_phy_node():

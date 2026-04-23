@@ -17,6 +17,7 @@ from ...model.board_model import (
     JesdLinkModel,
 )
 from ...devices.clocks import AD9528_1, AD9528_1Channel
+from ...devices.clocks.ad952x import _GpioLine
 from ..._utils import coerce_board_int, fmt_hz
 from ...devices.fpga_ip import (
     build_adxcvr_ctx,
@@ -411,24 +412,28 @@ class ADRV9009Builder:
         rx_os_device_clk_ref = (
             f"<&{rx_os_clkgen_label}>" if has_rx_os_clkgen else rx_os_clkgen_ref
         )
-        rx_xcvr_conv_clk_ref = (
-            f"<&{rx_clkgen_label}>" if has_rx_clkgen else rx_xcvr_clkgen_ref
-        )
-        rx_xcvr_div40_ref = (
-            f"<&{rx_clkgen_label}>" if has_rx_clkgen else rx_xcvr_div40_clk_ref
-        )
-        tx_xcvr_conv_clk_ref = (
-            f"<&{tx_clkgen_label}>" if has_tx_clkgen else tx_xcvr_clkgen_ref
-        )
-        tx_xcvr_div40_ref = (
-            f"<&{tx_clkgen_label}>" if has_tx_clkgen else tx_xcvr_div40_clk_ref
-        )
-        rx_os_xcvr_conv_clk_ref = (
-            f"<&{rx_os_clkgen_label}>" if has_rx_os_clkgen else rx_os_xcvr_clkgen_ref
-        )
-        rx_os_xcvr_div40_ref = (
-            f"<&{rx_os_clkgen_label}>" if has_rx_os_clkgen else rx_os_xcvr_div40_clk_ref
-        )
+        # The xcvr "conv" clock is the GT reference (QPLL input).  On
+        # single-chip ZC706/ZCU102 + ADRV9009 (AD9528-based) production
+        # wires this directly from AD9528 ch1 — a single "conv" input
+        # with no "div40".  Routing it through axi_clkgen pinned the MMCM
+        # output at 122.88 MHz for the GT, so the framework's
+        # ``clk_set_rate(device_clk, 61.44 MHz)`` on TX/RX_OS returned
+        # -EBUSY and the link stayed "Link is disabled".  The dual-chip
+        # FMComms8 path is different: it uses distinct HMC7044 channels
+        # for ``conv`` and ``div40`` (e.g. ch5/ch9 for RX) and needs both
+        # clocks declared, so we preserve the legacy dual-clock shape
+        # there.
+        rx_xcvr_conv_clk_ref = rx_xcvr_clkgen_ref
+        tx_xcvr_conv_clk_ref = tx_xcvr_clkgen_ref
+        rx_os_xcvr_conv_clk_ref = rx_os_xcvr_clkgen_ref
+        if is_fmcomms8:
+            rx_xcvr_div40_ref: str | None = rx_xcvr_div40_clk_ref
+            tx_xcvr_div40_ref: str | None = tx_xcvr_div40_clk_ref
+            rx_os_xcvr_div40_ref: str | None = rx_os_xcvr_div40_clk_ref
+        else:
+            rx_xcvr_div40_ref = None
+            tx_xcvr_div40_ref = None
+            rx_os_xcvr_div40_ref = None
 
         # --- Link IDs and JESD inputs ---
         rx_link_id = int(board_cfg.get("rx_link_id", 1))
@@ -438,13 +443,32 @@ class ADRV9009Builder:
         rx_os_octets_per_frame = int(board_cfg.get("rx_os_octets_per_frame", 2))
 
         trx_link_ids = [str(rx_link_id), str(tx_link_id)]
-        trx_jesd_inputs = [
-            f"<&{rx_xcvr_label} 0 {rx_link_id}>",
-            f"<&{tx_xcvr_label} 0 {tx_link_id}>",
-        ]
-        if rx_os_jesd_label:
-            trx_link_ids.insert(1, str(rx_os_link_id))
-            trx_jesd_inputs.insert(1, f"<&{rx_os_xcvr_label} 0 {rx_os_link_id}>")
+        # adrv9009-phy is the JESD framework top-device; its
+        # ``jesd204-inputs`` defines the topology graph the framework
+        # walks to find downstream devices.  For the ZC706 ADRV9009
+        # path (non-FMComms8) we point at the AXI JESD cores (RX,
+        # RX_OS) and the TX TPL DAC to mirror the Kuiper production
+        # topology: AD9528 → xcvr → axi-jesd204 → (RX: phy, TX: TX TPL
+        # → phy).  Without the TX TPL DAC in the topology the
+        # framework can't call clk_set_rate on the TX clkgen for the
+        # per-link rate (61.44 MHz vs 122.88 MHz for RX).
+        if not is_fmcomms8 and rx_jesd_label and tx_jesd_label:
+            trx_jesd_inputs = [
+                f"<&{rx_jesd_label} 0 {rx_link_id}>",
+                f"<&{tx_core_label} 0 {tx_link_id}>",
+            ]
+            if rx_os_jesd_label:
+                trx_link_ids.insert(1, str(rx_os_link_id))
+                trx_jesd_inputs.insert(1, f"<&{rx_os_jesd_label} 0 {rx_os_link_id}>")
+        else:
+            # FMComms8 / fallback: keep the original xcvr-pointing topology.
+            trx_jesd_inputs = [
+                f"<&{rx_xcvr_label} 0 {rx_link_id}>",
+                f"<&{tx_xcvr_label} 0 {tx_link_id}>",
+            ]
+            if rx_os_jesd_label:
+                trx_link_ids.insert(1, str(rx_os_link_id))
+                trx_jesd_inputs.insert(1, f"<&{rx_os_xcvr_label} 0 {rx_os_link_id}>")
 
         trx_clock_names = [
             '"dev_clk"',
@@ -453,6 +477,25 @@ class ADRV9009Builder:
             '"sysref_fmc_clk"',
         ]
 
+        # Prepend JESD lane-clock refs so the adrv9009 driver defers
+        # probe (and FSM start) until axi-jesd204-{rx,tx,rx_os} have
+        # bound and registered their lane clocks.  Without these the
+        # adrv9009 starts the FSM as soon as AD9528 is ready, which can
+        # complete `opt_post_running_stage` BEFORE axi-jesd204 platform
+        # devices even probe; a later axi_jesd204_rx_probe then calls
+        # jesd204_fsm_start on a link in opt_post_running and crashes
+        # with a NULL deref in jesd204_validate_lnk_state.  Matches the
+        # Kuiper production zynq-zc706-adv7511-adrv9009 DT.
+        if not is_fmcomms8 and rx_jesd_label and tx_jesd_label:
+            jesd_clock_refs = [f"<&{rx_jesd_label}>", f"<&{tx_jesd_label}>"]
+            jesd_clock_names = ['"jesd_rx_clk"', '"jesd_tx_clk"']
+            if rx_os_jesd_label:
+                jesd_clock_refs.insert(1, f"<&{rx_os_jesd_label}>")
+                jesd_clock_names.insert(1, '"jesd_rx_os_clk"')
+            trx_clocks = jesd_clock_refs + trx_clocks
+            trx1_clocks = jesd_clock_refs + trx1_clocks
+            trx_clock_names = jesd_clock_names + trx_clock_names
+
         trx_clocks_value = ", ".join(trx_clocks)
         trx1_clocks_value = ", ".join(trx1_clocks) if is_fmcomms8 else trx_clocks_value
         trx_clock_names_value = ", ".join(trx_clock_names)
@@ -460,18 +503,126 @@ class ADRV9009Builder:
         trx_inputs_value = ", ".join(trx_jesd_inputs)
 
         # --- Profile properties ---
-        default_trx_profile_props = [
-            "adi,rx-profile-rx-fir-num-fir-coefs = <48>;",
-            "adi,rx-profile-rx-fir-coefs = /bits/ 16 <(-2) (23) (46) (-17) (-104) (10) (208) (23) (-370) (-97) (607) (240) (-942) (-489) (1407) (910) (-2065) (-1637) (3058) (2995) (-4912) (-6526) (9941) (30489) (30489) (9941) (-6526) (-4912) (2995) (3058) (-1637) (-2065) (910) (1407) (-489) (-942) (240) (607) (-97) (-370) (23) (208) (10) (-104) (-17) (46) (23) (-2)>;",
-            "adi,rx-profile-rx-adc-profile = /bits/ 16 <182 142 173 90 1280 982 1335 96 1369 48 1012 18 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
-            "adi,orx-profile-rx-fir-num-fir-coefs = <24>;",
-            "adi,orx-profile-rx-fir-coefs = /bits/ 16 <(-10) (7) (-10) (-12) (6) (-12) (16) (-16) (1) (63) (-431) (17235) (-431) (63) (1) (-16) (16) (-12) (6) (-12) (-10) (7) (-10) (0)>;",
-            "adi,orx-profile-orx-low-pass-adc-profile = /bits/ 16 <185 141 172 90 1280 942 1332 90 1368 46 1016 19 48 48 37 208 0 0 0 0 52 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
-            "adi,orx-profile-orx-band-pass-adc-profile = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0>;",
-            "adi,orx-profile-orx-merge-filter = /bits/ 16 <0 0 0 0 0 0 0 0 0 0 0 0>;",
-            "adi,tx-profile-tx-fir-num-fir-coefs = <40>;",
-            "adi,tx-profile-tx-fir-coefs = /bits/ 16 <(-14) (5) (-9) (6) (-4) (19) (-29) (27) (-30) (46) (-63) (77) (-103) (150) (-218) (337) (-599) (1266) (-2718) (19537) (-2718) (1266) (-599) (337) (-218) (150) (-103) (77) (-63) (46) (-30) (27) (-29) (19) (-4) (6) (-9) (5) (-14) (0)>;",
-            "adi,tx-profile-loop-back-adc-profile = /bits/ 16 <206 132 168 90 1280 641 1307 53 1359 28 1039 30 48 48 37 210 0 0 0 0 53 0 7 6 42 0 7 6 42 0 25 27 0 0 25 27 0 0 165 44 31 905>;",
+        # Talise framer/deframer config per-link.  Without these the
+        # Talise driver uses built-in defaults that may not match the
+        # HDL's compile-time JESD link parameters, causing ILAS to fail
+        # and the AXI JESD core's ``status`` sysfs to report
+        # ``Link is disabled`` even though the framework FSM reaches
+        # ``opt_post_running_stage``.  Values lifted verbatim from the
+        # Kuiper production ``zynq-zc706-adv7511-adrv9009`` DT.
+        # framer-a → RX (M=4 L=2 F=4 Np=16 K=32)
+        # framer-b → RX_OS (M=2 L=2 F=2 Np=16 K=32)
+        # deframer-a → TX (M=4 L=4 F=2 Np=16 K=32)
+        default_jesd_framer_deframer_props = [
+            'adi,jesd204-framer-a-bank-id = <0x01>;',
+            'adi,jesd204-framer-a-device-id = <0x00>;',
+            'adi,jesd204-framer-a-lane0-id = <0x00>;',
+            'adi,jesd204-framer-a-m = <0x04>;',
+            'adi,jesd204-framer-a-k = <0x20>;',
+            'adi,jesd204-framer-a-f = <0x04>;',
+            'adi,jesd204-framer-a-np = <0x10>;',
+            'adi,jesd204-framer-a-scramble = <0x01>;',
+            'adi,jesd204-framer-a-external-sysref = <0x01>;',
+            'adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;',
+            'adi,jesd204-framer-a-serializer-lane-crossbar = <0xe4>;',
+            'adi,jesd204-framer-a-lmfc-offset = <0x1f>;',
+            'adi,jesd204-framer-a-new-sysref-on-relink = <0x00>;',
+            'adi,jesd204-framer-a-syncb-in-select = <0x00>;',
+            'adi,jesd204-framer-a-over-sample = <0x00>;',
+            'adi,jesd204-framer-a-syncb-in-lvds-mode = <0x01>;',
+            'adi,jesd204-framer-a-syncb-in-lvds-pn-invert = <0x00>;',
+            'adi,jesd204-framer-a-enable-manual-lane-xbar = <0x00>;',
+            'adi,jesd204-framer-b-bank-id = <0x00>;',
+            'adi,jesd204-framer-b-device-id = <0x00>;',
+            'adi,jesd204-framer-b-lane0-id = <0x00>;',
+            'adi,jesd204-framer-b-m = <0x02>;',
+            'adi,jesd204-framer-b-k = <0x20>;',
+            'adi,jesd204-framer-b-f = <0x02>;',
+            'adi,jesd204-framer-b-np = <0x10>;',
+            'adi,jesd204-framer-b-scramble = <0x01>;',
+            'adi,jesd204-framer-b-external-sysref = <0x01>;',
+            'adi,jesd204-framer-b-serializer-lanes-enabled = <0x0c>;',
+            'adi,jesd204-framer-b-serializer-lane-crossbar = <0xe4>;',
+            'adi,jesd204-framer-b-lmfc-offset = <0x1f>;',
+            'adi,jesd204-framer-b-new-sysref-on-relink = <0x00>;',
+            'adi,jesd204-framer-b-syncb-in-select = <0x01>;',
+            'adi,jesd204-framer-b-over-sample = <0x00>;',
+            'adi,jesd204-framer-b-syncb-in-lvds-mode = <0x01>;',
+            'adi,jesd204-framer-b-syncb-in-lvds-pn-invert = <0x00>;',
+            'adi,jesd204-framer-b-enable-manual-lane-xbar = <0x00>;',
+            'adi,jesd204-deframer-a-bank-id = <0x00>;',
+            'adi,jesd204-deframer-a-device-id = <0x00>;',
+            'adi,jesd204-deframer-a-lane0-id = <0x00>;',
+            'adi,jesd204-deframer-a-m = <0x04>;',
+            'adi,jesd204-deframer-a-k = <0x20>;',
+            'adi,jesd204-deframer-a-scramble = <0x01>;',
+            'adi,jesd204-deframer-a-external-sysref = <0x01>;',
+            'adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0f>;',
+            'adi,jesd204-deframer-a-deserializer-lane-crossbar = <0xe4>;',
+            'adi,jesd204-deframer-a-lmfc-offset = <0x11>;',
+            'adi,jesd204-deframer-a-new-sysref-on-relink = <0x00>;',
+            'adi,jesd204-deframer-a-syncb-out-select = <0x00>;',
+            'adi,jesd204-deframer-a-np = <0x10>;',
+            'adi,jesd204-deframer-a-syncb-out-lvds-mode = <0x01>;',
+            'adi,jesd204-deframer-a-syncb-out-lvds-pn-invert = <0x00>;',
+            'adi,jesd204-deframer-a-syncb-out-cmos-slew-rate = <0x00>;',
+            'adi,jesd204-deframer-a-syncb-out-cmos-drive-level = <0x00>;',
+            'adi,jesd204-deframer-a-enable-manual-lane-xbar = <0x00>;',
+            'adi,jesd204-ser-amplitude = <0x0f>;',
+            'adi,jesd204-ser-pre-emphasis = <0x01>;',
+            'adi,jesd204-ser-invert-lane-polarity = <0x00>;',
+            'adi,jesd204-des-invert-lane-polarity = <0x00>;',
+            'adi,jesd204-des-eq-setting = <0x01>;',
+            'adi,jesd204-sysref-lvds-mode = <0x01>;',
+            'adi,jesd204-sysref-lvds-pn-invert = <0x00>;',
+        ]
+        # Talise RX/ORX/TX profile properties copied verbatim from the
+        # production Kuiper ``zynq-zc706-adv7511-adrv9009`` DT.  The
+        # ``*-rate_khz`` entries (0x1e000 = 122880) are what the kernel
+        # JESD204 framework reads into ``lnk->sample_rate`` when computing
+        # per-link device/lane clocks — omitting them makes Talise pick
+        # built-in defaults whose rates don't match the HDL's MMCM
+        # configuration, producing a ``Link is disabled`` state.
+        default_trx_profile_props = default_jesd_framer_deframer_props + [
+            "adi,rx-profile-rx-fir-gain_db = <0xfffffffa>;",
+            "adi,rx-profile-rx-fir-num-fir-coefs = <0x30>;",
+            "adi,rx-profile-rx-fir-coefs = <0xfff8ffea 0x200032 0xffbcff96 0x8d00c7 0xfefefea0 0x1ae023c 0xfd4dfc79 0x42d0570 0xf994f784 0xa090df6 0xeef4e427 0x248b7977 0x7977248b 0xe427eef4 0xdf60a09 0xf784f994 0x570042d 0xfc79fd4d 0x23c01ae 0xfea0fefe 0xc7008d 0xff96ffbc 0x320020 0xffeafff8>;",
+            "adi,rx-profile-rx-fir-decimation = <0x02>;",
+            "adi,rx-profile-rx-dec5-decimation = <0x04>;",
+            "adi,rx-profile-rhb1-decimation = <0x02>;",
+            "adi,rx-profile-rx-output-rate_khz = <0x1e000>;",
+            "adi,rx-profile-rf-bandwidth_hz = <0x5f5e100>;",
+            "adi,rx-profile-rx-bbf3d-bcorner_khz = <0x186a0>;",
+            "adi,rx-profile-rx-adc-profile = <0x1090092 0xb5005a 0x500016e 0x4e9001b 0x4ea0011 0x2ce0027 0x30002e 0x1b00a1 0x00 0x00 0x280000 0x70006 0x2a0000 0x70006 0x2a0000 0x19001b 0x00 0x19001b 0x00 0xa5002c 0x1f0389>;",
+            "adi,rx-profile-rx-ddc-mode = <0x00>;",
+            "adi,orx-profile-rx-fir-gain_db = <0xfffffffa>;",
+            "adi,orx-profile-rx-fir-num-fir-coefs = <0x30>;",
+            "adi,orx-profile-rx-fir-coefs = <0xfff7ffee 0x1f002a 0xffbfffa7 0x8400a8 0xff10fed6 0x18c01e6 0xfd88fcfe 0x3c8048b 0xfa06f8ba 0x9410beb 0xf01ee8a1 0x25d97486 0x748625d9 0xe8a1f01e 0xbeb0941 0xf8bafa06 0x48b03c8 0xfcfefd88 0x1e6018c 0xfed6ff10 0xa80084 0xffa7ffbf 0x2a001f 0xffeefff7>;",
+            "adi,orx-profile-rx-fir-decimation = <0x02>;",
+            "adi,orx-profile-rx-dec5-decimation = <0x04>;",
+            "adi,orx-profile-rhb1-decimation = <0x02>;",
+            "adi,orx-profile-orx-output-rate_khz = <0x1e000>;",
+            "adi,orx-profile-rf-bandwidth_hz = <0x5f5e100>;",
+            "adi,orx-profile-rx-bbf3d-bcorner_khz = <0x36ee8>;",
+            "adi,orx-profile-orx-low-pass-adc-profile = <0x1090092 0xb5005a 0x500016e 0x4e9001b 0x4ea0011 0x2ce0027 0x30002e 0x1b00a1 0x00 0x00 0x280000 0x70006 0x2a0000 0x70006 0x2a0000 0x19001b 0x00 0x19001b 0x00 0xa5002c 0x1f0389>;",
+            "adi,orx-profile-orx-band-pass-adc-profile = <0x1090092 0xb5005a 0x500016e 0x4e9001b 0x4ea0011 0x2ce0027 0x30002e 0x1b00a1 0x00 0x00 0x280000 0x70006 0x2a0000 0x70006 0x2a0000 0x19001b 0x00 0x19001b 0x00 0xa5002c 0x1f0389>;",
+            "adi,orx-profile-orx-ddc-mode = <0x00>;",
+            "adi,orx-profile-orx-merge-filter = <0x00 0x00 0x00 0x00 0x00 0x00>;",
+            "adi,tx-profile-tx-fir-gain_db = <0x06>;",
+            "adi,tx-profile-tx-fir-num-fir-coefs = <0x50>;",
+            "adi,tx-profile-tx-fir-coefs = <0x00 0x01 0xfffd 0x10007 0xfffdfff3 0x70019 0xfff2ffd6 0x1b0045 0xffd2ff95 0x4a00a0 0xff8dff1b 0xb80150 0xfef8fe2c 0x17e028d 0xfde6fc78 0x2f204f5 0xfbe0f8ce 0x5ce0b3f 0xf811ed12 0xee83f5d 0x3f5d0ee8 0xed12f811 0xb3f05ce 0xf8cefbe0 0x4f502f2 0xfc78fde6 0x28d017e 0xfe2cfef8 0x15000b8 0xff1bff8d 0xa0004a 0xff95ffd2 0x45001b 0xffd6fff2 0x190007 0xfff3fffd 0x70001 0xfffd0000 0x10000 0x00>;",
+            "adi,tx-profile-dac-div = <0x01>;",
+            "adi,tx-profile-tx-fir-interpolation = <0x02>;",
+            "adi,tx-profile-thb1-interpolation = <0x02>;",
+            "adi,tx-profile-thb2-interpolation = <0x02>;",
+            "adi,tx-profile-thb3-interpolation = <0x02>;",
+            "adi,tx-profile-tx-int5-interpolation = <0x01>;",
+            "adi,tx-profile-tx-input-rate_khz = <0x1e000>;",
+            "adi,tx-profile-primary-sig-bandwidth_hz = <0x2faf080>;",
+            "adi,tx-profile-rf-bandwidth_hz = <0x5f5e100>;",
+            "adi,tx-profile-tx-dac3d-bcorner_khz = <0x2da78>;",
+            "adi,tx-profile-tx-bbf3d-bcorner_khz = <0xdac0>;",
+            "adi,tx-profile-loop-back-adc-profile = <0x1090092 0xb5005a 0x500016e 0x4e9001b 0x4ea0011 0x2ce0027 0x30002e 0x1b00a1 0x00 0x00 0x280000 0x70006 0x2a0000 0x70006 0x2a0000 0x19001b 0x00 0x19001b 0x00 0xa5002c 0x1f0389>;",
         ]
         trx_profile_props = board_cfg.get(
             "trx_profile_props", default_trx_profile_props
@@ -595,12 +746,19 @@ class ADRV9009Builder:
                 )
             else:
                 assert ad9528_vcxo_freq is not None
-                ch_freq = ad9528_vcxo_freq * 10 // 5
+                ch_freq = ad9528_vcxo_freq * 10 // 10
+                # Channel divider 10 (matches Kuiper production zynq-zc706
+                # ADRV9009 DT). Output rate = VCXO * pll1_fb * pll2_n2 /
+                # (pll2_r1 * pll2_vco_div_m1 * channel_divider) ≈ 122.88 MHz
+                # for VCXO=122.88. Earlier divider=5 produced 245.76, which
+                # caused the FPGA MMCM to pass 245.76 MHz to the JESD core
+                # and ``axi-jesd204-rx/tx/status`` reported "Link is
+                # disabled" because the framework expects 122.88 / 61.44.
                 ad9528_1_specs = [
                     {
                         "id": 13,
                         "name": "DEV_CLK",
-                        "divider": 5,
+                        "divider": 10,
                         "signal_source": 0,
                         "is_sysref": False,
                         "freq_str": fmt_hz(ch_freq),
@@ -608,7 +766,7 @@ class ADRV9009Builder:
                     {
                         "id": 1,
                         "name": "FMC_CLK",
-                        "divider": 5,
+                        "divider": 10,
                         "signal_source": 0,
                         "is_sysref": False,
                         "freq_str": fmt_hz(ch_freq),
@@ -616,22 +774,38 @@ class ADRV9009Builder:
                     {
                         "id": 12,
                         "name": "DEV_SYSREF",
-                        "divider": 5,
+                        "divider": 10,
                         "signal_source": 2,
                         "is_sysref": False,
                     },
                     {
                         "id": 3,
                         "name": "FMC_SYSREF",
-                        "divider": 5,
+                        "divider": 10,
                         "signal_source": 2,
                         "is_sysref": False,
                     },
                 ]
+                # Mark AD9528 as jesd204-device + sysref-provider so the
+                # axi-jesd204-{rx,tx} platform driver can resolve its
+                # ``jesd204-inputs`` chain.  Without these the AXI JESD
+                # core stays in deferred-probe forever and the
+                # ``/sys/.../axi-jesd204-*/status`` file is never created.
+                # ``reset-gpios`` mirrors the Kuiper production DT
+                # (gpio0:113 on ZC706 + ADRV9009).
+                ad9528_reset_gpio = int(board_cfg.get("ad9528_reset_gpio", 113))
                 ad9528 = AD9528_1(
                     label=clock_chip_label,
                     vcxo_hz=ad9528_vcxo_freq,
                     channels={s["id"]: AD9528_1Channel(**s) for s in ad9528_1_specs},
+                    gpio_lines=[
+                        _GpioLine(
+                            prop="reset-gpios",
+                            controller=gpio_label,
+                            index=ad9528_reset_gpio,
+                        ),
+                    ],
+                    jesd204_sysref_provider=True,
                 )
                 clock_component = ComponentModel(
                     role="clock",
@@ -714,7 +888,7 @@ class ADRV9009Builder:
                 f"{rx_device_clk_ref}, <&{rx_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
-            clock_output_name=None,
+            clock_output_name="jesd_rx_lane_clk",
             f=rx_f,
             k=rx_k,
             jesd204_inputs=f"{rx_xcvr_label} 0 {rx_link_id}",
@@ -727,14 +901,14 @@ class ADRV9009Builder:
                 f"{tx_device_clk_ref}, <&{tx_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
-            clock_output_name=None,
+            clock_output_name="jesd_tx_lane_clk",
             f=tx_octets_per_frame,
             k=tx_k,
             jesd204_inputs=f"{tx_xcvr_label} 0 {tx_link_id}",
-            converter_resolution=14,
+            converter_resolution=16,
             converters_per_device=tx_m,
             bits_per_sample=16,
-            control_bits_per_sample=2,
+            control_bits_per_sample=0,
         )
 
         jesd_links: list[JesdLinkModel] = [
@@ -762,16 +936,41 @@ class ADRV9009Builder:
         # --- Build raw extra nodes ---
         phy_label = f"trx0_{phy_family}"
 
-        # XCVR nodes (raw - no sys_clk_select/out_clk_select)
+        # XCVR nodes - need adi,sys-clk-select / adi,out-clk-select (and
+        # adi,use-lpm-enable on RX/RX_OS) so axi-jesd204-{rx,tx} drivers
+        # can probe; without these the platform driver waits indefinitely
+        # in deferred-probe and the /sys/bus/.../axi-jesd204-*/status
+        # file is never created.  RX uses sys-clk-select=0, TX uses
+        # sys-clk-select=3; both use out-clk-select=3.  Mirrors the
+        # working ADRV937xBuilder pattern (adidt/xsa/builders/adrv937x.py).
+        # Single-chip ADRV9009 (AD9528-based ZC706/ZCU102) declares a
+        # single "conv" clock matching production; FMComms8 keeps the
+        # legacy "conv" + "div40" pair pointing at two distinct HMC7044
+        # channels.
+        def _xcvr_clocks(conv: str, div40: str | None) -> tuple[str, str]:
+            if div40 is None:
+                return f"{conv}", '"conv"'
+            return f"{conv}, {div40}", '"conv", "div40"'
+
+        rx_clk_vals, rx_clk_names = _xcvr_clocks(rx_xcvr_conv_clk_ref, rx_xcvr_div40_ref)
+        tx_clk_vals, tx_clk_names = _xcvr_clocks(tx_xcvr_conv_clk_ref, tx_xcvr_div40_ref)
+        rx_os_clk_vals, rx_os_clk_names = _xcvr_clocks(
+            rx_os_xcvr_conv_clk_ref, rx_os_xcvr_div40_ref
+        )
+
         rx_xcvr_node = (
             f"\t&{rx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = {rx_xcvr_conv_clk_ref}, {rx_xcvr_div40_ref};\n"
-            '\t\tclock-names = "conv", "div40";\n'
+            f"\t\tclocks = {rx_clk_vals};\n"
+            f"\t\tclock-names = {rx_clk_names};\n"
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "rx_gt_clk", "rx_out_clk";\n'
+            "\t\tadi,sys-clk-select = <0>;\n"
+            "\t\tadi,out-clk-select = <3>;\n"
+            "\t\tadi,use-lpm-enable;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {rx_link_id}>;\n"
             "\t};"
         )
         rx_os_xcvr_node = ""
@@ -779,23 +978,30 @@ class ADRV9009Builder:
             rx_os_xcvr_node = (
                 f"\t&{rx_os_xcvr_label} {{\n"
                 '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-                f"\t\tclocks = {rx_os_xcvr_conv_clk_ref}, {rx_os_xcvr_div40_ref};\n"
-                '\t\tclock-names = "conv", "div40";\n'
+                f"\t\tclocks = {rx_os_clk_vals};\n"
+                f"\t\tclock-names = {rx_os_clk_names};\n"
                 "\t\t#clock-cells = <1>;\n"
                 '\t\tclock-output-names = "rx_os_gt_clk", "rx_os_out_clk";\n'
+                "\t\tadi,sys-clk-select = <0>;\n"
+                "\t\tadi,out-clk-select = <3>;\n"
+                "\t\tadi,use-lpm-enable;\n"
                 "\t\tjesd204-device;\n"
                 "\t\t#jesd204-cells = <2>;\n"
+                f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {rx_os_link_id}>;\n"
                 "\t};"
             )
         tx_xcvr_node = (
             f"\t&{tx_xcvr_label} {{\n"
             '\t\tcompatible = "adi,axi-adxcvr-1.0";\n'
-            f"\t\tclocks = {tx_xcvr_conv_clk_ref}, {tx_xcvr_div40_ref};\n"
-            '\t\tclock-names = "conv", "div40";\n'
+            f"\t\tclocks = {tx_clk_vals};\n"
+            f"\t\tclock-names = {tx_clk_names};\n"
             "\t\t#clock-cells = <1>;\n"
             '\t\tclock-output-names = "tx_gt_clk", "tx_out_clk";\n'
+            "\t\tadi,sys-clk-select = <3>;\n"
+            "\t\tadi,out-clk-select = <3>;\n"
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{clock_chip_label} 0 {tx_link_id}>;\n"
             "\t};"
         )
 
@@ -819,6 +1025,12 @@ class ADRV9009Builder:
                 '\t\tclock-names = "sampl_clk";\n'
                 "\t};"
             )
+        # TX TPL DAC needs to participate in the JESD framework graph
+        # (jesd204-device + jesd204-inputs pointing at axi-jesd204-tx)
+        # so the framework can call clk_set_rate on the TX clkgen MMCM
+        # to produce the per-link rate (61.44 MHz for L=4) instead of
+        # passing through the input rate.  Production DT also has
+        # ``adi,axi-pl-fifo-enable`` for the PL DDR FIFO bypass mode.
         tx_core_first = (
             f"\t&{tx_core_label} {{\n"
             '\t\tcompatible = "adi,axi-adrv9009-tx-1.0";\n'
@@ -827,6 +1039,9 @@ class ADRV9009Builder:
             '\t\tdma-names = "tx";\n'
             f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
             '\t\tclock-names = "sampl_clk";\n'
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{tx_jesd_label} 0 {tx_link_id}>;\n"
             "\t};"
         )
 
@@ -861,13 +1076,21 @@ class ADRV9009Builder:
 
         # --- Assemble extra_nodes_before (ordered before renderer output) ---
         extra_before: list[str] = [misc_clk_node]
+        # axi-clkgen needs `clocks = <s_axi_aclk, clkin1>` so the MMCM
+        # driver can program the right output rate.  ``ps_clk_label``
+        # provides the PS AXI bus clock (`<&clkc 15>` on Zynq-7000);
+        # ``rx_xcvr_clkgen_ref`` etc. give the AD9528/HMC7044 channel
+        # that physically drives the FPGA clkin1 pin.  Matches the
+        # Kuiper production DT.
+        s_axi_aclk_ref = f"<&{ps_clk_label} {ps_clk_index}>"
         if has_rx_clkgen:
             extra_before.append(
                 f"\t&{rx_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
+                f"\t\tclocks = {s_axi_aclk_ref}, {rx_xcvr_clkgen_ref};\n"
+                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
                 f'\t\tclock-output-names = "{rx_clkgen_label}";\n'
-                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 "\t};"
             )
         if has_tx_clkgen:
@@ -875,8 +1098,9 @@ class ADRV9009Builder:
                 f"\t&{tx_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
+                f"\t\tclocks = {s_axi_aclk_ref}, {tx_xcvr_clkgen_ref};\n"
+                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
                 f'\t\tclock-output-names = "{tx_clkgen_label}";\n'
-                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 "\t};"
             )
         if has_rx_os_clkgen:
@@ -884,8 +1108,9 @@ class ADRV9009Builder:
                 f"\t&{rx_os_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
+                f"\t\tclocks = {s_axi_aclk_ref}, {rx_os_xcvr_clkgen_ref};\n"
+                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
                 f'\t\tclock-output-names = "{rx_os_clkgen_label}";\n'
-                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 "\t};"
             )
 
@@ -900,7 +1125,7 @@ class ADRV9009Builder:
                     f"{rx_os_device_clk_ref}, <&{rx_os_xcvr_label} 0>"
                 ),
                 clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
-                clock_output_name=None,
+                clock_output_name="jesd_rx_os_lane_clk",
                 f=rx_os_octets_per_frame,
                 k=rx_k,
                 jesd204_inputs=(f"{rx_os_xcvr_label} 0 {rx_os_link_id}"),
