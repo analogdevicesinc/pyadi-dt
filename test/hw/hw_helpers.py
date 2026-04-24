@@ -265,6 +265,98 @@ def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
         raise RuntimeError(f"dtc overlay compilation failed:\n{res.stderr}")
 
 
+CONFIGFS_OVERLAYS = "/sys/kernel/config/device-tree/overlays"
+
+
+def assert_configfs_overlay_support(shell) -> None:
+    """Fail the calling test if the target lacks configfs overlay support.
+
+    The ``/sys/kernel/config/device-tree/overlays`` directory only exists
+    when the kernel is built with ``CONFIG_OF_CONFIGFS=y`` (which implies
+    ``CONFIG_OF_OVERLAY=y``) and ``configfs`` is mounted.  Without it
+    there is no way to apply a ``.dtbo`` at runtime.
+    """
+    res = shell_out(
+        shell,
+        f"test -d {CONFIGFS_OVERLAYS} && echo OK || echo MISSING",
+    )
+    assert "OK" in res, (
+        f"configfs overlay directory not found at {CONFIGFS_OVERLAYS}. "
+        "Ensure the target kernel was built with CONFIG_OF_OVERLAY=y and "
+        "configfs is mounted."
+    )
+
+
+def deploy_dtbo_via_shell(shell, dtbo_path: Path, remote_path: str) -> None:
+    """Transfer a ``.dtbo`` to the target over the serial shell.
+
+    Encodes the DTBO as base64 and writes it in 512-byte chunks so the
+    transfer survives serial line-length limits on the target shell.
+    ``base64 -d`` on the target reconstructs the binary and the remote
+    size is verified against the local file.  No SSH or networking
+    required — mirrors the Talise-profile push pattern in
+    ``test/hw/test_adrv9009_zcu102_hw.py``.
+
+    Args:
+        shell: An ``ADIShellDriver`` instance.
+        dtbo_path: Local ``.dtbo`` file.
+        remote_path: Absolute destination path on the target.
+    """
+    import base64
+
+    data = dtbo_path.read_bytes()
+    b64 = base64.b64encode(data).decode("ascii")
+    b64_path = f"{remote_path}.b64"
+
+    shell_out(shell, f"rm -f {remote_path} {b64_path}")
+    chunk_size = 512
+    for i in range(0, len(b64), chunk_size):
+        chunk = b64[i : i + chunk_size]
+        shell_out(shell, f"printf '%s' '{chunk}' >> {b64_path}")
+    shell_out(shell, f"base64 -d {b64_path} > {remote_path}")
+    shell_out(shell, f"rm -f {b64_path}")
+
+    remote_size = shell_out(
+        shell, f"stat -c %s {remote_path} 2>/dev/null; true"
+    ).strip()
+    assert remote_size == str(len(data)), (
+        f"dtbo transfer size mismatch: local={len(data)}, remote={remote_size!r}"
+    )
+
+
+def overlay_is_loaded(shell, name: str) -> bool:
+    """Return True if ``/sys/kernel/config/device-tree/overlays/<name>`` exists."""
+    res = shell_out(
+        shell,
+        f"test -d {CONFIGFS_OVERLAYS}/{name} && echo YES || echo NO",
+    )
+    return "YES" in res
+
+
+def load_overlay(shell, name: str, dtbo_remote_path: str) -> str:
+    """Apply a ``.dtbo`` at runtime via configfs.
+
+    Creates ``{CONFIGFS_OVERLAYS}/<name>/`` and writes *dtbo_remote_path*
+    to its ``path`` attribute, which the kernel resolves via the firmware
+    loader and applies to the live tree.  The returned string ends in
+    ``RC=<n>`` so callers can assert ``"RC=0"``.
+    """
+    shell_out(shell, f"mkdir -p {CONFIGFS_OVERLAYS}/{name}")
+    return shell_out(
+        shell,
+        f"echo -n {dtbo_remote_path} > {CONFIGFS_OVERLAYS}/{name}/path 2>&1; "
+        "echo RC=$?",
+    )
+
+
+def unload_overlay(shell, name: str) -> str:
+    """Remove an applied overlay via ``rmdir`` on its configfs entry."""
+    return shell_out(
+        shell,
+        f"rmdir {CONFIGFS_OVERLAYS}/{name} 2>&1; echo RC=$?",
+    )
+
+
 def require_hw_prereqs() -> None:
     """Skip the current test if required system tools are missing.
 
