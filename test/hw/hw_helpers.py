@@ -407,8 +407,8 @@ _DMESG_BENIGN_SUBSTRINGS = (
     # out on the board (no SATA).  Match by device-node address so a
     # genuine regression on the same driver elsewhere still trips.
     "ffcb0000.watchdog",  # Cadence WDT — unroutable clocks
-    "fd4a0000.display",   # ZynqMP DisplayPort — no monitor + DPMS pipe
-    "fd0c0000.ahci",      # Ceva AHCI/SATA — not routed on ZCU102
+    "fd4a0000.display",  # ZynqMP DisplayPort — no monitor + DPMS pipe
+    "fd0c0000.ahci",  # Ceva AHCI/SATA — not routed on ZCU102
     # Kuiper's prebuilt ``simpleImage.vcu118_fmcdaq3`` declares a
     # secondary AXI UART Lite at 0x41400000 whose DT entry is
     # missing ``current-speed``; the driver probe fails with -EINVAL
@@ -796,14 +796,18 @@ def assert_rx_capture_valid(
 
     suffix = f" ({context})" if context else ""
     candidates = (
-        (device_candidates,) if isinstance(device_candidates, str) else tuple(device_candidates)
+        (device_candidates,)
+        if isinstance(device_candidates, str)
+        else tuple(device_candidates)
     )
     all_names = sorted(d.name for d in ctx.devices if d.name)
 
     def _has_rx_scan(d):
         return any(c.scan_element and not c.output for c in d.channels)
 
-    dev = next((d for d in (ctx.find_device(n) for n in candidates) if d is not None), None)
+    dev = next(
+        (d for d in (ctx.find_device(n) for n in candidates) if d is not None), None
+    )
     if dev is None or not _has_rx_scan(dev):
         # No named candidate is RX-buffered — fall back to the first
         # *AXI DMA frontend* on the context (name starts with ``axi-`` /
@@ -815,7 +819,9 @@ def assert_rx_capture_valid(
             d
             for d in ctx.devices
             if d.name
-            and (d.name.startswith("axi-") or d.name.startswith("cf-") or "tpl" in d.name)
+            and (
+                d.name.startswith("axi-") or d.name.startswith("cf-") or "tpl" in d.name
+            )
             and _has_rx_scan(d)
         ]
         dev = buffered[0] if buffered else None

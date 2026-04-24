@@ -153,7 +153,8 @@ def test_adrv9009_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     # too (the optional Si570 clock chip sometimes doesn't ACK on the
     # default i2c address); strip it before the probe-error check.
     dmesg_filtered = "\n".join(
-        line for line in dmesg_txt.splitlines()
+        line
+        for line in dmesg_txt.splitlines()
         if not ("si570" in line and "failed" in line)
     )
     assert_no_probe_errors(dmesg_filtered)

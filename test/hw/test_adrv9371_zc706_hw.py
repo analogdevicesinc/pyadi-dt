@@ -207,18 +207,29 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     # Descriptor 1 @ +0x240: [31:24]=F, [23:16]=S, [15:8]=L, [7:0]=M
     # Descriptor 2 @ +0x244: [15:8]=Np, [7:0]=N
     print("=== HDL compile-time JESD framing (TPL descriptor regs) ===")
-    print("which devmem: " + shell_out(shell, "which devmem devmem2 busybox 2>/dev/null; busybox | head -1 2>/dev/null"))
+    print(
+        "which devmem: "
+        + shell_out(
+            shell,
+            "which devmem devmem2 busybox 2>/dev/null; busybox | head -1 2>/dev/null",
+        )
+    )
     # Two descriptor words per TPL core: +0x240 and +0x244.
     # Decoded layout (per ADI HDL docs):
     #   d1[31:24]=F d1[23:16]=S d1[15:8]=L d1[7:0]=M
     #   d2[15:8]=Np d2[7:0]=N
-    print(shell_out(shell, (
-        "for base in 0x44a00000 0x44a04000 0x44a08000; do "
-        "  echo \"--- TPL @ $base ---\"; "
-        "  busybox devmem $(printf '0x%x' $((base + 0x240))) 2>&1; "
-        "  busybox devmem $(printf '0x%x' $((base + 0x244))) 2>&1; "
-        "done"
-    )))
+    print(
+        shell_out(
+            shell,
+            (
+                "for base in 0x44a00000 0x44a04000 0x44a08000; do "
+                '  echo "--- TPL @ $base ---"; '
+                "  busybox devmem $(printf '0x%x' $((base + 0x240))) 2>&1; "
+                "  busybox devmem $(printf '0x%x' $((base + 0x244))) 2>&1; "
+                "done"
+            ),
+        )
+    )
 
     # Dump TPL ADC sysfs (enable state, sampling freq, etc.) and DMA
     # controller state.  These surface the most common DMA-stall
@@ -226,43 +237,63 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     # axi-dmac refusing to arm a descriptor, or the buffer sysfs
     # knob left disabled.
     print("=== TPL ADC sysfs (/sys/bus/iio/devices/<ad_ip_jesd204_tpl_adc>/) ===")
-    print(shell_out(shell, (
-        "tpl=$(ls -d /sys/bus/iio/devices/iio:device* 2>/dev/null "
-        "| while read d; do "
-        "  name=$(cat $d/name 2>/dev/null); "
-        "  case \"$name\" in *tpl_adc*|*ad9371*rx*|*axi-ad9371-rx*) echo $d; esac; "
-        "done | head -1); "
-        "echo \"PATH: $tpl\"; "
-        "[ -n \"$tpl\" ] && ls -la $tpl/; "
-        "for f in \"$tpl\"/name \"$tpl\"/sampling_frequency \"$tpl\"/buffer/enable "
-        "         \"$tpl\"/buffer/length \"$tpl\"/buffer/watermark; do "
-        "  [ -e $f ] && printf '%s = %s\\n' $f \"$(cat $f 2>/dev/null)\"; "
-        "done"
-    )))
+    print(
+        shell_out(
+            shell,
+            (
+                "tpl=$(ls -d /sys/bus/iio/devices/iio:device* 2>/dev/null "
+                "| while read d; do "
+                "  name=$(cat $d/name 2>/dev/null); "
+                '  case "$name" in *tpl_adc*|*ad9371*rx*|*axi-ad9371-rx*) echo $d; esac; '
+                "done | head -1); "
+                'echo "PATH: $tpl"; '
+                '[ -n "$tpl" ] && ls -la $tpl/; '
+                'for f in "$tpl"/name "$tpl"/sampling_frequency "$tpl"/buffer/enable '
+                '         "$tpl"/buffer/length "$tpl"/buffer/watermark; do '
+                "  [ -e $f ] && printf '%s = %s\\n' $f \"$(cat $f 2>/dev/null)\"; "
+                "done"
+            ),
+        )
+    )
     print("=== TPL ADC channel enables ===")
-    print(shell_out(shell, (
-        "for ch in /sys/bus/iio/devices/iio:device*/scan_elements/*_en; do "
-        "  [ -e $ch ] && printf '%s = %s\\n' $ch \"$(cat $ch 2>/dev/null)\"; "
-        "done | grep -E 'tpl_adc|ad9371'"
-    )))
+    print(
+        shell_out(
+            shell,
+            (
+                "for ch in /sys/bus/iio/devices/iio:device*/scan_elements/*_en; do "
+                "  [ -e $ch ] && printf '%s = %s\\n' $ch \"$(cat $ch 2>/dev/null)\"; "
+                "done | grep -E 'tpl_adc|ad9371'"
+            ),
+        )
+    )
     print("=== AXI DMAC (rx/tx) state ===")
-    print(shell_out(shell, (
-        "for d in /sys/bus/platform/devices/7c4?0000.axi_dmac; do "
-        "  echo \"--- $d ---\"; ls $d 2>/dev/null; "
-        "done; "
-        "dmesg | grep -iE 'dmac|axi-dmac|dma' | tail -n 20"
-    )))
+    print(
+        shell_out(
+            shell,
+            (
+                "for d in /sys/bus/platform/devices/7c4?0000.axi_dmac; do "
+                '  echo "--- $d ---"; ls $d 2>/dev/null; '
+                "done; "
+                "dmesg | grep -iE 'dmac|axi-dmac|dma' | tail -n 20"
+            ),
+        )
+    )
     print("=== AD9371 phy sysfs snapshot ===")
-    print(shell_out(shell, (
-        "phy=$(find /sys/bus/iio/devices -maxdepth 2 -name ensm_mode 2>/dev/null "
-        "     | xargs dirname 2>/dev/null | head -1); "
-        "echo \"PHY: $phy\"; "
-        "[ -n \"$phy\" ] && for f in $phy/ensm_mode $phy/gain_control_mode "
-        "     $phy/in_voltage0_rf_bandwidth $phy/in_voltage0_sampling_frequency "
-        "     $phy/rx_path_clks; do "
-        "  [ -e $f ] && printf '%s = %s\\n' $f \"$(cat $f 2>/dev/null)\"; "
-        "done"
-    )))
+    print(
+        shell_out(
+            shell,
+            (
+                "phy=$(find /sys/bus/iio/devices -maxdepth 2 -name ensm_mode 2>/dev/null "
+                "     | xargs dirname 2>/dev/null | head -1); "
+                'echo "PHY: $phy"; '
+                '[ -n "$phy" ] && for f in $phy/ensm_mode $phy/gain_control_mode '
+                "     $phy/in_voltage0_rf_bandwidth $phy/in_voltage0_sampling_frequency "
+                "     $phy/rx_path_clks; do "
+                "  [ -e $f ] && printf '%s = %s\\n' $f \"$(cat $f 2>/dev/null)\"; "
+                "done"
+            ),
+        )
+    )
     # TODO(adrv9371-capture): data-path smoke test still deferred.
     #
     # Progress across this series (all landed on this branch):

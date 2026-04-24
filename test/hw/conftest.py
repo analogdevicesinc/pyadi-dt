@@ -85,9 +85,7 @@ def _teardown_power_off(strategy) -> None:
         logger.info("Board transitioned to powered_off at test teardown.")
         return
     except Exception as exc:
-        logger.warning(
-            "Strategy transition to powered_off failed at teardown: %s", exc
-        )
+        logger.warning("Strategy transition to powered_off failed at teardown: %s", exc)
     try:
         power = getattr(strategy, "power", None)
         if power is None:
