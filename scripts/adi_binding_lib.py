@@ -384,12 +384,45 @@ def _collect_compatibles_from_json_files(project_root: Path) -> set[str]:
     return compatibles
 
 
+def _collect_compatibles_from_python_modules(root: Path) -> set[str]:
+    """Scan every ``*.py`` under *root* for ``adi,*`` tokens.
+
+    Catches ADI device compatibles whether they're declared as
+    ``compatible: ClassVar[str] = "adi,..."`` (most chips) or as
+    ``Field(default_factory=lambda: ["adi,...", ...])`` (variant
+    families like ADRV9009 / ADRV9025).  Property aliases such as
+    ``adi,driver-mode`` end up in the result too — that is harmless
+    here: the audit only checks the *direction* "is this Linux
+    compatible known to adidt?", so an extra "known" token that never
+    appears in Linux bindings does not inflate the missing set.
+    """
+    compatibles: set[str] = set()
+    if not root.exists():
+        return compatibles
+    for path in root.rglob("*.py"):
+        try:
+            text = path.read_text(errors="ignore")
+        except OSError:
+            continue
+        compatibles.update(_extract_adi_tokens(text))
+    return compatibles
+
+
 def collect_supported_compatibles(project_root: Path) -> set[str]:
     template_root = project_root / "adidt" / "templates"
+    # ``adidt/parts/`` was removed in commit 153955d during the
+    # boards/parts/templates re-arch; the typed device models now
+    # live under ``adidt/devices/``.  Keep the legacy parts scan so
+    # older branches still work, and add a Python-module scan over
+    # the new devices tree so post-rearch chips show up as known.
     parts_root = project_root / "adidt" / "parts"
+    devices_root = project_root / "adidt" / "devices"
+    xsa_root = project_root / "adidt" / "xsa"
     compatible_set = set(_KNOWN_PREFIXES)
     compatible_set.update(_collect_compatibles_from_templates(template_root))
     compatible_set.update(_collect_compatibles_from_parts(parts_root))
+    compatible_set.update(_collect_compatibles_from_python_modules(devices_root))
+    compatible_set.update(_collect_compatibles_from_python_modules(xsa_root))
     compatible_set.update(_collect_compatibles_from_json_files(project_root))
     return {
         compatible for compatible in compatible_set if compatible.startswith("adi,")
