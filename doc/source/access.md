@@ -1,6 +1,6 @@
 # Live Update Access Models
 
-**adidt** supports a number of different access models depending on where your device tree is located and how you want to apply changes. For example, the device tree can be directly read from the sysfs with *local_sysfs* and *remote_sysfs*. Remote calls will always utilize an SSH connect to access and run commands on remote systems. **adidt** does not support overlay loading at runtime (yet), so writes should be performed with *local_sd* or *remote_sd*. Note that the SD card management features are only supported on ADI platforms where the DT has a known location.
+**adidt** supports a number of different access models depending on where your device tree is located and how you want to apply changes. For example, the device tree can be directly read from the sysfs with *local_sysfs* and *remote_sysfs*. Remote calls will always utilize an SSH connect to access and run commands on remote systems. For persistent changes that survive a reboot, use *local_sd* or *remote_sd*. For transient changes at runtime, compile the pipeline's `.dtso` to a `.dtbo` with `dtc -@` and apply it via the target's `/sys/kernel/config/device-tree/overlays/` interface — see `test/hw/xsa/test_ad9081_zcu102_overlay.py` for a full load/unload/reload example. Note that the SD card management features are only supported on ADI platforms where the DT has a known location.
 
 ## Supported modes
 

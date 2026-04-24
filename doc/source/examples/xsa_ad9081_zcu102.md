@@ -199,3 +199,26 @@ dtc -@ -I dts -O dtb \
 
 The `-@` flag preserves external symbol references (the `&amba` phandle)
 required for overlay application at runtime via `configfs`.
+
+## Loading the Overlay at Runtime
+
+With `CONFIG_OF_OVERLAY=y` in the target kernel (the default in Kuiper
+2023_R2 and later), a `.dtbo` can be applied on a running system via
+`configfs`. After copying the `.dtbo` to the target (e.g. `/tmp/`):
+
+```bash
+# Apply: creates an entry, writes the path, kernel applies the overlay
+mkdir -p /sys/kernel/config/device-tree/overlays/ad9081_zcu102
+echo -n /tmp/ad9081_zcu102.dtbo \
+    > /sys/kernel/config/device-tree/overlays/ad9081_zcu102/path
+
+# Remove: drivers are unbound, phandles added by the overlay are torn down
+rmdir /sys/kernel/config/device-tree/overlays/ad9081_zcu102
+```
+
+The hardware test `test/hw/xsa/test_ad9081_zcu102_overlay.py` exercises
+the full lifecycle (load → verify JESD DATA + DMA loopback → unload →
+reload) against a live ZCU102. Reuse its helpers in
+`test/hw/hw_helpers.py` (`compile_dtso_to_dtbo`, `deploy_dtbo_via_shell`,
+`load_overlay`, `unload_overlay`) when building your own runtime
+overlay flow.
