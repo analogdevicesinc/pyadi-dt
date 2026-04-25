@@ -344,19 +344,25 @@ class ADRV937xBuilder:
                 '"jesd_rx_clk", "jesd_tx_clk", '
                 '"dev_clk", "fmc_clk", "sysref_dev_clk", "sysref_fmc_clk"'
             )
-        # Match Kuiper's working topology: AD9371 → JESD cores → xcvrs
-        # → AD9528 (terminal sysref provider).  AD9371's
-        # jesd204-inputs points at the three JESD cores, not the
-        # xcvrs — the walker traverses the graph via each JESD core's
-        # own ``jesd204-inputs = <xcvr …>`` and then each xcvr's
-        # ``jesd204-inputs = <AD9528 …>``, reaching the sysref
-        # provider through the correct chain.
+        # Match Kuiper's working FSM-mode topology
+        # (``zynq-zc706-adv7511-adrv9371-jesd204-fsm.dts``):
+        # AD9371 → {RX JESD core, RX_OBS JESD core, TX TPL DAC core}
+        # → ... → xcvrs → AD9528 (terminal sysref provider).
+        # The TX side passes through the TPL DAC core
+        # (``axi_ad9371_core_tx`` upstream / ``tx_core_label`` here)
+        # before reaching the JESD-TX core, so cf_axi_dds's
+        # ``jesd204_post_running_stage`` callback runs and emits the
+        # ``cf_axi_dds_start_sync`` that arms the DAC data path —
+        # without it the JESD-TX framer transmits no valid 8b/10b
+        # symbols and the AD9371 deframer never decodes an ILAS
+        # sequence (mismatch mask 0xc7f8 + deframerStatus 0x21 with
+        # FS-lost set / valid-checksum clear).
         if rx_os_jesd_label and rx_os_xcvr_label:
             trx_link_ids_value = f"{tx_link_id} {rx_link_id} {rx_os_link_id}"
             trx_inputs_value = (
                 f"<&{rx_jesd_label} 0 {rx_link_id}>, "
                 f"<&{rx_os_jesd_label} 0 {rx_os_link_id}>, "
-                f"<&{tx_jesd_label} 0 {tx_link_id}>"
+                f"<&{tx_core_label} 0 {tx_link_id}>"
             )
         else:
             ad9528_sysref_link_id = 2
@@ -469,6 +475,27 @@ class ADRV937xBuilder:
             else None
         )
 
+        # IRQ overrides for the AXI DMACs:
+        # The sdtgen-generated DT extracts ``interrupts = <0 31 4>``
+        # (rx), ``<0 32 4>`` (tx), ``<0 33 4>`` (rx_obs) from the XSA
+        # — but the bitstream loaded from Kuiper's
+        # ``release:zynq-zc706-adv7511-adrv937x/BOOT.BIN`` actually
+        # routes those IRQ wires to SPI 57 / 56 / 55 (= GIC IRQ
+        # 89 / 88 / 87).  Confirmed on bq by reading
+        # ``GICD ICDISPR[2] = 0x02000000`` (IRQ 89 pending) while the
+        # DMAC asserted its IRQ output (``IRQ_PENDING=0x3``,
+        # ``TRANSFER_DONE=3``) but ``/proc/interrupts`` for the
+        # DT-declared IRQ stayed at 0.  Override to match Kuiper's
+        # reference DT (``zynq-zc706-adv7511-adrv9371.dts``).
+        # SPI 57/56 = GIC IRQ 89/88. ``4`` = ``IRQ_TYPE_LEVEL_HIGH``
+        # written as a literal so the overlay DTSO doesn't need the
+        # ``<dt-bindings/interrupt-controller/irq.h>`` include.
+        # (rx_obs DMA is SPI 55 / GIC IRQ 87 if/when that path is
+        # wired up — currently OBS is gated by a separate
+        # missing-#dma-cells issue at the OBS TPL ADC node.)
+        rx_dma_interrupts = "<0 57 4>"
+        tx_dma_interrupts = "<0 56 4>"
+
         jesd_links = [
             JesdLinkModel(
                 direction="rx",
@@ -477,6 +504,7 @@ class ADRV937xBuilder:
                 dma_label=rx_dma_label,
                 core_label=rx_core_label,
                 link_params={"F": rx_f, "K": rx_k},
+                dma_interrupts_str=rx_dma_interrupts,
                 jesd_overlay_rendered=rx_jesd_overlay,
             ),
             JesdLinkModel(
@@ -486,6 +514,7 @@ class ADRV937xBuilder:
                 dma_label=tx_dma_label,
                 core_label=tx_core_label,
                 link_params={"F": tx_octets_per_frame, "K": tx_k, "M": tx_m},
+                dma_interrupts_str=tx_dma_interrupts,
                 jesd_overlay_rendered=tx_jesd_overlay,
             ),
         ]
@@ -572,11 +601,20 @@ class ADRV937xBuilder:
         rx_core_second = (
             f"\t&{rx_core_label} {{\n\t\tspibus-connected = <&{phy_label}>;\n\t}};"
         )
+        # FSM-mode: TPL DAC core is the AD9371's TX-link entry into
+        # the JESD204 graph.  ``jesd204-inputs`` chains it to the
+        # AXI JESD-TX core so the framework walks
+        # AD9371 → TPL DAC → JESD-TX → xcvr → AD9528.  Matches
+        # ``&axi_ad9371_core_tx`` overrides in
+        # ``zynq-zc706-adv7511-adrv9371-jesd204-fsm.dts``.
         tx_core_second = (
             f"\t&{tx_core_label} {{\n"
             f"\t\tspibus-connected = <&{phy_label}>;\n"
             f"\t\tclocks = <&{phy_label} 2>;\n"
             '\t\tclock-names = "sampl_clk";\n'
+            "\t\tjesd204-device;\n"
+            "\t\t#jesd204-cells = <2>;\n"
+            f"\t\tjesd204-inputs = <&{tx_jesd_label} 0 {tx_link_id}>;\n"
             "\t};"
         )
         # RX_OBS TPL core overlay — converts sdtgen's

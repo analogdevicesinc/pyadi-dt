@@ -17,7 +17,6 @@ LG_ENV: lg_adrv9371_zc706_tftp.yaml
 from __future__ import annotations
 
 import os
-import shutil
 from pathlib import Path
 
 import pytest
@@ -47,24 +46,13 @@ from test.hw.hw_helpers import (  # noqa: E402
     parse_ilas_status,
     read_jesd_status,
     shell_out,
+    stage_dtb_as_devicetree,
 )
 
 
 DEFAULT_KUIPER_RELEASE = "2023_R2_P1"
 DEFAULT_KUIPER_PROJECT = "zynq-zc706-adv7511-adrv937x"
 DEFAULT_VCXO_HZ = 122_880_000
-
-
-def _stage_dtb_as_devicetree(dtb: Path, staging_dir: Path) -> Path:
-    """Copy *dtb* into *staging_dir* renamed to ``devicetree.dtb``.
-
-    BootFPGASoCTFTP's YAML sets ``dtb_image_name: devicetree.dtb`` — the
-    file must have that exact basename when it lands in the TFTP root.
-    """
-    staging_dir.mkdir(parents=True, exist_ok=True)
-    staged = staging_dir / "devicetree.dtb"
-    shutil.copyfile(dtb, staged)
-    return staged
 
 
 # ---------------------------------------------------------------------------
@@ -144,7 +132,7 @@ def test_adrv9371_zc706_xsa_hw(board, built_kernel_image_zynq, tmp_path):
     # --- 4. Compile to DTB, stage as devicetree.dtb ---
     dtb_raw = out_dir / "adrv9371_zc706.dtb"
     compile_dts_to_dtb(merged_dts, dtb_raw)
-    dtb = _stage_dtb_as_devicetree(dtb_raw, out_dir / "tftp_staging_xsa")
+    dtb = stage_dtb_as_devicetree(dtb_raw, out_dir / "tftp_staging_xsa")
 
     # --- 5. Deploy + boot ---
     shell = deploy_and_boot(board, dtb, built_kernel_image_zynq)
