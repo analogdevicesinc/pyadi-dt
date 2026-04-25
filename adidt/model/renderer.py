@@ -95,5 +95,8 @@ class BoardModelRenderer:
         ]
         if link.dma_clocks_str:
             lines.append(f"\t\tclocks = {link.dma_clocks_str};")
+        if link.dma_interrupts_str:
+            lines.append("\t\t/delete-property/ interrupts;")
+            lines.append(f"\t\tinterrupts = {link.dma_interrupts_str};")
         lines.append("\t};")
         return "\n".join(lines)

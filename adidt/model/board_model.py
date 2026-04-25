@@ -48,6 +48,12 @@ class JesdLinkModel:
             ``L``, ``Np``, ``S``.
         dma_clocks_str: Optional ``clocks`` cells-string for the DMA
             overlay (inserted verbatim into the emitted overlay).
+        dma_interrupts_str: Optional ``interrupts`` cells-string for
+            the DMA overlay.  When set, the renderer emits a
+            ``/delete-property/ interrupts;`` followed by an
+            ``interrupts = ...;`` re-assignment.  Use this when the
+            sdtgen-generated IRQ number does not match the IRQ wire
+            in the loaded bitstream.
         xcvr_rendered, jesd_overlay_rendered, tpl_core_rendered:
             Pre-rendered DTS strings for the three FPGA-side IP
             overlays.  Produced by :mod:`adidt.devices.fpga_ip`.
@@ -60,6 +66,7 @@ class JesdLinkModel:
     dma_label: str | None
     link_params: dict[str, int] = field(default_factory=dict)
     dma_clocks_str: str | None = None
+    dma_interrupts_str: str | None = None
     xcvr_rendered: str | None = None
     jesd_overlay_rendered: str | None = None
     tpl_core_rendered: str | None = None
