@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This guide covers practical end-to-end paths to generate device trees from Xilinx .xsa archives." name="description" />
+
+    <title>XSA Flow Tutorials &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA + adijif Tutorial" href="xsa_adijif_tutorial.html" />
+    <link rel="prev" title="Examples" href="../examples.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">XSA Flow Tutorials</a><ul>
+<li><a class="reference internal" href="#tutorial-1-run-the-xsa-pipeline-from-the-cli">Tutorial 1: Run the XSA pipeline from the CLI</a><ul>
+<li><a class="reference internal" href="#install-the-required-tooling">1) Install the required tooling</a></li>
+<li><a class="reference internal" href="#prepare-a-config-file">2) Prepare a config file</a></li>
+<li><a class="reference internal" href="#run-the-converter">3) Run the converter</a></li>
+<li><a class="reference internal" href="#collect-outputs">4) Collect outputs</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tutorial-2-use-project-example-scripts">Tutorial 2: Use project example scripts</a></li>
+<li><a class="reference internal" href="#tutorial-3-use-the-python-api-directly">Tutorial 3: Use the Python API directly</a></li>
+<li><a class="reference internal" href="#tutorial-4-validate-the-generated-dts">Tutorial 4: Validate the generated DTS</a></li>
+<li><a class="reference internal" href="#related-references">Related references</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1" checked=""/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/hardware_ci.html">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../examples.html">Examples</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="xsa-flow-tutorials">
+<h1>XSA Flow Tutorials<a class="headerlink" href="#xsa-flow-tutorials" title="Link to this heading"></a></h1>
+<p>This guide covers practical end-to-end paths to generate device trees from
+Xilinx <code class="docutils literal notranslate"><span class="pre">.xsa</span></code> archives.</p>
+<p>Use this page if you want a hands-on workflow before diving into board-specific
+examples.</p>
+<section id="tutorial-1-run-the-xsa-pipeline-from-the-cli">
+<h2>Tutorial 1: Run the XSA pipeline from the CLI<a class="headerlink" href="#tutorial-1-run-the-xsa-pipeline-from-the-cli" title="Link to this heading"></a></h2>
+<section id="install-the-required-tooling">
+<h3>1) Install the required tooling<a class="headerlink" href="#install-the-required-tooling" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;adidt[xsa]&quot;</span>
+
+<span class="c1"># Optional: needed for auto-deriving JESD/clock settings in example scripts</span>
+pip<span class="w"> </span>install<span class="w"> </span>pyadi-jif<span class="o">[</span>cplex<span class="o">]</span><span class="w">   </span><span class="c1"># or pyadi-jif[gekko]</span>
+</pre></div>
+</div>
+</section>
+<section id="prepare-a-config-file">
+<h3>2) Prepare a config file<a class="headerlink" href="#prepare-a-config-file" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">xsa2dt</span></code> needs a JSON config file with at least JESD and clock fields.</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;jesd&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;rx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;M&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;L&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;Np&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;S&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;tx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;M&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">8</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;L&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;Np&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;S&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">}</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;clock&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;rx_device_clk_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clkgen&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tx_device_clk_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;clkgen&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hmc7044_rx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;hmc7044_tx_channel&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">clkgen</span></code>/<code class="docutils literal notranslate"><span class="pre">hmc7044</span></code> clock labels are platform- and profile-dependent. If you
+see clock-label errors, copy a built-in profile and tune this block first.</p>
+</div></blockquote>
+</section>
+<section id="run-the-converter">
+<h3>3) Run the converter<a class="headerlink" href="#run-the-converter" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>xsa2dt<span class="w"> </span>-x<span class="w"> </span>/path/to/design.xsa<span class="w"> </span>-c<span class="w"> </span>cfg.json<span class="w"> </span>-o<span class="w"> </span>out/
+</pre></div>
+</div>
+<p>Useful optional flags:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--profile</span> <span class="pre">ad9081_zcu102</span></code> (force profile; omit to auto-detect)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--reference-dts</span> <span class="pre">/path/to/ref.dts</span></code> (enable parity report generation)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--strict-parity</span></code> (exit non-zero if required roles/links/properties are missing)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--timeout</span> <span class="pre">180</span></code> (customize sdtgen timeout)</p></li>
+</ul>
+</section>
+<section id="collect-outputs">
+<h3>4) Collect outputs<a class="headerlink" href="#collect-outputs" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">xsa2dt</span></code> returns these artifact paths:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">overlay</span></code>: generated <code class="docutils literal notranslate"><span class="pre">.dtso</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">merged</span></code>: full merged <code class="docutils literal notranslate"><span class="pre">.dts</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">report</span></code>: HTML report (<code class="docutils literal notranslate"><span class="pre">*_report.html</span></code>) with topology + clock/jesd views</p></li>
+<li><p>optional: <code class="docutils literal notranslate"><span class="pre">base_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">clock_dot</span></code>, <code class="docutils literal notranslate"><span class="pre">clock_d2</span></code>, <code class="docutils literal notranslate"><span class="pre">map</span></code>, <code class="docutils literal notranslate"><span class="pre">coverage</span></code></p></li>
+</ul>
+</section>
+</section>
+<section id="tutorial-2-use-project-example-scripts">
+<h2>Tutorial 2: Use project example scripts<a class="headerlink" href="#tutorial-2-use-project-example-scripts" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">examples/xsa/</span></code> directory contains full end-to-end scripts that combine
+XSA parsing, <code class="docutils literal notranslate"><span class="pre">adijif</span></code> parameter derivation, and <code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code>.</p>
+<p>Example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/xsa/adrv9009_zcu102.py<span class="w"> </span>--xsa<span class="w"> </span>/path/to/system_top.xsa
+</pre></div>
+</div>
+<p>If you have network access and the <code class="docutils literal notranslate"><span class="pre">adi-labgrid-plugins</span></code> dependency,
+you can also download a Kuiper XSA automatically:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/xsa/adrv9009_zcu102.py<span class="w"> </span>--download-kuiper
+</pre></div>
+</div>
+<p>Example variations by board:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">examples/xsa/ad9083_zcu102.py</span> <span class="pre">--xsa</span> <span class="pre">/path/to/system_top.xsa</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">examples/xsa/fmcdaq2_zc706.py</span> <span class="pre">--xsa</span> <span class="pre">/path/to/system_top.xsa</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">examples/xsa/fmcdaq2_zcu102.py</span> <span class="pre">--xsa</span> <span class="pre">/path/to/system_top.xsa</span></code></p></li>
+</ul>
+<p>These scripts print a final artifact summary and are a good starting point for
+platform-specific defaults.</p>
+</section>
+<section id="tutorial-3-use-the-python-api-directly">
+<h2>Tutorial 3: Use the Python API directly<a class="headerlink" href="#tutorial-3-use-the-python-api-directly" title="Link to this heading"></a></h2>
+<p>For custom integrations (CI, scripts, internal tools), call <code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.xsa.pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">XsaPipeline</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="n">cfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;cfg.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;/path/to/design.xsa&quot;</span><span class="p">),</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="s2">&quot;out&quot;</span><span class="p">),</span>
+    <span class="n">emit_report</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">emit_clock_graphs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">result</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is the same internal flow used by <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">xsa2dt</span></code>.</p>
+</section>
+<section id="tutorial-4-validate-the-generated-dts">
+<h2>Tutorial 4: Validate the generated DTS<a class="headerlink" href="#tutorial-4-validate-the-generated-dts" title="Link to this heading"></a></h2>
+<p>You can compile for a basic syntax check before boot-time deployment:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>dtc<span class="w"> </span>-I<span class="w"> </span>dts<span class="w"> </span>-O<span class="w"> </span>dtb<span class="w"> </span>-o<span class="w"> </span>out/design.dtb<span class="w"> </span>out/design.dts
+</pre></div>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">--reference-dts</span></code> enabled parity mode, compare the coverage report to ensure
+required JESD/device roles are present before flashing a SD card.</p>
+</section>
+<section id="related-references">
+<h2>Related references<a class="headerlink" href="#related-references" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="../xsa.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">xsa.rst</span></code></span></a></p></li>
+<li><p><a class="reference internal" href="xsa_adijif_tutorial.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">xsa_adijif_tutorial.md</span></code></span></a></p></li>
+<li><p><a class="reference internal" href="xsa_ad9081_zcu102.html"><span class="std std-doc"><code class="docutils literal notranslate"><span class="pre">examples/xsa_ad9081_zcu102.md</span></code></span></a></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">examples/xsa/adrv9009_zcu102.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">xsa-profiles</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">xsa-profile-show</span> <span class="pre">PROFILE</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../examples.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Examples</a>
+    <a href="xsa_adijif_tutorial.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA + adijif Tutorial</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

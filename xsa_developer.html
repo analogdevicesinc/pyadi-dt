@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This document explains the internal architecture of the XSA pipeline, how Jinja2 templates are used for DTS generation, and how to add support for new components and boards." name="description" />
+
+    <title>XSA Pipeline — Developer Guide &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Command Line Interface" href="cli.html" />
+    <link rel="prev" title="Hardware CI" href="developer/hardware_ci.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">XSA Pipeline — Developer Guide</a><ul>
+<li><a class="reference internal" href="#architecture">Architecture</a><ul>
+<li><a class="reference internal" href="#component-interaction">Component interaction</a></li>
+<li><a class="reference internal" href="#key-data-models">Key data models</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#nodebuilder-internals">NodeBuilder internals</a><ul>
+<li><a class="reference internal" href="#entry-point">Entry point</a></li>
+<li><a class="reference internal" href="#platform-aware-register-format">Platform-aware register format</a></li>
+<li><a class="reference internal" href="#sdtgen-postprocessing-microblaze">sdtgen postprocessing (MicroBlaze)</a></li>
+<li><a class="reference internal" href="#jinja2-environment">Jinja2 environment</a></li>
+<li><a class="reference internal" href="#template-rendering">Template rendering</a></li>
+<li><a class="reference internal" href="#spi-bus-wrapping">SPI bus wrapping</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#templates">Templates</a><ul>
+<li><a class="reference internal" href="#how-templates-compose-into-a-full-device-tree">How templates compose into a full device tree</a></li>
+<li><a class="reference internal" href="#indentation-convention">Indentation convention</a></li>
+<li><a class="reference internal" href="#pre-formatted-string-variables">Pre-formatted string variables</a></li>
+<li><a class="reference internal" href="#conditional-properties">Conditional properties</a></li>
+<li><a class="reference internal" href="#raw-channels-escape-hatch"><code class="docutils literal notranslate"><span class="pre">raw_channels</span></code> escape hatch</a></li>
+<li><a class="reference internal" href="#template-catalogue">Template catalogue</a></li>
+<li><a class="reference internal" href="#adrv9009-zc706-specifics">ADRV9009 ZC706 specifics</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#context-builders">Context builders</a></li>
+<li><a class="reference internal" href="#board-specific-config-extraction">Board-specific config extraction</a></li>
+<li><a class="reference internal" href="#adding-a-new-component">Adding a new component</a><ul>
+<li><a class="reference internal" href="#step-1-write-the-template">Step 1 — Write the template</a></li>
+<li><a class="reference internal" href="#step-2-write-the-context-builder">Step 2 — Write the context builder</a></li>
+<li><a class="reference internal" href="#step-3-write-tests">Step 3 — Write tests</a></li>
+<li><a class="reference internal" href="#step-4-add-board-detection-if-needed">Step 4 — Add board detection (if needed)</a></li>
+<li><a class="reference internal" href="#step-5-wire-into-a-board-builder">Step 5 — Wire into a board builder</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adding-a-new-board">Adding a new board</a><ul>
+<li><a class="reference internal" href="#step-1-create-the-board-json-profile">Step 1 — Create the board JSON profile</a></li>
+<li><a class="reference internal" href="#step-2-register-the-profile">Step 2 — Register the profile</a></li>
+<li><a class="reference internal" href="#step-3-platform-support">Step 3 — Platform support</a></li>
+<li><a class="reference internal" href="#step-4-board-builder">Step 4 — Board builder</a></li>
+<li><a class="reference internal" href="#regression-and-parity-testing">Regression and parity testing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#utility-helpers">Utility helpers</a></li>
+<li><a class="reference internal" href="#testing-conventions">Testing conventions</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/hardware_ci.html">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="xsa-pipeline-developer-guide">
+<h1>XSA Pipeline — Developer Guide<a class="headerlink" href="#xsa-pipeline-developer-guide" title="Link to this heading"></a></h1>
+<p>This document explains the internal architecture of the XSA pipeline, how
+Jinja2 templates are used for DTS generation, and how to add support for new
+components and boards.</p>
+<nav class="contents local" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#architecture" id="id1">Architecture</a></p>
+<ul>
+<li><p><a class="reference internal" href="#component-interaction" id="id2">Component interaction</a></p></li>
+<li><p><a class="reference internal" href="#key-data-models" id="id3">Key data models</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#nodebuilder-internals" id="id4">NodeBuilder internals</a></p>
+<ul>
+<li><p><a class="reference internal" href="#entry-point" id="id5">Entry point</a></p></li>
+<li><p><a class="reference internal" href="#platform-aware-register-format" id="id6">Platform-aware register format</a></p></li>
+<li><p><a class="reference internal" href="#sdtgen-postprocessing-microblaze" id="id7">sdtgen postprocessing (MicroBlaze)</a></p></li>
+<li><p><a class="reference internal" href="#jinja2-environment" id="id8">Jinja2 environment</a></p></li>
+<li><p><a class="reference internal" href="#template-rendering" id="id9">Template rendering</a></p></li>
+<li><p><a class="reference internal" href="#spi-bus-wrapping" id="id10">SPI bus wrapping</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#templates" id="id11">Templates</a></p>
+<ul>
+<li><p><a class="reference internal" href="#how-templates-compose-into-a-full-device-tree" id="id12">How templates compose into a full device tree</a></p></li>
+<li><p><a class="reference internal" href="#indentation-convention" id="id13">Indentation convention</a></p></li>
+<li><p><a class="reference internal" href="#pre-formatted-string-variables" id="id14">Pre-formatted string variables</a></p></li>
+<li><p><a class="reference internal" href="#conditional-properties" id="id15">Conditional properties</a></p></li>
+<li><p><a class="reference internal" href="#raw-channels-escape-hatch" id="id16"><code class="docutils literal notranslate"><span class="pre">raw_channels</span></code> escape hatch</a></p></li>
+<li><p><a class="reference internal" href="#template-catalogue" id="id17">Template catalogue</a></p></li>
+<li><p><a class="reference internal" href="#adrv9009-zc706-specifics" id="id18">ADRV9009 ZC706 specifics</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#context-builders" id="id19">Context builders</a></p></li>
+<li><p><a class="reference internal" href="#board-specific-config-extraction" id="id20">Board-specific config extraction</a></p></li>
+<li><p><a class="reference internal" href="#adding-a-new-component" id="id21">Adding a new component</a></p>
+<ul>
+<li><p><a class="reference internal" href="#step-1-write-the-template" id="id22">Step 1 — Write the template</a></p></li>
+<li><p><a class="reference internal" href="#step-2-write-the-context-builder" id="id23">Step 2 — Write the context builder</a></p></li>
+<li><p><a class="reference internal" href="#step-3-write-tests" id="id24">Step 3 — Write tests</a></p></li>
+<li><p><a class="reference internal" href="#step-4-add-board-detection-if-needed" id="id25">Step 4 — Add board detection (if needed)</a></p></li>
+<li><p><a class="reference internal" href="#step-5-wire-into-a-board-builder" id="id26">Step 5 — Wire into a board builder</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#adding-a-new-board" id="id27">Adding a new board</a></p>
+<ul>
+<li><p><a class="reference internal" href="#step-1-create-the-board-json-profile" id="id28">Step 1 — Create the board JSON profile</a></p></li>
+<li><p><a class="reference internal" href="#step-2-register-the-profile" id="id29">Step 2 — Register the profile</a></p></li>
+<li><p><a class="reference internal" href="#step-3-platform-support" id="id30">Step 3 — Platform support</a></p></li>
+<li><p><a class="reference internal" href="#step-4-board-builder" id="id31">Step 4 — Board builder</a></p></li>
+<li><p><a class="reference internal" href="#regression-and-parity-testing" id="id32">Regression and parity testing</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#utility-helpers" id="id33">Utility helpers</a></p></li>
+<li><p><a class="reference internal" href="#testing-conventions" id="id34">Testing conventions</a></p></li>
+</ul>
+</nav>
+<section id="architecture">
+<h2><a class="toc-backref" href="#id1" role="doc-backlink">Architecture</a><a class="headerlink" href="#architecture" title="Link to this heading"></a></h2>
+<p>The XSA pipeline is composed of six loosely coupled stages.  Each stage
+operates on well-defined inputs and produces file or data-structure outputs
+that feed the next stage.</p>
+<a class="only-light reference internal image-reference" href="_images/dev_architecture.light.svg"><img alt="XSA Pipeline architecture stages" class="align-center only-light" src="_images/dev_architecture.light.svg" style="width: 30%;" />
+</a>
+<a class="only-dark reference internal image-reference" href="_images/dev_architecture.dark.svg"><img alt="XSA Pipeline architecture stages" class="align-center only-dark" src="_images/dev_architecture.dark.svg" style="width: 30%;" />
+</a>
+<p><code class="docutils literal notranslate"><span class="pre">XsaPipeline.run()</span></code> in <code class="docutils literal notranslate"><span class="pre">pipeline.py</span></code> wires all stages together and returns
+a <code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">Path]</span></code> of artifact paths.  Each stage class can also be used
+independently.</p>
+<section id="component-interaction">
+<h3><a class="toc-backref" href="#id2" role="doc-backlink">Component interaction</a><a class="headerlink" href="#component-interaction" title="Link to this heading"></a></h3>
+<p>The following diagram shows how <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> orchestrates rendering.
+It receives the topology and config, dispatches to per-board builders via
+a registry, and produces categorised DTS node strings that the merger
+assembles into the final tree.</p>
+<a class="only-light reference internal image-reference" href="_images/dev_component_interaction.light.svg"><img alt="NodeBuilder component interaction" class="align-center only-light" src="_images/dev_component_interaction.light.svg" style="width: 30%;" />
+</a>
+<a class="only-dark reference internal image-reference" href="_images/dev_component_interaction.dark.svg"><img alt="NodeBuilder component interaction" class="align-center only-dark" src="_images/dev_component_interaction.dark.svg" style="width: 30%;" />
+</a>
+<p>The <strong>context builder</strong> pattern is central to how templates receive their
+data.  For every <code class="docutils literal notranslate"><span class="pre">.tmpl</span></code> file there is a corresponding <code class="docutils literal notranslate"><span class="pre">_build_*_ctx()</span></code>
+method that:</p>
+<ol class="arabic simple">
+<li><p>Reads values from the board config (typed dataclass or raw dict).</p></li>
+<li><p>Computes derived values (<code class="docutils literal notranslate"><span class="pre">_fmt_hz()</span></code> for frequency annotations,
+<code class="docutils literal notranslate"><span class="pre">_fmt_gpi_gpo()</span></code> for hex GPIO strings, clock phandle strings).</p></li>
+<li><p>Pre-formats list values into DTS-ready strings (<code class="docutils literal notranslate"><span class="pre">clock_output_names_str</span></code>).</p></li>
+<li><p>Returns a flat <code class="docutils literal notranslate"><span class="pre">dict</span></code> whose keys match the Jinja2 variable names in the
+template.</p></li>
+</ol>
+<p>This separation means templates contain no logic beyond conditionals — all
+value computation happens in Python where it can be tested independently.</p>
+</section>
+<section id="key-data-models">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Key data models</a><a class="headerlink" href="#key-data-models" title="Link to this heading"></a></h3>
+<dl>
+<dt><code class="docutils literal notranslate"><span class="pre">XsaTopology</span></code> (<code class="docutils literal notranslate"><span class="pre">topology.py</span></code>)</dt><dd><p>Populated by <code class="docutils literal notranslate"><span class="pre">XsaParser.parse()</span></code>.  Carries lists of
+<code class="docutils literal notranslate"><span class="pre">Jesd204Instance</span></code>, <code class="docutils literal notranslate"><span class="pre">ClkgenInstance</span></code>, <code class="docutils literal notranslate"><span class="pre">ConverterInstance</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">SignalConnection</span></code> objects plus <code class="docutils literal notranslate"><span class="pre">fpga_part</span></code>.</p>
+<p>The helper methods <code class="docutils literal notranslate"><span class="pre">is_fmcdaq2_design()</span></code>, <code class="docutils literal notranslate"><span class="pre">is_fmcdaq3_design()</span></code>,
+<code class="docutils literal notranslate"><span class="pre">inferred_converter_family()</span></code>, and <code class="docutils literal notranslate"><span class="pre">inferred_platform()</span></code> encapsulate
+topology-level detection logic so that <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> does not have to
+re-parse names in multiple places.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">PipelineConfig</span></code> / <code class="docutils literal notranslate"><span class="pre">cfg</span></code> dict (<code class="docutils literal notranslate"><span class="pre">pipeline_config.py</span></code>, <code class="docutils literal notranslate"><span class="pre">board_configs.py</span></code>)</dt><dd><p>Configuration can be supplied as a typed <code class="docutils literal notranslate"><span class="pre">PipelineConfig</span></code> object or as a
+plain Python dict.  <code class="docutils literal notranslate"><span class="pre">PipelineConfig</span></code> wraps <code class="docutils literal notranslate"><span class="pre">JesdConfig</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ClockConfig</span></code>, and an optional board-family config (e.g.
+<code class="docutils literal notranslate"><span class="pre">FMCDAQ2BoardConfig</span></code>, <code class="docutils literal notranslate"><span class="pre">AD9084BoardConfig</span></code>).  The <code class="docutils literal notranslate"><span class="pre">from_dict()</span></code>
+class method auto-detects the board family from key presence
+(<code class="docutils literal notranslate"><span class="pre">&quot;fmcdaq2_board&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;ad9084_board&quot;</span></code>, etc.).</p>
+<p>JESD204 parameters live under <code class="docutils literal notranslate"><span class="pre">jesd.rx</span></code> / <code class="docutils literal notranslate"><span class="pre">jesd.tx</span></code>; board-wiring
+overrides live under family-specific attributes.  Profile loading and
+merging is handled by <code class="docutils literal notranslate"><span class="pre">profiles.py</span></code> — profiles are merged into the raw
+dict <em>before</em> <code class="docutils literal notranslate"><span class="pre">PipelineConfig.from_dict()</span></code> is called.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BoardBuilder</span></code> Protocol (<code class="docutils literal notranslate"><span class="pre">builders/__init__.py</span></code>)</dt><dd><p>Each board family implements the <code class="docutils literal notranslate"><span class="pre">BoardBuilder</span></code> protocol with four
+methods:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">matches(topology,</span> <span class="pre">cfg)</span></code> — detect whether this builder handles the
+design</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">build_nodes(node_builder,</span> <span class="pre">topology,</span> <span class="pre">cfg,</span> <span class="pre">...)</span></code> — generate DTS node
+strings</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">skips_generic_jesd()</span></code> — whether this builder renders its own JESD nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">skip_ip_types()</span></code> — converter IP types handled by this builder</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> iterates <code class="docutils literal notranslate"><span class="pre">_DEFAULT_BUILDERS</span></code> and dispatches to matching
+builders.  Adding a new board family means creating a new builder module
+and adding it to the list — no changes to <code class="docutils literal notranslate"><span class="pre">node_builder.py</span></code> are needed.</p>
+<p>Current builders: <code class="docutils literal notranslate"><span class="pre">FMCDAQ2Builder</span></code>, <code class="docutils literal notranslate"><span class="pre">FMCDAQ3Builder</span></code>,
+<code class="docutils literal notranslate"><span class="pre">AD9172Builder</span></code>, <code class="docutils literal notranslate"><span class="pre">AD9081Builder</span></code>, <code class="docutils literal notranslate"><span class="pre">AD9084Builder</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ADRV9009Builder</span></code>, <code class="docutils literal notranslate"><span class="pre">ADRV937xBuilder</span></code> (AD9371 / ADRV9371 / ADRV9375
+on ZC706 and ZCU102).</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> (<code class="docutils literal notranslate"><span class="pre">model/board_model.py</span></code>)</dt><dd><p>The unified board model that all builders produce internally.  A
+<code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> contains:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">components</span></code> — list of <code class="docutils literal notranslate"><span class="pre">ComponentModel</span></code> (clock chips, converters)
+each with a role, part name, template, SPI bus, and context dict</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jesd_links</span></code> — list of <code class="docutils literal notranslate"><span class="pre">JesdLinkModel</span></code> (RX/TX JESD links) each
+with ADXCVR, JESD overlay, and TPL core configs</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fpga_config</span></code> — <code class="docutils literal notranslate"><span class="pre">FpgaConfig</span></code> with platform, address cells, and
+PS clock labels</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">extra_nodes</span></code> — raw DTS node strings for non-template nodes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">metadata</span></code> — free-form dict for rendering metadata</p></li>
+</ul>
+<p>The model is <strong>editable</strong> after creation — callers can modify component
+configs, JESD link parameters, or metadata before rendering.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">BoardModelRenderer</span></code> (<code class="docutils literal notranslate"><span class="pre">model/renderer.py</span></code>)</dt><dd><p>Groups the pre-rendered strings carried on a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code>’s
+components and JESD links, wraps each SPI-bus group in an
+<code class="docutils literal notranslate"><span class="pre">&amp;spi_bus</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">};</span></code> overlay, and returns the same
+<code class="docutils literal notranslate"><span class="pre">dict[str,</span> <span class="pre">list[str]]</span></code> shape that <code class="docutils literal notranslate"><span class="pre">NodeBuilder.build()</span></code> does.
+The renderer itself does no template lookups; every string it
+concatenates was produced by a declarative device class.</p>
+</dd>
+<dt>Declarative device classes (<code class="docutils literal notranslate"><span class="pre">adidt/devices/</span></code>)</dt><dd><p>Typed pydantic models whose fields map 1:1 to DT properties.  Each
+class owns its rendering via <code class="docutils literal notranslate"><span class="pre">render_dt(cs=...)</span></code>; the output is a
+plain DTS string.  See <a class="reference internal" href="api/devices.html"><span class="doc">Declarative Devices</span></a> for the full catalog and
+<a class="reference internal" href="developer/authoring_devices.html"><span class="doc">Authoring a new device class</span></a> for the end-to-end walkthrough
+on authoring a new device class.</p>
+<p>FPGA-side JESD IP overlays (<code class="docutils literal notranslate"><span class="pre">Adxcvr</span></code>, <code class="docutils literal notranslate"><span class="pre">Jesd204Overlay</span></code>,
+<code class="docutils literal notranslate"><span class="pre">TplCore</span></code>) live under <code class="docutils literal notranslate"><span class="pre">adidt.devices.fpga_ip</span></code>.  Legacy
+<code class="docutils literal notranslate"><span class="pre">build_adxcvr_ctx</span></code> / <code class="docutils literal notranslate"><span class="pre">build_jesd204_overlay_ctx</span></code> /
+<code class="docutils literal notranslate"><span class="pre">build_tpl_core_ctx</span></code> functions are kept as thin shims that
+construct and render the corresponding device.</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="nodebuilder-internals">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">NodeBuilder internals</a><a class="headerlink" href="#nodebuilder-internals" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> (<code class="docutils literal notranslate"><span class="pre">node_builder.py</span></code>) orchestrates the pipeline.  It owns
+platform detection, clock resolution, and the generic rendering path.
+Board builders now construct a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> internally and render it via
+<code class="docutils literal notranslate"><span class="pre">BoardModelRenderer</span></code>, using shared context builders from
+<code class="docutils literal notranslate"><span class="pre">adidt/model/contexts.py</span></code>.  Builders no longer delegate rendering back
+to <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> methods — they are self-contained.</p>
+<section id="entry-point">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">Entry point</a><a class="headerlink" href="#entry-point" title="Link to this heading"></a></h3>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">NodeBuilder</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cfg</span><span class="p">)</span>
+<span class="c1"># Returns:</span>
+<span class="c1"># {</span>
+<span class="c1">#   &quot;clkgens&quot;:    [str, ...],   # axi-clkgen overlay nodes</span>
+<span class="c1">#   &quot;jesd204_rx&quot;: [str, ...],   # generic JESD RX overlay nodes</span>
+<span class="c1">#   &quot;jesd204_tx&quot;: [str, ...],   # generic JESD TX overlay nodes</span>
+<span class="c1">#   &quot;converters&quot;: [str, ...],   # all board-specific nodes</span>
+<span class="c1"># }</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">build()</span></code> detects the platform, resolves clocks, then runs two rendering
+paths:</p>
+<ol class="arabic simple">
+<li><p><strong>Generic path</strong> — renders clkgen and JESD FSM nodes for IP instances
+that no board builder claims.  Uses <code class="docutils literal notranslate"><span class="pre">clkgen.tmpl</span></code> and
+<code class="docutils literal notranslate"><span class="pre">jesd204_fsm.tmpl</span></code>.</p></li>
+<li><p><strong>Builder path</strong> — iterates <code class="docutils literal notranslate"><span class="pre">_DEFAULT_BUILDERS</span></code>, calls <code class="docutils literal notranslate"><span class="pre">matches()</span></code> on
+each, then <code class="docutils literal notranslate"><span class="pre">build_nodes()</span></code> on the matched builder.  The builder
+generates all SPI-device, clock-chip, DMA, TPL, JESD overlay, and XCVR
+nodes for its board family.</p></li>
+</ol>
+<p>The builder tells <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> which IP types it handles (via
+<code class="docutils literal notranslate"><span class="pre">skip_ip_types()</span></code> and <code class="docutils literal notranslate"><span class="pre">skips_generic_jesd()</span></code>), so the generic path skips
+those instances.</p>
+</section>
+<section id="platform-aware-register-format">
+<h3><a class="toc-backref" href="#id6" role="doc-backlink">Platform-aware register format</a><a class="headerlink" href="#platform-aware-register-format" title="Link to this heading"></a></h3>
+<p>MicroBlaze platforms (VCU118) use 32-bit addressing (<code class="docutils literal notranslate"><span class="pre">#address-cells</span> <span class="pre">=</span> <span class="pre">&lt;1&gt;</span></code>),
+while ZynqMP platforms use 64-bit (<code class="docutils literal notranslate"><span class="pre">#address-cells</span> <span class="pre">=</span> <span class="pre">&lt;2&gt;</span></code>).  Templates must
+emit <code class="docutils literal notranslate"><span class="pre">reg</span></code> properties in the correct cell format.</p>
+<p><code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> exposes two Jinja2 globals — <code class="docutils literal notranslate"><span class="pre">reg_addr()</span></code> and <code class="docutils literal notranslate"><span class="pre">reg_size()</span></code>
+— that format addresses and sizes according to the detected platform:</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="x">reg = &lt;</span><span class="cp">{{</span> <span class="nv">reg_addr</span><span class="o">(</span><span class="nv">instance.base_addr</span><span class="o">)</span> <span class="cp">}}</span><span class="x"> </span><span class="cp">{{</span> <span class="nv">reg_size</span><span class="o">(</span><span class="m">0</span><span class="nv">x10000</span><span class="o">)</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+</pre></div>
+</div>
+<p>On VCU118 this renders as <code class="docutils literal notranslate"><span class="pre">reg</span> <span class="pre">=</span> <span class="pre">&lt;0x44ad0000</span> <span class="pre">0x10000&gt;</span></code> (2 cells), and on
+ZCU102 as <code class="docutils literal notranslate"><span class="pre">reg</span> <span class="pre">=</span> <span class="pre">&lt;0x0</span> <span class="pre">0x44ad0000</span> <span class="pre">0x0</span> <span class="pre">0x10000&gt;</span></code> (4 cells).</p>
+<p>The platform is detected from the FPGA part string in the XSA topology via
+<code class="docutils literal notranslate"><span class="pre">inferred_platform()</span></code>.  32-bit platforms are listed in
+<code class="docutils literal notranslate"><span class="pre">NodeBuilder._32BIT_PLATFORMS</span></code>.</p>
+</section>
+<section id="sdtgen-postprocessing-microblaze">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">sdtgen postprocessing (MicroBlaze)</a><a class="headerlink" href="#sdtgen-postprocessing-microblaze" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">SdtgenRunner</span></code> applies several fixups to the sdtgen-generated DTS for
+MicroBlaze/VCU118 targets that are required for Linux boot:</p>
+<ul class="simple">
+<li><p><strong>CPU cluster rename</strong>: <code class="docutils literal notranslate"><span class="pre">cpus_microblaze&#64;0</span></code> → <code class="docutils literal notranslate"><span class="pre">cpus</span></code> (Linux
+<code class="docutils literal notranslate"><span class="pre">of_find_node_by_path(&quot;/cpus&quot;)</span></code> requires exact name match).</p></li>
+<li><p><strong>DDR4 memory node</strong>: Adds <code class="docutils literal notranslate"><span class="pre">device_type</span> <span class="pre">=</span> <span class="pre">&quot;memory&quot;</span></code> and collapses 4-cell
+<code class="docutils literal notranslate"><span class="pre">reg</span></code> to 2-cell format when <code class="docutils literal notranslate"><span class="pre">#address-cells</span> <span class="pre">=</span> <span class="pre">&lt;1&gt;</span></code>.</p></li>
+<li><p><strong>earlycon bootargs</strong>: Injects <code class="docutils literal notranslate"><span class="pre">bootargs</span> <span class="pre">=</span> <span class="pre">&quot;earlycon&quot;</span></code> into the <code class="docutils literal notranslate"><span class="pre">chosen</span></code>
+node so the kernel produces serial output from early boot.</p></li>
+</ul>
+</section>
+<section id="jinja2-environment">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Jinja2 environment</a><a class="headerlink" href="#jinja2-environment" title="Link to this heading"></a></h3>
+<p>The Jinja2 <code class="docutils literal notranslate"><span class="pre">Environment</span></code> is a <code class="docutils literal notranslate"><span class="pre">&#64;cached_property</span></code> on <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@cached_property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_env</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Environment</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Environment</span><span class="p">(</span>
+        <span class="n">loader</span><span class="o">=</span><span class="n">FileSystemLoader</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;templates&quot;</span> <span class="o">/</span> <span class="s2">&quot;xsa&quot;</span><span class="p">)),</span>
+        <span class="n">keep_trailing_newline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>Templates are loaded from <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/</span></code>.  The environment uses no
+auto-escaping (DTS is not HTML) and preserves trailing newlines so that
+rendered nodes concatenate cleanly.</p>
+</section>
+<section id="template-rendering">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Template rendering</a><a class="headerlink" href="#template-rendering" title="Link to this heading"></a></h3>
+<p>All template rendering goes through a single helper:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_render</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">template_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_env</span><span class="o">.</span><span class="n">get_template</span><span class="p">(</span><span class="n">template_name</span><span class="p">)</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">ctx</span><span class="p">)</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">ctx</span></code> is passed as a <strong>positional dict</strong>, not as keyword arguments.  This is
+intentional: the context dict schema is documented in the context-builder
+docstring (see below), and passing it positionally keeps the call sites
+uniform.</p>
+</section>
+<section id="spi-bus-wrapping">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">SPI bus wrapping</a><a class="headerlink" href="#spi-bus-wrapping" title="Link to this heading"></a></h3>
+<p>Multiple templates produce device nodes that must appear inside an
+<code class="docutils literal notranslate"><span class="pre">&amp;spi_bus</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> overlay block.  The helper <code class="docutils literal notranslate"><span class="pre">_wrap_spi_bus</span></code> is used
+instead of repeating the framing in each caller:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_wrap_spi_bus</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">children</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&amp;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> </span><span class="se">{{\n</span><span class="s2">&quot;</span>
+        <span class="s1">&#39;</span><span class="se">\t\t</span><span class="s1">status = &quot;okay&quot;;</span><span class="se">\n</span><span class="s1">&#39;</span>
+        <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">#address-cells = &lt;1&gt;;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;</span><span class="se">\t\t</span><span class="s2">#size-cells = &lt;0&gt;;</span><span class="se">\n</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">children</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="s2">&quot;</span><span class="se">\t</span><span class="s2">};&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="templates">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Templates</a><a class="headerlink" href="#templates" title="Link to this heading"></a></h2>
+<p>Template files live in <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/</span></code> and use the <code class="docutils literal notranslate"><span class="pre">.tmpl</span></code>
+extension.  Each template renders a single DTS node or a pair of related nodes
+(e.g. a device node that must appear inside an SPI bus block).</p>
+<section id="how-templates-compose-into-a-full-device-tree">
+<h3><a class="toc-backref" href="#id12" role="doc-backlink">How templates compose into a full device tree</a><a class="headerlink" href="#how-templates-compose-into-a-full-device-tree" title="Link to this heading"></a></h3>
+<p>A complete merged DTS is assembled in layers.  The base DTS (from sdtgen)
+provides the FPGA bus structure and CPU nodes.  <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> renders
+individual templates, then the board builder and merger nest them into
+the final tree.</p>
+<p>The following diagram shows this layering for an FMCDAQ2 design (AD9523-1
+clock + AD9680 ADC + AD9144 DAC).  The same pattern applies to all board
+families — only the specific templates change.</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────────────────────────────────────────────┐
+│  Merged DTS (.dts)                                                 │
+│                                                                    │
+│  /dts-v1/;                                                         │
+│  / {                                                               │
+│    amba: axi {   ◄── from base DTS (sdtgen)                        │
+│                                                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /* --- Clock Generators --- */                               │  │
+│  │  axi_clkgen_0: ... { ... };  ◄── clkgen.tmpl                 │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /* --- JESD204 RX --- */                                     │  │
+│  │  axi_jesd204_rx_0: ... { ... };  ◄── jesd204_fsm.tmpl        │  │
+│  │                                        (generic path)         │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /* --- JESD204 TX --- */                                     │  │
+│  │  axi_jesd204_tx_0: ... { ... };  ◄── jesd204_fsm.tmpl        │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  /* --- ADC / DAC / Transceiver PHY --- */                    │  │
+│  │  (board builder output — all nodes below)                     │  │
+│  │                                                               │  │
+│  │  ┌─────────────────────────────────────────────────────────┐  │  │
+│  │  │  &amp;spi0 {  ◄── _wrap_spi_bus()                          │  │  │
+│  │  │    ┌────────────────────────────────────────────────┐   │  │  │
+│  │  │    │  clk0_ad9523: ad9523-1@0 { ... };             │   │  │  │
+│  │  │    │    ◄── ad9523_1.tmpl                           │   │  │  │
+│  │  │    ├────────────────────────────────────────────────┤   │  │  │
+│  │  │    │  adc0_ad9680: ad9680@2 { ... };               │   │  │  │
+│  │  │    │    ◄── ad9680.tmpl                             │   │  │  │
+│  │  │    ├────────────────────────────────────────────────┤   │  │  │
+│  │  │    │  dac0_ad9144: ad9144@1 { ... };               │   │  │  │
+│  │  │    │    ◄── ad9144.tmpl                             │   │  │  │
+│  │  │    └────────────────────────────────────────────────┘   │  │  │
+│  │  │  };                                                    │  │  │
+│  │  └─────────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │  &amp;axi_ad9680_dma { ... };      ◄── inline DMA overlay        │  │
+│  │  &amp;axi_ad9144_dma { ... };      ◄── inline DMA overlay        │  │
+│  │                                                               │  │
+│  │  ┌─────────────────────────────────────────────────────────┐  │  │
+│  │  │  &amp;axi_ad9680_core { ... };  ◄── tpl_core.tmpl (rx)     │  │  │
+│  │  │  &amp;axi_ad9144_core { ... };  ◄── tpl_core.tmpl (tx)     │  │  │
+│  │  └─────────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │  ┌─────────────────────────────────────────────────────────┐  │  │
+│  │  │  &amp;axi_ad9680_jesd204_rx { ... };                        │  │  │
+│  │  │    ◄── jesd204_overlay.tmpl (rx)                        │  │  │
+│  │  │  &amp;axi_ad9144_jesd204_tx { ... };                        │  │  │
+│  │  │    ◄── jesd204_overlay.tmpl (tx)                        │  │  │
+│  │  └─────────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  │  ┌─────────────────────────────────────────────────────────┐  │  │
+│  │  │  &amp;axi_ad9680_adxcvr { ... };  ◄── adxcvr.tmpl (rx)     │  │  │
+│  │  │  &amp;axi_ad9144_adxcvr { ... };  ◄── adxcvr.tmpl (tx)     │  │  │
+│  │  └─────────────────────────────────────────────────────────┘  │  │
+│  │                                                               │  │
+│  └───────────────────────────────────────────────────────────────┘  │
+│                                                                    │
+│    };  /* amba */                                                   │
+│  };    /* / */                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+</pre></div>
+</div>
+<p><strong>Key points:</strong></p>
+<ul class="simple">
+<li><p>The <strong>base DTS</strong> (from sdtgen) defines the root <code class="docutils literal notranslate"><span class="pre">/</span></code> and bus
+<code class="docutils literal notranslate"><span class="pre">amba:</span> <span class="pre">axi</span></code> nodes.  The merger inserts generated nodes inside the bus.</p></li>
+<li><p><strong>Generic nodes</strong> (clkgens, JESD204 RX/TX) are rendered directly by
+<code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> using <code class="docutils literal notranslate"><span class="pre">clkgen.tmpl</span></code> and <code class="docutils literal notranslate"><span class="pre">jesd204_fsm.tmpl</span></code>.  These
+go into the <code class="docutils literal notranslate"><span class="pre">clkgens</span></code>, <code class="docutils literal notranslate"><span class="pre">jesd204_rx</span></code>, and <code class="docutils literal notranslate"><span class="pre">jesd204_tx</span></code> result
+lists.</p></li>
+<li><p><strong>Board builder nodes</strong> go into the <code class="docutils literal notranslate"><span class="pre">converters</span></code> list.  A board
+builder (e.g. <code class="docutils literal notranslate"><span class="pre">FMCDAQ2Builder</span></code>) calls <code class="docutils literal notranslate"><span class="pre">_render()</span></code> for each chip
+template, then <code class="docutils literal notranslate"><span class="pre">_wrap_spi_bus()</span></code> to nest the SPI device nodes
+inside an <code class="docutils literal notranslate"><span class="pre">&amp;spi0</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">}</span></code> overlay block.</p></li>
+<li><p><strong>Overlay nodes</strong> (prefixed with <code class="docutils literal notranslate"><span class="pre">&amp;</span></code>) like <code class="docutils literal notranslate"><span class="pre">&amp;axi_ad9680_core</span></code>,
+<code class="docutils literal notranslate"><span class="pre">&amp;axi_ad9680_jesd204_rx</span></code>, and <code class="docutils literal notranslate"><span class="pre">&amp;axi_ad9680_adxcvr</span></code> add properties
+to IP instances that sdtgen already defined in the base DTS.  The
+merger places these at the top level of the output.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">DtsMerger</span></code> arranges all nodes into the final DTS with section
+comments (<code class="docutils literal notranslate"><span class="pre">/*</span> <span class="pre">---</span> <span class="pre">Clock</span> <span class="pre">Generators</span> <span class="pre">---</span> <span class="pre">*/</span></code>, etc.) and handles
+overlay-vs-bus placement.</p></li>
+</ul>
+<p>The AD9084 variant is more complex (four JESD links, two SPI buses, HSCI,
+ADF4382 PLL) but follows the same layering principle — each template renders
+one DTS node, <code class="docutils literal notranslate"><span class="pre">_wrap_spi_bus()</span></code> groups SPI children, and the merger
+assembles everything into the tree.</p>
+</section>
+<section id="indentation-convention">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">Indentation convention</a><a class="headerlink" href="#indentation-convention" title="Link to this heading"></a></h3>
+<p>Templates use <strong>tabs</strong> for DTS indentation.  DTS nodes rendered at the top
+level of an overlay (<code class="docutils literal notranslate"><span class="pre">&amp;label</span> <span class="pre">{</span> <span class="pre">...</span> <span class="pre">};</span></code>) start at the first column; content
+inside them is indented one level per nesting depth.</p>
+<p>Jinja2 delimiters are placed at the start of control lines with no leading
+whitespace; rendered property lines carry their full DTS indentation inside the
+string literal.</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="x">&amp;</span><span class="cp">{{</span> <span class="nv">label</span> <span class="cp">}}</span><span class="x"> {</span>
+<span class="x">     compatible = &quot;adi,axi-jesd204-rx-1.0&quot;;</span>
+<span class="x">     clocks = </span><span class="cp">{{</span> <span class="nv">clocks_str</span> <span class="cp">}}</span><span class="x">;</span>
+<span class="cp">{%</span>- <span class="k">if</span> <span class="nv">clock_output_name</span> <span class="cp">%}</span>
+<span class="x">     clock-output-names = &quot;</span><span class="cp">{{</span> <span class="nv">clock_output_name</span> <span class="cp">}}</span><span class="x">&quot;;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+<span class="x">     jesd204-device;</span>
+<span class="x">};</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">{%-</span></code> trim marker removes the newline before the block tag, keeping
+properties flush with no blank lines.</p>
+</section>
+<section id="pre-formatted-string-variables">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">Pre-formatted string variables</a><a class="headerlink" href="#pre-formatted-string-variables" title="Link to this heading"></a></h3>
+<p>The Jinja2 environment does not load the <code class="docutils literal notranslate"><span class="pre">tojson</span></code> filter.  Wherever a
+property value is a list of quoted strings (e.g. <code class="docutils literal notranslate"><span class="pre">clock-output-names</span></code> or
+<code class="docutils literal notranslate"><span class="pre">clock-names</span></code>), the context builder pre-formats it as a single string:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># In the context builder:</span>
+<span class="n">clock_output_names_str</span> <span class="o">=</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&quot;</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">&quot;&#39;</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+
+<span class="c1"># In the template:</span>
+<span class="n">clock</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">names</span> <span class="o">=</span> <span class="p">{{</span> <span class="n">clock_output_names_str</span> <span class="p">}};</span>
+</pre></div>
+</div>
+<p>This pattern appears in every template that emits multi-value string
+properties.</p>
+</section>
+<section id="conditional-properties">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Conditional properties</a><a class="headerlink" href="#conditional-properties" title="Link to this heading"></a></h3>
+<p>Properties that are only present on some variants of a node use
+<code class="docutils literal notranslate"><span class="pre">{%-</span> <span class="pre">if</span> <span class="pre">x</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span> <span class="pre">%}</span></code> guards:</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="cp">{%</span>- <span class="k">if</span> <span class="nv">converter_resolution</span> <span class="k">is</span> <span class="k">not</span> <span class="nf">none</span> <span class="cp">%}</span>
+<span class="x">     adi,converter-resolution = &lt;</span><span class="cp">{{</span> <span class="nv">converter_resolution</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span></code> (not a truthiness check) so that the property is emitted
+when the value is <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+</section>
+<section id="raw-channels-escape-hatch">
+<h3><a class="toc-backref" href="#id16" role="doc-backlink"><code class="docutils literal notranslate"><span class="pre">raw_channels</span></code> escape hatch</a><a class="headerlink" href="#raw-channels-escape-hatch" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">hmc7044.tmpl</span></code> supports two channel-rendering modes:</p>
+<ol class="arabic simple">
+<li><p><strong>Structured</strong>: pass <code class="docutils literal notranslate"><span class="pre">channels</span></code> as a list of dicts with keys
+<code class="docutils literal notranslate"><span class="pre">id</span></code>, <code class="docutils literal notranslate"><span class="pre">name</span></code>, <code class="docutils literal notranslate"><span class="pre">divider</span></code>, <code class="docutils literal notranslate"><span class="pre">freq_str</span></code>, <code class="docutils literal notranslate"><span class="pre">driver_mode</span></code>, etc.
+The template loops over the list and renders each channel sub-node.</p></li>
+<li><p><strong>Raw string</strong>: pass <code class="docutils literal notranslate"><span class="pre">channels=None</span></code> and <code class="docutils literal notranslate"><span class="pre">raw_channels</span></code> as a
+pre-rendered DTS string.  The template emits the string verbatim.</p></li>
+</ol>
+<p>The raw-string path is used by the FMComms8 builder where the channel
+block is too complex (or too hardware-specific) to be captured as structured
+channel dicts without a dedicated schema extension.</p>
+</section>
+<section id="template-catalogue">
+<h3><a class="toc-backref" href="#id17" role="doc-backlink">Template catalogue</a><a class="headerlink" href="#template-catalogue" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Template</p></th>
+<th class="head"><p>Renders</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hmc7044.tmpl</span></code></p></td>
+<td><p>HMC7044 clock chip node (inside SPI bus).  Supports structured
+channels or raw <code class="docutils literal notranslate"><span class="pre">raw_channels</span></code> string.  All optional properties
+are guarded with <code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9523_1.tmpl</span></code></p></td>
+<td><p>AD9523-1 clock chip (FMCDAQ2); 8 channels hardcoded, optional GPIO
+lines (sync, status0/1).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9528.tmpl</span></code></p></td>
+<td><p>AD9528 clock chip (FMCDAQ3); channels carry <code class="docutils literal notranslate"><span class="pre">signal_source</span></code> and
+<code class="docutils literal notranslate"><span class="pre">is_sysref</span></code> fields.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9528_1.tmpl</span></code></p></td>
+<td><p>AD9528-1 variant (ADRV9009 standard path); ADRV9009-specific PLL
+properties, <code class="docutils literal notranslate"><span class="pre">adi,driver-mode</span> <span class="pre">=</span> <span class="pre">&lt;0&gt;</span></code> per channel.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9680.tmpl</span></code></p></td>
+<td><p>AD9680 ADC.  <code class="docutils literal notranslate"><span class="pre">use_spi_3wire</span></code> flag controls <code class="docutils literal notranslate"><span class="pre">spi-cpol</span></code>/
+<code class="docutils literal notranslate"><span class="pre">spi-cpha</span></code> and sysref-related properties.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9144.tmpl</span></code></p></td>
+<td><p>AD9144 DAC.  <code class="docutils literal notranslate"><span class="pre">jesd204-inputs</span></code> offset is always 1.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9152.tmpl</span></code></p></td>
+<td><p>AD9152 DAC (FMCDAQ3).  Includes <code class="docutils literal notranslate"><span class="pre">spi-cpol</span></code>/<code class="docutils literal notranslate"><span class="pre">spi-cpha</span></code> and
+<code class="docutils literal notranslate"><span class="pre">adi,jesd-link-mode</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9172.tmpl</span></code></p></td>
+<td><p>AD9172 DAC.  Simple structure, mostly hardcoded properties.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">adxcvr.tmpl</span></code></p></td>
+<td><p>GT transceiver overlay.  <code class="docutils literal notranslate"><span class="pre">use_div40=True</span></code> emits two-clock (conv +
+div40) variant; <code class="docutils literal notranslate"><span class="pre">use_div40=False</span></code> emits single-clock variant.
+<code class="docutils literal notranslate"><span class="pre">use_lpm_enable</span></code> adds <code class="docutils literal notranslate"><span class="pre">adi,use-lpm-enable</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jesd204_overlay.tmpl</span></code></p></td>
+<td><p>JESD204 controller overlay (RX or TX).  TX fields
+(<code class="docutils literal notranslate"><span class="pre">converter_resolution</span></code>, <code class="docutils literal notranslate"><span class="pre">bits_per_sample</span></code>, etc.) are guarded
+with <code class="docutils literal notranslate"><span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span></code>.  <code class="docutils literal notranslate"><span class="pre">clock_output_name=None</span></code> suppresses
+<code class="docutils literal notranslate"><span class="pre">clock-output-names</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">tpl_core.tmpl</span></code></p></td>
+<td><p>AXI TPL core overlay.  <code class="docutils literal notranslate"><span class="pre">dma_label</span></code> controls the DMA link;
+<code class="docutils literal notranslate"><span class="pre">sampl_clk_ref</span></code> adds a <code class="docutils literal notranslate"><span class="pre">clocks</span></code> property; <code class="docutils literal notranslate"><span class="pre">pl_fifo_enable</span></code>
+adds <code class="docutils literal notranslate"><span class="pre">adi,axi-pl-fifo-enable</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ad9084.tmpl</span></code></p></td>
+<td><p>AD9084 converter SPI device node.  Supports <code class="docutils literal notranslate"><span class="pre">adi,device-profile-fw-name</span></code>
+for firmware loading, <code class="docutils literal notranslate"><span class="pre">adi,axi-hsci-connected</span></code> for HSCI linkup,
+<code class="docutils literal notranslate"><span class="pre">dev_clk-clock-scales</span></code>, JESD204 lane mappings (<code class="docutils literal notranslate"><span class="pre">jrx0</span></code>/<code class="docutils literal notranslate"><span class="pre">jtx0</span></code>/
+<code class="docutils literal notranslate"><span class="pre">jrx1</span></code>/<code class="docutils literal notranslate"><span class="pre">jtx1</span></code>), subclass, and <code class="docutils literal notranslate"><span class="pre">adi,side-b-use-seperate-tpl-en</span></code>
+for dual-link designs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ad9081_mxfe.tmpl</span></code></p></td>
+<td><p>AD9081 MXFE device node.  Complex nested <code class="docutils literal notranslate"><span class="pre">adi,tx-dacs</span></code> and
+<code class="docutils literal notranslate"><span class="pre">adi,rx-adcs</span></code> sub-trees rendered from structured context.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">adrv9009.tmpl</span></code></p></td>
+<td><p>ADRV9009/9025 PHY device node.  <code class="docutils literal notranslate"><span class="pre">{%</span> <span class="pre">if</span> <span class="pre">is_fmcomms8</span> <span class="pre">%}</span></code> block
+emits second PHY for dual-chip FMComms8 layouts.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">clkgen.tmpl</span></code></p></td>
+<td><p>AXI clock-generator overlay.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">jesd204_fsm.tmpl</span></code></p></td>
+<td><p>Generic JESD204 FSM overlay (used by the generic path).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">axi_ad9081.tmpl</span></code></p></td>
+<td><p>AXI AD9081 MXFE PL core overlay.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="adrv9009-zc706-specifics">
+<h3><a class="toc-backref" href="#id18" role="doc-backlink">ADRV9009 ZC706 specifics</a><a class="headerlink" href="#adrv9009-zc706-specifics" title="Link to this heading"></a></h3>
+<p>The ADRV9009 builder applies two ZC706-only fixes to make
+buffered RX capture work on the sdtgen-merged DTB:</p>
+<ol class="arabic simple">
+<li><p><strong>``sampl_clk`` on TPL cores.</strong>  <code class="docutils literal notranslate"><span class="pre">cf_axi_adc</span></code> calls
+<code class="docutils literal notranslate"><span class="pre">clk_get_rate(sampl_clk)</span></code> to size the DMA buffer.  Without it,
+the driver still binds and the JESD link reaches <code class="docutils literal notranslate"><span class="pre">DATA</span></code>, but
+<code class="docutils literal notranslate"><span class="pre">iio_buffer_refill</span></code> never triggers and capture hangs.  The
+builder wires <code class="docutils literal notranslate"><span class="pre">sampl_clk</span></code> in two passes: pass 1 points at the
+PS reference (<code class="docutils literal notranslate"><span class="pre">clkc</span></code>); pass 2 redirects to the ADRV9009 chip’s
+per-direction clock-provider outputs (<code class="docutils literal notranslate"><span class="pre">trx0_adrv9009</span> <span class="pre">0/1/2</span></code>)
+once the phy label is resolvable.</p></li>
+<li><p><strong>DMA-done IRQ override.</strong>  The Kuiper ZC706 ADRV9009 XSA
+declares <code class="docutils literal notranslate"><span class="pre">PCW_IRQ_F2P_MODE</span> <span class="pre">=</span> <span class="pre">REVERSE</span></code> on the PS, and sdtgen
+follows that — emitting DT cell 31 (SPI 63) for <code class="docutils literal notranslate"><span class="pre">In13</span></code> /
+<code class="docutils literal notranslate"><span class="pre">rx_dma</span></code>.  The bitstream actually fires DMA-done on the
+<em>DIRECT</em>-mode SPIs the production
+<code class="docutils literal notranslate"><span class="pre">zynq-zc706-adv7511-adrv9009.dts</span></code> uses (DT cells 57/56/55
+for rx/tx/rx-obs).  With the sdtgen vectors,
+<code class="docutils literal notranslate"><span class="pre">/proc/interrupts</span></code> shows zero counts during refill and capture
+stalls.  The builder overrides <code class="docutils literal notranslate"><span class="pre">interrupts</span></code> on the rx / tx /
+rx-obs <code class="docutils literal notranslate"><span class="pre">axi_dmac</span></code> nodes for <code class="docutils literal notranslate"><span class="pre">platform</span> <span class="pre">==</span> <span class="pre">&quot;zc706&quot;</span></code> only;
+ZynqMP boards keep their sdtgen interrupts unchanged.</p></li>
+</ol>
+</section>
+</section>
+<section id="context-builders">
+<h2><a class="toc-backref" href="#id19" role="doc-backlink">Context builders</a><a class="headerlink" href="#context-builders" title="Link to this heading"></a></h2>
+<p>Every template has a matching <strong>context builder</strong> function in
+<code class="docutils literal notranslate"><span class="pre">adidt/model/contexts.py</span></code>.  Context builders are responsible for:</p>
+<ol class="arabic simple">
+<li><p>Accepting named parameters for the component configuration.</p></li>
+<li><p>Computing derived values (e.g. <code class="docutils literal notranslate"><span class="pre">fmt_hz()</span></code> for frequency annotations,
+<code class="docutils literal notranslate"><span class="pre">fmt_gpi_gpo()</span></code> for hex GPIO control strings).</p></li>
+<li><p>Pre-formatting list values into strings (<code class="docutils literal notranslate"><span class="pre">clock_output_names_str</span></code>, etc.).</p></li>
+<li><p>Returning a flat <code class="docutils literal notranslate"><span class="pre">dict</span></code> whose keys match the variable names used in the
+template.</p></li>
+</ol>
+<p>Naming convention: <code class="docutils literal notranslate"><span class="pre">build_&lt;chip&gt;_ctx()</span></code> or <code class="docutils literal notranslate"><span class="pre">build_&lt;chip&gt;_device_ctx()</span></code>.</p>
+<p>These functions are standalone (not methods on <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code>) so they can
+be reused by both XSA builders and the manual board-class workflow
+(<code class="docutils literal notranslate"><span class="pre">to_board_model()</span></code>).  Legacy <code class="docutils literal notranslate"><span class="pre">_build_*_ctx()</span></code> methods still exist on
+<code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> for backward compatibility but internally delegate to the
+shared functions.</p>
+<p>Context builder docstrings document the full <strong>context schema</strong> — the
+complete set of keys returned and the meaning of each.  For example:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_build_jesd204_overlay_ctx</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ps_clk_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ps_clk_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">device_clk_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">xcvr_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">jesd_link_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">is_tx</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">octets_per_frame</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">frames_per_multiframe</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">num_converters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">converter_resolution</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bits_per_sample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">control_bits_per_sample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">clock_output_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build context dict for jesd204_overlay.tmpl.</span>
+
+<span class="sd">    Context schema:</span>
+<span class="sd">        label (str): DTS label (e.g. ``&quot;axi_ad9680_jesd_rx_axi&quot;``).</span>
+<span class="sd">        direction (str): ``&quot;rx&quot;`` or ``&quot;tx&quot;``.</span>
+<span class="sd">        clocks_str (str): Pre-formatted ``clocks = &lt;...&gt;`` value.</span>
+<span class="sd">        clock_names_str (str): Pre-formatted ``clock-names = &quot;...&quot;`` value.</span>
+<span class="sd">        clock_output_name (str | None): If set, emits ``clock-output-names``.</span>
+<span class="sd">        f (int): Octets per frame.</span>
+<span class="sd">        k (int): Frames per multiframe.</span>
+<span class="sd">        converter_resolution (int | None): Emits ``adi,converter-resolution`` when set.</span>
+<span class="sd">        ...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="board-specific-config-extraction">
+<h2><a class="toc-backref" href="#id20" role="doc-backlink">Board-specific config extraction</a><a class="headerlink" href="#board-specific-config-extraction" title="Link to this heading"></a></h2>
+<p>Each builder’s <code class="docutils literal notranslate"><span class="pre">build_model()</span></code> method extracts configuration from the
+<code class="docutils literal notranslate"><span class="pre">cfg</span></code> dict using <code class="docutils literal notranslate"><span class="pre">coerce_board_int()</span></code> for type-safe integer conversion.
+The extracted values populate <code class="docutils literal notranslate"><span class="pre">ComponentModel.config</span></code> dicts (via context
+builder functions) and <code class="docutils literal notranslate"><span class="pre">JesdLinkModel</span></code> fields.</p>
+<p>Legacy private dataclasses (<code class="docutils literal notranslate"><span class="pre">_FMCDAQ2Cfg</span></code>, <code class="docutils literal notranslate"><span class="pre">_FMCDAQ3Cfg</span></code>,
+<code class="docutils literal notranslate"><span class="pre">_AD9172Cfg</span></code>) still exist in <code class="docutils literal notranslate"><span class="pre">node_builder.py</span></code> but are no longer used
+by the builders — configuration extraction now happens directly in each
+builder’s <code class="docutils literal notranslate"><span class="pre">build_model()</span></code> method.</p>
+</section>
+<section id="adding-a-new-component">
+<h2><a class="toc-backref" href="#id21" role="doc-backlink">Adding a new component</a><a class="headerlink" href="#adding-a-new-component" title="Link to this heading"></a></h2>
+<p>This section walks through the full process of adding DTS support for a new
+SPI-attached chip — for example a new ADC called <code class="docutils literal notranslate"><span class="pre">AD_NEW</span></code>.</p>
+<section id="step-1-write-the-template">
+<h3><a class="toc-backref" href="#id22" role="doc-backlink">Step 1 — Write the template</a><a class="headerlink" href="#step-1-write-the-template" title="Link to this heading"></a></h3>
+<p>Create <code class="docutils literal notranslate"><span class="pre">adidt/templates/xsa/ad_new.tmpl</span></code>.  Follow the indentation
+convention (tabs, single-level inside the SPI bus node):</p>
+<div class="highlight-jinja notranslate"><div class="highlight"><pre><span></span><span class="x">             </span><span class="cp">{{</span> <span class="nv">label</span> <span class="cp">}}</span><span class="x">: ad_new@</span><span class="cp">{{</span> <span class="nv">cs</span> <span class="cp">}}</span><span class="x"> {</span>
+<span class="x">                     compatible = &quot;adi,ad-new&quot;;</span>
+<span class="x">                     reg = &lt;</span><span class="cp">{{</span> <span class="nv">cs</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="x">                     spi-max-frequency = &lt;</span><span class="cp">{{</span> <span class="nv">spi_max_hz</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="cp">{%</span>- <span class="k">if</span> <span class="nv">reset_gpio</span> <span class="k">is</span> <span class="k">not</span> <span class="nf">none</span> <span class="cp">%}</span>
+<span class="x">                     reset-gpios = &lt;&amp;</span><span class="cp">{{</span> <span class="nv">gpio_controller</span> <span class="cp">}}</span><span class="x"> </span><span class="cp">{{</span> <span class="nv">reset_gpio</span> <span class="cp">}}</span><span class="x"> 0&gt;;</span>
+<span class="cp">{%</span>- <span class="k">endif</span> <span class="cp">%}</span>
+<span class="x">                     adi,sampling-frequency = &lt;</span><span class="cp">{{</span> <span class="nv">sampling_freq_hz</span> <span class="cp">}}</span><span class="x">&gt;;</span>
+<span class="x">                     #clock-cells = &lt;0&gt;;</span>
+<span class="x">             };</span>
+</pre></div>
+</div>
+<p>Follow these rules when writing templates:</p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">{%-</span> <span class="pre">if</span> <span class="pre">x</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">none</span> <span class="pre">%}</span></code> (not truthiness) for optional properties.</p></li>
+<li><p>Pre-format any multi-value string property in the context builder, not in
+the template.</p></li>
+<li><p>Keep the closing <code class="docutils literal notranslate"><span class="pre">};</span></code> at the same indentation as the opening <code class="docutils literal notranslate"><span class="pre">label:</span></code>.</p></li>
+</ul>
+</section>
+<section id="step-2-write-the-context-builder">
+<h3><a class="toc-backref" href="#id23" role="doc-backlink">Step 2 — Write the context builder</a><a class="headerlink" href="#step-2-write-the-context-builder" title="Link to this heading"></a></h3>
+<p>Add a <code class="docutils literal notranslate"><span class="pre">build_ad_new_ctx()</span></code> function to <code class="docutils literal notranslate"><span class="pre">adidt/model/contexts.py</span></code>.
+Use keyword-only arguments so callers are explicit:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">build_ad_new_ctx</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adc0_ad_new&quot;</span><span class="p">,</span>
+    <span class="n">cs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="n">spi_max_hz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10_000_000</span><span class="p">,</span>
+    <span class="n">gpio_controller</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gpio0&quot;</span><span class="p">,</span>
+    <span class="n">reset_gpio</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sampling_freq_hz</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build context dict for ``ad_new.tmpl``.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span>
+        <span class="s2">&quot;cs&quot;</span><span class="p">:</span> <span class="n">cs</span><span class="p">,</span>
+        <span class="s2">&quot;spi_max_hz&quot;</span><span class="p">:</span> <span class="n">spi_max_hz</span><span class="p">,</span>
+        <span class="s2">&quot;gpio_controller&quot;</span><span class="p">:</span> <span class="n">gpio_controller</span><span class="p">,</span>
+        <span class="s2">&quot;reset_gpio&quot;</span><span class="p">:</span> <span class="n">reset_gpio</span><span class="p">,</span>
+        <span class="s2">&quot;sampling_freq_hz&quot;</span><span class="p">:</span> <span class="n">sampling_freq_hz</span><span class="p">,</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Context builders live in <code class="docutils literal notranslate"><span class="pre">adidt/model/contexts.py</span></code> so they can be reused
+by both XSA builders and manual board classes (<code class="docutils literal notranslate"><span class="pre">to_board_model()</span></code>).</p>
+</section>
+<section id="step-3-write-tests">
+<h3><a class="toc-backref" href="#id24" role="doc-backlink">Step 3 — Write tests</a><a class="headerlink" href="#step-3-write-tests" title="Link to this heading"></a></h3>
+<p>Add tests under <code class="docutils literal notranslate"><span class="pre">test/devices/</span></code> for the device class itself (field
+semantics, rendered DTS content) and <code class="docutils literal notranslate"><span class="pre">test/xsa/</span></code> for the builder
+integration.  Follow TDD: write the test first, confirm it fails, then
+implement.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">test_ad_new_renders_expected_properties</span><span class="p">():</span>
+    <span class="n">ad_new</span> <span class="o">=</span> <span class="n">ADNew</span><span class="p">(</span>
+        <span class="n">label</span><span class="o">=</span><span class="s2">&quot;adc0_ad_new&quot;</span><span class="p">,</span>
+        <span class="n">reset_gpio</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+        <span class="n">sampling_frequency_hz</span><span class="o">=</span><span class="mi">245_760_000</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">ad_new</span><span class="o">.</span><span class="n">render_dt</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;gpio_label&quot;</span><span class="p">:</span> <span class="s2">&quot;gpio&quot;</span><span class="p">})</span>
+    <span class="k">assert</span> <span class="s1">&#39;compatible = &quot;adi,ad-new&quot;;&#39;</span> <span class="ow">in</span> <span class="n">out</span>
+    <span class="k">assert</span> <span class="s2">&quot;adc0_ad_new: ad_new@0 {&quot;</span> <span class="ow">in</span> <span class="n">out</span>
+    <span class="k">assert</span> <span class="s2">&quot;reset-gpios = &lt;&amp;gpio 100 0&gt;;&quot;</span> <span class="ow">in</span> <span class="n">out</span>
+    <span class="k">assert</span> <span class="s2">&quot;adi,sampling-frequency = /bits/ 64 &lt;245760000&gt;;&quot;</span> <span class="ow">in</span> <span class="n">out</span>
+</pre></div>
+</div>
+<p>Run tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>nox<span class="w"> </span>-s<span class="w"> </span>tests<span class="w"> </span>--<span class="w"> </span>test/xsa/test_node_builder_templates.py<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;ad_new&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="step-4-add-board-detection-if-needed">
+<h3><a class="toc-backref" href="#id25" role="doc-backlink">Step 4 — Add board detection (if needed)</a><a class="headerlink" href="#step-4-add-board-detection-if-needed" title="Link to this heading"></a></h3>
+<p>If the new chip is the primary converter in a design, add a detection method
+to <code class="docutils literal notranslate"><span class="pre">XsaTopology</span></code> in <code class="docutils literal notranslate"><span class="pre">topology.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_ad_new_design</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True if the topology contains an AD_NEW design.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_converter_types</span><span class="p">(</span><span class="s2">&quot;axi_ad_new&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Or use JESD instance name matching if there is no dedicated AXI IP type:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">is_ad_new_design</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="s2">&quot;ad_new&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jesd_name_blob</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Add the family to <code class="docutils literal notranslate"><span class="pre">inferred_converter_family()</span></code> in the priority list.</p>
+</section>
+<section id="step-5-wire-into-a-board-builder">
+<h3><a class="toc-backref" href="#id26" role="doc-backlink">Step 5 — Wire into a board builder</a><a class="headerlink" href="#step-5-wire-into-a-board-builder" title="Link to this heading"></a></h3>
+<p>All builders construct a <code class="docutils literal notranslate"><span class="pre">BoardModel</span></code> internally by instantiating
+declarative device classes and stuffing their rendered strings into
+<code class="docutils literal notranslate"><span class="pre">ComponentModel.rendered</span></code>.  Add the new device by writing a class
+under <code class="docutils literal notranslate"><span class="pre">adidt/devices/</span></code> (see <a class="reference internal" href="developer/authoring_devices.html"><span class="doc">Authoring a new device class</span></a> for
+the full pattern — class design, <code class="docutils literal notranslate"><span class="pre">render_node</span></code> hooks, and cookbook
+recipes) and wiring it in:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.model.board_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ComponentModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.devices.converters</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADNew</span>
+
+<span class="c1"># Inside the builder&#39;s build_model():</span>
+<span class="n">ad_new</span> <span class="o">=</span> <span class="n">ADNew</span><span class="p">(</span>
+    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;adc0_ad_new&quot;</span><span class="p">,</span>
+    <span class="n">sampling_frequency_hz</span><span class="o">=</span><span class="mi">245_760_000</span><span class="p">,</span>
+    <span class="c1"># ... further fields match the DT properties 1:1.</span>
+<span class="p">)</span>
+<span class="n">components</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+    <span class="n">ComponentModel</span><span class="p">(</span>
+        <span class="n">role</span><span class="o">=</span><span class="s2">&quot;adc&quot;</span><span class="p">,</span>
+        <span class="n">part</span><span class="o">=</span><span class="s2">&quot;ad_new&quot;</span><span class="p">,</span>
+        <span class="n">template</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+        <span class="n">spi_bus</span><span class="o">=</span><span class="n">spi_bus</span><span class="p">,</span>
+        <span class="n">spi_cs</span><span class="o">=</span><span class="n">adc_cs</span><span class="p">,</span>
+        <span class="n">config</span><span class="o">=</span><span class="p">{},</span>
+        <span class="n">rendered</span><span class="o">=</span><span class="n">ad_new</span><span class="o">.</span><span class="n">render_dt</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="n">adc_cs</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">BoardModelRenderer</span></code> handles SPI bus grouping, template rendering,
+and assembly automatically.</p>
+<p>If it is a new board family entirely, create a new builder module in
+<code class="docutils literal notranslate"><span class="pre">adidt/xsa/builders/</span></code> implementing the <code class="docutils literal notranslate"><span class="pre">BoardBuilder</span></code> protocol with a
+<code class="docutils literal notranslate"><span class="pre">build_model()</span></code> method.  See <code class="docutils literal notranslate"><span class="pre">fmcdaq2.py</span></code> as the reference
+implementation.  Add the builder to <code class="docutils literal notranslate"><span class="pre">NodeBuilder._DEFAULT_BUILDERS</span></code>.</p>
+</section>
+</section>
+<section id="adding-a-new-board">
+<h2><a class="toc-backref" href="#id27" role="doc-backlink">Adding a new board</a><a class="headerlink" href="#adding-a-new-board" title="Link to this heading"></a></h2>
+<p>A <strong>board</strong> in this context means a specific combination of FPGA platform and
+daughter card (e.g. <code class="docutils literal notranslate"><span class="pre">ad_new_zcu102</span></code>).  Adding board support involves:</p>
+<ol class="arabic simple">
+<li><p>Creating a board JSON profile</p></li>
+<li><p>Registering the profile</p></li>
+<li><p>Adding topology detection (if the FPGA part is new)</p></li>
+<li><p>Writing or extending a board builder</p></li>
+</ol>
+<section id="step-1-create-the-board-json-profile">
+<h3><a class="toc-backref" href="#id28" role="doc-backlink">Step 1 — Create the board JSON profile</a><a class="headerlink" href="#step-1-create-the-board-json-profile" title="Link to this heading"></a></h3>
+<p>Create <code class="docutils literal notranslate"><span class="pre">adidt/xsa/profiles/ad_new_zcu102.json</span></code>.  A profile supplies default
+values for all board-wiring keys so that users only need to override what
+differs:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;ad_new_zcu102&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;defaults&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;jesd&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;rx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">&quot;tx&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;F&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;K&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="w"> </span><span class="p">}</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="nt">&quot;ad_new_board&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">&quot;spi_bus&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;spi0&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;clk_cs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;adc_cs&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;clk_spi_max_frequency&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10000000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;adc_spi_max_frequency&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10000000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;reset_gpio&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">100</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;sampling_freq_hz&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">245760000</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Profile keys are validated against a schema in <code class="docutils literal notranslate"><span class="pre">profiles.py</span></code>.  Add the new
+board-level key (<code class="docutils literal notranslate"><span class="pre">&quot;ad_new_board&quot;</span></code> in this example) to <code class="docutils literal notranslate"><span class="pre">KNOWN_BOARD_KEYS</span></code>
+in <code class="docutils literal notranslate"><span class="pre">profiles.py</span></code> and define its allowed sub-keys to prevent silent typos.</p>
+</section>
+<section id="step-2-register-the-profile">
+<h3><a class="toc-backref" href="#id29" role="doc-backlink">Step 2 — Register the profile</a><a class="headerlink" href="#step-2-register-the-profile" title="Link to this heading"></a></h3>
+<p>In <code class="docutils literal notranslate"><span class="pre">profiles.py</span></code>, add an entry to the profile registry so that
+<code class="docutils literal notranslate"><span class="pre">XsaPipeline</span></code> can auto-select or explicitly load it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_BUILTIN_PROFILES</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="o">...</span>
+    <span class="s2">&quot;ad_new_zcu102&quot;</span><span class="p">,</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Auto-selection logic lives in <code class="docutils literal notranslate"><span class="pre">XsaParser</span></code> / <code class="docutils literal notranslate"><span class="pre">XsaPipeline</span></code>.  If the new
+design is unambiguously identifiable from the topology (e.g. a unique
+<code class="docutils literal notranslate"><span class="pre">axi_ad_new</span></code> IP type), add it to the auto-selection table.  If it shares
+IP names with an existing family, require explicit <code class="docutils literal notranslate"><span class="pre">profile=</span></code> selection and
+document this in the <code class="docutils literal notranslate"><span class="pre">xsa.rst</span></code> user guide.</p>
+</section>
+<section id="step-3-platform-support">
+<h3><a class="toc-backref" href="#id30" role="doc-backlink">Step 3 — Platform support</a><a class="headerlink" href="#step-3-platform-support" title="Link to this heading"></a></h3>
+<p>If the FPGA part is not yet known, add it to <code class="docutils literal notranslate"><span class="pre">_PART_TO_PLATFORM</span></code> in
+<code class="docutils literal notranslate"><span class="pre">topology.py</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">_PART_TO_PLATFORM</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">...</span>
+    <span class="s2">&quot;xczu9eg&quot;</span><span class="p">:</span> <span class="s2">&quot;zcu102&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xc7z045&quot;</span><span class="p">:</span> <span class="s2">&quot;zc706&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;xcvu9p&quot;</span><span class="p">:</span>  <span class="s2">&quot;vcu118&quot;</span><span class="p">,</span>   <span class="c1"># ← new entry</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">inferred_platform()</span></code> uses this table to select PS clock labels and GPIO
+controller names.  If a new platform needs different labels, update the
+<code class="docutils literal notranslate"><span class="pre">_platform_ps_labels()</span></code> helper in <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code>.</p>
+</section>
+<section id="step-4-board-builder">
+<h3><a class="toc-backref" href="#id31" role="doc-backlink">Step 4 — Board builder</a><a class="headerlink" href="#step-4-board-builder" title="Link to this heading"></a></h3>
+<p>Create <code class="docutils literal notranslate"><span class="pre">_build_ad_new_nodes()</span></code> on <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> following the pattern
+below:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">_build_ad_new_nodes</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">topology</span><span class="p">:</span> <span class="n">XsaTopology</span><span class="p">,</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">ps_clk_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ps_clk_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build DTS node strings for an AD_NEW design.</span>
+
+<span class="sd">    Returns an empty list if the topology is not an AD_NEW design.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">topology</span><span class="o">.</span><span class="n">is_ad_new_design</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">board_cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ad_new_board&quot;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="n">spi_bus</span>   <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">board_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;spi_bus&quot;</span><span class="p">,</span> <span class="s2">&quot;spi0&quot;</span><span class="p">))</span>
+    <span class="n">clk_cs</span>    <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">board_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;clk_cs&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">adc_cs</span>    <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">board_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;adc_cs&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="o">...</span>
+
+    <span class="c1"># Construct devices and collect their pre-rendered DTS strings.</span>
+    <span class="n">hmc7044</span> <span class="o">=</span> <span class="n">HMC7044</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;hmc7044&quot;</span><span class="p">,</span> <span class="n">vcxo_hz</span><span class="o">=</span><span class="mi">125_000_000</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+    <span class="n">ad_new</span> <span class="o">=</span> <span class="n">ADNew</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;adc0_ad_new&quot;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+
+    <span class="n">spi_children</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">hmc7044</span><span class="o">.</span><span class="n">render_dt</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="n">clk_cs</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">ad_new</span><span class="o">.</span><span class="n">render_dt</span><span class="p">(</span><span class="n">cs</span><span class="o">=</span><span class="n">adc_cs</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="n">nodes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="c1"># misc / DMA / XCVR / JESD overlay nodes ...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wrap_spi_bus</span><span class="p">(</span><span class="n">spi_bus</span><span class="p">,</span> <span class="n">spi_children</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="n">nodes</span>
+</pre></div>
+</div>
+<p>Then call it from <code class="docutils literal notranslate"><span class="pre">build()</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;converters&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_build_ad_new_nodes</span><span class="p">(</span><span class="n">topology</span><span class="p">,</span> <span class="n">cfg</span><span class="p">,</span> <span class="n">ps_clk_label</span><span class="p">,</span> <span class="n">ps_clk_index</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="regression-and-parity-testing">
+<h3><a class="toc-backref" href="#id32" role="doc-backlink">Regression and parity testing</a><a class="headerlink" href="#regression-and-parity-testing" title="Link to this heading"></a></h3>
+<p>For hardware-verified designs, add a <strong>parity test</strong> that runs the full
+pipeline against a reference DTS and checks that required roles are present:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># test/xsa/test_parity.py  (or equivalent)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_ad_new_zcu102_parity</span><span class="p">(</span><span class="n">xsa_path</span><span class="p">,</span> <span class="n">ref_dts_path</span><span class="p">):</span>
+    <span class="n">cfg</span> <span class="o">=</span> <span class="n">load_profile</span><span class="p">(</span><span class="s2">&quot;ad_new_zcu102&quot;</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+        <span class="n">xsa_path</span><span class="o">=</span><span class="n">xsa_path</span><span class="p">,</span>
+        <span class="n">cfg</span><span class="o">=</span><span class="n">cfg</span><span class="p">,</span>
+        <span class="n">output_dir</span><span class="o">=</span><span class="n">tmp_path</span><span class="p">,</span>
+        <span class="n">reference_dts</span><span class="o">=</span><span class="n">ref_dts_path</span><span class="p">,</span>
+        <span class="n">strict_parity</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="c1"># Passes when all required roles from the reference are present.</span>
+</pre></div>
+</div>
+<p>Unit tests for the new context builder and template should live in
+<code class="docutils literal notranslate"><span class="pre">test/xsa/test_node_builder_templates.py</span></code>.</p>
+</section>
+</section>
+<section id="utility-helpers">
+<h2><a class="toc-backref" href="#id33" role="doc-backlink">Utility helpers</a><a class="headerlink" href="#utility-helpers" title="Link to this heading"></a></h2>
+<p>Several static helpers on <code class="docutils literal notranslate"><span class="pre">NodeBuilder</span></code> are useful when writing new board
+builders.</p>
+<dl class="simple">
+<dt><code class="docutils literal notranslate"><span class="pre">_fmt_hz(hz)</span></code></dt><dd><p>Formats an integer frequency into a human-readable string:
+<code class="docutils literal notranslate"><span class="pre">245760000</span> <span class="pre">→</span> <span class="pre">&quot;245.76</span> <span class="pre">MHz&quot;</span></code>.  Used for DTS comment annotations.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">_fmt_gpi_gpo(controls)</span></code></dt><dd><p>Formats a list of integer values as lowercase hex tokens for HMC7044
+GPI/GPO control properties: <code class="docutils literal notranslate"><span class="pre">[0x1F,</span> <span class="pre">0x2B]</span> <span class="pre">→</span> <span class="pre">&quot;0x1f</span> <span class="pre">0x2b&quot;</span></code>.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">_topology_instance_names(topology)</span></code></dt><dd><p>Returns the union of all IP instance names from a topology, with hyphens
+replaced by underscores to match DTS label conventions.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">_pick_matching_label(topology_names,</span> <span class="pre">default,</span> <span class="pre">required_tokens)</span></code></dt><dd><p>Returns the first topology name containing all <code class="docutils literal notranslate"><span class="pre">required_tokens</span></code> (as
+substrings of the lowercased name), or <code class="docutils literal notranslate"><span class="pre">default</span></code> if none match.  Useful
+for finding labels like <code class="docutils literal notranslate"><span class="pre">axi_adrv9009_rx_xcvr</span></code> when the exact name varies
+by design.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">_wrap_spi_bus(label,</span> <span class="pre">children)</span></code></dt><dd><p>Wraps a string of rendered device-node content inside an
+<code class="docutils literal notranslate"><span class="pre">&amp;label</span> <span class="pre">{</span> <span class="pre">status</span> <span class="pre">=</span> <span class="pre">&quot;okay&quot;;</span> <span class="pre">...</span> <span class="pre">};</span></code> SPI bus overlay block.</p>
+</dd>
+<dt><code class="docutils literal notranslate"><span class="pre">_coerce_board_int(value,</span> <span class="pre">key_path)</span></code></dt><dd><p>Converts a config value to <code class="docutils literal notranslate"><span class="pre">int</span></code>, raising <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> with context
+when conversion fails (guards against <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">False</span></code> being accidentally
+passed where integers are expected).</p>
+</dd>
+</dl>
+</section>
+<section id="testing-conventions">
+<h2><a class="toc-backref" href="#id34" role="doc-backlink">Testing conventions</a><a class="headerlink" href="#testing-conventions" title="Link to this heading"></a></h2>
+<p>All DTS-generation logic should be covered at three levels:</p>
+<ol class="arabic simple">
+<li><p><strong>Template smoke tests</strong> (<code class="docutils literal notranslate"><span class="pre">test_node_builder_templates.py</span></code>): call
+<code class="docutils literal notranslate"><span class="pre">NodeBuilder()._render(template,</span> <span class="pre">ctx)</span></code> with a minimal hand-crafted
+context dict and assert that key properties and labels appear in the
+output.</p></li>
+<li><p><strong>Context builder unit tests</strong> (<code class="docutils literal notranslate"><span class="pre">test_node_builder_context_builders.py</span></code>):
+call <code class="docutils literal notranslate"><span class="pre">NodeBuilder()._build_&lt;x&gt;_ctx(...)</span></code> with specific inputs and assert
+the returned dict contains the expected values, especially for edge cases
+and derived fields.</p></li>
+<li><p><strong>Board builder integration tests</strong> (<code class="docutils literal notranslate"><span class="pre">test_node_builder.py</span></code>): call
+<code class="docutils literal notranslate"><span class="pre">NodeBuilder().build(topology,</span> <span class="pre">cfg)</span></code> with a mocked or minimal
+<code class="docutils literal notranslate"><span class="pre">XsaTopology</span></code> and assert that the returned node list contains the
+expected DTS fragments.</p></li>
+</ol>
+<p>Follow TDD: write the failing test first, run it to confirm the failure, then
+implement.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run only the new tests while developing</span>
+nox<span class="w"> </span>-s<span class="w"> </span>tests<span class="w"> </span>--<span class="w"> </span>test/xsa/<span class="w"> </span>-v<span class="w"> </span>-k<span class="w"> </span><span class="s2">&quot;ad_new&quot;</span>
+
+<span class="c1"># Run the full suite before committing</span>
+nox<span class="w"> </span>-s<span class="w"> </span>tests<span class="w"> </span>--<span class="w"> </span>test/xsa/<span class="w"> </span>-v
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="developer/hardware_ci.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Hardware CI</a>
+    <a href="cli.html" title="Next document (Alt+Shift+RightArrow)" class="next">Command Line Interface</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

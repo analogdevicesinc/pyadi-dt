@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="adidt — device-centric device-tree composition for ADI hardware." name="description" />
+
+    <title>Core Module &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Declarative Devices" href="devices.html" />
+    <link rel="prev" title="API Reference" href="index.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Core Module</a></li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/hardware_ci.html">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">API Reference</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="module-adidt">
+<span id="core-module"></span><h1>Core Module<a class="headerlink" href="#module-adidt" title="Link to this heading"></a></h1>
+<p>adidt — device-centric device-tree composition for ADI hardware.</p>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="index.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">API Reference</a>
+    <a href="devices.html" title="Next document (Alt+Shift+RightArrow)" class="next">Declarative Devices</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

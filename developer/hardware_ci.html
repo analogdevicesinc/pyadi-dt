@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Hardware tests under test/hw/ are driven by GitHub Actions through the Hardware Tests workflow (.github/workflows/hardware-test.yml). This page is the reference for setting up the runners, secrets, and per-node configuration that workflow depends on — plus the recipe for onboarding a new hardware node." name="description" />
+
+    <title>Hardware CI &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA Pipeline — Developer Guide" href="../xsa_developer.html" />
+    <link rel="prev" title="Authoring a new device class" href="authoring_devices.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Hardware CI</a><ul>
+<li><a class="reference internal" href="#how-it-works">How it works</a></li>
+<li><a class="reference internal" href="#boot-reliability">Boot reliability</a></li>
+<li><a class="reference internal" href="#board-power-off-on-teardown">Board power-off on teardown</a></li>
+<li><a class="reference internal" href="#node-manifest">Node manifest</a></li>
+<li><a class="reference internal" href="#adding-a-new-hardware-node">Adding a new hardware node</a></li>
+<li><a class="reference internal" href="#self-hosted-runner-registration">Self-hosted runner registration</a><ul>
+<li><a class="reference internal" href="#direct-mode-yaml-templates">Direct-mode YAML templates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#exporter-systemd-service">Exporter systemd service</a></li>
+<li><a class="reference internal" href="#fork-pr-approval-gate">Fork-PR approval gate</a></li>
+<li><a class="reference internal" href="#private-repo-dependency-access">Private-repo dependency access</a></li>
+<li><a class="reference internal" href="#debug-artifacts">Debug artifacts</a></li>
+<li><a class="reference internal" href="#local-dt-emission-parity-test">Local DT-emission parity test</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="hardware-ci">
+<h1>Hardware CI<a class="headerlink" href="#hardware-ci" title="Link to this heading"></a></h1>
+<p>Hardware tests under <code class="docutils literal notranslate"><span class="pre">test/hw/</span></code> are driven by GitHub Actions through
+the <code class="docutils literal notranslate"><span class="pre">Hardware</span> <span class="pre">Tests</span></code> workflow (<code class="docutils literal notranslate"><span class="pre">.github/workflows/hardware-test.yml</span></code>).
+This page is the reference for setting up the runners, secrets, and
+per-node configuration that workflow depends on — plus the recipe for
+onboarding a new hardware node.</p>
+<section id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h2>
+<p>The workflow has three jobs:</p>
+<ul class="simple">
+<li><p><strong>preflight</strong> — runs on the <code class="docutils literal notranslate"><span class="pre">hw-coordinator</span></code> self-hosted runner
+(the only host with a route to the private-lab labgrid coordinator),
+reads the node manifest (<code class="docutils literal notranslate"><span class="pre">.github/hw-nodes.json</span></code>), and queries the
+coordinator for advertised places.  It emits a JSON array of
+<em>available</em> nodes as the <code class="docutils literal notranslate"><span class="pre">available_nodes</span></code> job output.  If the
+coordinator is unreachable the TCP probe fails fast and
+<code class="docutils literal notranslate"><span class="pre">available_nodes</span></code> is <code class="docutils literal notranslate"><span class="pre">[]</span></code> — all downstream matrix legs then skip
+(green) instead of hanging on hardware that is not powered up.</p></li>
+<li><p><strong>hw-direct</strong> — a matrix job, one leg per available node, running
+on the self-hosted runner attached to that node
+(<code class="docutils literal notranslate"><span class="pre">runs-on:</span> <span class="pre">[self-hosted,</span> <span class="pre">&lt;matrix.node.runner_label&gt;]</span></code>).  Tests
+run without the coordinator, against a node-local labgrid YAML
+whose path is in the runner-level env var <code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV</span></code>.  When
+<code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV</span></code> is unset on a runner the job skips all work and
+exits green — add the env entry in <code class="docutils literal notranslate"><span class="pre">~/actions-runner/.env</span></code> to
+light up direct-mode on that node.</p></li>
+<li><p><strong>hw-coord</strong> — a matrix job, one leg per available node, running
+on the <strong>same per-node runner as hw-direct</strong> (label
+<code class="docutils literal notranslate"><span class="pre">hw-&lt;place&gt;</span></code>).  Each leg uses the committed
+<code class="docutils literal notranslate"><span class="pre">test/hw/env/&lt;place&gt;.yaml</span></code> from the manifest and talks to the
+labgrid coordinator via <code class="docutils literal notranslate"><span class="pre">LG_COORDINATOR</span></code> — so pytest exercises
+the coordinator code path while the XSA toolchain (Vivado’s
+sdtgen, xsct) and kernel build artifacts already present on the
+per-node runner are used in place.  The <code class="docutils literal notranslate"><span class="pre">hw-coordinator</span></code> runner
+itself carries only the preflight job.</p></li>
+</ul>
+<p>Fork-PR protection is handled by GitHub Actions’ built-in workflow
+approval gate rather than a custom <code class="docutils literal notranslate"><span class="pre">environment:</span></code>.  Under <em>Settings
+→ Actions → General → Approval for outside collaborators</em>, workflows
+triggered by fork PRs require a maintainer to click “Approve and run”
+before any self-hosted runner is scheduled.  Same-repo PRs, pushes to
+<code class="docutils literal notranslate"><span class="pre">main</span></code>, and <code class="docutils literal notranslate"><span class="pre">workflow_dispatch</span></code> are always trusted and run
+directly.</p>
+</section>
+<section id="boot-reliability">
+<h2>Boot reliability<a class="headerlink" href="#boot-reliability" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">BootFPGASoC</span></code> strategy (used on <code class="docutils literal notranslate"><span class="pre">mini2</span></code> / ZCU102 and similar
+SD-mux targets) does two things to tolerate the common “silent first
+power-on” flake in CI:</p>
+<ul class="simple">
+<li><p><strong>Pre-emptive cold-cycle.</strong>  After muxing the SD card back to the
+DUT and before the kernel-banner expect, the strategy does an
+explicit <code class="docutils literal notranslate"><span class="pre">power.off()</span> <span class="pre">→</span> <span class="pre">sleep</span> <span class="pre">5</span> <span class="pre">→</span> <span class="pre">power.on()</span></code>.  The prior
+<code class="docutils literal notranslate"><span class="pre">Status.powered_off</span></code> transition did already toggle power, but the
+intervening SD-mux operations (which briefly energise the SD slot
+from the host side) can leave the board in a latched state where the
+first <code class="docutils literal notranslate"><span class="pre">on()</span></code> looks applied but the board stays silent on UART.  A
+clean cycle right before the boot window sidesteps this.</p></li>
+<li><p><strong>One-shot retry.</strong>  If the banner expect still times out <em>with
+zero bytes captured</em> (board genuinely never emitted anything), the
+strategy tears down the shell driver, power-cycles once more, and
+re-runs the expect.  The retry only kicks in on 0-byte silence —
+if any bytes made it through, the failure is a real boot problem
+(wrong DTB, bad BOOT.BIN, etc.) and is raised immediately.</p></li>
+</ul>
+<p>Both behaviours are tuned by attributes on the strategy:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_for_kernel_banner_timeout</span></code> (default 120 s) — time to wait
+for <code class="docutils literal notranslate"><span class="pre">Linux</span></code> in the UART stream on each attempt.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kernel_banner_retries</span></code> (default 1) — number of additional boot
+attempts on zero-byte silence.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">debug_write_boot_log</span></code> (<code class="docutils literal notranslate"><span class="pre">true</span></code> in every env yaml shipped here)
+— dump the pexpect buffer at attempt timeout to
+<code class="docutils literal notranslate"><span class="pre">uart_log_kernel_banner_attempt&lt;N&gt;_&lt;ts&gt;.txt</span></code> at the workspace
+root.  The CI workflow’s artifact step captures these so flaky
+boots can be post-mortem’d from the Actions run page.</p></li>
+</ul>
+</section>
+<section id="board-power-off-on-teardown">
+<h2>Board power-off on teardown<a class="headerlink" href="#board-power-off-on-teardown" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">board</span></code> fixture in <code class="docutils literal notranslate"><span class="pre">test/hw/conftest.py</span></code> wraps its <code class="docutils literal notranslate"><span class="pre">yield</span></code>
+in a try/finally so that every hw test-module exits with the board
+transitioned back to <code class="docutils literal notranslate"><span class="pre">powered_off</span></code>.  Lab hardware is never left
+energised between runs, and the fixture’s fallback path calls
+<code class="docutils literal notranslate"><span class="pre">power.off()</span></code> directly on the bound <code class="docutils literal notranslate"><span class="pre">PowerProtocol</span></code> driver if the
+strategy is in a broken state from a prior failure.</p>
+</section>
+<section id="node-manifest">
+<h2>Node manifest<a class="headerlink" href="#node-manifest" title="Link to this heading"></a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">.github/hw-nodes.json</span></code> is the single source of truth for per-node
+CI configuration:</p>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;place&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bq&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;runner_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hw-bq&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;env_remote&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;test/hw/env/bq.yaml&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tests&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;test/hw/test_adrv9371_zc706_hw.py&quot;</span><span class="p">]</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;place&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;mini2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;runner_label&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;hw-mini2&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;env_remote&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;test/hw/env/mini2.yaml&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;tests&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">      </span><span class="s2">&quot;test/hw/test_ad9081_zcu102_xsa_hw.py&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="s2">&quot;test/hw/test_ad9081_zcu102_system_hw.py&quot;</span>
+<span class="w">    </span><span class="p">]</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Field reference:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">place</span></code> — the labgrid coordinator place name.  Must match what
+the exporter registers (<code class="docutils literal notranslate"><span class="pre">labgrid-client</span> <span class="pre">places</span></code> on the
+coordinator host).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_label</span></code> — the extra label on the self-hosted runner
+physically attached to the board.  Convention: <code class="docutils literal notranslate"><span class="pre">hw-&lt;place&gt;</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">env_remote</span></code> — repo-relative path to the committed env YAML
+(conventionally <code class="docutils literal notranslate"><span class="pre">test/hw/env/&lt;place&gt;.yaml</span></code>) used by the
+<code class="docutils literal notranslate"><span class="pre">hw-coord</span></code> matrix leg.  Must use <code class="docutils literal notranslate"><span class="pre">RemotePlace</span></code> only — no
+local paths, no credentials, no serial device names.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tests</span></code> — list of <code class="docutils literal notranslate"><span class="pre">pytest</span></code> targets (test files) to run for
+this node, used verbatim in both <code class="docutils literal notranslate"><span class="pre">hw-direct</span></code> and <code class="docutils literal notranslate"><span class="pre">hw-coord</span></code>.</p></li>
+</ul>
+</section>
+<section id="adding-a-new-hardware-node">
+<h2>Adding a new hardware node<a class="headerlink" href="#adding-a-new-hardware-node" title="Link to this heading"></a></h2>
+<p>One-time setup:</p>
+<ol class="arabic simple">
+<li><p>Stand up an exporter that registers a new place <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> with
+the coordinator at <code class="docutils literal notranslate"><span class="pre">10.0.0.41:20408</span></code> — install it as a systemd
+unit via <code class="docutils literal notranslate"><span class="pre">scripts/labgrid-exporter/install.sh</span></code>
+(see <a class="reference internal" href="#exporter-systemd"><span class="std std-ref">Exporter systemd service</span></a>).  Verify with
+<code class="docutils literal notranslate"><span class="pre">labgrid-client</span> <span class="pre">-x</span> <span class="pre">10.0.0.41:20408</span> <span class="pre">places</span></code>.</p></li>
+<li><p>Register a new self-hosted runner with labels
+<code class="docutils literal notranslate"><span class="pre">self-hosted,hw-&lt;name&gt;</span></code> on the host physically attached to the
+board (see <a class="reference internal" href="#runner-registration"><span class="std std-ref">Self-hosted runner registration</span></a> below).</p></li>
+<li><p>Author a node-local labgrid YAML on the runner host — typically
+<code class="docutils literal notranslate"><span class="pre">~/ci/lg_direct.yaml</span></code> — that describes the exporter resources
+directly (no <code class="docutils literal notranslate"><span class="pre">RemotePlace</span></code>).  Reference
+<code class="docutils literal notranslate"><span class="pre">lg_adrv9371_zc706_tftp.yaml</span></code> on <code class="docutils literal notranslate"><span class="pre">bq</span></code> for a worked example.</p></li>
+<li><p>Put <code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV=/home/&lt;user&gt;/ci/lg_direct.yaml</span></code> in
+<code class="docutils literal notranslate"><span class="pre">~/actions-runner/.env</span></code> on the runner host.  The runner picks
+this up automatically on the next job.</p></li>
+<li><p>Author a <code class="docutils literal notranslate"><span class="pre">test/hw/env/&lt;name&gt;.yaml</span></code> using <code class="docutils literal notranslate"><span class="pre">RemotePlace</span></code> only;
+commit it.</p></li>
+<li><p>Append one entry to <code class="docutils literal notranslate"><span class="pre">.github/hw-nodes.json</span></code> with the new place,
+runner label, env_remote path, and test list.  No workflow edits
+needed.</p></li>
+</ol>
+<p>That’s it — the next workflow run picks up the new node automatically
+via <code class="docutils literal notranslate"><span class="pre">fromJSON(needs.preflight.outputs.available_nodes)</span></code>.</p>
+</section>
+<section id="self-hosted-runner-registration">
+<span id="runner-registration"></span><h2>Self-hosted runner registration<a class="headerlink" href="#self-hosted-runner-registration" title="Link to this heading"></a></h2>
+<p>Prerequisites (one-time, repo-admin only):</p>
+<ul class="simple">
+<li><p>GitHub CLI (<code class="docutils literal notranslate"><span class="pre">gh</span></code>) installed locally, authenticated with a repo
+admin account for <code class="docutils literal notranslate"><span class="pre">analogdevicesinc/pyadi-dt</span></code>.</p></li>
+</ul>
+<p>Generate a one-use registration token:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>api<span class="w"> </span>-X<span class="w"> </span>POST<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>/repos/analogdevicesinc/pyadi-dt/actions/runners/registration-token
+</pre></div>
+</div>
+<p>Copy the <code class="docutils literal notranslate"><span class="pre">token</span></code> value from the response.</p>
+<p>On the target host:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>mkdir<span class="w"> </span>-p<span class="w"> </span>~/actions-runner<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>~/actions-runner
+<span class="c1"># Pick the latest from https://github.com/actions/runner/releases</span>
+curl<span class="w"> </span>-O<span class="w"> </span>-L<span class="w"> </span>https://github.com/actions/runner/releases/download/v2.319.1/actions-runner-linux-x64-2.319.1.tar.gz
+tar<span class="w"> </span>xzf<span class="w"> </span>actions-runner-linux-x64-2.319.1.tar.gz
+./config.sh<span class="w"> </span>--url<span class="w"> </span>https://github.com/analogdevicesinc/pyadi-dt<span class="w"> </span><span class="se">\</span>
+<span class="w">            </span>--token<span class="w"> </span>&lt;TOKEN&gt;<span class="w"> </span><span class="se">\</span>
+<span class="w">            </span>--labels<span class="w"> </span>self-hosted,hw-&lt;place&gt;
+sudo<span class="w"> </span>./svc.sh<span class="w"> </span>install<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>./svc.sh<span class="w"> </span>start
+</pre></div>
+</div>
+<p>For the runner on the coordinator host (<code class="docutils literal notranslate"><span class="pre">10.0.0.41</span></code>), use
+<code class="docutils literal notranslate"><span class="pre">--labels</span> <span class="pre">self-hosted,hw-coordinator</span></code>.  That is the only label the
+workflow hardcodes; every other <code class="docutils literal notranslate"><span class="pre">hw-*</span></code> label flows from the
+manifest.</p>
+<p>Populate the runner-level env file so the direct-mode job can find
+the node-local labgrid YAML:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;LG_DIRECT_ENV=/home/</span><span class="nv">$USER</span><span class="s2">/ci/lg_direct.yaml&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/actions-runner/.env
+sudo<span class="w"> </span>./svc.sh<span class="w"> </span>stop<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>./svc.sh<span class="w"> </span>start
+</pre></div>
+</div>
+<p>(The <code class="docutils literal notranslate"><span class="pre">hw-coordinator</span></code> runner does not need <code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV</span></code> — it
+only runs <code class="docutils literal notranslate"><span class="pre">hw-coord</span></code> legs, which use the committed
+<code class="docutils literal notranslate"><span class="pre">test/hw/env/*.yaml</span></code> files.)</p>
+<section id="direct-mode-yaml-templates">
+<h3>Direct-mode YAML templates<a class="headerlink" href="#direct-mode-yaml-templates" title="Link to this heading"></a></h3>
+<p>A node-local direct-mode YAML has the same <em>shape</em> as the coordinator
+env YAML except it declares resources + drivers in full rather than
+pointing at a <code class="docutils literal notranslate"><span class="pre">RemotePlace</span></code>.  Because it contains host-specific
+paths (serial by-id symlinks, sdmux ID_PATH, <code class="docutils literal notranslate"><span class="pre">MassStorageDevice</span></code>
+partition path) and credentials (VeSync account for the smart plug,
+Home Assistant tokens for ZC706’s HAS outlet), <strong>it must not be
+checked into the repo</strong>.</p>
+<p>Two redacted templates ship in
+<code class="docutils literal notranslate"><span class="pre">doc/source/developer/samples/</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">lg_direct_mini2.yaml.example</span></code> — AD9081 + ZCU102 on mini2.  Fill
+in serial port symlink, sdmux ID_PATH, MassStorageDevice partition,
+and VeSync credentials.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lg_direct_nuc.yaml.example</span></code> — FMCDAQ3 + VCU118 on nuc.  Fill in
+serial port symlink, VeSync credentials; JTAG <code class="docutils literal notranslate"><span class="pre">root_target</span></code> /
+<code class="docutils literal notranslate"><span class="pre">microblaze_target</span></code> follow the existing exporter config at
+<code class="docutils literal notranslate"><span class="pre">~/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml</span></code> on nuc.</p></li>
+</ul>
+<p>Per-node bring-up:</p>
+<ol class="arabic">
+<li><p>Copy the template onto the runner host, rename and strip the
+<code class="docutils literal notranslate"><span class="pre">.example</span></code> suffix:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>scp<span class="w"> </span>doc/source/developer/samples/lg_direct_mini2.yaml.example<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>mini2:~/ci/lg_direct.yaml
+</pre></div>
+</div>
+</li>
+<li><p>SSH in and replace every <code class="docutils literal notranslate"><span class="pre">&lt;FILL&gt;</span></code> placeholder with the
+host-specific value.  Cross-reference the exporter YAML already
+on the host for serial symlinks, USB device paths, and VeSync
+credentials.</p></li>
+<li><p>Point the runner at it and restart the runner service:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">echo</span><span class="w"> </span><span class="s2">&quot;LG_DIRECT_ENV=/home/</span><span class="nv">$USER</span><span class="s2">/ci/lg_direct.yaml&quot;</span><span class="w"> </span>&gt;&gt;<span class="w"> </span>~/actions-runner/.env
+sudo<span class="w"> </span>./svc.sh<span class="w"> </span>stop<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>sudo<span class="w"> </span>./svc.sh<span class="w"> </span>start
+</pre></div>
+</div>
+</li>
+<li><p>Trigger the workflow (<code class="docutils literal notranslate"><span class="pre">gh</span> <span class="pre">workflow</span> <span class="pre">run</span> <span class="pre">hardware-test.yml</span></code>) and
+check that <code class="docutils literal notranslate"><span class="pre">hw-direct</span> <span class="pre">(&lt;place&gt;)</span></code> now runs the full test path
+instead of emitting
+<code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">set</span> <span class="pre">on</span> <span class="pre">this</span> <span class="pre">runner</span> <span class="pre">—</span> <span class="pre">skipping</span> <span class="pre">direct-mode</span>
+<span class="pre">tests.</span></code>.</p></li>
+</ol>
+<p>The templates are intentionally minimal — only the drivers and
+resources each board’s test actually uses — so the same bring-up
+works for both ZCU102 (SD-mux boot) and VCU118 (JTAG boot) after
+swapping the strategy / driver section.</p>
+<p>System-tool prerequisites on each hw-node runner:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>device-tree-compiler<span class="w"> </span>cpp<span class="w"> </span>u-boot-tools
+<span class="c1"># For ZynqMP nodes:</span>
+pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>xilinx-sdt-gen
+<span class="c1"># For ZCU102/AD9081 (USB SD-mux mode):</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span>usbsdmux
+</pre></div>
+</div>
+<p>On <strong>every</strong> hw-node runner (including the coordinator host), the
+workflow uses <a class="icon link reference external" href="https://github.com/astral-sh/uv" target="_blank">uv</a> to build two
+persistent venvs under <code class="docutils literal notranslate"><span class="pre">~/.cache/adidt-ci/</span></code>: one for
+<code class="docutils literal notranslate"><span class="pre">labgrid-client</span></code> on the coordinator host, and one holding an
+editable <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-e</span> <span class="pre">&quot;.[dev]&quot;</span></code> of adidt on every runner.
+<code class="docutils literal notranslate"><span class="pre">.github/scripts/bootstrap-uv.sh</span></code> curl-installs <code class="docutils literal notranslate"><span class="pre">uv</span></code> into
+<code class="docutils literal notranslate"><span class="pre">~/.local/bin</span></code> on first use, so no distro Python packaging is
+required — only <code class="docutils literal notranslate"><span class="pre">curl</span></code> and a working <code class="docutils literal notranslate"><span class="pre">python3</span></code> interpreter (both
+present on stock Debian/Ubuntu).</p>
+<p>Coordinator-mode tests additionally require SSH key-auth from the
+<code class="docutils literal notranslate"><span class="pre">hw-coordinator</span></code> runner to the exporter host (for the
+<code class="docutils literal notranslate"><span class="pre">MassStorageDriver</span></code> SSH-proxy path) and write access to
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/kernel/</span></code> for the kernel image cache.</p>
+</section>
+</section>
+<section id="exporter-systemd-service">
+<span id="exporter-systemd"></span><h2>Exporter systemd service<a class="headerlink" href="#exporter-systemd-service" title="Link to this heading"></a></h2>
+<p>Each hw-node also runs a <code class="docutils literal notranslate"><span class="pre">labgrid-exporter</span></code> process that publishes
+its local hardware resources to the coordinator.  Production hosts
+run it as a systemd template unit — <code class="docutils literal notranslate"><span class="pre">labgrid-exporter&#64;&lt;place&gt;</span></code> —
+installed by <code class="docutils literal notranslate"><span class="pre">scripts/labgrid-exporter/install.sh</span></code>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># On the exporter host (bq, mini2, nuc, ...):</span>
+<span class="nb">cd</span><span class="w"> </span>/path/to/pyadi-dt
+sudo<span class="w"> </span>scripts/labgrid-exporter/install.sh<span class="w"> </span>&lt;place&gt;<span class="w"> </span>&lt;exporter-yaml&gt;
+
+<span class="c1"># Concrete example — nuc:</span>
+sudo<span class="w"> </span>scripts/labgrid-exporter/install.sh<span class="w"> </span>nuc<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>/home/tcollins/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml
+</pre></div>
+</div>
+<p>The installer writes two files and enables the unit:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/labgrid-exporter&#64;.service</span></code> — the template
+unit.  <code class="docutils literal notranslate"><span class="pre">User=</span></code> is baked in at install time (defaults to
+<code class="docutils literal notranslate"><span class="pre">$SUDO_USER</span></code>; override with <code class="docutils literal notranslate"><span class="pre">--user</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">/etc/default/labgrid-exporter-&lt;place&gt;</span></code> — per-instance env
+(<code class="docutils literal notranslate"><span class="pre">LG_EXPORTER_BIN</span></code>, <code class="docutils literal notranslate"><span class="pre">LG_COORDINATOR</span></code>, <code class="docutils literal notranslate"><span class="pre">LG_EXPORTER_NAME</span></code>,
+<code class="docutils literal notranslate"><span class="pre">LG_EXPORTER_YAML</span></code>, <code class="docutils literal notranslate"><span class="pre">PATH</span></code>).</p></li>
+</ul>
+<p>Install-time options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--coordinator</span> <span class="pre">ADDR</span></code>   — default <code class="docutils literal notranslate"><span class="pre">10.0.0.41:20408</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--user</span> <span class="pre">USER</span></code>          — default <code class="docutils literal notranslate"><span class="pre">$SUDO_USER</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--bin</span> <span class="pre">PATH</span></code>           — default auto-detected via <code class="docutils literal notranslate"><span class="pre">command</span> <span class="pre">-v</span></code>
+as the service user (picks up the
+<code class="docutils literal notranslate"><span class="pre">~/.local/share/uv/tools/labgrid/bin/labgrid-exporter</span></code> that
+<code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">tool</span> <span class="pre">install</span> <span class="pre">labgrid</span></code> produces).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--ser2net-path</span> <span class="pre">DIR</span></code>   — prepend DIR to the service PATH so
+<code class="docutils literal notranslate"><span class="pre">labgrid-exporter</span></code> finds the right <code class="docutils literal notranslate"><span class="pre">ser2net</span></code> binary (e.g.
+<code class="docutils literal notranslate"><span class="pre">$HOME/opt/ser2net-4.6.1/sbin</span></code>).  Omit if <code class="docutils literal notranslate"><span class="pre">ser2net</span></code> on the
+system PATH is the one you want.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--no-start</span></code>           — install files but don’t
+<code class="docutils literal notranslate"><span class="pre">enable</span> <span class="pre">--now</span></code>.</p></li>
+</ul>
+<p>Day-to-day operation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># After a yaml change:</span>
+sudo<span class="w"> </span>systemctl<span class="w"> </span>restart<span class="w"> </span>labgrid-exporter@&lt;place&gt;
+
+<span class="c1"># Live logs:</span>
+journalctl<span class="w"> </span>-u<span class="w"> </span>labgrid-exporter@&lt;place&gt;<span class="w"> </span>-f
+
+<span class="c1"># Unit status:</span>
+systemctl<span class="w"> </span>status<span class="w"> </span>labgrid-exporter@&lt;place&gt;
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">Restart=on-failure</span></code> brings the exporter back after a crash, and
+<code class="docutils literal notranslate"><span class="pre">multi-user.target</span></code> is the enable target, so the exporter also
+starts automatically after a reboot.  Re-running <code class="docutils literal notranslate"><span class="pre">install.sh</span></code> is
+idempotent — safe to use to pick up a new coordinator address,
+binary path, or yaml file.</p>
+</section>
+<section id="fork-pr-approval-gate">
+<h2>Fork-PR approval gate<a class="headerlink" href="#fork-pr-approval-gate" title="Link to this heading"></a></h2>
+<p>Fork-PR workflows are held by GitHub’s built-in approval gate
+configured at <em>Settings → Actions → General → Approval for outside
+collaborators</em>.  Pick <em>Require approval for first-time contributors</em>
+(or stricter) so fork-PR runs pause until a maintainer clicks
+<em>Approve and run</em> in the PR’s Actions tab.  No custom
+<code class="docutils literal notranslate"><span class="pre">environment:</span></code> is needed on the workflow side.</p>
+</section>
+<section id="private-repo-dependency-access">
+<h2>Private-repo dependency access<a class="headerlink" href="#private-repo-dependency-access" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">[dev]</span></code> extras in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> include
+<code class="docutils literal notranslate"><span class="pre">pyadi-build</span> <span class="pre">&#64;</span> <span class="pre">git+https://github.com/tfcollins/pyadi-build.git</span></code>,
+which currently points at a private repo.  For CI to <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span>
+<span class="pre">install</span></code> it, scope a fine-grained PAT to the private repo and store
+it as a repository secret.</p>
+<ol class="arabic">
+<li><p>Create a fine-grained PAT at
+<a class="icon link reference external" href="https://github.com/settings/tokens?type=beta" target="_blank">https://github.com/settings/tokens?type=beta</a>:</p>
+<ul class="simple">
+<li><p><em>Token name</em>: <code class="docutils literal notranslate"><span class="pre">pyadi-dt-ci-pyadi-build-read</span></code></p></li>
+<li><p><em>Resource owner</em>: the org/user that owns the private dependency
+(here: <code class="docutils literal notranslate"><span class="pre">tfcollins</span></code>)</p></li>
+<li><p><em>Repository access</em>: <strong>Only select repositories</strong> → pick
+<code class="docutils literal notranslate"><span class="pre">tfcollins/pyadi-build</span></code> (and any other private deps).</p></li>
+<li><p><em>Repository permissions</em> → <strong>Contents: Read-only</strong>.</p></li>
+</ul>
+</li>
+<li><p>Store it at repository scope.  Fork PRs don’t see repo secrets
+until a maintainer approves via the built-in workflow approval
+gate, so the PAT stays protected without any environment
+indirection.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Repo-scoped secret — visible to trusted (non-fork) runs,</span>
+<span class="c1"># and to fork-PR runs only after maintainer &quot;Approve and run&quot;.</span>
+gh<span class="w"> </span>secret<span class="w"> </span><span class="nb">set</span><span class="w"> </span>PYADI_BUILD_TOKEN<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--repo<span class="w"> </span>analogdevicesinc/pyadi-dt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--body<span class="w"> </span><span class="s1">&#39;github_pat_...&#39;</span>
+</pre></div>
+</div>
+<p>(Or via the GitHub UI: <em>Settings → Secrets and variables →
+Actions → New repository secret</em>.)</p>
+</li>
+</ol>
+<p>The install step reads <code class="docutils literal notranslate"><span class="pre">secrets.PYADI_BUILD_TOKEN</span></code> and exports it
+as a process-local <code class="docutils literal notranslate"><span class="pre">GIT_CONFIG_COUNT</span></code> / <code class="docutils literal notranslate"><span class="pre">GIT_CONFIG_KEY_0</span></code> /
+<code class="docutils literal notranslate"><span class="pre">GIT_CONFIG_VALUE_0</span></code> triple that rewrites <code class="docutils literal notranslate"><span class="pre">https://github.com/</span></code>
+to <code class="docutils literal notranslate"><span class="pre">https://x-access-token:&lt;token&gt;&#64;github.com/</span></code> for the duration
+of that step.  The secret is never written to the runner’s
+<code class="docutils literal notranslate"><span class="pre">~/.gitconfig</span></code> so it doesn’t leak to later jobs.</p>
+</section>
+<section id="debug-artifacts">
+<h2>Debug artifacts<a class="headerlink" href="#debug-artifacts" title="Link to this heading"></a></h2>
+<p>Every hw-direct and hw-coord matrix leg uploads a workflow artifact
+named <code class="docutils literal notranslate"><span class="pre">hw-&lt;mode&gt;-&lt;place&gt;-output</span></code> containing, per run:</p>
+<ul class="simple">
+<li><p>Generated <code class="docutils literal notranslate"><span class="pre">.dts</span></code> / pre-cpp <code class="docutils literal notranslate"><span class="pre">.pp.dts</span></code> / compiled <code class="docutils literal notranslate"><span class="pre">.dtb</span></code> from
+the test’s output directory (<code class="docutils literal notranslate"><span class="pre">test/hw/output/</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dmesg_*.log</span></code> snapshots taken by <code class="docutils literal notranslate"><span class="pre">collect_dmesg</span></code>.</p></li>
+<li><p>Per-attempt <code class="docutils literal notranslate"><span class="pre">uart_log_kernel_banner_attempt&lt;N&gt;_&lt;ts&gt;.txt</span></code> dumps
+from failed boot attempts.</p></li>
+</ul>
+<p>Artifacts stay for 14 days.  Fast local diff against a known-good
+reference:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>run<span class="w"> </span>download<span class="w"> </span>&lt;RUN_ID&gt;<span class="w"> </span>-n<span class="w"> </span>hw-coord-mini2-output<span class="w"> </span>-D<span class="w"> </span>/tmp/artifact
+python3<span class="w"> </span>-m<span class="w"> </span>adidt.tools.dts_compare_cli<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>test/devices/fixtures/ad9081_zcu102_xsa_reference.dts<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>/tmp/artifact/ad9081_zcu102.dts
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="#local-dts-diff"><span class="std std-ref">Local DT-emission parity test</span></a> (below) for the property-level inspection
+flow.</p>
+</section>
+<section id="local-dt-emission-parity-test">
+<span id="local-dts-diff"></span><h2>Local DT-emission parity test<a class="headerlink" href="#local-dt-emission-parity-test" title="Link to this heading"></a></h2>
+<p>Most driver-probe failures on the declarative System API path today
+are visible in the generated DTS <em>before</em> anything is flashed — they
+show up as missing / wrong properties compared to the XSA pipeline’s
+emission (which is known to probe on real hardware).  The parity
+test at <code class="docutils literal notranslate"><span class="pre">test/devices/test_system_ad9081_dts_parity.py</span></code> pins the
+System API’s emitted DTS against a committed XSA reference fixture
+(<code class="docutils literal notranslate"><span class="pre">test/devices/fixtures/ad9081_zcu102_xsa_reference.dts</span></code>) over the
+full list of kernel-critical properties defined in
+<code class="docutils literal notranslate"><span class="pre">adidt.tools.dts_inspect.KERNEL_CRITICAL_KEYS</span></code>.  It runs in under
+1 s and gives a focused per-property failure when the two paths
+diverge.</p>
+<p>Regenerate the fixture when the XSA path evolves:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>run<span class="w"> </span>download<span class="w"> </span>&lt;PASSING_RUN_ID&gt;<span class="w"> </span>-n<span class="w"> </span>hw-coord-mini2-output<span class="w"> </span>-D<span class="w"> </span>/tmp/ref
+cp<span class="w"> </span>/tmp/ref/ad9081_zcu102.dts<span class="w"> </span>test/devices/fixtures/ad9081_zcu102_xsa_reference.dts
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<dl class="simple">
+<dt><strong>All hw jobs skip on every run.</strong></dt><dd><p>Preflight is marking everything unavailable.  Check the preflight
+job logs for “Coordinator … unreachable” or the places listing.
+Try <code class="docutils literal notranslate"><span class="pre">labgrid-client</span> <span class="pre">-x</span> <span class="pre">10.0.0.41:20408</span> <span class="pre">places</span></code> from any host.</p>
+</dd>
+<dt><strong>One node’s jobs skip while others run.</strong></dt><dd><p>The corresponding exporter is not advertising its place to the
+coordinator.  SSH to that node and restart the unit
+(<code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">labgrid-exporter&#64;&lt;place&gt;</span></code> — see
+<a class="reference internal" href="#exporter-systemd"><span class="std std-ref">Exporter systemd service</span></a>), then verify the place shows up in
+<code class="docutils literal notranslate"><span class="pre">labgrid-client</span> <span class="pre">places</span></code>.  Check
+<code class="docutils literal notranslate"><span class="pre">journalctl</span> <span class="pre">-u</span> <span class="pre">labgrid-exporter&#64;&lt;place&gt;</span> <span class="pre">-n</span> <span class="pre">50</span></code> if the restart
+alone doesn’t recover it.</p>
+</dd>
+<dt><strong>``hw-direct`` fails with “LG_DIRECT_ENV is not set”.</strong></dt><dd><p>The runner’s <code class="docutils literal notranslate"><span class="pre">~/actions-runner/.env</span></code> does not define
+<code class="docutils literal notranslate"><span class="pre">LG_DIRECT_ENV</span></code>, or the file path it points at does not exist.
+Edit the file and restart the runner service.</p>
+</dd>
+<dt><strong>``hw-coord`` fails with “No such file” on the env yaml.</strong></dt><dd><p>The manifest entry’s <code class="docutils literal notranslate"><span class="pre">env_remote</span></code> path points at a file that is
+not committed at the listed repo-relative path (conventionally
+<code class="docutils literal notranslate"><span class="pre">test/hw/env/&lt;place&gt;.yaml</span></code>).  Either commit the YAML or fix the
+manifest entry.</p>
+</dd>
+<dt><strong>PR from a fork never runs hw jobs.</strong></dt><dd><p>Fork PRs pause on GitHub’s built-in workflow approval gate.
+Open the PR’s Actions tab and click <em>Approve and run</em> to release
+the jobs.</p>
+</dd>
+<dt><strong>``hw-coord (&lt;place&gt;)`` takes ~120 s longer than usual.</strong></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">BootFPGASoC</span></code> retry path fired on a zero-byte serial timeout.
+Check the <code class="docutils literal notranslate"><span class="pre">uart_log_kernel_banner_attempt1_*.txt</span></code> artifact — if
+it’s empty, the first power-on was silent (the pre-emptive
+cold-cycle should have handled this, so getting here usually means
+the serial exporter on the hw node is misbehaving).  Restart the
+exporter — <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">restart</span> <span class="pre">labgrid-exporter&#64;&lt;place&gt;</span></code> —
+which also respawns <code class="docutils literal notranslate"><span class="pre">ser2net</span></code>.</p>
+</dd>
+<dt><strong>Board left powered on after a local test run.</strong></dt><dd><p>The <code class="docutils literal notranslate"><span class="pre">board</span></code> fixture in <code class="docutils literal notranslate"><span class="pre">test/hw/conftest.py</span></code> powers the board
+off at teardown, but if the fixture itself errored out before the
+<code class="docutils literal notranslate"><span class="pre">yield</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">require_hw_prereqs</span></code> failed) the teardown didn’t
+run.  Manual recovery: <code class="docutils literal notranslate"><span class="pre">labgrid-client</span> <span class="pre">-x</span> <span class="pre">&lt;coordinator&gt;</span> <span class="pre">-p</span> <span class="pre">&lt;place&gt;</span>
+<span class="pre">acquire</span></code>, then <code class="docutils literal notranslate"><span class="pre">power</span> <span class="pre">off</span></code> in the labgrid shell.</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="authoring_devices.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Authoring a new device class</a>
+    <a href="../xsa_developer.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Pipeline — Developer Guide</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

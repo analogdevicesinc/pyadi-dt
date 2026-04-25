@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The adidt.devices package is the single source of truth for how ADI hardware maps to device-tree nodes.  Every modeled device is a small pydantic class whose fields are the DT properties it emits — no Jinja2 templates, no intermediate context dicts.  A device’s render_dt method returns the DTS text directly." name="description" />
+
+    <title>Declarative Devices &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Board Model" href="model.html" />
+    <link rel="prev" title="Core Module" href="core.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Declarative Devices</a><ul>
+<li><a class="reference internal" href="#design-in-three-pieces">Design in three pieces</a></li>
+<li><a class="reference internal" href="#component-device-models">Component device models</a></li>
+<li><a class="reference internal" href="#composition-layer">Composition layer</a></li>
+<li><a class="reference internal" href="#writing-a-new-device">Writing a new device</a></li>
+<li><a class="reference internal" href="#end-to-end-hardware-verification">End-to-end hardware verification</a><ul>
+<li><a class="reference internal" href="#kernel-image-caching">Kernel image caching</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/hardware_ci.html">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">API Reference</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="declarative-devices">
+<h1>Declarative Devices<a class="headerlink" href="#declarative-devices" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidt.devices</span></code> package is the single source of truth for how ADI
+hardware maps to device-tree nodes.  Every modeled device is a small
+pydantic class whose fields are the DT properties it emits — no Jinja2
+templates, no intermediate context dicts.  A device’s <code class="docutils literal notranslate"><span class="pre">render_dt</span></code>
+method returns the DTS text directly.</p>
+<section id="design-in-three-pieces">
+<h2>Design in three pieces<a class="headerlink" href="#design-in-three-pieces" title="Link to this heading"></a></h2>
+<p><strong>1. Typed fields with DT-property aliases.</strong>  Each field on a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Device</span></code> subclass carries the exact DT
+property name via <code class="docutils literal notranslate"><span class="pre">Field(alias=&quot;adi,...&quot;)</span></code>.  The Python attribute is
+the human-facing handle; the alias is the on-disk name.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">HMC7044</span><span class="p">(</span><span class="n">ClockDevice</span><span class="p">):</span>
+    <span class="n">compatible</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adi,hmc7044&quot;</span>
+    <span class="n">dt_header</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;#clock-cells&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;#jesd204-cells&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">}</span>
+    <span class="n">dt_flags</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;jesd204-device&quot;</span><span class="p">,)</span>
+
+    <span class="n">vcxo_hz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;adi,vcxo-frequency&quot;</span><span class="p">)</span>
+    <span class="n">pll2_output_hz</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;adi,pll2-output-frequency&quot;</span><span class="p">)</span>
+    <span class="n">pll1_ref_autorevert</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s2">&quot;adi,pll1-ref-autorevert-enable&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.devices._dt_render</span></code> renderer walks these fields,
+formats each value by its Python type, and emits:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">adi</span><span class="p">,</span><span class="n">vcxo</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="o">&lt;</span><span class="mi">122880000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="n">adi</span><span class="p">,</span><span class="n">pll2</span><span class="o">-</span><span class="n">output</span><span class="o">-</span><span class="n">frequency</span> <span class="o">=</span> <span class="o">&lt;</span><span class="mi">2949120000</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="n">adi</span><span class="p">,</span><span class="n">pll1</span><span class="o">-</span><span class="n">ref</span><span class="o">-</span><span class="n">autorevert</span><span class="o">-</span><span class="n">enable</span><span class="p">;</span>
+</pre></div>
+</div>
+<p><strong>2. Field markers for non-scalar cases.</strong>  Fields that don’t map 1:1
+to a DT value use <code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.devices._fields</span></code> markers, applied via
+<code class="docutils literal notranslate"><span class="pre">typing.Annotated</span></code>:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DtSubnodes</span></code> — a <code class="docutils literal notranslate"><span class="pre">dict[key,</span> <span class="pre">child]</span></code>
+renders as child DT nodes (e.g. HMC7044 channels).</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DtSkip</span></code> — excludes a field from
+rendering (Python-only state, ports, etc.).</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DtBits64</span></code> — emit <code class="docutils literal notranslate"><span class="pre">/bits/</span> <span class="pre">64</span> <span class="pre">&lt;N&gt;</span></code>
+for sampling/converter frequencies that don’t fit in a 32-bit cell.</p></li>
+</ul>
+<p><strong>3. An ``extra_dt_lines`` hook for coupled properties.</strong>  Properties
+that need System-supplied context (phandles, <code class="docutils literal notranslate"><span class="pre">gpio_label</span></code>) or that
+render as tied pairs (<code class="docutils literal notranslate"><span class="pre">clocks</span></code> + <code class="docutils literal notranslate"><span class="pre">clock-names</span></code>) are emitted by
+overriding <code class="docutils literal notranslate"><span class="pre">extra_dt_lines(context)</span></code>.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">extra_dt_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">ctx</span> <span class="o">=</span> <span class="n">context</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">clkin0_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">&quot;clocks = &lt;&amp;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">clkin0_ref</span><span class="si">}</span><span class="s2">&gt;;&quot;</span><span class="p">,</span>
+            <span class="s1">&#39;clock-names = &quot;clkin0&quot;;&#39;</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="p">[]</span>
+</pre></div>
+</div>
+</section>
+<section id="component-device-models">
+<h2>Component device models<a class="headerlink" href="#component-device-models" title="Link to this heading"></a></h2>
+<p>Clock distributors and PLLs:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.clocks.HMC7044</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.clocks.AD9523_1</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.clocks.AD9528</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.clocks.AD9528_1</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.clocks.ADF4382</span></code></p></li>
+</ul>
+<p>Converters / MxFE transceivers:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9081</span></code> (with <code class="xref py py-class docutils literal notranslate"><span class="pre">AD9081Adc</span></code>/<code class="xref py py-class docutils literal notranslate"><span class="pre">AD9081Dac</span></code>)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9084</span></code> (with <code class="xref py py-class docutils literal notranslate"><span class="pre">AD9084Adc</span></code>/<code class="xref py py-class docutils literal notranslate"><span class="pre">AD9084Dac</span></code>)</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9172</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9680</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9144</span></code></p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.converters.AD9152</span></code></p></li>
+</ul>
+<p>RF transceivers:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.transceivers.ADRV9009</span></code> — reused for ADRV9025/9026/9029
+(Talise silicon) and for AD9371/ADRV9371 (Mykonos silicon).  The kernel
+binding differs per chip: set <code class="docutils literal notranslate"><span class="pre">compatible_strings=[&quot;adi,ad9371&quot;]</span></code> plus
+<code class="docutils literal notranslate"><span class="pre">node_name_base=&quot;ad9371-phy&quot;</span></code> for AD9371, otherwise the ADRV9009 default
+applies.</p></li>
+</ul>
+<p>FPGA-side JESD204 IP overlays:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.fpga_ip.Adxcvr</span></code> — AXI ADXCVR overlay</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.fpga_ip.Jesd204Overlay</span></code> — AXI JESD204 RX/TX overlay</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.devices.fpga_ip.TplCore</span></code> — AXI TPL core overlay</p></li>
+</ul>
+</section>
+<section id="composition-layer">
+<h2>Composition layer<a class="headerlink" href="#composition-layer" title="Link to this heading"></a></h2>
+<p>The composition API lives in <code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.eval</span></code>, <code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.fpga</span></code>, and
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.system</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">adidt</span>
+
+<span class="n">fmc</span> <span class="o">=</span> <span class="n">adidt</span><span class="o">.</span><span class="n">eval</span><span class="o">.</span><span class="n">ad9081_fmc</span><span class="p">()</span>
+<span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">set_jesd204_mode</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="s2">&quot;jesd204c&quot;</span><span class="p">)</span>
+<span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">sample_rate</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mf">250e6</span><span class="p">)</span>
+<span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">cddc_decimation</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="o">.</span><span class="n">fddc_decimation</span> <span class="o">=</span> <span class="mi">4</span>
+
+<span class="n">fpga</span> <span class="o">=</span> <span class="n">adidt</span><span class="o">.</span><span class="n">fpga</span><span class="o">.</span><span class="n">zcu102</span><span class="p">()</span>
+
+<span class="n">system</span> <span class="o">=</span> <span class="n">adidt</span><span class="o">.</span><span class="n">System</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;ad9081_zcu102&quot;</span><span class="p">,</span> <span class="n">components</span><span class="o">=</span><span class="p">[</span><span class="n">fmc</span><span class="p">,</span> <span class="n">fpga</span><span class="p">])</span>
+<span class="n">system</span><span class="o">.</span><span class="n">connect_spi</span><span class="p">(</span><span class="n">bus_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">primary</span><span class="o">=</span><span class="n">fpga</span><span class="o">.</span><span class="n">spi</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                   <span class="n">secondary</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">clock</span><span class="o">.</span><span class="n">spi</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">connect_spi</span><span class="p">(</span><span class="n">bus_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">primary</span><span class="o">=</span><span class="n">fpga</span><span class="o">.</span><span class="n">spi</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                   <span class="n">secondary</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">spi</span><span class="p">,</span> <span class="n">cs</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">add_link</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">converter</span><span class="o">.</span><span class="n">adc</span><span class="p">,</span> <span class="n">sink</span><span class="o">=</span><span class="n">fpga</span><span class="o">.</span><span class="n">gt</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">sink_reference_clock</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">dev_refclk</span><span class="p">,</span>
+                <span class="n">sink_core_clock</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">core_clk_rx</span><span class="p">,</span>
+                <span class="n">sink_sysref</span><span class="o">=</span><span class="n">fmc</span><span class="o">.</span><span class="n">dev_sysref</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">system</span><span class="o">.</span><span class="n">generate_dts</span><span class="p">())</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.system.System</span></code> — collects devices + connection records,
+produces a <a class="reference internal" href="model.html#adidt.model.BoardModel" title="adidt.model.BoardModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoardModel</span></code></a>, delegates to
+<a class="reference internal" href="model.html#adidt.model.renderer.BoardModelRenderer" title="adidt.model.renderer.BoardModelRenderer"><code class="xref py py-class docutils literal notranslate"><span class="pre">BoardModelRenderer</span></code></a> for DTS emission.</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.eval.EvalBoard</span></code> subclasses (<code class="docutils literal notranslate"><span class="pre">ad9081_fmc</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ad9084_fmc</span></code>, <code class="docutils literal notranslate"><span class="pre">adrv937x_fmc</span></code>) pre-wire a clock chip and a
+converter with the schematic-level channel assignments a specific FMC
+expects, and expose named clock-output aliases (<code class="docutils literal notranslate"><span class="pre">fmc.dev_refclk</span></code>,
+<code class="docutils literal notranslate"><span class="pre">fmc.fpga_sysref</span></code>, …).</p></li>
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.fpga.FpgaBoard</span></code> subclasses (<code class="docutils literal notranslate"><span class="pre">zcu102</span></code>, <code class="docutils literal notranslate"><span class="pre">vpk180</span></code>,
+<code class="docutils literal notranslate"><span class="pre">zc706</span></code>) hold platform constants: address-cells, PS clock
+label/index, GPIO controller, SPI masters, GT lane count, default QPLL
+selection.</p></li>
+</ul>
+</section>
+<section id="writing-a-new-device">
+<h2>Writing a new device<a class="headerlink" href="#writing-a-new-device" title="Link to this heading"></a></h2>
+<p>See <a class="reference internal" href="../developer/authoring_devices.html"><span class="doc">Authoring a new device class</span></a> for the full walkthrough —
+class hierarchy, end-to-end call flow from
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">adidt.system.System.generate_dts()</span></code> through
+<code class="xref py py-func docutils literal notranslate"><span class="pre">adidt.devices._dt_render.render_node()</span></code>, and cookbook recipes for
+adding a new clock, converter / transceiver, or eval-board / FPGA-board
+class.  <code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.devices.clocks.hmc7044</span></code> is the canonical full
+reference implementation.</p>
+</section>
+<section id="end-to-end-hardware-verification">
+<h2>End-to-end hardware verification<a class="headerlink" href="#end-to-end-hardware-verification" title="Link to this heading"></a></h2>
+<p>Hardware tests live in <code class="docutils literal notranslate"><span class="pre">test/hw/</span></code>.  Each one exercises every stage —
+XSA parsing → sdtgen → DTS generation → DTB compile → labgrid boot →
+IIO + JESD204 link verification on real hardware — and covers all three
+supported boot strategies (SD-card, TFTP, and MicroBlaze/JTAG):</p>
+<div class="table-wrapper colwidths-given docutils container">
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 20.0%" />
+<col style="width: 20.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Test module</p></th>
+<th class="head"><p>Board + carrier</p></th>
+<th class="head"><p>Boot strategy</p></th>
+<th class="head"><p>Path</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">test_ad9081_zcu102_system_hw.py</span></code></p></td>
+<td><p>AD9081 + ZCU102</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BootFPGASoC</span></code></p></td>
+<td><p>Declarative <code class="xref py py-class docutils literal notranslate"><span class="pre">adidt.System</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">test_ad9081_zcu102_xsa_hw.py</span></code></p></td>
+<td><p>AD9081 + ZCU102</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BootFPGASoC</span></code></p></td>
+<td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">AD9081Builder</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">test_adrv9009_zcu102_hw.py</span></code></p></td>
+<td><p>ADRV9009 + ZCU102</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BootFPGASoC</span></code></p></td>
+<td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ADRV9009Builder</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">test_adrv9371_zc706_hw.py</span></code></p></td>
+<td><p>ADRV9371 + ZC706</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BootFPGASoCTFTP</span></code></p></td>
+<td><p><a class="reference internal" href="xsa.html#adidt.xsa.builders.ADRV937xBuilder" title="adidt.xsa.builders.adrv937x.ADRV937xBuilder"><code class="xref py py-class docutils literal notranslate"><span class="pre">ADRV937xBuilder</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">test_fmcdaq3_vcu118_hw.py</span></code></p></td>
+<td><p>FMCDAQ3 + VCU118</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">BootFabric</span></code> (JTAG)</p></td>
+<td><p>Prebuilt simpleImage (smoke test)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Tests support two connection modes, selected by <code class="docutils literal notranslate"><span class="pre">.env</span></code> at the project
+root (loaded via <code class="docutils literal notranslate"><span class="pre">pytest-dotenv</span></code>):</p>
+<ul class="simple">
+<li><p><strong>Coordinator mode</strong> — set <code class="docutils literal notranslate"><span class="pre">LG_COORDINATOR=&lt;host&gt;:&lt;port&gt;</span></code> plus
+<code class="docutils literal notranslate"><span class="pre">LG_ENV=&lt;test/hw/env/*.yaml&gt;</span></code>.  The env YAML binds a <code class="docutils literal notranslate"><span class="pre">RemotePlace</span></code>
+to the coordinator-published resources.</p></li>
+<li><p><strong>Direct mode</strong> — set <code class="docutils literal notranslate"><span class="pre">LG_ENV=&lt;local_yaml&gt;</span></code> only.</p></li>
+</ul>
+<p>Each board family has a dedicated single-target env file under
+<code class="docutils literal notranslate"><span class="pre">test/hw/env/</span></code>: <code class="docutils literal notranslate"><span class="pre">mini2.yaml</span></code> (ZCU102 + AD9081),
+<code class="docutils literal notranslate"><span class="pre">bq.yaml</span></code> (ZC706 + ADRV9371), and <code class="docutils literal notranslate"><span class="pre">nuc.yaml</span></code> (VCU118 + FMCDAQ3).
+The combined <code class="docutils literal notranslate"><span class="pre">test/hw/env/all.yaml</span></code> exposes all three as named
+targets.</p>
+<p>Example — run the ADRV9371+ZC706 test via a coordinator:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">LG_COORDINATOR</span><span class="o">=</span><span class="mf">10.0.0.41</span><span class="p">:</span><span class="mi">20408</span> \
+<span class="n">LG_ENV</span><span class="o">=</span><span class="n">test</span><span class="o">/</span><span class="n">hw</span><span class="o">/</span><span class="n">env</span><span class="o">/</span><span class="n">bq</span><span class="o">.</span><span class="n">yaml</span> \
+<span class="n">pytest</span> <span class="n">test</span><span class="o">/</span><span class="n">hw</span><span class="o">/</span><span class="n">test_adrv9371_zc706_hw</span><span class="o">.</span><span class="n">py</span>
+</pre></div>
+</div>
+<p>Copy <code class="docutils literal notranslate"><span class="pre">.env.example</span></code> to <code class="docutils literal notranslate"><span class="pre">.env</span></code> for the supported variables.  The skip
+guard in each hw test module requires one of <code class="docutils literal notranslate"><span class="pre">LG_COORDINATOR</span></code> or
+<code class="docutils literal notranslate"><span class="pre">LG_ENV</span></code> to be set.</p>
+<section id="kernel-image-caching">
+<h3>Kernel image caching<a class="headerlink" href="#kernel-image-caching" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">test/hw/conftest.py</span></code> provides session-scoped <code class="docutils literal notranslate"><span class="pre">built_kernel_image_*</span></code>
+fixtures backed by a file-based cache keyed on the sha256 of the
+<code class="docutils literal notranslate"><span class="pre">pyadi-build</span></code> YAML config.  First run per config builds through
+<code class="docutils literal notranslate"><span class="pre">pyadi-build</span></code> and copies the produced kernel image into
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/kernel/&lt;platform&gt;/&lt;hash&gt;/&lt;image&gt;</span></code>; subsequent runs
+skip <code class="docutils literal notranslate"><span class="pre">prepare_source</span></code> + <code class="docutils literal notranslate"><span class="pre">build</span></code> entirely.  Zynq-7000 <code class="docutils literal notranslate"><span class="pre">zImage</span></code> is
+wrapped as a <code class="docutils literal notranslate"><span class="pre">uImage</span></code> via <code class="docutils literal notranslate"><span class="pre">mkimage</span></code> so <code class="docutils literal notranslate"><span class="pre">BootFPGASoCTFTP</span></code>’s
+<code class="docutils literal notranslate"><span class="pre">tftpboot</span> <span class="pre">uImage</span></code> can find the file.</p>
+<p>Control via env vars:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ADIDT_KERNEL_CACHE=0</span></code> — force a rebuild.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ADIDT_KERNEL_CACHE_DIR=&lt;path&gt;</span></code> — relocate the cache (default
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/kernel</span></code>).</p></li>
+</ul>
+<p>Measured: first ZC706 run ≈ 600 s; cached re-run ≈ 70 s.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="core.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Core Module</a>
+    <a href="model.html" title="Next document (Alt+Shift+RightArrow)" class="next">Board Model</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

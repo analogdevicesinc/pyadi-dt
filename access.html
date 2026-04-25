@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="adidt supports a number of different access models depending on where your device tree is located and how you want to apply changes. For example, the device tree can be directly read from the sysfs with local_sysfs and remote_sysfs. Remote calls will always utilize an SSH connect to access and run commands on remote systems. For persistent changes that survive a reboot, use local_sd or remote_sd. For transient changes at runtime, compile the pipeline’s .dtso to a .dtbo with dtc -&#64; and apply it via the target’s /sys/kernel/config/device-tree/overlays/ interface — see test/hw/xsa/test_ad9081_zcu102_overlay.py for a full load/unload/reload example. Note that the SD card management features are only supported on ADI platforms where the DT has a known location." name="description" />
+
+    <title>Live Update Access Models &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=833c9372" />
+    <link rel="stylesheet" type="text/css" href="_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="_static/app.umd.js?v=f78f54ff"></script>
+    <link rel="icon" href="_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Utilities" href="utils.html" />
+    <link rel="prev" title="Board Model: Unified Device Tree Generation" href="examples/board_model_usage.html" />
+   
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Live Update Access Models</a><ul>
+<li><a class="reference internal" href="#supported-modes">Supported modes</a></li>
+<li><a class="reference internal" href="#choosing-an-access-mode">Choosing an access mode</a></li>
+<li><a class="reference internal" href="#cli-examples">CLI examples</a></li>
+<li><a class="reference internal" href="#copying-boot-files-to-a-remote-board">Copying boot files to a remote board</a></li>
+<li><a class="reference internal" href="#python-api">Python API</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="index.html">
+      <img class="only-light" src="_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="developer/hardware_ci.html">Hardware CI</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="live-update-access-models">
+<h1>Live Update Access Models<a class="headerlink" href="#live-update-access-models" title="Link to this heading"></a></h1>
+<p><strong>adidt</strong> supports a number of different access models depending on where your device tree is located and how you want to apply changes. For example, the device tree can be directly read from the sysfs with <em>local_sysfs</em> and <em>remote_sysfs</em>. Remote calls will always utilize an SSH connect to access and run commands on remote systems. For persistent changes that survive a reboot, use <em>local_sd</em> or <em>remote_sd</em>. For transient changes at runtime, compile the pipeline’s <code class="docutils literal notranslate"><span class="pre">.dtso</span></code> to a <code class="docutils literal notranslate"><span class="pre">.dtbo</span></code> with <code class="docutils literal notranslate"><span class="pre">dtc</span> <span class="pre">-&#64;</span></code> and apply it via the target’s <code class="docutils literal notranslate"><span class="pre">/sys/kernel/config/device-tree/overlays/</span></code> interface — see <code class="docutils literal notranslate"><span class="pre">test/hw/xsa/test_ad9081_zcu102_overlay.py</span></code> for a full load/unload/reload example. Note that the SD card management features are only supported on ADI platforms where the DT has a known location.</p>
+<section id="supported-modes">
+<h2>Supported modes<a class="headerlink" href="#supported-modes" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">local_sysfs</span></code> - DT extracted from sysfs on the local machine.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">local_file</span></code> - DT read from a local <code class="docutils literal notranslate"><span class="pre">.dts</span></code> or <code class="docutils literal notranslate"><span class="pre">.dtb</span></code> file (read-only).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">local_sd</span></code> - DT extracted from a locally attached ADI SD card.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remote_sysfs</span></code> - DT extracted from a remote board’s sysfs over SSH.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">remote_sd</span></code> - DT extracted from a remote board’s SD card over SSH.</p></li>
+</ul>
+</section>
+<section id="choosing-an-access-mode">
+<h2>Choosing an access mode<a class="headerlink" href="#choosing-an-access-mode" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Mode</p></th>
+<th class="head"><p>Reads from</p></th>
+<th class="head"><p>Can write</p></th>
+<th class="head"><p>Requires</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_sysfs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/proc/device-tree</span></code></p></td>
+<td><p>No</p></td>
+<td><p>Running on target board</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">local_file</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">.dts</span></code> / <code class="docutils literal notranslate"><span class="pre">.dtb</span></code> file</p></td>
+<td><p>No</p></td>
+<td><p>File path (<code class="docutils literal notranslate"><span class="pre">-f</span></code> flag)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">local_sd</span></code></p></td>
+<td><p>SD card boot partition</p></td>
+<td><p>Yes</p></td>
+<td><p>SD card mounted locally</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">remote_sysfs</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/proc/device-tree</span></code> over SSH</p></td>
+<td><p>No</p></td>
+<td><p>Network access to board</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">remote_sd</span></code></p></td>
+<td><p>SD card over SSH</p></td>
+<td><p>Yes</p></td>
+<td><p>Network access to board</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">local_sysfs</span></code> or <code class="docutils literal notranslate"><span class="pre">remote_sysfs</span></code> for read-only inspection of a running
+system. Use <code class="docutils literal notranslate"><span class="pre">local_sd</span></code> or <code class="docutils literal notranslate"><span class="pre">remote_sd</span></code> when you need to modify the device tree
+and reboot. Use <code class="docutils literal notranslate"><span class="pre">local_file</span></code> to inspect a generated <code class="docutils literal notranslate"><span class="pre">.dts</span></code> or <code class="docutils literal notranslate"><span class="pre">.dtb</span></code> without
+hardware.</p>
+</section>
+<section id="cli-examples">
+<h2>CLI examples<a class="headerlink" href="#cli-examples" title="Link to this heading"></a></h2>
+<p>Set the default TX LO of a AD9361 based system to 1 GHz remotely:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>-i<span class="w"> </span>ad9361.local<span class="w"> </span>-c<span class="w"> </span>remote_sd<span class="w"> </span>props<span class="w"> </span>-cp<span class="w"> </span>adi,ad9361<span class="w"> </span>adi,tx-synthesizer-frequency-hz<span class="w"> </span><span class="m">1000000000</span>
+</pre></div>
+</div>
+<p>Set the default TX LO of a AD9361 based system to 1 GHz from the board itself:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>-c<span class="w"> </span>local_sd<span class="w"> </span>props<span class="w"> </span>-cp<span class="w"> </span>adi,ad9361<span class="w"> </span>adi,tx-synthesizer-frequency-hz<span class="w"> </span><span class="m">1000000000</span>
+</pre></div>
+</div>
+<p>Get the default RX LO of a AD9361 based system:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>-c<span class="w"> </span>local_sysfs<span class="w"> </span>props<span class="w"> </span>-cp<span class="w"> </span>adi,ad9361<span class="w"> </span>adi,rx-synthesizer-frequency-hz
+
+<span class="m">2400000000</span>
+</pre></div>
+</div>
+<p>Read a property from a local DTS or DTB file:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>-c<span class="w"> </span>local_file<span class="w"> </span>-f<span class="w"> </span>system.dtb<span class="w"> </span>prop<span class="w"> </span>-cp<span class="w"> </span>adi,ad9081<span class="w"> </span>clock-output-names
+</pre></div>
+</div>
+</section>
+<section id="copying-boot-files-to-a-remote-board">
+<h2>Copying boot files to a remote board<a class="headerlink" href="#copying-boot-files-to-a-remote-board" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">sd-remote-copy</span></code> command copies local boot files (BOOT.BIN, image.ub,
+devicetree, etc.) to a remote board’s SD card over SSH:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>adidtc<span class="w"> </span>-i<span class="w"> </span><span class="m">192</span>.168.2.1<span class="w"> </span>-c<span class="w"> </span>remote_sd<span class="w"> </span>sd-remote-copy<span class="w"> </span>BOOT.BIN,image.ub<span class="w"> </span>-r
+</pre></div>
+</div>
+<p>Options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-r</span></code> / <code class="docutils literal notranslate"><span class="pre">--reboot</span></code> — Reboot the board after copying</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span></code> / <code class="docutils literal notranslate"><span class="pre">--show</span></code> — Print commands as they run</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-d</span></code> / <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> — Show what would be done without executing</p></li>
+</ul>
+</section>
+<section id="python-api">
+<h2>Python API<a class="headerlink" href="#python-api" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">dt</span></code> class provides programmatic access to the same functionality:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt</span><span class="w"> </span><span class="kn">import</span> <span class="n">dt</span>
+
+<span class="c1"># Read from live hardware over SSH</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">dt</span><span class="p">(</span><span class="n">dt_source</span><span class="o">=</span><span class="s2">&quot;remote_sysfs&quot;</span><span class="p">,</span> <span class="n">ip</span><span class="o">=</span><span class="s2">&quot;192.168.2.1&quot;</span><span class="p">)</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_node_by_compatible</span><span class="p">(</span><span class="s2">&quot;adi,ad9361&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">nodes</span><span class="p">)</span>
+
+<span class="c1"># Read from a local file</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">dt</span><span class="p">(</span><span class="n">dt_source</span><span class="o">=</span><span class="s2">&quot;local_file&quot;</span><span class="p">,</span> <span class="n">local_dt_filepath</span><span class="o">=</span><span class="s2">&quot;system.dtb&quot;</span><span class="p">)</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">get_node_by_compatible</span><span class="p">(</span><span class="s2">&quot;adi,ad9081&quot;</span><span class="p">)</span>
+
+<span class="c1"># Update SD card boot files on a remote board</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">dt</span><span class="p">(</span><span class="n">dt_source</span><span class="o">=</span><span class="s2">&quot;remote_sd&quot;</span><span class="p">,</span> <span class="n">ip</span><span class="o">=</span><span class="s2">&quot;192.168.2.1&quot;</span><span class="p">)</span>
+<span class="n">d</span><span class="o">.</span><span class="n">copy_local_files_to_remote_sd_card</span><span class="p">([</span><span class="s2">&quot;BOOT.BIN&quot;</span><span class="p">,</span> <span class="s2">&quot;image.ub&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="api/core.html"><span class="doc">Core Module</span></a> for the full <code class="docutils literal notranslate"><span class="pre">dt</span></code> class API reference.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="examples/board_model_usage.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Board Model: Unified Device Tree Generation</a>
+    <a href="utils.html" title="Next document (Alt+Shift+RightArrow)" class="next">Utilities</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
