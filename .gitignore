@@ -140,3 +140,8 @@ lg_*
 
 # One-off local operator helper, never tracked.
 /setup-direct-mode.sh
+
+# Local superpowers/agent-generated design specs — keep out of PRs by
+# default.  Already-tracked files in this tree continue to be tracked
+# (.gitignore only filters untracked paths).
+docs/superpowers/
