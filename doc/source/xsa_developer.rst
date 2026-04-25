@@ -525,6 +525,33 @@ Template catalogue
    * - ``axi_ad9081.tmpl``
      - AXI AD9081 MXFE PL core overlay.
 
+ADRV9009 ZC706 specifics
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ADRV9009 builder applies two ZC706-only fixes to make
+buffered RX capture work on the sdtgen-merged DTB:
+
+1. **``sampl_clk`` on TPL cores.**  ``cf_axi_adc`` calls
+   ``clk_get_rate(sampl_clk)`` to size the DMA buffer.  Without it,
+   the driver still binds and the JESD link reaches ``DATA``, but
+   ``iio_buffer_refill`` never triggers and capture hangs.  The
+   builder wires ``sampl_clk`` in two passes: pass 1 points at the
+   PS reference (``clkc``); pass 2 redirects to the ADRV9009 chip's
+   per-direction clock-provider outputs (``trx0_adrv9009 0/1/2``)
+   once the phy label is resolvable.
+
+2. **DMA-done IRQ override.**  The Kuiper ZC706 ADRV9009 XSA
+   declares ``PCW_IRQ_F2P_MODE = REVERSE`` on the PS, and sdtgen
+   follows that — emitting DT cell 31 (SPI 63) for ``In13`` /
+   ``rx_dma``.  The bitstream actually fires DMA-done on the
+   *DIRECT*-mode SPIs the production
+   ``zynq-zc706-adv7511-adrv9009.dts`` uses (DT cells 57/56/55
+   for rx/tx/rx-obs).  With the sdtgen vectors,
+   ``/proc/interrupts`` shows zero counts during refill and capture
+   stalls.  The builder overrides ``interrupts`` on the rx / tx /
+   rx-obs ``axi_dmac`` nodes for ``platform == "zc706"`` only;
+   ZynqMP boards keep their sdtgen interrupts unchanged.
+
 Context builders
 ----------------
 

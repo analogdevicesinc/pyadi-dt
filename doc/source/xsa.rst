@@ -833,11 +833,33 @@ the parser implementation.
 Hardware test note
 ~~~~~~~~~~~~~~~~~~
 
-Some XSA-derived FMCDAQ2 designs expose tpl-core IIO names instead of legacy
-core names. Hardware tests therefore accept either set:
+The Kuiper kernel's ``cf_axi_adc_core.c`` sets the IIO device name from
+``pdev->dev.of_node->name``, so the IIO name follows the DT *node-name*.
+Production Kuiper DTs spell the buffered ADC node ``axi-<chip>-rx-hpc``;
+sdtgen-built XSAs spell the same node ``ad_ip_jesd204_tpl_<adc|dac>``.
+Hardware tests therefore accept either set, e.g.:
 
-- legacy: ``axi-ad9680-hpc``, ``axi-ad9144-hpc``
-- tpl-core: ``ad_ip_jesd204_tpl_adc``, ``ad_ip_jesd204_tpl_dac``
+- FMCDAQ2: ``axi-ad9680-hpc`` / ``axi-ad9144-hpc`` *or*
+  ``ad_ip_jesd204_tpl_adc`` / ``ad_ip_jesd204_tpl_dac``
+- ADRV9009 ZC706: ``axi-adrv9009-rx-hpc`` /
+  ``axi-adrv9009-rx-obs-hpc`` *or* both ADC frontends as
+  ``ad_ip_jesd204_tpl_adc``
+
+ADRV9009 ZC706 in particular binds two IIO devices both named
+``ad_ip_jesd204_tpl_adc`` — RX (``@44a00000``, via ``cf_axi_adc``) and
+OBS (``@44a08000``, via ``ad_adc.c`` matching
+``adi,axi-adrv9009-obs-1.0``).  ``ctx.find_device(name)`` returns
+whichever probed first.  Tests that need the RX path (the one Talise
+``radio_on`` actually streams) disambiguate by ``of_node`` reg
+address; ``test/hw/xsa/test_adrv9009_zc706_overlay.py::test_dma_loopback``
+shows the pattern.
+
+``pyadi-iio`` looks up the buffered ADC by the production name
+(``axi-adrv9009-rx-hpc``).  On the merged DTB that name is absent, so
+``adi.adrv9009(uri=...)`` returns successfully but with
+``_rxadc = None``.  Tests that drop down to ``pyadi-iio`` therefore
+need to gate on ``getattr(dev, "_rxadc", None) is not None`` and skip
+the high-level path when the merged-DTB names are in play.
 
 Profile validation
 ~~~~~~~~~~~~~~~~~~
