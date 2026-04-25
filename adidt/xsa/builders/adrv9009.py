@@ -514,67 +514,67 @@ class ADRV9009Builder:
         # framer-b → RX_OS (M=2 L=2 F=2 Np=16 K=32)
         # deframer-a → TX (M=4 L=4 F=2 Np=16 K=32)
         default_jesd_framer_deframer_props = [
-            'adi,jesd204-framer-a-bank-id = <0x01>;',
-            'adi,jesd204-framer-a-device-id = <0x00>;',
-            'adi,jesd204-framer-a-lane0-id = <0x00>;',
-            'adi,jesd204-framer-a-m = <0x04>;',
-            'adi,jesd204-framer-a-k = <0x20>;',
-            'adi,jesd204-framer-a-f = <0x04>;',
-            'adi,jesd204-framer-a-np = <0x10>;',
-            'adi,jesd204-framer-a-scramble = <0x01>;',
-            'adi,jesd204-framer-a-external-sysref = <0x01>;',
-            'adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;',
-            'adi,jesd204-framer-a-serializer-lane-crossbar = <0xe4>;',
-            'adi,jesd204-framer-a-lmfc-offset = <0x1f>;',
-            'adi,jesd204-framer-a-new-sysref-on-relink = <0x00>;',
-            'adi,jesd204-framer-a-syncb-in-select = <0x00>;',
-            'adi,jesd204-framer-a-over-sample = <0x00>;',
-            'adi,jesd204-framer-a-syncb-in-lvds-mode = <0x01>;',
-            'adi,jesd204-framer-a-syncb-in-lvds-pn-invert = <0x00>;',
-            'adi,jesd204-framer-a-enable-manual-lane-xbar = <0x00>;',
-            'adi,jesd204-framer-b-bank-id = <0x00>;',
-            'adi,jesd204-framer-b-device-id = <0x00>;',
-            'adi,jesd204-framer-b-lane0-id = <0x00>;',
-            'adi,jesd204-framer-b-m = <0x02>;',
-            'adi,jesd204-framer-b-k = <0x20>;',
-            'adi,jesd204-framer-b-f = <0x02>;',
-            'adi,jesd204-framer-b-np = <0x10>;',
-            'adi,jesd204-framer-b-scramble = <0x01>;',
-            'adi,jesd204-framer-b-external-sysref = <0x01>;',
-            'adi,jesd204-framer-b-serializer-lanes-enabled = <0x0c>;',
-            'adi,jesd204-framer-b-serializer-lane-crossbar = <0xe4>;',
-            'adi,jesd204-framer-b-lmfc-offset = <0x1f>;',
-            'adi,jesd204-framer-b-new-sysref-on-relink = <0x00>;',
-            'adi,jesd204-framer-b-syncb-in-select = <0x01>;',
-            'adi,jesd204-framer-b-over-sample = <0x00>;',
-            'adi,jesd204-framer-b-syncb-in-lvds-mode = <0x01>;',
-            'adi,jesd204-framer-b-syncb-in-lvds-pn-invert = <0x00>;',
-            'adi,jesd204-framer-b-enable-manual-lane-xbar = <0x00>;',
-            'adi,jesd204-deframer-a-bank-id = <0x00>;',
-            'adi,jesd204-deframer-a-device-id = <0x00>;',
-            'adi,jesd204-deframer-a-lane0-id = <0x00>;',
-            'adi,jesd204-deframer-a-m = <0x04>;',
-            'adi,jesd204-deframer-a-k = <0x20>;',
-            'adi,jesd204-deframer-a-scramble = <0x01>;',
-            'adi,jesd204-deframer-a-external-sysref = <0x01>;',
-            'adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0f>;',
-            'adi,jesd204-deframer-a-deserializer-lane-crossbar = <0xe4>;',
-            'adi,jesd204-deframer-a-lmfc-offset = <0x11>;',
-            'adi,jesd204-deframer-a-new-sysref-on-relink = <0x00>;',
-            'adi,jesd204-deframer-a-syncb-out-select = <0x00>;',
-            'adi,jesd204-deframer-a-np = <0x10>;',
-            'adi,jesd204-deframer-a-syncb-out-lvds-mode = <0x01>;',
-            'adi,jesd204-deframer-a-syncb-out-lvds-pn-invert = <0x00>;',
-            'adi,jesd204-deframer-a-syncb-out-cmos-slew-rate = <0x00>;',
-            'adi,jesd204-deframer-a-syncb-out-cmos-drive-level = <0x00>;',
-            'adi,jesd204-deframer-a-enable-manual-lane-xbar = <0x00>;',
-            'adi,jesd204-ser-amplitude = <0x0f>;',
-            'adi,jesd204-ser-pre-emphasis = <0x01>;',
-            'adi,jesd204-ser-invert-lane-polarity = <0x00>;',
-            'adi,jesd204-des-invert-lane-polarity = <0x00>;',
-            'adi,jesd204-des-eq-setting = <0x01>;',
-            'adi,jesd204-sysref-lvds-mode = <0x01>;',
-            'adi,jesd204-sysref-lvds-pn-invert = <0x00>;',
+            "adi,jesd204-framer-a-bank-id = <0x01>;",
+            "adi,jesd204-framer-a-device-id = <0x00>;",
+            "adi,jesd204-framer-a-lane0-id = <0x00>;",
+            "adi,jesd204-framer-a-m = <0x04>;",
+            "adi,jesd204-framer-a-k = <0x20>;",
+            "adi,jesd204-framer-a-f = <0x04>;",
+            "adi,jesd204-framer-a-np = <0x10>;",
+            "adi,jesd204-framer-a-scramble = <0x01>;",
+            "adi,jesd204-framer-a-external-sysref = <0x01>;",
+            "adi,jesd204-framer-a-serializer-lanes-enabled = <0x03>;",
+            "adi,jesd204-framer-a-serializer-lane-crossbar = <0xe4>;",
+            "adi,jesd204-framer-a-lmfc-offset = <0x1f>;",
+            "adi,jesd204-framer-a-new-sysref-on-relink = <0x00>;",
+            "adi,jesd204-framer-a-syncb-in-select = <0x00>;",
+            "adi,jesd204-framer-a-over-sample = <0x00>;",
+            "adi,jesd204-framer-a-syncb-in-lvds-mode = <0x01>;",
+            "adi,jesd204-framer-a-syncb-in-lvds-pn-invert = <0x00>;",
+            "adi,jesd204-framer-a-enable-manual-lane-xbar = <0x00>;",
+            "adi,jesd204-framer-b-bank-id = <0x00>;",
+            "adi,jesd204-framer-b-device-id = <0x00>;",
+            "adi,jesd204-framer-b-lane0-id = <0x00>;",
+            "adi,jesd204-framer-b-m = <0x02>;",
+            "adi,jesd204-framer-b-k = <0x20>;",
+            "adi,jesd204-framer-b-f = <0x02>;",
+            "adi,jesd204-framer-b-np = <0x10>;",
+            "adi,jesd204-framer-b-scramble = <0x01>;",
+            "adi,jesd204-framer-b-external-sysref = <0x01>;",
+            "adi,jesd204-framer-b-serializer-lanes-enabled = <0x0c>;",
+            "adi,jesd204-framer-b-serializer-lane-crossbar = <0xe4>;",
+            "adi,jesd204-framer-b-lmfc-offset = <0x1f>;",
+            "adi,jesd204-framer-b-new-sysref-on-relink = <0x00>;",
+            "adi,jesd204-framer-b-syncb-in-select = <0x01>;",
+            "adi,jesd204-framer-b-over-sample = <0x00>;",
+            "adi,jesd204-framer-b-syncb-in-lvds-mode = <0x01>;",
+            "adi,jesd204-framer-b-syncb-in-lvds-pn-invert = <0x00>;",
+            "adi,jesd204-framer-b-enable-manual-lane-xbar = <0x00>;",
+            "adi,jesd204-deframer-a-bank-id = <0x00>;",
+            "adi,jesd204-deframer-a-device-id = <0x00>;",
+            "adi,jesd204-deframer-a-lane0-id = <0x00>;",
+            "adi,jesd204-deframer-a-m = <0x04>;",
+            "adi,jesd204-deframer-a-k = <0x20>;",
+            "adi,jesd204-deframer-a-scramble = <0x01>;",
+            "adi,jesd204-deframer-a-external-sysref = <0x01>;",
+            "adi,jesd204-deframer-a-deserializer-lanes-enabled = <0x0f>;",
+            "adi,jesd204-deframer-a-deserializer-lane-crossbar = <0xe4>;",
+            "adi,jesd204-deframer-a-lmfc-offset = <0x11>;",
+            "adi,jesd204-deframer-a-new-sysref-on-relink = <0x00>;",
+            "adi,jesd204-deframer-a-syncb-out-select = <0x00>;",
+            "adi,jesd204-deframer-a-np = <0x10>;",
+            "adi,jesd204-deframer-a-syncb-out-lvds-mode = <0x01>;",
+            "adi,jesd204-deframer-a-syncb-out-lvds-pn-invert = <0x00>;",
+            "adi,jesd204-deframer-a-syncb-out-cmos-slew-rate = <0x00>;",
+            "adi,jesd204-deframer-a-syncb-out-cmos-drive-level = <0x00>;",
+            "adi,jesd204-deframer-a-enable-manual-lane-xbar = <0x00>;",
+            "adi,jesd204-ser-amplitude = <0x0f>;",
+            "adi,jesd204-ser-pre-emphasis = <0x01>;",
+            "adi,jesd204-ser-invert-lane-polarity = <0x00>;",
+            "adi,jesd204-des-invert-lane-polarity = <0x00>;",
+            "adi,jesd204-des-eq-setting = <0x01>;",
+            "adi,jesd204-sysref-lvds-mode = <0x01>;",
+            "adi,jesd204-sysref-lvds-pn-invert = <0x00>;",
         ]
         # Talise RX/ORX/TX profile properties copied verbatim from the
         # production Kuiper ``zynq-zc706-adv7511-adrv9009`` DT.  The
@@ -952,8 +952,12 @@ class ADRV9009Builder:
                 return f"{conv}", '"conv"'
             return f"{conv}, {div40}", '"conv", "div40"'
 
-        rx_clk_vals, rx_clk_names = _xcvr_clocks(rx_xcvr_conv_clk_ref, rx_xcvr_div40_ref)
-        tx_clk_vals, tx_clk_names = _xcvr_clocks(tx_xcvr_conv_clk_ref, tx_xcvr_div40_ref)
+        rx_clk_vals, rx_clk_names = _xcvr_clocks(
+            rx_xcvr_conv_clk_ref, rx_xcvr_div40_ref
+        )
+        tx_clk_vals, tx_clk_names = _xcvr_clocks(
+            tx_xcvr_conv_clk_ref, tx_xcvr_div40_ref
+        )
         rx_os_clk_vals, rx_os_clk_names = _xcvr_clocks(
             rx_os_xcvr_conv_clk_ref, rx_os_xcvr_div40_ref
         )
@@ -1005,13 +1009,22 @@ class ADRV9009Builder:
             "\t};"
         )
 
-        # TPL core first pass (compatible + dma, no spibus-connected)
+        # TPL core first pass (compatible + dma, no spibus-connected).
+        # ``sampl_clk`` is required: cf_axi_adc reads its rate from this
+        # clock to size the DMA buffer and tag IIO timestamps.  Without
+        # it the driver still binds, but ``iio_buffer_refill`` never
+        # triggers and capture hangs.  We start it pointing at the PS
+        # reference (``clkc``) here; the second pass below redirects it
+        # at the ADRV9009 chip's RX clock output (``trx0_adrv9009 0``)
+        # once that label is resolvable.  Same shape OBS and TX use.
         rx_core_first = (
             f"\t&{rx_core_label} {{\n"
             '\t\tcompatible = "adi,axi-adrv9009-rx-1.0";\n'
             "\t\tadi,axi-decimation-core-available;\n"
             f"\t\tdmas = <&{rx_dma_label} 0>;\n"
             '\t\tdma-names = "rx";\n'
+            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
+            '\t\tclock-names = "sampl_clk";\n'
             "\t};"
         )
         rx_os_core_first = ""
@@ -1045,9 +1058,19 @@ class ADRV9009Builder:
             "\t};"
         )
 
-        # TPL core second pass (spibus-connected + phy clocks)
+        # TPL core second pass (spibus-connected + phy clocks).
+        # Output 0 of the ADRV9009 chip's clock-provider is the RX
+        # sample clock (1 = OBS, 2 = TX), per the upstream binding
+        # ``adi,adrv9009`` (``#clock-cells = <1>`` with three named
+        # outputs).  Overriding here re-points the cf_axi_adc sample
+        # clock from the static PS reference set in the first pass to
+        # the live ADRV9009 RX rate.
         rx_core_second = (
-            f"\t&{rx_core_label} {{\n\t\tspibus-connected = <&{phy_label}>;\n\t}};"
+            f"\t&{rx_core_label} {{\n"
+            f"\t\tspibus-connected = <&{phy_label}>;\n"
+            f"\t\tclocks = <&{phy_label} 0>;\n"
+            '\t\tclock-names = "sampl_clk";\n'
+            "\t};"
         )
         rx_os_core_second = ""
         if has_rx_os:
@@ -1147,14 +1170,39 @@ class ADRV9009Builder:
                 ),
             )
 
-        # DMA nodes for all 3 directions
+        # DMA nodes for all 3 directions.
+        #
+        # ZC706 IRQ override: the Kuiper ADRV9009 ZC706 XSA declares
+        # ``PCW_IRQ_F2P_MODE = REVERSE`` on the PS, and sdtgen
+        # follows that — so for a concat input ``In13`` (rx_dma) it
+        # emits SPI 63 (DT cell 31), which is what the kernel
+        # registers.  In practice the bitstream's PL→PS routing in
+        # this XSA fires the rx/tx/rx-obs DMA-done IRQs on the
+        # DIRECT-mode SPIs (89/88/87 = DT 57/56/55), which is what
+        # the production ``zynq-zc706-adv7511-adrv9009.dts`` uses.
+        # Without the override no DMA IRQ ever fires (verified via
+        # ``/proc/interrupts``), so buffered RX refills time out.
+        # Re-anchor only on zc706.
+        zc706_dma_irq = (
+            {rx_dma_label: 57, tx_dma_label: 56, rx_os_dma_label: 55}
+            if platform == "zc706"
+            else {}
+        )
+
         def _dma_node(label: str) -> str:
+            irq_block = ""
+            if label in zc706_dma_irq:
+                irq_block = (
+                    "\t\t/delete-property/ interrupts;\n"
+                    f"\t\tinterrupts = <0 {zc706_dma_irq[label]} 4>;\n"
+                )
             return (
                 f"\t&{label} {{\n"
                 "\t\t/delete-property/ compatible;\n"
                 '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
                 "\t\t#dma-cells = <1>;\n"
                 "\t\t#clock-cells = <0>;\n"
+                f"{irq_block}"
                 "\t};"
             )
 
