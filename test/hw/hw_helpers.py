@@ -212,6 +212,20 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
 
+def stage_dtb_as_devicetree(dtb: Path, staging_dir: Path) -> Path:
+    """Copy *dtb* into *staging_dir* renamed to ``devicetree.dtb``.
+
+    The Zynq-7000 ``BootFPGASoCTFTP`` driver in the ``bq`` and ``nemo``
+    labgrid environments hard-codes ``dtb_image_name: devicetree.dtb`` —
+    the file must have that exact basename when it lands in the TFTP
+    root for U-Boot's ``tftp devicetree.dtb`` to find it.
+    """
+    staging_dir.mkdir(parents=True, exist_ok=True)
+    staged = staging_dir / "devicetree.dtb"
+    shutil.copyfile(dtb, staged)
+    return staged
+
+
 def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
     """Compile a DTS overlay to a DTBO binary.
 
