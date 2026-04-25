@@ -12,19 +12,17 @@ Two platform-specific differences from the AD9081 variant:
    so U-Boot's ``tftp devicetree.dtb`` finds it; the kernel is
    ``uImage`` (legacy U-Boot image, wrapped from the built ``zImage``
    by :func:`~test.hw.hw_helpers._wrap_zimage_as_uimage`).
-2. **DMA path** — two adaptations vs the AD9081 variant:
-
-   * The default post-boot Talise state on ZC706 + ADRV9009 leaves
-     buffered RX inert.  The DMA test pushes a canonical
-     iio-oscilloscope ``DC245p76`` Talise profile via
-     ``adrv9009-phy.profile_config`` first; that re-inits the radio
-     to ``radio_on`` without changing the JESD lane rate.
-   * The ADRV9009 ZC706 reference HDL has no internal DAC→ADC
-     loopback (unlike AD9081's ``ad_ip_jesd204_tpl_*`` cores), so a
-     TX DDS tone may not appear in the RX capture without an
-     external SMA-to-SMA cable on the daughter card.  The FFT stage
-     asserts SNR > 10 dB on a non-DC peak only when one is clearly
-     present and otherwise logs the noise-only result and passes.
+2. **DMA path** — the default post-boot Talise state on ZC706 +
+   ADRV9009 leaves buffered RX inert.  The DMA test pushes a
+   canonical iio-oscilloscope ``DC245p76`` Talise profile via
+   ``adrv9009-phy.profile_config`` first; that re-inits the radio
+   to ``radio_on`` without changing the JESD lane rate.  The
+   ADRV9009 ZC706 reference HDL has no internal DAC→ADC loopback
+   (unlike AD9081's ``ad_ip_jesd204_tpl_*`` cores), so a TX DDS tone
+   may not appear in the RX capture without an external SMA-to-SMA
+   cable on the daughter card.  The FFT stage asserts SNR > 10 dB
+   on a non-DC peak only when one is clearly present and otherwise
+   logs the noise-only result and passes.
 
 LG_ENV: ``test/hw/env/nemo.yaml``.
 """
@@ -442,48 +440,87 @@ def test_dma_loopback(booted_board, tmp_path):
 
     ctx, ip = open_iio_context(shell)
 
-    # Pre-check before touching any DMA buffer: only the production
-    # Kuiper DTB names (``axi-adrv9009-rx-hpc`` / ``-obs-hpc``) back
-    # a refillable AXI-DMA buffer.  Our merged sdtgen DTB labels the
-    # JESD framing core ``ad_ip_jesd204_tpl_adc`` instead, which is
-    # the JESD framing test endpoint, not the buffered ADC frontend
-    # — refilling its buffer hangs even after Talise re-init +
-    # ``ensm_mode=radio_on``.  Aligning the merged-DTB IIO names
-    # with Kuiper is a separate merged-DTB IIO-naming change,
-    # outside overlay-lifecycle scope.  Skip the buffered-RX phase
-    # cleanly when the right names are absent so we don't leave a
-    # stalled libiio buffer that segfaults the rest of the suite.
-    rx_dev_names = {d.name for d in ctx.devices if d.name}
-    has_buffered_rx = bool(
-        rx_dev_names & {"axi-adrv9009-rx-hpc", "axi-adrv9009-rx-obs-hpc"}
-    )
-    if not has_buffered_rx:
-        del ctx
-        pytest.skip(
-            "merged-DTB exposes only ad_ip_jesd204_tpl_adc, not the"
-            " axi-adrv9009-rx-hpc Kuiper name backed by AXI-DMA;"
-            " buffered RX requires merged-DTB IIO-naming work"
-            " outside overlay-lifecycle scope"
-        )
-
     # Phase 1: bare data-path smoke check.
-    assert_rx_capture_valid(
-        ctx,
-        (
-            "axi-adrv9009-rx-hpc",
-            "axi-adrv9009-rx-obs-hpc",
-        ),
-        n_samples=2**12,
-        context="adrv9009 zc706 overlay",
+    #
+    # Both the RX TPL (``...@44a00000``) and the OBS TPL
+    # (``...@44a08000``) probe to libiio with the same of_node
+    # name ``ad_ip_jesd204_tpl_adc`` — their unit-names are
+    # identical in the sdtgen-built DTB.  ``find_device`` returns
+    # whichever probed first (typically OBS via ``ad_adc.c``,
+    # before cf_axi_adc binds the RX TPL).  Talise's ``radio_on``
+    # streams framer-A (RX); framer-B (OBS) stays gated, so a
+    # refill on the OBS device returns all zeros even though the
+    # OBS DMA fires its done IRQ.  Prefer the RX TPL by reg
+    # address so we exercise the path ``radio_on`` actually
+    # enables.
+    rx_tpl_dev = None
+    for d in ctx.devices:
+        if d.name != "ad_ip_jesd204_tpl_adc":
+            continue
+        try:
+            of_node = d.attrs["of_node"].value if "of_node" in d.attrs else ""
+        except Exception:  # noqa: BLE001 — attr read may raise on some builds
+            of_node = ""
+        if "44a00000" in of_node:
+            rx_tpl_dev = d
+            break
+    if rx_tpl_dev is None:
+        # ``of_node`` isn't always exposed as an IIO attr; fall back
+        # to the higher-numbered duplicate.  cf_axi_adc binds the RX
+        # TPL after ``ad_adc`` binds OBS, so the RX iio:device has
+        # the larger numeric id.
+        candidates = [d for d in ctx.devices if d.name == "ad_ip_jesd204_tpl_adc"]
+        if candidates:
+            rx_tpl_dev = max(candidates, key=lambda d: int(d.id.rsplit(":device", 1)[1]))
+
+    target_names: tuple[str, ...] = (
+        "axi-adrv9009-rx-hpc",
+        "axi-adrv9009-rx-obs-hpc",
+        "ad_ip_jesd204_tpl_adc",
     )
+    if rx_tpl_dev is not None:
+        target_names = (rx_tpl_dev.id,)
+
+    try:
+        assert_rx_capture_valid(
+            ctx,
+            target_names,
+            n_samples=2**12,
+            context="adrv9009 zc706 overlay",
+        )
+    except AssertionError:
+        # On-target diagnostics: IRQ counts disambiguate
+        # DMA-not-firing from JESD-not-streaming for the next
+        # round of debugging.
+        print("=== /proc/interrupts ===")
+        print(shell_out(shell, "cat /proc/interrupts"))
+        print("=== dmesg tail ===")
+        print(shell_out(shell, "dmesg | tail -n 60"))
+        raise
 
     # Phase 2: opportunistic spectrum check via pyadi-iio.
+    #
+    # ``pyadi-iio`` looks up the buffered ADC by the production
+    # name ``axi-adrv9009-rx-hpc``.  Our merged DTB names the same
+    # node ``ad_ip_jesd204_tpl_adc`` (sdtgen unit-name), so the
+    # ``adi.adrv9009`` constructor returns an object with
+    # ``_rxadc = None`` instead of raising — every subsequent
+    # ``dev.rx_*`` access then crashes with ``AttributeError``.
+    # Detect that state up front and skip; Phase 1 already
+    # validated the data path.
     import adi
 
     try:
         dev = adi.adrv9009(uri=f"ip:{ip}")
     except Exception as exc:  # noqa: BLE001 — connect failure → skip phase 2
         print(f"adi.adrv9009 unavailable; skipping FFT phase: {exc}")
+        return
+    if getattr(dev, "_rxadc", None) is None:
+        print(
+            "adi.adrv9009 missing 'axi-adrv9009-rx-hpc' IIO name "
+            "(merged DTB exposes 'ad_ip_jesd204_tpl_adc' instead) — "
+            "skipping FFT phase; Phase 1 already validated the data path."
+        )
         return
 
     dev.rx_enabled_channels = [0]
