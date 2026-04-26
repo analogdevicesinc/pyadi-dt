@@ -5,6 +5,10 @@ pyadi-dt generates PetaLinux-ready ``system-user.dtsi`` files from
 Vivado XSA archives, eliminating the need to hand-write ADI device tree
 nodes for clock chips, JESD204 links, and high-speed converters.
 
+The flow is regularly exercised against PetaLinux **2023.2** on the
+ADI hardware lab (see `Hardware tests`_).  Earlier 2020.1+ releases work
+with the same code path but are not continuously verified.
+
 .. contents:: Contents
    :local:
    :depth: 2
@@ -120,6 +124,13 @@ Step 2: Import the hardware description
 
 This imports the XSA and generates the base device tree via DTG.
 
+.. note::
+
+   ``--get-hw-description`` takes a *directory* containing the
+   ``.xsa`` file, not the ``.xsa`` path itself.  PetaLinux scans the
+   directory and picks the first ``.xsa`` alphabetically, so isolate
+   the XSA in its own directory if other ``.xsa`` files live alongside.
+
 Step 3: Generate system-user.dtsi
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -184,7 +195,8 @@ Step 5: Build the device tree
    petalinux-build -c device-tree
 
 This compiles the base DTS with your ``system-user.dtsi`` overlay into
-a DTB.  It is much faster than a full build.
+a DTB.  Typical runtime is ≈3 minutes on a warm sstate cache, versus
+30-60 minutes for a full ``petalinux-build``.
 
 Step 6: Full build and package
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -192,7 +204,19 @@ Step 6: Full build and package
 .. code-block:: bash
 
    petalinux-build
+
+ZynqMP packaging:
+
+.. code-block:: bash
+
    petalinux-package --boot --fsbl images/linux/zynqmp_fsbl.elf \
+       --fpga images/linux/system.bit --u-boot --force
+
+Zynq-7000 (ZC706) packaging:
+
+.. code-block:: bash
+
+   petalinux-package --boot --fsbl images/linux/zynq_fsbl.elf \
        --fpga images/linux/system.bit --u-boot --force
 
 Step 7: Boot and verify
@@ -241,6 +265,25 @@ Use the formatter standalone:
        petalinux_version="2024.1", # includes system-conf.dtsi
    )
    Path("system-user.dtsi").write_text(dtsi)
+
+Hardware tests
+--------------
+
+pyadi-dt ships hardware integration tests that exercise the full
+PetaLinux flow on real boards.  Each test creates (or reuses a cached)
+PetaLinux project, imports the XSA, drops in a pyadi-dt-generated
+``system-user.dtsi``, runs ``petalinux-build -c device-tree``, and boots
+the produced ``images/linux/system.dtb`` on a labgrid-controlled board:
+
+* ``test/hw/test_ad9081_zcu102_petalinux_hw.py``   (ZynqMP, SD boot)
+* ``test/hw/test_adrv9009_zc706_petalinux_hw.py``  (Zynq-7000, TFTP boot)
+* ``test/hw/test_adrv9371_zc706_petalinux_hw.py``  (Zynq-7000, TFTP boot)
+
+Boot+verify is shared with the corresponding ``test_*_xsa_hw.py`` so the
+two test families differ only in *how* the DTB was produced.  See
+``test/hw/README.md`` ("PetaLinux variant" section) for prerequisites
+(``PETALINUX_INSTALL``, project cache layout) and the per-board pytest
+invocations.
 
 Platform notes
 --------------
