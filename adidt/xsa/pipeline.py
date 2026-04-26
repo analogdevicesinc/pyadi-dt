@@ -215,6 +215,74 @@ class XsaPipeline:
 
         return result
 
+    def run_petalinux_only(
+        self,
+        xsa_path: Path,
+        cfg: PipelineConfig | dict[str, Any],
+        output_dir: Path,
+        profile: str | None = None,
+    ) -> dict[str, Path]:
+        """Generate ``system-user.dtsi`` + ``device-tree.bbappend`` without sdtgen.
+
+        Use when PetaLinux's own DTG (invoked by ``petalinux-config
+        --get-hw-description``) provides the base device tree — pyadi-dt's
+        sdtgen call is then redundant and forces a Vitis dependency that
+        callers in PetaLinux-only environments don't have.
+
+        Produces the same ``system-user.dtsi`` and ``device-tree.bbappend``
+        as :meth:`run` with ``output_format="petalinux"``, but skips
+        sdtgen, the merged DTS, the HTML report, and the clock graphs.
+
+        The overlay's bus reference (``&amba`` vs ``&amba_pl``) is determined
+        the same way: a stub base DTS declares ``amba``; the
+        :class:`PetalinuxFormatter` rewrites to ``amba_pl`` for ZynqMP
+        platforms based on ``topology.inferred_platform()``.
+
+        Returns:
+            Dict with ``"system_user_dtsi"`` and ``"bbappend"`` keys.
+        """
+        from .petalinux import PetalinuxFormatter
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        topology = XsaParser().parse(xsa_path)
+        inferred_name = self._derive_name(topology)
+        name = profile or inferred_name
+
+        cfg_merged = cfg
+        selected_profile = profile or self._auto_profile_name(topology)
+        if selected_profile:
+            profile_data = ProfileManager().load(selected_profile)
+            cfg_merged = merge_profile_defaults(cfg, profile_data)
+            cfg_merged = self._apply_profile_jesd_defaults(
+                cfg, cfg_merged, selected_profile
+            )
+
+        # Stub base DTS: only used by DtsMerger._build_overlay to detect
+        # the bus label.  Both Zynq-7000 and ZynqMP sdtgen output use
+        # ``amba`` as the PL bus label — PetaLinux's DTG matches this on
+        # Zynq-7000 and produces ``amba_pl`` on ZynqMP.  PetalinuxFormatter
+        # handles the ZynqMP rewrite based on inferred platform.
+        stub_base_dts = "/dts-v1/;\n/ {\n\tamba: amba {\n\t};\n};\n"
+
+        nodes = NodeBuilder().build(topology, cfg_merged)
+        overlay_content = DtsMerger()._build_overlay(stub_base_dts, nodes, name)
+
+        formatter = PetalinuxFormatter()
+        plat = topology.inferred_platform()
+        dtsi = formatter.format_system_user_dtsi(overlay_content, platform=plat)
+        dtsi_path = output_dir / "system-user.dtsi"
+        dtsi_path.write_text(dtsi)
+
+        bbappend = formatter.generate_bbappend()
+        bbappend_path = output_dir / "device-tree.bbappend"
+        bbappend_path.write_text(bbappend)
+
+        return {
+            "system_user_dtsi": dtsi_path,
+            "bbappend": bbappend_path,
+        }
+
     def _derive_name(self, topology: XsaTopology) -> str:
         """Return a ``"<converter_family>_<platform>"`` name string inferred from the topology.
 
