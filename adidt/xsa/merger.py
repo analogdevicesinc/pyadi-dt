@@ -7,6 +7,8 @@ import subprocess
 import warnings
 from pathlib import Path
 
+from .dts_normalize import dedup_zynqmp_root_nodes
+
 _LABEL_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:\s*\w", re.MULTILINE)
 _NODE_ADDR_RE = re.compile(r"@([0-9a-fA-F]+)\s*\{")
 _NODE_LABEL_IN_SNIPPET_RE = re.compile(r"^\s*([a-zA-Z_]\w*)\s*:")
@@ -632,6 +634,11 @@ class DtsMerger:
                 if cpp_result.returncode != 0:
                     _log.warning("cpp preprocessing failed: %s", cpp_result.stderr)
                     return
+                # Normalize sdtgen-emitted ZynqMP root-block duplicates so the
+                # smoke test catches real merge bugs instead of the known
+                # sdtgen quirk that the downstream ``compile_dts_to_dtb``
+                # already handles.
+                dedup_zynqmp_root_nodes(preprocessed)
                 compile_input = preprocessed
             result = subprocess.run(
                 [
