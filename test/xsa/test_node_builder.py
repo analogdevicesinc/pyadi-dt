@@ -1307,3 +1307,29 @@ def test_build_adrv9009_fmcomms8_uses_hmc7044_and_tpl_core_labels(cfg):
         "clocks = <&hmc7044_fmc 2>, <&hmc7044_fmc 5>, <&hmc7044_fmc 3>, <&hmc7044_fmc 7>;"
         in merged
     )  # trx1: dev=ch2, fmc=ch5, sysref_dev=ch3, sysref_fmc=ch7
+
+
+def test_build_skips_clkgens_unreferenced_by_jesd_chain(topo, cfg):
+    """Clkgens that no JESD instance references must not get rendered.
+
+    ZC706 reference designs ship an ``axi_hdmi_clkgen`` for the HDMI
+    output that has nothing to do with the converter chain.  The base
+    DTS already declares it via ``#include``, so re-rendering it from
+    the topology would make the merger emit a noisy
+    ``Replaced included node with duplicate label`` warning at apply
+    time.  Filter at the source instead.
+    """
+    topo.clkgens.append(
+        ClkgenInstance(
+            name="axi_hdmi_clkgen",
+            base_addr=0x79000000,
+            output_clks=["axi_hdmi_clkgen_0", "axi_hdmi_clkgen_1"],
+        )
+    )
+    nodes = NodeBuilder().build(topo, cfg)
+    rendered = "\n".join(nodes["clkgens"])
+    assert "axi_hdmi_clkgen" not in rendered, (
+        "axi_hdmi_clkgen is unreferenced by any JESD instance and must be skipped"
+    )
+    # The chain clkgen the JESD instances DO reference still renders.
+    assert "axi_clkgen_0" in rendered

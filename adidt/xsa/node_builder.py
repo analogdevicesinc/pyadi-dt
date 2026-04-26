@@ -113,7 +113,21 @@ class NodeBuilder:
         rx_labels: list[str] = []
         tx_labels: list[str] = []
 
+        # Only render clkgens that some JESD instance in the topology actually
+        # references as its link clock.  ZC706 reference designs ship an
+        # ``axi_hdmi_clkgen`` for the HDMI output that has nothing to do with
+        # the converter chain; the base DTS already declares it via #include
+        # and re-rendering it here makes the merger emit a noisy
+        # ``Replaced included node with duplicate label`` warning.
+        used_clkgen_names: set[str] = set()
+        for jesd_inst in (*topology.jesd204_rx, *topology.jesd204_tx):
+            clkgen = clock_map.get(jesd_inst.link_clk)
+            if clkgen is not None:
+                used_clkgen_names.add(clkgen.name)
+
         for clkgen in topology.clkgens:
+            if clkgen.name not in used_clkgen_names:
+                continue
             if self._is_adrv90xx_name(clkgen.name) and any(
                 isinstance(b, ADRV9009Builder) for b in matched_builders
             ):
