@@ -879,6 +879,19 @@ def build_kernel_image(platform_arch: str) -> Path | None:
         RuntimeError: if the build produced no kernel image or the resulting
             file does not exist on disk.
     """
+    # Allow tests to bypass the pyadi-build dependency by pointing at a
+    # pre-built kernel image — useful in environments without the
+    # private pyadi-build package, or for fast iteration when the kernel
+    # is already known-good (e.g. matching a Kuiper sdcard image).
+    override_var = f"ADIDT_KERNEL_IMAGE_{platform_arch.upper()}"
+    override = os.environ.get(override_var)
+    if override:
+        path = Path(override)
+        if not path.is_file():
+            pytest.skip(f"{override_var}={override!s} does not exist")
+        print(f"Using pre-built {platform_arch} kernel image from {override_var}: {path}")
+        return path
+
     if not DEFAULT_BUILD_KERNEL:
         return None
 
