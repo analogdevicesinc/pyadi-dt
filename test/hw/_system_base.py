@@ -48,6 +48,7 @@ from test.hw.xsa._overlay_spec import (  # re-exported for board-file convenienc
 __all__ = [
     "BoardSystemProfile",
     "acquire_or_local_xsa",
+    "boot_and_verify_from_dtb",
     "boot_and_verify_from_merged_dts",
     "local_xsa_or_skip",
     "requires_lg",
@@ -138,6 +139,9 @@ class BoardSystemProfile:
 
     dtb_basename: str = field(default="")  # auto-derived from out_label if empty
 
+    petalinux_template: Optional[Literal["zynqMP", "zynq"]] = None
+    petalinux_install_env: str = "PETALINUX_INSTALL"
+
 
 def _staged_dtb_for_boot(
     spec: BoardSystemProfile, dtb_raw: Path, staging_root: Path
@@ -170,41 +174,37 @@ def _assert_iio_devices_present(spec: BoardSystemProfile, ctx) -> None:
         )
 
 
-def boot_and_verify_from_merged_dts(
+def boot_and_verify_from_dtb(
     spec: BoardSystemProfile,
-    merged_dts: Path,
+    dtb_path: Path,
     *,
     board,
     request,
     out_dir: Path,
-    dtb_basename: Optional[str] = None,
 ):
-    """Compile *merged_dts*, boot the board, and run the standard verify.
+    """Stage *dtb_path*, boot the board, and run the standard verify.
+
+    Assumes ``dtb_path`` is an already-compiled, non-empty DTB.
 
     Steps performed:
 
-    1. Compile merged DTS → DTB.
-    2. Stage the DTB under the boot transport's expected basename.
-    3. Pull the kernel image fixture named in ``spec.kernel_fixture_name``.
-    4. ``deploy_and_boot``.
-    5. Collect dmesg and assert no kernel faults / probe errors.
-    6. Optional probe signature check (``spec.probe_signature_any``).
-    7. Open an IIO context and check ``iio_required_all`` / ``_any``.
-    8. Assert both JESD links reach DATA (with optional reg-address globs).
-    9. Optional RX capture smoke test (``spec.rx_capture_target_names``).
+    1. Stage the DTB under the boot transport's expected basename.
+    2. Pull the kernel image fixture named in ``spec.kernel_fixture_name``.
+    3. ``deploy_and_boot``.
+    4. Collect dmesg and assert no kernel faults / probe errors.
+    5. Optional probe signature check (``spec.probe_signature_any``).
+    6. Open an IIO context and check ``iio_required_all`` / ``_any``.
+    7. Assert both JESD links reach DATA (with optional reg-address globs).
+    8. Optional RX capture smoke test (``spec.rx_capture_target_names``).
 
     Returns ``(shell, ctx, dmesg_txt)`` so callers can run additional
     board-specific diagnostics on the booted target.
     """
-    out_dir.mkdir(parents=True, exist_ok=True)
-    name = dtb_basename or f"{spec.out_label}.dtb"
-    dtb_raw = out_dir / name
-    compile_dts_to_dtb(merged_dts, dtb_raw)
-    assert dtb_raw.exists() and dtb_raw.stat().st_size > 0, (
-        f"dtc produced empty/missing DTB: {dtb_raw}"
+    assert dtb_path.exists() and dtb_path.stat().st_size > 0, (
+        f"empty/missing DTB: {dtb_path}"
     )
 
-    staged_dtb = _staged_dtb_for_boot(spec, dtb_raw, out_dir)
+    staged_dtb = _staged_dtb_for_boot(spec, dtb_path, out_dir)
     kernel_image = request.getfixturevalue(spec.kernel_fixture_name)
 
     shell = deploy_and_boot(board, staged_dtb, kernel_image)
@@ -248,6 +248,32 @@ def boot_and_verify_from_merged_dts(
         )
 
     return shell, ctx, dmesg_txt
+
+
+def boot_and_verify_from_merged_dts(
+    spec: BoardSystemProfile,
+    merged_dts: Path,
+    *,
+    board,
+    request,
+    out_dir: Path,
+    dtb_basename: Optional[str] = None,
+):
+    """Compile *merged_dts* with dtc, then boot and run the standard verify.
+
+    Thin wrapper: dtc compile → :func:`boot_and_verify_from_dtb`.
+    See that function for the full step list and return value.
+    """
+    out_dir.mkdir(parents=True, exist_ok=True)
+    name = dtb_basename or f"{spec.out_label}.dtb"
+    dtb_raw = out_dir / name
+    compile_dts_to_dtb(merged_dts, dtb_raw)
+    assert dtb_raw.exists() and dtb_raw.stat().st_size > 0, (
+        f"dtc produced empty/missing DTB: {dtb_raw}"
+    )
+    return boot_and_verify_from_dtb(
+        spec, dtb_raw, board=board, request=request, out_dir=out_dir
+    )
 
 
 def run_xsa_pipeline(
