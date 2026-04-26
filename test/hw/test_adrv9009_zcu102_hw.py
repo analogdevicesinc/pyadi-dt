@@ -5,18 +5,19 @@ the only substantive difference is the rendering engine.  The AD9081
 test composes overlays via the declarative :class:`adidt.System`; this
 one uses :class:`adidt.xsa.pipeline.XsaPipeline` because
 :class:`adidt.xsa.builders.adrv9009.ADRV9009Builder` performs extensive
-topology-driven label derivation (xcvr, dma, clkgen, observation-link
-handling) that the declarative ``System`` path doesn't yet cover.  The
-same plumbing — ``XsaParser``, ``SdtgenRunner``, labgrid's
-``KuiperDLDriver`` + ``ADIShellDriver`` — is exercised end-to-end.
+topology-driven label derivation that the System path doesn't yet
+cover.
 
-LG_ENV: /jenkins/lg_hw.yaml
+After the standard boot + verify, this test sweeps four canonical
+Talise filter profiles, pushing each via ``adrv9009-phy.profile_config``
+and re-verifying both JESD links return to DATA.
+
+LG_ENV: /jenkins/lg_hw.yaml.
 """
 
 from __future__ import annotations
 
 import base64
-import os
 import time
 import urllib.request
 from pathlib import Path
@@ -24,27 +25,11 @@ from typing import Any
 
 import pytest
 
-if not (os.environ.get("LG_COORDINATOR") or os.environ.get("LG_ENV")):
-    pytest.skip(
-        "set LG_COORDINATOR or LG_ENV for ADRV9009 ZCU102 hardware test"
-        " (see .env.example)",
-        allow_module_level=True,
-    )
-
-from adidt.xsa.pipeline import XsaPipeline  # noqa: E402
-from adidt.xsa.topology import XsaParser  # noqa: E402
-from test.hw.hw_helpers import (  # noqa: E402
-    DEFAULT_OUT_DIR,
-    acquire_xsa,
-    assert_jesd_links_data,
-    assert_no_kernel_faults,
-    assert_no_probe_errors,
-    assert_rx_capture_valid,
-    collect_dmesg,
-    compile_dts_to_dtb,
-    deploy_and_boot,
-    open_iio_context,
-    shell_out,
+from test.hw._system_base import (
+    BoardSystemProfile,
+    acquire_or_local_xsa,
+    requires_lg,
+    run_xsa_boot_and_verify,
 )
 
 
@@ -53,12 +38,12 @@ DEFAULT_KUIPER_PROJECT = "zynqmp-zcu102-rev10-adrv9009"
 DEFAULT_VCXO_HZ = 122.88e6
 DEFAULT_SAMPLE_RATE_HZ = 245.76e6
 
+
 # Canonical Talise filter profiles published alongside iio-oscilloscope.
-# Loaded post-boot via ``adrv9009-phy.profile_config``.  All four share
-# deviceClock=245.76 MHz so the JESD lane rate does not change between
-# profiles, but the write path does re-initialise the radio — a useful
-# smoke test that exercises the driver's profile-reload code and
-# confirms JESD returns to DATA after each swap.
+# All four share deviceClock=245.76 MHz so the JESD lane rate doesn't
+# change between profiles, but the write path does re-initialise the
+# radio — a useful smoke test that exercises the driver's profile-reload
+# code and confirms JESD returns to DATA after each swap.
 TALISE_PROFILE_BASE_URL = (
     "https://raw.githubusercontent.com/analogdevicesinc/iio-oscilloscope/"
     "main/filters/adrv9009"
@@ -72,31 +57,22 @@ TALISE_PROFILE_FILES = (
 
 
 def _fetch_talise_profile(filename: str, cache_dir: Path) -> str:
-    """Fetch a Talise profile, caching into ``cache_dir``."""
     cache_dir.mkdir(parents=True, exist_ok=True)
     cached = cache_dir / filename
     if cached.exists() and cached.stat().st_size > 0:
         return cached.read_text()
     url = f"{TALISE_PROFILE_BASE_URL}/{filename}"
-    with urllib.request.urlopen(url, timeout=30) as resp:
+    with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310
         body = resp.read().decode("utf-8")
     cached.write_text(body)
     return body
-
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 
 
 def _solve_adrv9009_config(
     vcxo_hz: float = DEFAULT_VCXO_HZ,
     sample_rate_hz: float = DEFAULT_SAMPLE_RATE_HZ,
 ) -> dict[str, Any]:
-    """Resolve ADRV9009 JESD framing + clock tree via pyadi-jif.
-
-    Skips the test gracefully if ``pyadi-jif`` is not installed.
-    """
+    """Resolve ADRV9009 JESD framing + clock tree via pyadi-jif."""
     try:
         import adijif
     except ModuleNotFoundError as exc:
@@ -151,111 +127,54 @@ def _solve_adrv9009_config(
     return cfg
 
 
-# ---------------------------------------------------------------------------
-# Hardware test
-# ---------------------------------------------------------------------------
-
-
-@pytest.mark.lg_feature(["adrv9009", "zcu102"])
-def test_adrv9009_zcu102_hw(board, built_kernel_image_zynqmp, tmp_path):
-    """End-to-end pyadi-dt ADRV9009+ZCU102 boot + IIO verification."""
-    out_dir = DEFAULT_OUT_DIR
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    # --- 1. Acquire the XSA for the target design ---
-    xsa_path = acquire_xsa(
-        Path(__file__).parent / "xsa" / "ref_data" / "system_top_adrv9009_zcu102.xsa",
-        DEFAULT_KUIPER_RELEASE,
-        DEFAULT_KUIPER_PROJECT,
-        tmp_path,
-    )
-    assert xsa_path.exists(), f"XSA not found: {xsa_path}"
-
-    # --- 2. Parse the XSA as a sanity check on topology + fixture ---
-    topology = XsaParser().parse(xsa_path)
+def _topology_assert(topology) -> None:
     assert topology.jesd204_rx, "No JESD204 RX instances in XSA topology"
     assert topology.jesd204_tx, "No JESD204 TX instances in XSA topology"
-    print(
-        f"XSA topology: {len(topology.converters)} converter(s), "
-        f"{len(topology.jesd204_rx)} rx jesd, {len(topology.jesd204_tx)} tx jesd"
+
+
+SPEC = BoardSystemProfile(
+    lg_features=("adrv9009", "zcu102"),
+    cfg_builder=_solve_adrv9009_config,
+    xsa_resolver=acquire_or_local_xsa(
+        "system_top_adrv9009_zcu102.xsa",
+        DEFAULT_KUIPER_RELEASE,
+        DEFAULT_KUIPER_PROJECT,
+    ),
+    topology_assert=_topology_assert,
+    boot_mode="sd",
+    kernel_fixture_name="built_kernel_image_zynqmp",
+    out_label="adrv9009",
+    dmesg_grep_pattern="adrv9009|ad9528|jesd204|probe|failed|error",
+    merged_dts_must_contain=('compatible = "adi,adrv9009"',),
+    probe_signature_any=("adrv9009-phy", "talise"),
+    probe_signature_message="ADRV9009 phy probe signature not found in dmesg",
+    iio_required_all=("adrv9009-phy", "axi-adrv9009-rx-hpc", "ad9528-1"),
+    rx_capture_target_names=("axi-adrv9009-rx-hpc", "axi-adrv9009-rx-obs-hpc"),
+)
+
+
+@requires_lg
+@pytest.mark.lg_feature(list(SPEC.lg_features))
+def test_adrv9009_zcu102_hw(board, tmp_path, request):
+    """End-to-end pyadi-dt ADRV9009+ZCU102 boot + IIO verification."""
+    from test.hw.hw_helpers import (
+        assert_jesd_links_data,
+        assert_no_kernel_faults,
+        assert_no_probe_errors,
+        shell_out,
     )
 
-    # --- 3. Render device tree via the XSA pipeline ---
-    cfg = _solve_adrv9009_config()
-    result = XsaPipeline().run(
-        xsa_path=xsa_path,
-        cfg=cfg,
-        output_dir=out_dir,
-        sdtgen_timeout=300,
-    )
-    merged_dts = result["merged"]
-    assert merged_dts.exists(), f"Merged DTS not written: {merged_dts}"
-
-    merged_content = merged_dts.read_text()
-    assert 'compatible = "adi,adrv9009"' in merged_content, (
-        "ADRV9009 compatible string missing from merged DTS"
+    shell, _ctx, _dmesg = run_xsa_boot_and_verify(
+        SPEC, board=board, request=request, tmp_path=tmp_path
     )
 
-    # --- 4. Compile merged DTS to DTB ---
-    dtb = out_dir / "adrv9009_zcu102.dtb"
-    compile_dts_to_dtb(merged_dts, dtb)
-    assert dtb.exists() and dtb.stat().st_size > 0, (
-        f"dtc produced empty/missing DTB: {dtb}"
-    )
-
-    # --- 5. Deploy + boot via labgrid ---
-    shell = deploy_and_boot(board, dtb, built_kernel_image_zynqmp)
-
-    # --- 6. Collect dmesg + key sysfs state for diagnostics ---
-    dmesg_txt = collect_dmesg(
-        shell,
-        out_dir,
-        label="adrv9009",
-        grep_pattern="adrv9009|ad9528|jesd204|probe|failed|error",
-    )
-
-    # --- 7. Verify: kernel probe + IIO context + JESD DATA state ---
-    assert_no_kernel_faults(dmesg_txt)
-    assert_no_probe_errors(dmesg_txt)
-    assert "adrv9009-phy" in dmesg_txt or "Talise" in dmesg_txt, (
-        "ADRV9009 phy probe signature was not found in kernel dmesg output"
-    )
-
-    ctx, _ = open_iio_context(shell)
-
-    found = [d.name for d in ctx.devices]
-    expected = {
-        "adrv9009-phy": "phy device",
-        "axi-adrv9009-rx-hpc": "RX HPC frontend",
-        "ad9528-1": "AD9528-1 clock chip",
-    }
-    for name, role in expected.items():
-        assert name in found, (
-            f"Expected IIO {role} ({name!r}) not found. Devices: {found}"
-        )
-        n_channels = len([c for c in ctx.devices if c.name == name][0].channels)
-        print(f"  IIO {role}: {name} ({n_channels} channels)")
-
-    # --- 8. JESD204 link DATA state via sysfs ---
-    rx_status, tx_status = assert_jesd_links_data(shell, context="initial boot")
-    print(f"$ cat .../axi?jesd204?rx/status\n{rx_status}")
-    print(f"$ cat .../axi?jesd204?tx/status\n{tx_status}")
-
-    # --- 8b. Data-path smoke test: capture a real RX buffer. ---
-    assert_rx_capture_valid(
-        ctx,
-        ("axi-adrv9009-rx-hpc", "axi-adrv9009-rx-obs-hpc"),
-        n_samples=2**12,
-        context="adrv9009 initial boot",
-    )
-
-    # --- 9. Load all four canonical Talise filter profiles ---
+    # --- Talise filter-profile sweep ---
     # The remote libiio write path drops its TCP socket when the driver
-    # holds the CPU for Talise re-init, surfacing as ``BrokenPipeError``.
-    # Push each profile file to /tmp via the serial shell instead, then
-    # ``cat`` it into the sysfs attribute.
-    # profile_config is exposed via debugfs on ADRV9009; fall back to a
-    # broader /sys search if the usual location is unavailable.
+    # holds the CPU for Talise re-init (BrokenPipeError); push each
+    # profile to /tmp via the serial shell instead, then ``cat`` it
+    # into the sysfs attribute.  ``profile_config`` is exposed via
+    # debugfs on ADRV9009; fall back to a broader /sys search if the
+    # usual location is unavailable.
     profile_sysfs = shell_out(
         shell,
         "find /sys/kernel/debug/iio /sys/bus/iio/devices "
