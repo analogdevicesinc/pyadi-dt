@@ -127,8 +127,7 @@ class BoardSystemProfile:
     probe_signature_message: str = "expected probe signature not found in dmesg"
 
     iio_required_all: tuple[str, ...] = ()
-    iio_required_any: tuple[str, ...] = ()
-    iio_frontend_label: str = "RX frontend"
+    iio_required_any_groups: tuple[tuple[str, ...], ...] = ()
 
     jesd_rx_glob: Optional[str] = None
     jesd_tx_glob: Optional[str] = None
@@ -165,11 +164,9 @@ def _assert_iio_devices_present(spec: BoardSystemProfile, ctx) -> None:
         assert required in found, (
             f"IIO device {required!r} not present. Devices: {sorted(found)}"
         )
-    if spec.iio_required_any:
-        assert any(n in found for n in spec.iio_required_any), (
-            f"{spec.iio_frontend_label} not present. "
-            f"Expected one of {spec.iio_required_any}; "
-            f"found: {sorted(found)}"
+    for group in spec.iio_required_any_groups:
+        assert any(n in found for n in group), (
+            f"None of {list(group)} present. Devices: {sorted(found)}"
         )
 
 

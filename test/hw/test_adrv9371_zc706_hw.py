@@ -84,8 +84,7 @@ SPEC = BoardSystemProfile(
     merged_dts_must_contain=('compatible = "adi,ad9371"',),
     probe_signature_any=("ad9371", "mykonos"),
     probe_signature_message="AD9371 driver probe signature not found in dmesg",
-    iio_required_any=("9371", "adrv9", "9528"),
-    iio_frontend_label="AD9371 / ADRV9xxx phy device",
+    iio_required_all=("ad9371-phy", "ad9528-1"),
 )
 
 

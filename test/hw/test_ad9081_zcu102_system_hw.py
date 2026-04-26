@@ -130,8 +130,10 @@ SPEC = BoardSystemProfile(
     probe_signature_any=("AD9081 Rev.", "probed ADC AD9081"),
     probe_signature_message="AD9081 probe signature not found in dmesg",
     iio_required_all=("hmc7044",),
-    iio_required_any=("axi-ad9081-rx-hpc", "ad_ip_jesd204_tpl_adc"),
-    iio_frontend_label="AD9081 RX frontend",
+    iio_required_any_groups=(
+        ("axi-ad9081-rx-hpc", "ad_ip_jesd204_tpl_adc"),
+        ("axi-ad9081-tx-hpc", "ad_ip_jesd204_tpl_dac"),
+    ),
     jesd_rx_glob="84a90000.axi[_-]jesd204[_-]rx",
     jesd_tx_glob="84b90000.axi[_-]jesd204[_-]tx",
     rx_capture_target_names=("axi-ad9081-rx-hpc", "ad_ip_jesd204_tpl_adc"),

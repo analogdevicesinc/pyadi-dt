@@ -93,8 +93,10 @@ SPEC = BoardSystemProfile(
     merged_dts_must_contain=('compatible = "adi,adrv9009"',),
     probe_signature_any=("adrv9009", "talise"),
     probe_signature_message="ADRV9009 driver probe signature not found in dmesg",
-    iio_required_any=("adrv9009-phy", "talise"),
-    iio_frontend_label="ADRV9009 phy device",
+    iio_required_any_groups=(
+        ("adrv9009-phy", "talise"),
+        ("ad9528-1", "hmc7044"),
+    ),
 )
 
 
