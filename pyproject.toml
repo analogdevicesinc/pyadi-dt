@@ -100,6 +100,7 @@ python_functions = ["test_*"]
 addopts = "-v --ignore-glob=*_hw.py"
 markers = [
     "network: tests requiring internet downloads",
+    "slow: reboot-heavy hw tests; opt out via -m 'not slow'",
 ]
 
 [tool.ty.rules]

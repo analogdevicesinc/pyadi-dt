@@ -11,7 +11,10 @@
     "env_remote": "test/hw/env/mini2.yaml",
     "tests": [
       "test/hw/test_ad9081_zcu102_xsa_hw.py",
-      "test/hw/test_ad9081_zcu102_system_hw.py"
+      "test/hw/test_ad9081_zcu102_system_hw.py",
+      "test/hw/test_cli_dts_gen_ad9081_zcu102_hw.py",
+      "test/hw/test_cli_live_ad9081_zcu102_hw.py",
+      "test/hw/test_cli_mcp_ad9081_zcu102_hw.py"
     ]
   },
   {
