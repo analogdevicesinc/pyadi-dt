@@ -225,7 +225,7 @@ def test_sd_remote_copy_with_reboot(booted, tmp_path: Path):
                 "--reboot",
             ],
         )
-        wait_for_ssh(ip)
+        wait_for_ssh(ip, wait_for_down=True)
 
         with Connection(
             f"{KUIPER_USER}@{ip}:22",

@@ -108,6 +108,8 @@ def wait_for_ssh(
     password: str = KUIPER_PASSWORD,
     timeout: float = 180.0,
     poll_interval: float = 2.0,
+    wait_for_down: bool = False,
+    down_timeout: float = 60.0,
 ) -> None:
     """Block until SSH login succeeds against *ip* or *timeout* elapses.
 
@@ -116,17 +118,37 @@ def wait_for_ssh(
     fresh :class:`fabric.Connection`.  Failure raises
     ``TimeoutError`` with the last underlying exception's message so
     the test report points at the actual SSH error.
+
+    When ``wait_for_down=True`` (the default for post-reboot use), the
+    function first waits up to *down_timeout* seconds for SSH to *fail*
+    — proof that the kernel actually started rebooting — before
+    polling for SSH to come back.  Without this, the very first poll
+    can race the kernel and succeed against the still-running pre-
+    reboot SSH, returning immediately and producing a misleading
+    success.  If SSH never goes down within *down_timeout* the function
+    proceeds to the up-poll anyway (the reboot may have happened
+    extremely fast or before our first probe).
     """
     from fabric import Connection
+
+    address = f"{user}@{ip}:22"
+    connect_kwargs = {"password": password}
+
+    if wait_for_down:
+        down_deadline = time.monotonic() + down_timeout
+        while time.monotonic() < down_deadline:
+            try:
+                with Connection(address, connect_kwargs=connect_kwargs) as c:
+                    c.run("true", hide=True, warn=False)
+            except Exception:  # noqa: BLE001 — failure is the success condition here
+                break
+            time.sleep(poll_interval)
 
     deadline = time.monotonic() + timeout
     last_exc: Exception | None = None
     while time.monotonic() < deadline:
         try:
-            with Connection(
-                f"{user}@{ip}:22",
-                connect_kwargs={"password": password},
-            ) as c:
+            with Connection(address, connect_kwargs=connect_kwargs) as c:
                 c.run("uname -r", hide=True, warn=False)
             return
         except Exception as exc:  # noqa: BLE001 — any connect failure → keep polling
