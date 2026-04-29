@@ -293,63 +293,14 @@ Coordinator-mode tests additionally require SSH key-auth from the
 Exporter systemd service
 ------------------------
 
-Each hw-node also runs a ``labgrid-exporter`` process that publishes
-its local hardware resources to the coordinator.  Production hosts
-run it as a systemd template unit — ``labgrid-exporter@<place>`` —
-installed by ``scripts/labgrid-exporter/install.sh``:
+Each hw-node runs a ``labgrid-exporter`` process that publishes its
+local hardware to the coordinator.  Production hosts run it as a
+non-templated systemd service reading
+``/etc/labgrid/exporter.yaml``, installed by
+``scripts/labgrid-exporter/install.sh``.
 
-.. code-block:: bash
-
-   # On the exporter host (bq, mini2, nuc, ...):
-   cd /path/to/pyadi-dt
-   sudo scripts/labgrid-exporter/install.sh <place> <exporter-yaml>
-
-   # Concrete example — nuc:
-   sudo scripts/labgrid-exporter/install.sh nuc \
-       /home/tcollins/dev/lg-coordinator/lg_fmcdaq3_vcu118_exporter.yaml
-
-The installer writes two files and enables the unit:
-
-- ``/etc/systemd/system/labgrid-exporter@.service`` — the template
-  unit.  ``User=`` is baked in at install time (defaults to
-  ``$SUDO_USER``; override with ``--user``).
-- ``/etc/default/labgrid-exporter-<place>`` — per-instance env
-  (``LG_EXPORTER_BIN``, ``LG_COORDINATOR``, ``LG_EXPORTER_NAME``,
-  ``LG_EXPORTER_YAML``, ``PATH``).
-
-Install-time options:
-
-- ``--coordinator ADDR``   — default ``10.0.0.41:20408``.
-- ``--user USER``          — default ``$SUDO_USER``.
-- ``--bin PATH``           — default auto-detected via ``command -v``
-  as the service user (picks up the
-  ``~/.local/share/uv/tools/labgrid/bin/labgrid-exporter`` that
-  ``uv tool install labgrid`` produces).
-- ``--ser2net-path DIR``   — prepend DIR to the service PATH so
-  ``labgrid-exporter`` finds the right ``ser2net`` binary (e.g.
-  ``$HOME/opt/ser2net-4.6.1/sbin``).  Omit if ``ser2net`` on the
-  system PATH is the one you want.
-- ``--no-start``           — install files but don't
-  ``enable --now``.
-
-Day-to-day operation:
-
-.. code-block:: bash
-
-   # After a yaml change:
-   sudo systemctl restart labgrid-exporter@<place>
-
-   # Live logs:
-   journalctl -u labgrid-exporter@<place> -f
-
-   # Unit status:
-   systemctl status labgrid-exporter@<place>
-
-``Restart=on-failure`` brings the exporter back after a crash, and
-``multi-user.target`` is the enable target, so the exporter also
-starts automatically after a reboot.  Re-running ``install.sh`` is
-idempotent — safe to use to pick up a new coordinator address,
-binary path, or yaml file.
+See :doc:`labgrid_exporter` for the convention, installer options,
+and day-to-day operation.
 
 Fork-PR approval gate
 ---------------------

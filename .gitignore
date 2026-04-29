@@ -145,3 +145,6 @@ lg_*
 # default.  Already-tracked files in this tree continue to be tracked
 # (.gitignore only filters untracked paths).
 docs/superpowers/
+
+# Lab-specific labgrid-exporter deploy manifest (per user, not in repo).
+scripts/labgrid-exporter/nodes.conf
