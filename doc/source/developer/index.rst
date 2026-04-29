@@ -10,3 +10,4 @@ board builders.
 
    authoring_devices
    hardware_ci
+   labgrid_exporter

@@ -1,0 +1,18 @@
+[Unit]
+Description=labgrid exporter
+Documentation=https://github.com/analogdevicesinc/pyadi-dt/blob/main/doc/source/developer/labgrid_exporter.rst
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@SERVICE_USER@
+EnvironmentFile=/etc/default/labgrid-exporter
+ExecStart=@EXPORTER_BIN@ -c ${LG_COORDINATOR} -n ${LG_EXPORTER_NAME} ${LG_EXPORTER_YAML}
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

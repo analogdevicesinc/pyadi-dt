@@ -1,0 +1,27 @@
+# Manifest for deploy.sh — list one hw-node per line.
+#
+# Format (pipe-separated, leading/trailing whitespace ignored):
+#
+#   host | yaml-path-on-host | extra-install.sh-args
+#
+# - host: ssh-resolvable hostname or alias.
+# - yaml-path-on-host: absolute path to the source exporter yaml on that
+#   host.  install.sh copies it to /etc/labgrid/exporter.yaml.
+# - extra-install.sh-args: optional extra flags forwarded to install.sh.
+#   The most common one is --bin <path> when labgrid-exporter is not on
+#   the sudo login PATH (e.g. installed via uv tool to ~/.local/bin or
+#   inside a venv).
+#
+# deploy.sh always passes --stop-manual --force-yaml to install.sh.  If
+# you also need --coordinator, --user, --ser2net-path, or --no-start,
+# add them in the third column.
+#
+# Lines starting with '#' and blank lines are ignored.  '#' anywhere on a
+# line starts a comment.
+#
+# Copy this file to nodes.conf and edit for your lab.
+
+# Example entries — replace with your hosts:
+# bq   | /home/me/lg_bq_exporter.yaml   | --bin /home/me/.local/bin/labgrid-exporter
+# nuc  | /home/me/lg_nuc_exporter.yaml  |
+# nemo | /home/me/lg_nemo_exporter.yaml | --bin /home/me/venv/bin/labgrid-exporter --coordinator 10.0.0.41:20408
