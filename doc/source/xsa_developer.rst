@@ -13,8 +13,48 @@ Architecture
 ------------
 
 The XSA pipeline is composed of six loosely coupled stages.  Each stage
-operates on well-defined inputs and produces file or data-structure outputs
-that feed the next stage.
+lives in its own subpackage under ``adidt/xsa/`` and operates on
+well-defined inputs and produces file or data-structure outputs that feed
+the next stage:
+
+.. list-table::
+   :widths: 18 22 60
+   :header-rows: 1
+
+   * - Stage
+     - Subpackage
+     - Responsibility
+   * - **parse**
+     - ``adidt/xsa/parse/``
+     - Read the Vivado ``.xsa`` archive (``topology.py``), invoke
+       ``sdtgen`` on it (``sdtgen.py``), and download Kuiper release XSAs
+       on demand (``kuiper.py``).
+   * - **config**
+     - ``adidt/xsa/config/``
+     - Typed configuration dataclasses (``board_configs.py``,
+       ``pipeline_config.py``), built-in profiles (``profiles.py`` +
+       ``profiles/*.json``), the Kuiper board manifest
+       (``kuiper_boards.json``), and adijif solver helpers
+       (``adijif_fmcdaq3.py``).
+   * - **build**
+     - ``adidt/xsa/build/``
+     - Compose ADI overlay nodes from topology + config: per-board
+       builders (``builders/``), the ``NodeBuilder`` orchestrator
+       (``node_builder.py``), and base-DTS fixups (``board_fixups.py``).
+   * - **merge**
+     - ``adidt/xsa/merge/``
+     - Merge the base sdtgen DTS with overlay nodes (``merger.py``),
+       normalize the result (``dts_normalize.py``), and emit the
+       PetaLinux ``system-user.dtsi`` form (``petalinux.py``).
+   * - **validate**
+     - ``adidt/xsa/validate/``
+     - Structural lint of the merged DTS (``dts_lint.py``), parity check
+       against a reference manifest (``parity.py``,
+       ``reference.py``).
+   * - **viz**
+     - ``adidt/xsa/viz/``
+     - Render an interactive HTML report (``visualizer.py``) and a
+       clock-tree diagram (``clock_graph.py``).
 
 .. image:: _diagrams/svg/dev_architecture.light.svg
    :class: only-light
@@ -28,9 +68,11 @@ that feed the next stage.
    :align: center
    :width: 30%
 
-``XsaPipeline.run()`` in ``pipeline.py`` wires all stages together and returns
-a ``dict[str, Path]`` of artifact paths.  Each stage class can also be used
-independently.
+``XsaPipeline.run()`` in ``adidt/xsa/pipeline.py`` wires all stages
+together and returns a ``dict[str, Path]`` of artifact paths.  Each
+stage class can also be used independently — the subpackages have no
+cross-dependencies in the wrong direction (e.g., ``parse`` does not
+import from ``build``).
 
 Component interaction
 ~~~~~~~~~~~~~~~~~~~~~
@@ -69,7 +111,7 @@ value computation happens in Python where it can be tested independently.
 Key data models
 ~~~~~~~~~~~~~~~
 
-``XsaTopology`` (``topology.py``)
+``XsaTopology`` (``parse/topology.py``)
    Populated by ``XsaParser.parse()``.  Carries lists of
    ``Jesd204Instance``, ``ClkgenInstance``, ``ConverterInstance``, and
    ``SignalConnection`` objects plus ``fpga_part``.
@@ -79,7 +121,7 @@ Key data models
    topology-level detection logic so that ``NodeBuilder`` does not have to
    re-parse names in multiple places.
 
-``PipelineConfig`` / ``cfg`` dict (``pipeline_config.py``, ``board_configs.py``)
+``PipelineConfig`` / ``cfg`` dict (``config/pipeline_config.py``, ``config/board_configs.py``)
    Configuration can be supplied as a typed ``PipelineConfig`` object or as a
    plain Python dict.  ``PipelineConfig`` wraps ``JesdConfig``,
    ``ClockConfig``, and an optional board-family config (e.g.
@@ -89,10 +131,10 @@ Key data models
 
    JESD204 parameters live under ``jesd.rx`` / ``jesd.tx``; board-wiring
    overrides live under family-specific attributes.  Profile loading and
-   merging is handled by ``profiles.py`` — profiles are merged into the raw
-   dict *before* ``PipelineConfig.from_dict()`` is called.
+   merging is handled by ``config/profiles.py`` — profiles are merged into
+   the raw dict *before* ``PipelineConfig.from_dict()`` is called.
 
-``BoardBuilder`` Protocol (``builders/__init__.py``)
+``BoardBuilder`` Protocol (``build/builders/__init__.py``)
    Each board family implements the ``BoardBuilder`` protocol with four
    methods:
 
@@ -105,7 +147,8 @@ Key data models
 
    ``NodeBuilder`` iterates ``_DEFAULT_BUILDERS`` and dispatches to matching
    builders.  Adding a new board family means creating a new builder module
-   and adding it to the list — no changes to ``node_builder.py`` are needed.
+   and adding it to the list — no changes to ``build/node_builder.py`` are
+   needed.
 
    Current builders: ``FMCDAQ2Builder``, ``FMCDAQ3Builder``,
    ``AD9172Builder``, ``AD9081Builder``, ``AD9084Builder``,
@@ -152,8 +195,8 @@ Declarative device classes (``adidt/devices/``)
 NodeBuilder internals
 ---------------------
 
-``NodeBuilder`` (``node_builder.py``) orchestrates the pipeline.  It owns
-platform detection, clock resolution, and the generic rendering path.
+``NodeBuilder`` (``build/node_builder.py``) orchestrates the pipeline.  It
+owns platform detection, clock resolution, and the generic rendering path.
 Board builders now construct a ``BoardModel`` internally and render it via
 ``BoardModelRenderer``, using shared context builders from
 ``adidt/model/contexts.py``.  Builders no longer delegate rendering back
@@ -618,7 +661,7 @@ The extracted values populate ``ComponentModel.config`` dicts (via context
 builder functions) and ``JesdLinkModel`` fields.
 
 Legacy private dataclasses (``_FMCDAQ2Cfg``, ``_FMCDAQ3Cfg``,
-``_AD9172Cfg``) still exist in ``node_builder.py`` but are no longer used
+``_AD9172Cfg``) still exist in ``build/node_builder.py`` but are no longer used
 by the builders — configuration extraction now happens directly in each
 builder's ``build_model()`` method.
 
@@ -716,7 +759,7 @@ Step 4 — Add board detection (if needed)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the new chip is the primary converter in a design, add a detection method
-to ``XsaTopology`` in ``topology.py``:
+to ``XsaTopology`` in ``parse/topology.py``:
 
 .. code-block:: python
 
@@ -813,14 +856,15 @@ differs:
      }
    }
 
-Profile keys are validated against a schema in ``profiles.py``.  Add the new
-board-level key (``"ad_new_board"`` in this example) to ``KNOWN_BOARD_KEYS``
-in ``profiles.py`` and define its allowed sub-keys to prevent silent typos.
+Profile keys are validated against a schema in ``config/profiles.py``.  Add
+the new board-level key (``"ad_new_board"`` in this example) to
+``KNOWN_BOARD_KEYS`` in ``config/profiles.py`` and define its allowed
+sub-keys to prevent silent typos.
 
 Step 2 — Register the profile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-In ``profiles.py``, add an entry to the profile registry so that
+In ``config/profiles.py``, add an entry to the profile registry so that
 ``XsaPipeline`` can auto-select or explicitly load it:
 
 .. code-block:: python
@@ -840,7 +884,7 @@ Step 3 — Platform support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If the FPGA part is not yet known, add it to ``_PART_TO_PLATFORM`` in
-``topology.py``:
+``parse/topology.py``:
 
 .. code-block:: python
 
@@ -858,53 +902,81 @@ controller names.  If a new platform needs different labels, update the
 Step 4 — Board builder
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Create ``_build_ad_new_nodes()`` on ``NodeBuilder`` following the pattern
-below:
+Create a builder module under ``adidt/xsa/build/builders/ad_new.py``
+implementing the ``BoardBuilder`` protocol:
 
 .. code-block:: python
 
-   def _build_ad_new_nodes(
-       self,
-       topology: XsaTopology,
-       cfg: dict[str, Any],
-       ps_clk_label: str,
-       ps_clk_index: int,
-   ) -> list[str]:
-       """Build DTS node strings for an AD_NEW design.
+   from adidt.devices.clocks import HMC7044, ClockChannel
+   from adidt.devices.converters import ADNew
+   from adidt.model.board_model import BoardModel, ComponentModel, JesdLinkModel
+   from adidt.model.renderer import BoardModelRenderer
+   from ...parse.topology import XsaTopology
 
-       Returns an empty list if the topology is not an AD_NEW design.
-       """
-       if not topology.is_ad_new_design():
-           return []
+   class ADNewBuilder:
+       """BoardBuilder for AD_NEW + ZCU102 designs."""
 
-       board_cfg = cfg.get("ad_new_board", {})
-       spi_bus   = str(board_cfg.get("spi_bus", "spi0"))
-       clk_cs    = int(board_cfg.get("clk_cs", 0))
-       adc_cs    = int(board_cfg.get("adc_cs", 1))
-       ...
+       def matches(self, topology: XsaTopology, cfg: dict) -> bool:
+           return topology.is_ad_new_design()
 
-       # Construct devices and collect their pre-rendered DTS strings.
-       hmc7044 = HMC7044(label="hmc7044", vcxo_hz=125_000_000, ...)
-       ad_new = ADNew(label="adc0_ad_new", ...)
+       def skips_generic_jesd(self) -> bool:
+           return True   # this builder renders its own JESD overlay nodes
 
-       spi_children = (
-           hmc7044.render_dt(cs=clk_cs)
-           + ad_new.render_dt(cs=adc_cs)
-       )
+       def skip_ip_types(self) -> tuple[str, ...]:
+           return ("axi_ad_new",)
 
-       nodes: list[str] = [
-           # misc / DMA / XCVR / JESD overlay nodes ...
-           self._wrap_spi_bus(spi_bus, spi_children),
-       ]
-       return nodes
+       def build_model(
+           self,
+           topology: XsaTopology,
+           cfg: dict,
+           ps_clk_label: str,
+           ps_clk_index: int,
+           gpio_label: str,
+       ) -> BoardModel:
+           board_cfg = cfg.get("ad_new_board", {})
 
-Then call it from ``build()``:
+           hmc7044 = HMC7044(label="hmc7044", vcxo_hz=125_000_000, ...)
+           ad_new  = ADNew(label="adc0_ad_new", ...)
+
+           components = [
+               ComponentModel(
+                   role="clock", part="hmc7044",
+                   spi_bus=board_cfg["spi_bus"],
+                   spi_cs=board_cfg["clk_cs"],
+                   rendered=hmc7044.render_dt(cs=board_cfg["clk_cs"]),
+               ),
+               ComponentModel(
+                   role="adc", part="ad_new",
+                   spi_bus=board_cfg["spi_bus"],
+                   spi_cs=board_cfg["adc_cs"],
+                   rendered=ad_new.render_dt(cs=board_cfg["adc_cs"]),
+               ),
+           ]
+           # Populate jesd_links / fpga_config / extra_nodes as needed.
+           return BoardModel(components=components, ...)
+
+Then register the builder by adding it to ``_DEFAULT_BUILDERS`` in
+``adidt/xsa/build/node_builder.py``:
 
 .. code-block:: python
 
-   result["converters"].extend(
-       self._build_ad_new_nodes(topology, cfg, ps_clk_label, ps_clk_index)
-   )
+   from .builders.ad_new import ADNewBuilder
+
+   _DEFAULT_BUILDERS: list[BoardBuilder] = [
+       ADRV9009Builder(),
+       ADRV937xBuilder(),
+       AD9081Builder(),
+       AD9084Builder(),
+       AD9172Builder(),
+       FMCDAQ2Builder(),
+       FMCDAQ3Builder(),
+       ADNewBuilder(),   # ← new entry
+   ]
+
+``NodeBuilder.build()`` runs ``BoardModelRenderer`` on the returned
+``BoardModel`` automatically — no changes to the orchestrator are needed.
+See :doc:`developer/authoring_devices` for the full walkthrough on
+designing the ``ADNew`` device class itself.
 
 Regression and parity testing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
