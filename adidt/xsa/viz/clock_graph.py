@@ -12,10 +12,10 @@ Two output formats are supported:
 """
 
 import re
-import shutil
-import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+
+from ._common import categorise, d2_label, run_tool, short_label
 
 
 # ---------------------------------------------------------------------------
@@ -41,30 +41,6 @@ class _DtsClockNode:
 # Node categorisation helpers
 # ---------------------------------------------------------------------------
 
-_CATEGORY_TESTS: list[tuple[str, list[str]]] = [
-    ("ps_clock", ["zynqmp_clk", "ps7_clkc", "ps_clk", "sys_clk"]),
-    ("clock_chip", ["hmc7044", "ad9528", "ad9523", "ad9516", "clk0_"]),
-    ("xcvr", ["xcvr"]),
-    ("jesd", ["jesd"]),
-    ("clkgen", ["clkgen", "clk_gen"]),
-    (
-        "converter",
-        [
-            "trx",
-            "adrv9009",
-            "adrv9004",
-            "ad9081",
-            "ad9084",
-            "ad9172",
-            "ad9144",
-            "ad9152",
-            "ad9680",
-            "ad9208",
-        ],
-    ),
-    ("dma", ["dma", "dmac"]),
-]
-
 _CATEGORY_STYLE: dict[str, dict[str, str]] = {
     "ps_clock": {"fillcolor": "#7a3800", "shape": "ellipse"},
     "clock_chip": {"fillcolor": "#1a3d5c", "shape": "box"},
@@ -86,24 +62,6 @@ _CLOCK_NAME_EDGE_STYLE: dict[str, str] = {
 }
 
 
-def _categorise(label: str) -> str:
-    """Return the category string for *label* using simple substring heuristics.
-
-    Args:
-        label: DTS node label (e.g. ``"hmc7044_fmc"``, ``"axi_jesd_rx"``).
-
-    Returns:
-        One of the category keys defined in :data:`_CATEGORY_STYLE`
-        (``"ps_clock"``, ``"clock_chip"``, ``"xcvr"``, ``"jesd"``,
-        ``"clkgen"``, ``"converter"``, ``"dma"``, or ``"other"``).
-    """
-    low = label.lower()
-    for cat, keywords in _CATEGORY_TESTS:
-        if any(kw in low for kw in keywords):
-            return cat
-    return "other"
-
-
 def _node_style(label: str) -> str:
     """Return a Graphviz attribute string for the node identified by *label*.
 
@@ -114,7 +72,7 @@ def _node_style(label: str) -> str:
         A space-separated string of ``key="value"`` Graphviz node attributes
         (e.g. ``'fillcolor="#1a3d5c" shape="box"'``).
     """
-    style = _CATEGORY_STYLE.get(_categorise(label), _CATEGORY_STYLE["other"])
+    style = _CATEGORY_STYLE.get(categorise(label), _CATEGORY_STYLE["other"])
     parts = [f'{k}="{v}"' for k, v in style.items()]
     return " ".join(parts)
 
@@ -131,28 +89,6 @@ def _edge_style(clock_name: str) -> str:
         fall back to a neutral grey colour.
     """
     return _CLOCK_NAME_EDGE_STYLE.get(clock_name, 'color="#888888" fontcolor="#888888"')
-
-
-def _short_label(label: str, node_name: str) -> str:
-    r"""Return a concise display name combining *label* and a shortened *node_name*.
-
-    The ``@address`` suffix is stripped from *node_name* for readability.
-    When *label* and the stripped *node_name* are identical the label alone
-    is returned; otherwise both are combined with a ``\n`` separator.
-
-    Args:
-        label: DTS node label (e.g. ``"axi_clkgen_0"``).
-        node_name: DTS node name, possibly with an ``@addr`` suffix
-            (e.g. ``"axi-clkgen@44a10000"``).
-
-    Returns:
-        A display string suitable for use in a Graphviz ``label`` attribute.
-    """
-    # Drop @address suffix for readability
-    base = re.sub(r"@[\da-fA-F]+$", "", node_name)
-    if base == label:
-        return label
-    return f"{label}\\n({base})"
 
 
 # ---------------------------------------------------------------------------
@@ -400,7 +336,7 @@ class _DotRenderer:
         for lbl in sorted(all_labels):
             node = label_to_node.get(lbl)
             node_name = node.node_name if node else lbl
-            display = _short_label(lbl, node_name)
+            display = short_label(lbl, node_name)
             style = _node_style(lbl)
             lines.append(f'    {lbl} [label="{display}" {style}];')
 
@@ -481,8 +417,8 @@ class _D2Renderer:
         for lbl in sorted(all_labels):
             node = label_to_node.get(lbl)
             node_name = node.node_name if node else lbl
-            display = _d2_label(lbl, node_name)
-            cat = _categorise(lbl)
+            display = d2_label(lbl, node_name)
+            cat = categorise(lbl)
             s = _D2_CATEGORY_STYLE.get(cat, _D2_CATEGORY_STYLE["other"])
             lines.append(f"{lbl}: {{")
             lines.append(f'  label: "{display}"')
@@ -505,23 +441,6 @@ class _D2Renderer:
                 lines.append("}")
 
         return "\n".join(lines)
-
-
-def _d2_label(label: str, node_name: str) -> str:
-    r"""Return a D2 display label (uses ``\n`` as a line separator).
-
-    Args:
-        label: DTS node label.
-        node_name: DTS node name, possibly with an ``@addr`` suffix.
-
-    Returns:
-        A display string for the D2 node ``label:`` field.  When *label*
-        and the stripped *node_name* differ both are combined with ``\n``.
-    """
-    base = re.sub(r"@[\da-fA-F]+$", "", node_name)
-    if base == label:
-        return label
-    return f"{label}\\n({base})"
 
 
 # ---------------------------------------------------------------------------
@@ -558,7 +477,7 @@ class ClockGraphGenerator:
         dot_path.write_text(_DotRenderer().render(nodes, name))
         result: dict[str, Path] = {"clock_dot": dot_path}
         dot_svg = output_dir / f"{safe_name}_clocks.dot.svg"
-        if self._run_tool(["dot", "-Tsvg", "-o", str(dot_svg), str(dot_path)], "dot"):
+        if run_tool(["dot", "-Tsvg", "-o", str(dot_svg), str(dot_path)], "dot"):
             result["clock_dot_svg"] = dot_svg
 
         # --- D2 ---
@@ -566,25 +485,7 @@ class ClockGraphGenerator:
         d2_path.write_text(_D2Renderer().render(nodes, name))
         result["clock_d2"] = d2_path
         d2_svg = output_dir / f"{safe_name}_clocks.d2.svg"
-        if self._run_tool(["d2", str(d2_path), str(d2_svg)], "d2"):
+        if run_tool(["d2", str(d2_path), str(d2_svg)], "d2"):
             result["clock_d2_svg"] = d2_svg
 
         return result
-
-    def _run_tool(self, cmd: list[str], tool: str) -> bool:
-        """Run *cmd* if *tool* is on PATH; return ``True`` on success.
-
-        Args:
-            cmd: Full command and arguments to execute (passed directly to
-                :func:`subprocess.run`).
-            tool: Executable name used to probe ``PATH`` via
-                :func:`shutil.which` before attempting the run.
-
-        Returns:
-            ``True`` when *tool* is found and the process exits with return
-            code 0; ``False`` otherwise.
-        """
-        if shutil.which(tool) is None:
-            return False
-        res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        return res.returncode == 0
