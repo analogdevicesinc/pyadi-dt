@@ -152,3 +152,21 @@ def test_html_contains_expandable_detail_sections(topo, cfg, merged_dts, tmp_pat
     assert "Parsed Topology" in html
     assert "Clock References" in html
     assert "JESD Paths" in html
+
+
+def test_html_contains_wiring_panel(topo, cfg, merged_dts, tmp_path):
+    html = HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "test")
+    assert "Control-Plane Wiring" in html
+    assert '<svg id="wiring-svg">' in html
+    # Five kind-toggle checkboxes.
+    for kind in ("spi", "jesd", "gpio", "irq", "i2c"):
+        assert f'data-kind="{kind}"' in html
+
+
+def test_html_contains_wiring_data_object(topo, cfg, merged_dts, tmp_path):
+    html = HtmlVisualizer().generate(topo, cfg, merged_dts, tmp_path, "test")
+    assert "const wiringData=" in html
+    # The fixture has JESD instances with IRQ values, so the wiring graph
+    # should contain at least IRQ edges.
+    assert '"kind": "irq"' in html or '"kind":"irq"' in html
+    assert '"kind": "jesd"' in html or '"kind":"jesd"' in html
