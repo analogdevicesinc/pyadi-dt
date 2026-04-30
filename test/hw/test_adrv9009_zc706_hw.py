@@ -1,7 +1,7 @@
 """ADRV9009 + ZC706 hardware test.
 
 Drives the XSA pipeline (:class:`adidt.xsa.pipeline.XsaPipeline` +
-:class:`adidt.xsa.builders.adrv9009.ADRV9009Builder`) end-to-end on
+:class:`adidt.xsa.build.builders.adrv9009.ADRV9009Builder`) end-to-end on
 real hardware attached to the ``nemo`` labgrid place.  Boot strategy
 is :class:`BootFPGASoCTFTP` (Zynq-7000 TFTP boot); the DTB is renamed
 to ``devicetree.dtb`` by the shared ``boot_mode="tftp"`` dispatch.

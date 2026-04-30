@@ -8,7 +8,7 @@ import pytest
 
 pytest.importorskip("requests", reason="requests not installed")
 
-from adidt.xsa.kuiper import download_kuiper_xsa
+from adidt.xsa.parse.kuiper import download_kuiper_xsa
 
 
 def _build_boot_partition_tar(

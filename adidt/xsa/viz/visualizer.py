@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .topology import XsaTopology
+from ..parse.topology import XsaTopology
 
 _D3_BUNDLE_PATH = Path(__file__).parent / "d3_bundle.js"
 _D3_BUNDLE = _D3_BUNDLE_PATH.read_text() if _D3_BUNDLE_PATH.exists() else ""

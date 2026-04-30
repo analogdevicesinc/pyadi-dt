@@ -31,9 +31,9 @@ from typing import Any, Mapping, Optional
 
 import pytest
 
-from adidt.xsa.petalinux import validate_petalinux_project
+from adidt.xsa.merge.petalinux import validate_petalinux_project
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.parse.topology import XsaParser
 from test.hw._system_base import (
     BoardSystemProfile,
     acquire_or_local_xsa,

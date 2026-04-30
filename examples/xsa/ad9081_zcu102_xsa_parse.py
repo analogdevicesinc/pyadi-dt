@@ -2,14 +2,14 @@
 
 Pipeline
 --------
-1. Parse ``system_top.xsa`` with :class:`~adidt.xsa.topology.XsaParser`.
+1. Parse ``system_top.xsa`` with :class:`~adidt.xsa.parse.topology.XsaParser`.
 2. Patch the topology with the correct hardware values (the ZCU102 HWH uses
    a slightly older Vivado schema, so base addresses, lane count, and IRQ are
    recovered from the parameter block rather than the elements the parser
    normally reads).
 3. Use :mod:`adijif` to look up the JESD204B quick-configuration mode for the
    AD9081 operating at M=8, L=4, S=1, Np=16 – yielding F=4, K=32.
-4. Feed the topology + config into :class:`~adidt.xsa.node_builder.NodeBuilder`
+4. Feed the topology + config into :class:`~adidt.xsa.build.node_builder.NodeBuilder`
    to render the ADI DTS nodes, then write a ``.dtso`` overlay file.
 
 Usage::
@@ -28,9 +28,9 @@ from pathlib import Path
 
 import adijif as jif
 
-from adidt.xsa.merger import DtsMerger
-from adidt.xsa.node_builder import NodeBuilder
-from adidt.xsa.topology import ClkgenInstance, Jesd204Instance, XsaParser
+from adidt.xsa.merge.merger import DtsMerger
+from adidt.xsa.build.node_builder import NodeBuilder
+from adidt.xsa.parse.topology import ClkgenInstance, Jesd204Instance, XsaParser
 
 # ---------------------------------------------------------------------------
 # Paths

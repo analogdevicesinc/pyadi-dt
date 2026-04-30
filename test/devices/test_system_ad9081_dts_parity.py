@@ -1,6 +1,6 @@
 """Pin System-API ``AD9081+ZCU102`` DTS against the XSA reference.
 
-The XSA-pipeline flow (``adidt.xsa.builders.ad9081``) is the known-good
+The XSA-pipeline flow (``adidt.xsa.build.builders.ad9081``) is the known-good
 emission path — its DTS boots successfully on hardware.  The
 System-API (declarative) flow should, for the same inputs, emit DTS
 whose *kernel-critical* properties match.  When they diverge the

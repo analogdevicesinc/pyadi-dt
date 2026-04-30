@@ -917,7 +917,7 @@ def xsa2dt(
             click.echo(f"  bbappend:         {result['bbappend']}")
 
             if petalinux_project:
-                from adidt.xsa.petalinux import validate_petalinux_project
+                from adidt.xsa.merge.petalinux import validate_petalinux_project
 
                 proj = Path(petalinux_project)
                 validate_petalinux_project(proj)
@@ -1114,7 +1114,7 @@ def xsa_profiles():
         adidtc xsa-profile-show ad9081_zcu102
     """
     try:
-        from adidt.xsa.profiles import ProfileManager
+        from adidt.xsa.config.profiles import ProfileManager
     except ImportError:
         click.echo(
             click.style(
@@ -1160,7 +1160,7 @@ def xsa_profile_show(name):
         adidtc xsa-profile-show adrv9009_zcu102 | jq .
     """
     try:
-        from adidt.xsa.profiles import ProfileManager
+        from adidt.xsa.config.profiles import ProfileManager
         from adidt.xsa.exceptions import ProfileError
     except ImportError:
         click.echo(
@@ -1221,7 +1221,9 @@ def kuiper_boards(status, json_output):
       Filter JSON output with jq:
         adidtc kuiper-boards --json-output | jq 'to_entries[] | select(.value.status == "full")'
     """
-    manifest_path = Path(__file__).parent.parent / "xsa" / "kuiper_boards.json"
+    manifest_path = (
+        Path(__file__).parent.parent / "xsa" / "config" / "kuiper_boards.json"
+    )
     if not manifest_path.exists():
         click.echo(click.style("Error: kuiper_boards.json not found", fg="red"))
         return

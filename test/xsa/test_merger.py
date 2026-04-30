@@ -1,6 +1,6 @@
 # test/xsa/test_merger.py
 import warnings
-from adidt.xsa.merger import DtsMerger
+from adidt.xsa.merge.merger import DtsMerger
 
 BASE_DTS = """\
 /dts-v1/;

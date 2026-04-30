@@ -4,7 +4,7 @@ Parallels :mod:`test.hw.test_ad9081_zcu102_system_hw` stage-for-stage —
 the only substantive difference is the rendering engine.  The AD9081
 test composes overlays via the declarative :class:`adidt.System`; this
 one uses :class:`adidt.xsa.pipeline.XsaPipeline` because
-:class:`adidt.xsa.builders.adrv9009.ADRV9009Builder` performs extensive
+:class:`adidt.xsa.build.builders.adrv9009.ADRV9009Builder` performs extensive
 topology-driven label derivation that the System path doesn't yet
 cover.
 

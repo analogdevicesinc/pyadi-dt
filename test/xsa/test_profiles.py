@@ -1,7 +1,7 @@
 import pytest
 
 from adidt.xsa.exceptions import ProfileError
-from adidt.xsa.profiles import ProfileManager, merge_profile_defaults
+from adidt.xsa.config.profiles import ProfileManager, merge_profile_defaults
 
 
 def test_profile_manager_lists_builtin_profiles():

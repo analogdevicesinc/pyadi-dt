@@ -3,7 +3,7 @@
 import pytest
 from pathlib import Path
 
-from adidt.xsa.petalinux import PetalinuxFormatter, validate_petalinux_project
+from adidt.xsa.merge.petalinux import PetalinuxFormatter, validate_petalinux_project
 
 
 # Sample overlay content matching the format produced by DtsMerger._build_overlay

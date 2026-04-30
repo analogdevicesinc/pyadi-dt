@@ -12,8 +12,8 @@ from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
-from .pipeline_config import PipelineConfig
-from .topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
+from ..config.pipeline_config import PipelineConfig
+from ..parse.topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
 
 
 class NodeBuilder:
@@ -341,7 +341,7 @@ class NodeBuilder:
         ps_clk_index: int | None,
     ) -> str:
         """Render an AXI JESD204 FSM link IP DTS node."""
-        from .exceptions import ConfigError
+        from ..exceptions import ConfigError
 
         for key in ("F", "K"):
             if key not in jesd_params:

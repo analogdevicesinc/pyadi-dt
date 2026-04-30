@@ -14,9 +14,9 @@ from pathlib import Path
 import pytest
 
 from adidt.model.renderer import BoardModelRenderer
-from adidt.xsa.builders.ad9081 import AD9081Builder
-from adidt.xsa.builders.fmcdaq2 import FMCDAQ2Builder
-from adidt.xsa.topology import (
+from adidt.xsa.build.builders.ad9081 import AD9081Builder
+from adidt.xsa.build.builders.fmcdaq2 import FMCDAQ2Builder
+from adidt.xsa.parse.topology import (
     ConverterInstance,
     Jesd204Instance,
     XsaTopology,

@@ -1,7 +1,7 @@
 """Unit tests for FMCDAQ2Builder."""
 
 from adidt.model.renderer import BoardModelRenderer
-from adidt.xsa.builders.fmcdaq2 import FMCDAQ2Builder
+from adidt.xsa.build.builders.fmcdaq2 import FMCDAQ2Builder
 
 
 class TestFMCDAQ2Builder:

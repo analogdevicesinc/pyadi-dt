@@ -13,7 +13,7 @@ for the architecture documentation.
 Topology
 --------
 
-.. automodule:: adidt.xsa.topology
+.. automodule:: adidt.xsa.parse.topology
    :members:
    :undoc-members:
    :show-inheritance:
@@ -29,7 +29,7 @@ Pipeline
 Node Builder
 ------------
 
-.. automodule:: adidt.xsa.node_builder
+.. automodule:: adidt.xsa.build.node_builder
    :members:
    :undoc-members:
    :show-inheritance:
@@ -37,7 +37,7 @@ Node Builder
 DTS Merger
 ----------
 
-.. automodule:: adidt.xsa.merger
+.. automodule:: adidt.xsa.merge.merger
    :members:
    :undoc-members:
    :show-inheritance:
@@ -45,7 +45,7 @@ DTS Merger
 HTML Visualizer
 ---------------
 
-.. automodule:: adidt.xsa.visualizer
+.. automodule:: adidt.xsa.viz.visualizer
    :members:
    :undoc-members:
    :show-inheritance:
@@ -53,7 +53,7 @@ HTML Visualizer
 SDT Generator Runner
 --------------------
 
-.. automodule:: adidt.xsa.sdtgen
+.. automodule:: adidt.xsa.parse.sdtgen
    :members:
    :undoc-members:
    :show-inheritance:
@@ -69,7 +69,7 @@ Exceptions
 Board Configurations
 --------------------
 
-.. automodule:: adidt.xsa.board_configs
+.. automodule:: adidt.xsa.config.board_configs
    :members:
    :undoc-members:
    :show-inheritance:
@@ -77,7 +77,7 @@ Board Configurations
 Pipeline Configuration
 ----------------------
 
-.. automodule:: adidt.xsa.pipeline_config
+.. automodule:: adidt.xsa.config.pipeline_config
    :members:
    :undoc-members:
    :show-inheritance:
@@ -85,7 +85,7 @@ Pipeline Configuration
 Builders
 --------
 
-.. automodule:: adidt.xsa.builders
+.. automodule:: adidt.xsa.build.builders
    :members:
    :undoc-members:
    :show-inheritance:
@@ -93,7 +93,7 @@ Builders
 DTS Linter
 ----------
 
-.. automodule:: adidt.xsa.dts_lint
+.. automodule:: adidt.xsa.validate.dts_lint
    :members:
    :undoc-members:
    :show-inheritance:

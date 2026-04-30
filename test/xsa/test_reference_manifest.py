@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from adidt.xsa.reference import ReferenceManifestExtractor
+from adidt.xsa.validate.reference import ReferenceManifestExtractor
 
 
 def test_extract_manifest_resolves_nested_includes_and_maps_roles(tmp_path: Path):

@@ -17,11 +17,11 @@ class BoardModelRenderer:
     """Renders a :class:`BoardModel` into DTS node strings.
 
     The output dict has the same shape that
-    :meth:`~adidt.xsa.node_builder.NodeBuilder.build` returns::
+    :meth:`~adidt.xsa.build.node_builder.NodeBuilder.build` returns::
 
         {"clkgens": [...], "jesd204_rx": [...], "jesd204_tx": [...], "converters": [...]}
 
-    This allows the existing :class:`~adidt.xsa.merger.DtsMerger` to consume
+    This allows the existing :class:`~adidt.xsa.merge.merger.DtsMerger` to consume
     the output without changes.
     """
 

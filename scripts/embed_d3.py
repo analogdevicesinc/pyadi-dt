@@ -10,7 +10,7 @@ import urllib.request
 from pathlib import Path
 
 D3_URL = "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"
-OUTPUT = Path(__file__).parent.parent / "adidt" / "xsa" / "d3_bundle.js"
+OUTPUT = Path(__file__).parent.parent / "adidt" / "xsa" / "viz" / "d3_bundle.js"
 
 
 def main():

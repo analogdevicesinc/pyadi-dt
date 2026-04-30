@@ -140,7 +140,7 @@ class System:
         never binds.
 
         Mirrors the extraction in
-        :meth:`adidt.xsa.builders.ad9081.AD9081Builder.build_model`:
+        :meth:`adidt.xsa.build.builders.ad9081.AD9081Builder.build_model`:
         prefer MxFE-named instances when multiple exist, else fall
         back to the first instance on each side.  Missing sides are
         left as-is (the default naming applies).

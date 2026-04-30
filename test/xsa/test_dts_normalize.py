@@ -1,10 +1,10 @@
-"""Unit tests for adidt.xsa.dts_normalize.dedup_zynqmp_root_nodes."""
+"""Unit tests for adidt.xsa.merge.dts_normalize.dedup_zynqmp_root_nodes."""
 
 from __future__ import annotations
 
 import textwrap
 
-from adidt.xsa.dts_normalize import dedup_zynqmp_root_nodes
+from adidt.xsa.merge.dts_normalize import dedup_zynqmp_root_nodes
 
 
 def _write(tmp_path, body: str):

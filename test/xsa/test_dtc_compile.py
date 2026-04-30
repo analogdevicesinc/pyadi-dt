@@ -19,7 +19,7 @@ from pathlib import Path
 
 import pytest
 
-from adidt.xsa.petalinux import PetalinuxFormatter
+from adidt.xsa.merge.petalinux import PetalinuxFormatter
 
 # ---------------------------------------------------------------------------
 # dtc discovery

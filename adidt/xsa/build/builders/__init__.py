@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 from .adrv937x import ADRV937xBuilder
 
 if TYPE_CHECKING:
-    from ..topology import XsaTopology
+    from ...parse.topology import XsaTopology
 
 __all__ = ["BoardBuilder", "ADRV937xBuilder"]
 

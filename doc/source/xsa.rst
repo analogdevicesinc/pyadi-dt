@@ -539,7 +539,7 @@ Core classes and methods used in the XSA flow:
    ``PipelineConfig`` object.  ``PipelineConfig.from_dict(d)`` provides
    typed access to JESD, clock, and board-specific settings with
    auto-detection of board config keys.  See
-   :class:`~adidt.xsa.pipeline_config.PipelineConfig` in the API reference.
+   :class:`~adidt.xsa.config.pipeline_config.PipelineConfig` in the API reference.
 
 Using adijif (pyadi-jif) With the XSA Flow
 ------------------------------------------
@@ -898,9 +898,9 @@ Parsed topology fields
 ``XsaTopology`` carries:
 
 - ``fpga_part`` – full Xilinx part string (e.g. ``xczu9eg-ffvb1156-2-e``)
-- ``jesd204_rx`` / ``jesd204_tx`` – list of :class:`~adidt.xsa.topology.Jesd204Instance`
-- ``clkgens`` – list of :class:`~adidt.xsa.topology.ClkgenInstance`
-- ``converters`` – list of :class:`~adidt.xsa.topology.ConverterInstance`
+- ``jesd204_rx`` / ``jesd204_tx`` – list of :class:`~adidt.xsa.parse.topology.Jesd204Instance`
+- ``clkgens`` – list of :class:`~adidt.xsa.parse.topology.ClkgenInstance`
+- ``converters`` – list of :class:`~adidt.xsa.parse.topology.ConverterInstance`
 
 Outputs
 -------
@@ -981,7 +981,7 @@ pipeline:
 .. code-block:: python
 
    from pathlib import Path
-   from adidt.xsa.clock_graph import ClockGraphGenerator
+   from adidt.xsa.viz.clock_graph import ClockGraphGenerator
 
    merged_dts = Path("out/adrv9009_zcu102.dts").read_text()
    result = ClockGraphGenerator().generate(merged_dts, Path("out/"), "adrv9009_zcu102")

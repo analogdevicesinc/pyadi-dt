@@ -5,19 +5,19 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .pipeline_config import PipelineConfig
-from .sdtgen import SdtgenRunner
-from .topology import XsaParser, XsaTopology
-from .node_builder import NodeBuilder
-from .merger import DtsMerger
-from .visualizer import HtmlVisualizer
-from .clock_graph import ClockGraphGenerator
-from .profiles import ProfileManager, merge_profile_defaults
-from .reference import ReferenceManifestExtractor
-from .parity import check_manifest_against_dts, write_parity_reports
-from .dts_lint import DtsLinter
+from .config.pipeline_config import PipelineConfig
+from .config.profiles import ProfileManager, merge_profile_defaults
+from .parse.sdtgen import SdtgenRunner
+from .parse.topology import XsaParser, XsaTopology
+from .build.node_builder import NodeBuilder
+from .build.board_fixups import apply_board_fixups
+from .merge.merger import DtsMerger
+from .validate.dts_lint import DtsLinter
+from .validate.reference import ReferenceManifestExtractor
+from .validate.parity import check_manifest_against_dts, write_parity_reports
+from .viz.visualizer import HtmlVisualizer
+from .viz.clock_graph import ClockGraphGenerator
 from .exceptions import DtsLintError, ParityError
-from .board_fixups import apply_board_fixups
 
 
 class XsaPipeline:
@@ -43,7 +43,7 @@ class XsaPipeline:
         Args:
             xsa_path: Path to the Vivado ``.xsa`` archive.
             cfg: User-supplied configuration dictionary passed to
-                :class:`~adidt.xsa.node_builder.NodeBuilder`.
+                :class:`~adidt.xsa.build.node_builder.NodeBuilder`.
             output_dir: Directory where all output files are written.
                 Created automatically if it does not exist.
             sdtgen_timeout: Maximum seconds to wait for ``sdtgen`` to finish

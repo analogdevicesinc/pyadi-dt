@@ -12,7 +12,7 @@ import pytest
 
 import re as _re
 
-from adidt.xsa.dts_normalize import dedup_zynqmp_root_nodes
+from adidt.xsa.merge.dts_normalize import dedup_zynqmp_root_nodes
 
 HERE = Path(__file__).parent
 

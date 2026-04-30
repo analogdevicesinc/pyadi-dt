@@ -256,7 +256,7 @@ Use the formatter standalone:
 
 .. code-block:: python
 
-   from adidt.xsa.petalinux import PetalinuxFormatter
+   from adidt.xsa.merge.petalinux import PetalinuxFormatter
 
    overlay_dts = Path("overlay.dtso").read_text()
    dtsi = PetalinuxFormatter().format_system_user_dtsi(

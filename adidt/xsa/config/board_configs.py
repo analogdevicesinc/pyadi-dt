@@ -3,7 +3,7 @@
 These types formalize the raw ``dict[str, Any]`` configuration that the pipeline
 has historically accepted.  Each board family has a dedicated dataclass with
 typed fields and defaults matching the existing ``.get(key, default)`` patterns
-in :mod:`adidt.xsa.node_builder`.
+in :mod:`adidt.xsa.build.node_builder`.
 
 Backward compatibility
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -6,7 +6,7 @@ items with severity, rule ID, node location, and actionable message.
 
 Usage::
 
-    from adidt.xsa.dts_lint import DtsLinter
+    from adidt.xsa.validate.dts_lint import DtsLinter
 
     diagnostics = DtsLinter().lint(dts_text)
     errors = [d for d in diagnostics if d.severity == "error"]

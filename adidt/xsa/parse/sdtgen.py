@@ -7,7 +7,7 @@ import stat
 import subprocess
 from pathlib import Path
 
-from .exceptions import SdtgenError, SdtgenNotFoundError
+from ..exceptions import SdtgenError, SdtgenNotFoundError
 
 
 class SdtgenRunner:

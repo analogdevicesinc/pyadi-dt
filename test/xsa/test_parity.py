@@ -1,12 +1,12 @@
 from pathlib import Path
 import json
 
-from adidt.xsa.parity import (
+from adidt.xsa.validate.parity import (
     ParityReport,
     check_manifest_against_dts,
     write_parity_reports,
 )
-from adidt.xsa.reference import (
+from adidt.xsa.validate.reference import (
     DriverManifest,
     LinkRequirement,
     PropertyRequirement,

@@ -1,7 +1,7 @@
 """Unit tests for AD9081Builder."""
 
 from adidt.model.renderer import BoardModelRenderer
-from adidt.xsa.builders.ad9081 import AD9081Builder
+from adidt.xsa.build.builders.ad9081 import AD9081Builder
 
 
 AD9081_CFG = {

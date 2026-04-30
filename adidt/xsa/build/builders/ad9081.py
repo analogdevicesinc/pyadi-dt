@@ -8,23 +8,23 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...model.board_model import (
+from ....model.board_model import (
     BoardModel,
     ComponentModel,
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import HMC7044, ClockChannel
-from ...devices.converters import AD9081
-from ...devices.converters.base import Jesd204Settings
-from ..._utils import coerce_board_int
-from ...devices.fpga_ip import (
+from ....devices.clocks import HMC7044, ClockChannel
+from ....devices.converters import AD9081
+from ....devices.converters.base import Jesd204Settings
+from ...._utils import coerce_board_int
+from ....devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
 )
-from ...model.renderer import BoardModelRenderer
-from ..topology import XsaTopology
+from ....model.renderer import BoardModelRenderer
+from ...parse.topology import XsaTopology
 
 # (M, L) -> (rx_link_mode, tx_link_mode)
 _AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
@@ -40,7 +40,7 @@ def _resolve_link_mode(
     direction: str,
 ) -> int:
     """Determine the AD9081 link mode for *direction* from config or by inference."""
-    from ..exceptions import ConfigError
+    from ...exceptions import ConfigError
 
     explicit = ad9081_cfg.get(f"{direction}_link_mode")
     if explicit is not None:
