@@ -17,6 +17,7 @@ from .validate.reference import ReferenceManifestExtractor
 from .validate.parity import check_manifest_against_dts, write_parity_reports
 from .viz.visualizer import HtmlVisualizer
 from .viz.clock_graph import ClockGraphGenerator
+from .viz.wiring_graph import WiringGraph, WiringGraphGenerator
 from .exceptions import DtsLintError, ParityError
 
 
@@ -34,6 +35,7 @@ class XsaPipeline:
         strict_parity: bool = False,
         emit_report: bool = True,
         emit_clock_graphs: bool = True,
+        emit_wiring_graph: bool = True,
         lint: bool = False,
         strict_lint: bool = False,
         output_format: str = "default",
@@ -63,6 +65,10 @@ class XsaPipeline:
             emit_clock_graphs: When ``True`` (default) DOT and D2 clock-tree
                 diagrams are generated and their paths included in the result
                 dict.  Pass ``False`` to skip clock-graph generation.
+            emit_wiring_graph: When ``True`` (default) a control-plane
+                wiring graph (SPI / JESD / GPIO / IRQ / I2C edges) is
+                generated as DOT + D2 alongside the clock-tree diagrams.
+                Pass ``False`` to skip.
             lint: When ``True``, run the structural DTS linter on the merged
                 DTS and write a diagnostics JSON file.  Defaults to ``False``.
             strict_lint: When ``True``, raise
@@ -78,9 +84,12 @@ class XsaPipeline:
             ``"merged"``.  ``"report"`` is present when *emit_report* is
             ``True``.  ``"clock_dot"`` and ``"clock_d2"`` (plus optionally
             ``"clock_dot_svg"`` / ``"clock_d2_svg"``) are present when
-            *emit_clock_graphs* is ``True``.  ``"map"`` and ``"coverage"``
-            are present when *reference_dts* is provided.  ``"diagnostics"``
-            is present when *lint* or *strict_lint* is ``True``.
+            *emit_clock_graphs* is ``True``.  ``"wiring_dot"`` and
+            ``"wiring_d2"`` (plus optionally ``"wiring_dot_svg"`` /
+            ``"wiring_d2_svg"``) are present when *emit_wiring_graph* is
+            ``True``.  ``"map"`` and ``"coverage"`` are present when
+            *reference_dts* is provided.  ``"diagnostics"`` is present
+            when *lint* or *strict_lint* is ``True``.
 
         Raises:
             ParityError: When *strict_parity* is ``True`` and the merged DTS
@@ -150,6 +159,14 @@ class XsaPipeline:
         if emit_clock_graphs:
             result.update(
                 ClockGraphGenerator().generate(merged_content, output_dir, name)
+            )
+
+        if emit_wiring_graph:
+            wiring = WiringGraph.from_topology(
+                topology, cfg_merged, merged_dts=merged_content
+            )
+            result.update(
+                WiringGraphGenerator().generate(wiring, output_dir, name)
             )
 
         if reference_dts is not None:
