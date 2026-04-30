@@ -1,6 +1,6 @@
 {
   "errors": [],
-  "generated_at": "2026-04-23T16:37:06Z",
+  "generated_at": "2026-04-30T10:12:43Z",
   "metrics": {
     "_totals": {
       "CONFIDENCE.HIGH": 18,
@@ -11,7 +11,7 @@
       "SEVERITY.LOW": 17,
       "SEVERITY.MEDIUM": 5,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 10881,
+      "loc": 11404,
       "nosec": 0,
       "skipped_tests": 1
     },
@@ -115,7 +115,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 1220,
+      "loc": 1222,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -583,7 +583,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 183,
+      "loc": 190,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -596,7 +596,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 78,
+      "loc": 81,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -622,7 +622,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 402,
+      "loc": 419,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -795,7 +795,20 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/adijif_fmcdaq3.py": {
+    "adidt/xsa/config/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/config/adijif_fmcdaq3.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -808,7 +821,7 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/board_configs.py": {
+    "adidt/xsa/config/board_configs.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -821,7 +834,7 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/board_fixups.py": {
+    "adidt/xsa/config/pipeline_config.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -830,24 +843,11 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 131,
+      "loc": 97,
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/clock_graph.py": {
-      "CONFIDENCE.HIGH": 2,
-      "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 0,
-      "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 2,
-      "SEVERITY.MEDIUM": 0,
-      "SEVERITY.UNDEFINED": 0,
-      "loc": 441,
-      "nosec": 0,
-      "skipped_tests": 0
-    },
-    "adidt/xsa/dts_lint.py": {
+    "adidt/xsa/config/profiles.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -856,7 +856,7 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 248,
+      "loc": 384,
       "nosec": 0,
       "skipped_tests": 0
     },
@@ -873,7 +873,7 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/kuiper.py": {
+    "adidt/xsa/merge/__init__.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -882,11 +882,24 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 65,
+      "loc": 1,
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/merger.py": {
+    "adidt/xsa/merge/dts_normalize.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 73,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/merge/merger.py": {
       "CONFIDENCE.HIGH": 4,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -895,24 +908,11 @@
       "SEVERITY.LOW": 4,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 572,
+      "loc": 574,
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/parity.py": {
-      "CONFIDENCE.HIGH": 0,
-      "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 0,
-      "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 0,
-      "SEVERITY.MEDIUM": 0,
-      "SEVERITY.UNDEFINED": 0,
-      "loc": 252,
-      "nosec": 0,
-      "skipped_tests": 0
-    },
-    "adidt/xsa/petalinux.py": {
+    "adidt/xsa/merge/petalinux.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -925,7 +925,7 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/pipeline.py": {
+    "adidt/xsa/parse/__init__.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -934,11 +934,11 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 243,
+      "loc": 1,
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/pipeline_config.py": {
+    "adidt/xsa/parse/kuiper.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -947,37 +947,11 @@
       "SEVERITY.LOW": 0,
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
-      "loc": 97,
+      "loc": 65,
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/profiles.py": {
-      "CONFIDENCE.HIGH": 0,
-      "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 0,
-      "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 0,
-      "SEVERITY.MEDIUM": 0,
-      "SEVERITY.UNDEFINED": 0,
-      "loc": 384,
-      "nosec": 0,
-      "skipped_tests": 0
-    },
-    "adidt/xsa/reference.py": {
-      "CONFIDENCE.HIGH": 0,
-      "CONFIDENCE.LOW": 0,
-      "CONFIDENCE.MEDIUM": 0,
-      "CONFIDENCE.UNDEFINED": 0,
-      "SEVERITY.HIGH": 0,
-      "SEVERITY.LOW": 0,
-      "SEVERITY.MEDIUM": 0,
-      "SEVERITY.UNDEFINED": 0,
-      "loc": 159,
-      "nosec": 0,
-      "skipped_tests": 0
-    },
-    "adidt/xsa/sdtgen.py": {
+    "adidt/xsa/parse/sdtgen.py": {
       "CONFIDENCE.HIGH": 4,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -990,7 +964,7 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/topology.py": {
+    "adidt/xsa/parse/topology.py": {
       "CONFIDENCE.HIGH": 3,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -1003,7 +977,33 @@
       "nosec": 0,
       "skipped_tests": 0
     },
-    "adidt/xsa/visualizer.py": {
+    "adidt/xsa/pipeline.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 309,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/validate/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/validate/dts_lint.py": {
       "CONFIDENCE.HIGH": 0,
       "CONFIDENCE.LOW": 0,
       "CONFIDENCE.MEDIUM": 0,
@@ -1013,6 +1013,97 @@
       "SEVERITY.MEDIUM": 0,
       "SEVERITY.UNDEFINED": 0,
       "loc": 248,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/validate/parity.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 252,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/validate/reference.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 159,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/viz/__init__.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 1,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/viz/_common.py": {
+      "CONFIDENCE.HIGH": 2,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 2,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 64,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/viz/clock_graph.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 359,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/viz/visualizer.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 352,
+      "nosec": 0,
+      "skipped_tests": 0
+    },
+    "adidt/xsa/viz/wiring_graph.py": {
+      "CONFIDENCE.HIGH": 0,
+      "CONFIDENCE.LOW": 0,
+      "CONFIDENCE.MEDIUM": 0,
+      "CONFIDENCE.UNDEFINED": 0,
+      "SEVERITY.HIGH": 0,
+      "SEVERITY.LOW": 0,
+      "SEVERITY.MEDIUM": 0,
+      "SEVERITY.UNDEFINED": 0,
+      "loc": 393,
       "nosec": 0,
       "skipped_tests": 0
     }
@@ -1249,46 +1340,6 @@
       "test_name": "hardcoded_tmp_directory"
     },
     {
-      "code": "15 import shutil\n16 import subprocess\n17 from dataclasses import dataclass, field\n",
-      "col_offset": 0,
-      "end_col_offset": 17,
-      "filename": "adidt/xsa/viz/clock_graph.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 78,
-        "link": "https://cwe.mitre.org/data/definitions/78.html"
-      },
-      "issue_severity": "LOW",
-      "issue_text": "Consider possible security implications associated with the subprocess module.",
-      "line_number": 16,
-      "line_range": [
-        16
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
-      "test_id": "B404",
-      "test_name": "blacklist"
-    },
-    {
-      "code": "588             return False\n589         res = subprocess.run(cmd, capture_output=True, text=True, check=False)\n590         return res.returncode == 0\n",
-      "col_offset": 14,
-      "end_col_offset": 78,
-      "filename": "adidt/xsa/viz/clock_graph.py",
-      "issue_confidence": "HIGH",
-      "issue_cwe": {
-        "id": 78,
-        "link": "https://cwe.mitre.org/data/definitions/78.html"
-      },
-      "issue_severity": "LOW",
-      "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 589,
-      "line_range": [
-        589
-      ],
-      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
-      "test_id": "B603",
-      "test_name": "subprocess_without_shell_equals_true"
-    },
-    {
       "code": "5 import re\n6 import subprocess\n7 import warnings\n",
       "col_offset": 0,
       "end_col_offset": 17,
@@ -1309,7 +1360,7 @@
       "test_name": "blacklist"
     },
     {
-      "code": "625                 ]\n626                 cpp_result = subprocess.run(\n627                     cpp_cmd,\n628                     capture_output=True,\n629                     text=True,\n630                     check=False,\n631                 )\n632                 if cpp_result.returncode != 0:\n",
+      "code": "627                 ]\n628                 cpp_result = subprocess.run(\n629                     cpp_cmd,\n630                     capture_output=True,\n631                     text=True,\n632                     check=False,\n633                 )\n634                 if cpp_result.returncode != 0:\n",
       "col_offset": 29,
       "end_col_offset": 17,
       "filename": "adidt/xsa/merge/merger.py",
@@ -1320,21 +1371,21 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 626,
+      "line_number": 628,
       "line_range": [
-        626,
-        627,
         628,
         629,
         630,
-        631
+        631,
+        632,
+        633
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
       "test_name": "subprocess_without_shell_equals_true"
     },
     {
-      "code": "635                 compile_input = preprocessed\n636             result = subprocess.run(\n637                 [\n638                     \"dtc\",\n639                     \"-I\",\n640                     \"dts\",\n641                     \"-O\",\n642                     \"dtb\",\n643                     \"-o\",\n644                     str(dtb_path),\n645                     str(compile_input),\n646                 ],\n647                 capture_output=True,\n648                 text=True,\n649                 check=False,\n650             )\n651             if result.returncode != 0:\n",
+      "code": "642                 compile_input = preprocessed\n643             result = subprocess.run(\n644                 [\n645                     \"dtc\",\n646                     \"-I\",\n647                     \"dts\",\n648                     \"-O\",\n649                     \"dtb\",\n650                     \"-o\",\n651                     str(dtb_path),\n652                     str(compile_input),\n653                 ],\n654                 capture_output=True,\n655                 text=True,\n656                 check=False,\n657             )\n658             if result.returncode != 0:\n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "adidt/xsa/merge/merger.py",
@@ -1345,15 +1396,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "Starting a process with a partial executable path",
-      "line_number": 636,
+      "line_number": 643,
       "line_range": [
-        636,
-        637,
-        638,
-        639,
-        640,
-        641,
-        642,
         643,
         644,
         645,
@@ -1361,14 +1405,21 @@
         647,
         648,
         649,
-        650
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b607_start_process_with_partial_path.html",
       "test_id": "B607",
       "test_name": "start_process_with_partial_path"
     },
     {
-      "code": "635                 compile_input = preprocessed\n636             result = subprocess.run(\n637                 [\n638                     \"dtc\",\n639                     \"-I\",\n640                     \"dts\",\n641                     \"-O\",\n642                     \"dtb\",\n643                     \"-o\",\n644                     str(dtb_path),\n645                     str(compile_input),\n646                 ],\n647                 capture_output=True,\n648                 text=True,\n649                 check=False,\n650             )\n651             if result.returncode != 0:\n",
+      "code": "642                 compile_input = preprocessed\n643             result = subprocess.run(\n644                 [\n645                     \"dtc\",\n646                     \"-I\",\n647                     \"dts\",\n648                     \"-O\",\n649                     \"dtb\",\n650                     \"-o\",\n651                     str(dtb_path),\n652                     str(compile_input),\n653                 ],\n654                 capture_output=True,\n655                 text=True,\n656                 check=False,\n657             )\n658             if result.returncode != 0:\n",
       "col_offset": 21,
       "end_col_offset": 13,
       "filename": "adidt/xsa/merge/merger.py",
@@ -1379,15 +1430,8 @@
       },
       "issue_severity": "LOW",
       "issue_text": "subprocess call - check for execution of untrusted input.",
-      "line_number": 636,
+      "line_number": 643,
       "line_range": [
-        636,
-        637,
-        638,
-        639,
-        640,
-        641,
-        642,
         643,
         644,
         645,
@@ -1395,7 +1439,14 @@
         647,
         648,
         649,
-        650
+        650,
+        651,
+        652,
+        653,
+        654,
+        655,
+        656,
+        657
       ],
       "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
       "test_id": "B603",
@@ -1558,6 +1609,46 @@
       "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b313-b320-xml-bad-elementtree",
       "test_id": "B314",
       "test_name": "blacklist"
+    },
+    {
+      "code": "11 import shutil\n12 import subprocess\n13 \n",
+      "col_offset": 0,
+      "end_col_offset": 17,
+      "filename": "adidt/xsa/viz/_common.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "Consider possible security implications associated with the subprocess module.",
+      "line_number": 12,
+      "line_range": [
+        12
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess",
+      "test_id": "B404",
+      "test_name": "blacklist"
+    },
+    {
+      "code": "78         return False\n79     res = subprocess.run(cmd, capture_output=True, text=True, check=False)\n80     return res.returncode == 0\n",
+      "col_offset": 10,
+      "end_col_offset": 74,
+      "filename": "adidt/xsa/viz/_common.py",
+      "issue_confidence": "HIGH",
+      "issue_cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      },
+      "issue_severity": "LOW",
+      "issue_text": "subprocess call - check for execution of untrusted input.",
+      "line_number": 79,
+      "line_range": [
+        79
+      ],
+      "more_info": "https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html",
+      "test_id": "B603",
+      "test_name": "subprocess_without_shell_equals_true"
     }
   ]
 }
