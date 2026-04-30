@@ -496,3 +496,24 @@ class System:
     def generate_dts_overlay(self) -> str:
         """Alias for :meth:`generate_dts`; both produce overlay-mode DTS."""
         return self.generate_dts()
+
+    def generate_wiring_graph(
+        self,
+        output_dir: "Path",
+        name: str | None = None,
+    ) -> "dict[str, Path]":
+        """Render the SPI/JESD/GPIO control-plane wiring to DOT + D2 files.
+
+        Returns the artifact dict described by
+        :meth:`adidt.xsa.viz.wiring_graph.WiringGraphGenerator.generate` —
+        ``wiring_dot`` and ``wiring_d2`` (always), plus ``wiring_dot_svg``
+        / ``wiring_d2_svg`` when the corresponding renderer is on PATH.
+        """
+        from pathlib import Path as _Path
+
+        from .xsa.viz.wiring_graph import WiringGraph, WiringGraphGenerator
+
+        graph = WiringGraph.from_system(self)
+        return WiringGraphGenerator().generate(
+            graph, _Path(output_dir), name or self.name
+        )

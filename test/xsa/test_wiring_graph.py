@@ -389,3 +389,47 @@ def test_generator_emits_dot_svg_when_dot_on_path(tmp_path):
     assert "wiring_dot_svg" in result
     assert result["wiring_dot_svg"].exists()
     assert result["wiring_dot_svg"].read_text().startswith("<?xml")
+
+
+# ---------------------------------------------------------------------------
+# End-to-end test: real System.generate_wiring_graph() on an AD9081 + ZCU102
+# ---------------------------------------------------------------------------
+
+
+def test_system_path_ad9081_zcu102_emits_spi_jesd_gpio(tmp_path):
+    import adidt
+
+    fmc = adidt.eval.ad9081_fmc()
+    fmc.converter.set_jesd204_mode(1, "jesd204c")
+    fpga = adidt.fpga.zcu102()
+    system = adidt.System(name="ad9081_zcu102_wiring", components=[fmc, fpga])
+    system.connect_spi(
+        bus_index=0, primary=fpga.spi[0], secondary=fmc.clock.spi, cs=0
+    )
+    system.connect_spi(
+        bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi, cs=0
+    )
+    system.add_link(
+        source=fmc.converter.adc, sink=fpga.gt[0],
+        sink_reference_clock=fmc.dev_refclk,
+        sink_core_clock=fmc.core_clk_rx,
+        sink_sysref=fmc.dev_sysref,
+    )
+    system.add_link(
+        source=fpga.gt[1], sink=fmc.converter.dac,
+        source_reference_clock=fmc.fpga_refclk_tx,
+        source_core_clock=fmc.core_clk_tx,
+        sink_sysref=fmc.fpga_sysref,
+    )
+
+    result = system.generate_wiring_graph(tmp_path)
+
+    assert "wiring_dot" in result and result["wiring_dot"].exists()
+    text = result["wiring_dot"].read_text()
+    # SPI edges to clock chip + AD9081
+    assert "spi" in text  # SPI master node label
+    # JESD edges to/from converter
+    assert "jesd" in text or "JESD" in text
+    # AD9081-FMC sets reset_gpio + sysref_req_gpio in its constructor.
+    assert "reset=" in text
+    assert "sysref-req=" in text
