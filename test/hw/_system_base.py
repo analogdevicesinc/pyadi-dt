@@ -26,7 +26,7 @@ from typing import Any, Callable, Literal, Optional
 import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.parse.topology import XsaParser
 from test.hw.hw_helpers import (
     DEFAULT_OUT_DIR,
     assert_jesd_links_data,

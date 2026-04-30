@@ -5,7 +5,7 @@ import shutil
 
 import pytest
 
-from adidt.xsa.clock_graph import (
+from adidt.xsa.viz.clock_graph import (
     ClockGraphGenerator,
     _D2Renderer,
     _DotRenderer,
@@ -284,7 +284,7 @@ def test_generator_returns_d2_svg_when_d2_available(tmp_path):
 
 
 def test_generator_no_svg_keys_when_tools_unavailable(tmp_path, monkeypatch):
-    monkeypatch.setattr("adidt.xsa.clock_graph.shutil.which", lambda _: None)
+    monkeypatch.setattr("adidt.xsa.viz.clock_graph.shutil.which", lambda _: None)
     result = ClockGraphGenerator().generate(_SIMPLE_DTS, tmp_path, "notools")
     assert "clock_dot_svg" not in result
     assert "clock_d2_svg" not in result

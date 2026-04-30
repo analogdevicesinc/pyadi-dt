@@ -2,15 +2,15 @@
 
 Exercises every stage of pyadi-dt end-to-end:
 
-1. **XSA parsing** — :class:`adidt.xsa.topology.XsaParser` extracts the
+1. **XSA parsing** — :class:`adidt.xsa.parse.topology.XsaParser` extracts the
    FPGA IP topology from the Vivado archive.
-2. **Base DTS generation** — :class:`adidt.xsa.sdtgen.SdtgenRunner`
+2. **Base DTS generation** — :class:`adidt.xsa.parse.sdtgen.SdtgenRunner`
    produces the platform ``system-top.dts`` for ZCU102.
 3. **Declarative device composition** — :class:`adidt.eval.ad9081_fmc`
    + :class:`adidt.fpga.zcu102` are wired with SPI / JESD-link
    connections through :class:`adidt.System`; ``System.generate_dts``
    emits the MxFE + HMC7044 + ADXCVR / JESD204 / TPL-core overlays.
-4. **DTS merge** — :class:`adidt.xsa.merger.DtsMerger` splices the
+4. **DTS merge** — :class:`adidt.xsa.merge.merger.DtsMerger` splices the
    overlay into the base DTS.
 5. **Standard boot + verify** — delegated to
    :func:`test.hw._system_base.boot_and_verify_from_merged_dts`
@@ -27,9 +27,9 @@ from pathlib import Path
 import pytest
 
 import adidt
-from adidt.xsa.merger import DtsMerger
-from adidt.xsa.sdtgen import SdtgenRunner
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.merge.merger import DtsMerger
+from adidt.xsa.parse.sdtgen import SdtgenRunner
+from adidt.xsa.parse.topology import XsaParser
 from test.hw._system_base import (
     BoardSystemProfile,
     acquire_or_local_xsa,

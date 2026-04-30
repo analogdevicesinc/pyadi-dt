@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from adidt.xsa.dts_lint import DtsLinter, LintDiagnostic
+from adidt.xsa.validate.dts_lint import DtsLinter, LintDiagnostic
 from adidt.xsa.exceptions import DtsLintError
 
 
@@ -48,14 +48,14 @@ class TestLinterOnGeneratedOutput:
 
     def test_ad9084_vcu118_output_lint(self):
         """Build AD9084 VCU118 nodes and lint them."""
-        from adidt.xsa.topology import (
+        from adidt.xsa.parse.topology import (
             ClkgenInstance,
             ConverterInstance,
             Jesd204Instance,
             XsaTopology,
         )
-        from adidt.xsa.node_builder import NodeBuilder
-        from adidt.xsa.profiles import ProfileManager, merge_profile_defaults
+        from adidt.xsa.build.node_builder import NodeBuilder
+        from adidt.xsa.config.profiles import ProfileManager, merge_profile_defaults
 
         topo = XsaTopology(
             jesd204_rx=[

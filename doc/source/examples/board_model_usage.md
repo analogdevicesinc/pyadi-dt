@@ -13,8 +13,8 @@ The XSA pipeline constructs a `BoardModel` internally for every
 supported board. You can access it directly through the builder:
 
 ```python
-from adidt.xsa.topology import XsaParser
-from adidt.xsa.builders.fmcdaq2 import FMCDAQ2Builder
+from adidt.xsa.parse.topology import XsaParser
+from adidt.xsa.build.builders.fmcdaq2 import FMCDAQ2Builder
 from adidt.model.renderer import BoardModelRenderer
 
 topology = XsaParser().parse("design.xsa")

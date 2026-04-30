@@ -1,6 +1,6 @@
 """Unit tests for ADRV937xBuilder."""
 
-from adidt.xsa.builders.adrv937x import ADRV937xBuilder
+from adidt.xsa.build.builders.adrv937x import ADRV937xBuilder
 
 
 ADRV937X_CFG = {

@@ -3,7 +3,7 @@ import stat
 from unittest.mock import patch, MagicMock
 import pytest
 
-from adidt.xsa.sdtgen import SdtgenRunner
+from adidt.xsa.parse.sdtgen import SdtgenRunner
 from adidt.xsa.exceptions import SdtgenNotFoundError, SdtgenError
 
 
@@ -49,7 +49,7 @@ def test_run_invokes_sdtgen_with_correct_args(tmp_path):
     # New runner per test avoids module-level cache interference
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ) as mock_run:
         result = runner.run(xsa, out_dir)
 
@@ -69,7 +69,7 @@ def test_run_raises_not_found_when_binary_missing(tmp_path):
     out_dir.mkdir()
 
     runner = SdtgenRunner()
-    with patch("adidt.xsa.sdtgen.subprocess.run", side_effect=FileNotFoundError):
+    with patch("adidt.xsa.parse.sdtgen.subprocess.run", side_effect=FileNotFoundError):
         with pytest.raises(SdtgenNotFoundError):
             runner.run(xsa, out_dir)
 
@@ -89,7 +89,7 @@ def test_run_discovers_vitis_settings_on_missing_binary(tmp_path):
             SdtgenRunner, "_find_vitis_settings_script", return_value=settings_script
         ),
         patch(
-            "adidt.xsa.sdtgen.subprocess.run",
+            "adidt.xsa.parse.sdtgen.subprocess.run",
             side_effect=[FileNotFoundError, _help_result(), _ok_result()],
         ) as mock_run,
     ):
@@ -116,7 +116,7 @@ def test_run_raises_error_on_nonzero_exit(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), fail_result]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), fail_result]
     ):
         with pytest.raises(SdtgenError) as exc_info:
             runner.run(xsa, out_dir)
@@ -131,7 +131,7 @@ def test_run_raises_error_on_timeout(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run",
+        "adidt.xsa.parse.sdtgen.subprocess.run",
         side_effect=[_help_result(), subprocess.TimeoutExpired("sdtgen", 5)],
     ):
         with pytest.raises(SdtgenError, match="timed out"):
@@ -147,7 +147,7 @@ def test_run_scans_for_dts_when_system_top_absent(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         result = runner.run(xsa, out_dir)
     assert result == out_dir / "other_name.dts"
@@ -161,7 +161,7 @@ def test_run_raises_error_when_no_dts_produced(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         with pytest.raises(SdtgenError, match=r"no \.dts output"):
             runner.run(xsa, out_dir)
@@ -175,7 +175,7 @@ def test_help_timeout_raises_sdtgen_error(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run",
+        "adidt.xsa.parse.sdtgen.subprocess.run",
         side_effect=subprocess.TimeoutExpired("sdtgen", 10),
     ):
         with pytest.raises(SdtgenError, match="timed out"):
@@ -191,7 +191,7 @@ def test_run_uses_eval_mode_for_2025_style_sdtgen(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run",
+        "adidt.xsa.parse.sdtgen.subprocess.run",
         side_effect=[_help_result_eval_only(), _ok_result()],
     ) as mock_run:
         result = runner.run(xsa, out_dir)
@@ -216,7 +216,7 @@ def test_run_falls_back_to_dash_help_when_long_help_is_invalid(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run",
+        "adidt.xsa.parse.sdtgen.subprocess.run",
         side_effect=[
             _help_illegal_option_result(),
             _help_result_eval_only(),
@@ -250,7 +250,7 @@ def test_run_postprocesses_sdtgen_cpu_and_interrupt_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -279,7 +279,7 @@ def test_run_postprocesses_readonly_dtsi(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -300,7 +300,7 @@ def test_run_disables_problematic_rpu_ipi_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -329,7 +329,7 @@ def test_run_adds_missing_sdhci1_properties(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -350,7 +350,7 @@ def test_run_adds_missing_sdhci1_properties_for_ref_block(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -396,7 +396,7 @@ def test_run_sanitizes_non_ddr_memory_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 
@@ -433,7 +433,7 @@ def test_run_adds_missing_gem3_iommu_property(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
     ):
         runner.run(xsa, out_dir)
 

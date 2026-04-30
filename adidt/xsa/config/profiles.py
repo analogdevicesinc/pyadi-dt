@@ -5,7 +5,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-from .exceptions import ProfileError
+from ..exceptions import ProfileError
 
 
 _AD9081_BOARD_ALLOWED_KEYS = {

@@ -1,6 +1,6 @@
 """Tests for the DTS structural linter."""
 
-from adidt.xsa.dts_lint import DtsLinter, LintDiagnostic
+from adidt.xsa.validate.dts_lint import DtsLinter, LintDiagnostic
 
 
 def _lint(dts: str) -> list[LintDiagnostic]:

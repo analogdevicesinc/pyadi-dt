@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 from fastmcp import FastMCP
 
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.profiles import ProfileManager
+from adidt.xsa.config.profiles import ProfileManager
 
 mcp = FastMCP("pyadi-dt")
 
@@ -210,7 +210,7 @@ def lint_devicetree(dts_path: str) -> Dict[str, Any]:
         return {"error": f"DTS file not found: {dts_path}"}
 
     try:
-        from adidt.xsa.dts_lint import DtsLinter
+        from adidt.xsa.validate.dts_lint import DtsLinter
 
         diagnostics = DtsLinter().lint_file(path)
         return {

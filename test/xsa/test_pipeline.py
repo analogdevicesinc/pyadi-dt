@@ -8,7 +8,7 @@ import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.exceptions import ParityError
-from adidt.xsa.parity import ParityReport
+from adidt.xsa.validate.parity import ParityReport
 
 FIXTURE_HWH = Path(__file__).parent / "fixtures" / "ad9081_zcu102.hwh"
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
@@ -555,7 +555,7 @@ def test_pipeline_auto_selects_adrv9025_profile_from_adrv9026_jesd_names(tmp_pat
 
 
 def test_pipeline_derive_name_handles_mxfe_jesd_only():
-    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+    from adidt.xsa.parse.topology import Jesd204Instance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",
@@ -584,7 +584,7 @@ def test_pipeline_derive_name_handles_mxfe_jesd_only():
 
 
 def test_pipeline_derive_name_handles_ad9084_jesd_only():
-    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+    from adidt.xsa.parse.topology import Jesd204Instance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xcvp1202_vsva2785_-2MHP-e-S",
@@ -613,7 +613,7 @@ def test_pipeline_derive_name_handles_ad9084_jesd_only():
 
 
 def test_pipeline_derive_name_ignores_unknown_converter_when_known_exists():
-    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    from adidt.xsa.parse.topology import ConverterInstance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",
@@ -638,7 +638,7 @@ def test_pipeline_derive_name_ignores_unknown_converter_when_known_exists():
 
 
 def test_pipeline_derive_name_handles_fmcdaq3_converter_types():
-    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    from adidt.xsa.parse.topology import ConverterInstance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",
@@ -663,7 +663,7 @@ def test_pipeline_derive_name_handles_fmcdaq3_converter_types():
 
 
 def test_pipeline_derive_name_handles_adrv9002_converter_type():
-    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    from adidt.xsa.parse.topology import ConverterInstance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xc7z045ffg900-2",
@@ -681,7 +681,7 @@ def test_pipeline_derive_name_handles_adrv9002_converter_type():
 
 
 def test_pipeline_derive_name_handles_ad9082_converter_type():
-    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    from adidt.xsa.parse.topology import ConverterInstance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",
@@ -699,7 +699,7 @@ def test_pipeline_derive_name_handles_ad9082_converter_type():
 
 
 def test_pipeline_derive_name_uses_substring_platform_inference():
-    from adidt.xsa.topology import XsaTopology
+    from adidt.xsa.parse.topology import XsaTopology
 
     topo = XsaTopology(
         fpga_part="xilinx,xcvp1202,revA",
@@ -708,7 +708,7 @@ def test_pipeline_derive_name_uses_substring_platform_inference():
 
 
 def test_pipeline_derive_name_uses_adrv9025_family_for_adrv9026_labels():
-    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+    from adidt.xsa.parse.topology import Jesd204Instance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",
@@ -737,7 +737,7 @@ def test_pipeline_derive_name_uses_adrv9025_family_for_adrv9026_labels():
 
 
 def test_pipeline_derive_name_uses_adrv937x_family_for_ad9371_labels():
-    from adidt.xsa.topology import Jesd204Instance, XsaTopology
+    from adidt.xsa.parse.topology import Jesd204Instance, XsaTopology
 
     topo = XsaTopology(
         fpga_part="xczu9eg_ffvb1156_-2",

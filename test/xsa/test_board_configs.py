@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from adidt.xsa.board_configs import (
+from adidt.xsa.config.board_configs import (
     AD9081BoardConfig,
     AD9084BoardConfig,
     AD9172BoardConfig,
@@ -16,8 +16,8 @@ from adidt.xsa.board_configs import (
     JesdConfig,
     JesdLinkParams,
 )
-from adidt.xsa.pipeline_config import PipelineConfig
-from adidt.xsa.profiles import ProfileManager
+from adidt.xsa.config.pipeline_config import PipelineConfig
+from adidt.xsa.config.profiles import ProfileManager
 
 
 FIXTURE_DIR = Path(__file__).parent / "fixtures"

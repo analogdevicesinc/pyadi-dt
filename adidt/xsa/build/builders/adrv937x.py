@@ -9,17 +9,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...model.board_model import (
+from ....model.board_model import (
     BoardModel,
     ComponentModel,
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import AD9528_1_ADRV9371
-from ...devices.clocks.ad952x import AD9528_1Channel, _GpioLine
-from ...devices.fpga_ip import build_jesd204_overlay_ctx
-from ...model.renderer import BoardModelRenderer
-from ..topology import XsaTopology
+from ....devices.clocks import AD9528_1_ADRV9371
+from ....devices.clocks.ad952x import AD9528_1Channel, _GpioLine
+from ....devices.fpga_ip import build_jesd204_overlay_ctx
+from ....model.renderer import BoardModelRenderer
+from ...parse.topology import XsaTopology
 
 _ADRV937X_KEYWORDS = ("ad9371", "adrv937")
 
@@ -309,7 +309,7 @@ class ADRV937xBuilder:
         )
 
         # --- PHY component (ADRV9009 device rendered as ADRV9371) ---
-        from ...devices.transceivers import ADRV9009
+        from ....devices.transceivers import ADRV9009
 
         phy_dev = ADRV9009(
             label="trx0_ad9371",

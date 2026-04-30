@@ -10,22 +10,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...model.board_model import (
+from ....model.board_model import (
     BoardModel,
     ComponentModel,
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import AD9528_1, AD9528_1Channel
-from ...devices.clocks.ad952x import _GpioLine
-from ..._utils import coerce_board_int, fmt_hz
-from ...devices.fpga_ip import (
+from ....devices.clocks import AD9528_1, AD9528_1Channel
+from ....devices.clocks.ad952x import _GpioLine
+from ...._utils import coerce_board_int, fmt_hz
+from ....devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
 )
-from ...model.renderer import BoardModelRenderer
-from ..topology import XsaTopology
+from ....model.renderer import BoardModelRenderer
+from ...parse.topology import XsaTopology
 
 _ADRV90XX_KEYWORDS = ("adrv9009", "adrv9025", "adrv9026")
 
@@ -94,7 +94,7 @@ def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
     return "".join(f"{prefix}{line.lstrip()}\n" for line in lines)
 
 
-from ..._utils import fmt_gpi_gpo as _fmt_gpi_gpo  # noqa: E402
+from ...._utils import fmt_gpi_gpo as _fmt_gpi_gpo  # noqa: E402
 
 
 class ADRV9009Builder:
@@ -659,7 +659,7 @@ class ADRV9009Builder:
                 raw_channels_block = _build_default_hmc7044_channels(
                     hmc7044_pll2_out_freq
                 )
-            from ...devices.clocks import HMC7044
+            from ....devices.clocks import HMC7044
 
             hmc7044_dev = HMC7044(
                 label=clock_chip_label,
@@ -817,7 +817,7 @@ class ADRV9009Builder:
                 raw_clock_chip_node = None
 
         # --- Build PHY device component ---
-        from ...devices.transceivers import ADRV9009
+        from ....devices.transceivers import ADRV9009
 
         shared_ctx: dict[str, Any] = {
             "gpio_label": gpio_label,

@@ -2,7 +2,7 @@
 
 import pytest
 
-from adidt.xsa.topology import (
+from adidt.xsa.parse.topology import (
     ClkgenInstance,
     ConverterInstance,
     Jesd204Instance,

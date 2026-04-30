@@ -46,9 +46,9 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from adidt.xsa.kuiper import download_kuiper_xsa
+from adidt.xsa.parse.kuiper import download_kuiper_xsa
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.parse.topology import XsaParser
 
 HERE = Path(__file__).parent
 DEFAULT_OUT_DIR = HERE / "output"

@@ -24,7 +24,7 @@ from pathlib import Path
 import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.parse.topology import XsaParser
 from test.hw.hw_helpers import (
     CONFIGFS_OVERLAYS,
     assert_configfs_overlay_support,

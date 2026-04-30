@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from adidt.xsa.node_builder import NodeBuilder
-from adidt.xsa.topology import ConverterInstance, Jesd204Instance, XsaTopology
+from adidt.xsa.build.node_builder import NodeBuilder
+from adidt.xsa.parse.topology import ConverterInstance, Jesd204Instance, XsaTopology
 
 
 def test_node_builder_generates_fmcdaq3_specific_nodes():

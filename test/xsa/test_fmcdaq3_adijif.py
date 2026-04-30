@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 
 def test_resolve_fmcdaq3_config_falls_back_when_ad9152_model_missing(monkeypatch):
-    from adidt.xsa.adijif_fmcdaq3 import resolve_fmcdaq3_config
+    from adidt.xsa.config.adijif_fmcdaq3 import resolve_fmcdaq3_config
 
     class _FakeSystem:
         pass

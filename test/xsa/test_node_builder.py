@@ -4,15 +4,15 @@ import warnings
 from pathlib import Path
 import pytest
 
-from adidt.xsa.topology import (
+from adidt.xsa.parse.topology import (
     ClkgenInstance,
     ConverterInstance,
     Jesd204Instance,
     SignalConnection,
     XsaTopology,
 )
-from adidt.xsa.node_builder import NodeBuilder
-from adidt.xsa.profiles import ProfileManager, merge_profile_defaults
+from adidt.xsa.build.node_builder import NodeBuilder
+from adidt.xsa.config.profiles import ProfileManager, merge_profile_defaults
 
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
 

@@ -8,22 +8,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...model.board_model import (
+from ....model.board_model import (
     BoardModel,
     ComponentModel,
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import AD9528, AD9528Channel
-from ...devices.converters import AD9152, AD9680
-from ..._utils import coerce_board_int
-from ...devices.fpga_ip import (
+from ....devices.clocks import AD9528, AD9528Channel
+from ....devices.converters import AD9152, AD9680
+from ...._utils import coerce_board_int
+from ....devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
 )
-from ...model.renderer import BoardModelRenderer
-from ..topology import XsaTopology
+from ....model.renderer import BoardModelRenderer
+from ...parse.topology import XsaTopology
 
 
 class FMCDAQ3Builder:

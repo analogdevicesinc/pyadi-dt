@@ -1,12 +1,12 @@
 # test/xsa/test_visualizer.py
 import pytest
-from adidt.xsa.topology import (
+from adidt.xsa.parse.topology import (
     XsaTopology,
     Jesd204Instance,
     ClkgenInstance,
     ConverterInstance,
 )
-from adidt.xsa.visualizer import HtmlVisualizer
+from adidt.xsa.viz.visualizer import HtmlVisualizer
 
 
 @pytest.fixture
@@ -97,7 +97,7 @@ def test_html_file_written(topo, cfg, merged_dts, tmp_path):
 
 
 def test_missing_d3_bundle_raises(topo, cfg, merged_dts, tmp_path, monkeypatch):
-    import adidt.xsa.visualizer as vis_mod
+    import adidt.xsa.viz.visualizer as vis_mod
 
     monkeypatch.setattr(vis_mod, "_D3_BUNDLE", "")
     with pytest.raises(RuntimeError, match="D3 bundle missing"):
@@ -114,7 +114,7 @@ def test_title_with_html_chars_is_escaped(topo, cfg, merged_dts, tmp_path):
 
 def test_node_name_closing_script_tag_is_safe(topo, cfg, tmp_path):
     # Build a topology where a converter name contains </script>
-    from adidt.xsa.topology import ConverterInstance, XsaTopology
+    from adidt.xsa.parse.topology import ConverterInstance, XsaTopology
 
     topo_injected = XsaTopology(
         converters=[

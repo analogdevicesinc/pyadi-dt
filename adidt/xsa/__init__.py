@@ -1,6 +1,6 @@
 """XSA-to-DeviceTree pipeline: parse Vivado archives and generate Linux DTS overlays."""
 
-from .board_configs import (  # noqa: F401
+from .config.board_configs import (  # noqa: F401
     AD9081BoardConfig,
     AD9084BoardConfig,
     AD9172BoardConfig,
@@ -11,5 +11,5 @@ from .board_configs import (  # noqa: F401
     JesdConfig,
     JesdLinkParams,
 )
-from .dts_lint import DtsLinter, LintDiagnostic  # noqa: F401
-from .pipeline_config import PipelineConfig  # noqa: F401
+from .config.pipeline_config import PipelineConfig  # noqa: F401
+from .validate.dts_lint import DtsLinter, LintDiagnostic  # noqa: F401

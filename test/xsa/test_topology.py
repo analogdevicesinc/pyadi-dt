@@ -4,7 +4,7 @@ import warnings
 import zipfile
 import pytest
 from pathlib import Path
-from adidt.xsa.topology import (
+from adidt.xsa.parse.topology import (
     Jesd204Instance,
     ClkgenInstance,
     ConverterInstance,

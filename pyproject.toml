@@ -67,7 +67,12 @@ where = ["."]
 include = ["adidt*"]
 
 [tool.setuptools.package-data]
-adidt = ["templates/*.json", "xsa/d3_bundle.js", "xsa/profiles/*.json"]
+adidt = [
+    "templates/*.json",
+    "xsa/viz/d3_bundle.js",
+    "xsa/config/profiles/*.json",
+    "xsa/config/kuiper_boards.json",
+]
 
 [tool.ruff.lint]
 select = ["D"]

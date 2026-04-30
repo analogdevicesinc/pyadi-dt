@@ -171,15 +171,15 @@ supported boot strategies (SD-card, TFTP, and MicroBlaze/JTAG):
    * - ``test_ad9081_zcu102_xsa_hw.py``
      - AD9081 + ZCU102
      - ``BootFPGASoC``
-     - :class:`~adidt.xsa.builders.ad9081.AD9081Builder`
+     - :class:`~adidt.xsa.build.builders.ad9081.AD9081Builder`
    * - ``test_adrv9009_zcu102_hw.py``
      - ADRV9009 + ZCU102
      - ``BootFPGASoC``
-     - :class:`~adidt.xsa.builders.adrv9009.ADRV9009Builder`
+     - :class:`~adidt.xsa.build.builders.adrv9009.ADRV9009Builder`
    * - ``test_adrv9371_zc706_hw.py``
      - ADRV9371 + ZC706
      - ``BootFPGASoCTFTP``
-     - :class:`~adidt.xsa.builders.adrv937x.ADRV937xBuilder`
+     - :class:`~adidt.xsa.build.builders.adrv937x.ADRV937xBuilder`
    * - ``test_fmcdaq3_vcu118_hw.py``
      - FMCDAQ3 + VCU118
      - ``BootFabric`` (JTAG)

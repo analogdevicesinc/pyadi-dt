@@ -135,8 +135,8 @@ without cpoptimizer or gekko installed.
 ### Step 3 – Render and write the overlay
 
 ```python
-from adidt.xsa.node_builder import NodeBuilder
-from adidt.xsa.merger import DtsMerger
+from adidt.xsa.build.node_builder import NodeBuilder
+from adidt.xsa.merge.merger import DtsMerger
 
 cfg = {
     "jesd": {"rx": {"F": 4, "K": 32}, "tx": {"F": 4, "K": 32}},

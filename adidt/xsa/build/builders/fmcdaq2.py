@@ -8,22 +8,22 @@ from __future__ import annotations
 
 from typing import Any
 
-from ...model.board_model import (
+from ....model.board_model import (
     BoardModel,
     ComponentModel,
     FpgaConfig,
     JesdLinkModel,
 )
-from ...devices.clocks import AD9523_1, AD9523Channel
-from ...devices.converters import AD9144, AD9680
-from ..._utils import coerce_board_int, fmt_hz
-from ...devices.fpga_ip import (
+from ....devices.clocks import AD9523_1, AD9523Channel
+from ....devices.converters import AD9144, AD9680
+from ...._utils import coerce_board_int, fmt_hz
+from ....devices.fpga_ip import (
     build_adxcvr_ctx,
     build_jesd204_overlay_ctx,
     build_tpl_core_ctx,
 )
-from ...model.renderer import BoardModelRenderer
-from ..topology import XsaTopology
+from ....model.renderer import BoardModelRenderer
+from ...parse.topology import XsaTopology
 
 
 class FMCDAQ2Builder:
@@ -220,7 +220,7 @@ class FMCDAQ2Builder:
             channels=ad9523_channels,
         )
         # Inject GPIO lines (device expects model objects; dicts auto-validate).
-        from ...devices.clocks.ad952x import _GpioLine
+        from ....devices.clocks.ad952x import _GpioLine
 
         ad9523.gpio_lines = [_GpioLine(**gl) for gl in clock_gpio_lines]
         clock_rendered = ad9523.render_dt(cs=clock_cs)

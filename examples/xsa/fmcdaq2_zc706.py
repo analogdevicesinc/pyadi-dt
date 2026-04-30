@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-from adidt.xsa.kuiper import download_kuiper_xsa
+from adidt.xsa.parse.kuiper import download_kuiper_xsa
 from adidt.xsa.pipeline import XsaPipeline
 
 HERE = Path(__file__).parent

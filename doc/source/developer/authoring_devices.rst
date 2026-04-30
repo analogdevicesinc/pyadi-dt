@@ -441,7 +441,7 @@ Export the new class from ``adidt/fpga/__init__.py`` so users can do
 
 Every device class written against the declarative layer is
 automatically usable from the XSA pipeline.  An ``XsaBuilder`` (e.g.
-:class:`adidt.xsa.builders.adrv937x.ADRV937xBuilder`) parses the
+:class:`adidt.xsa.build.builders.adrv937x.ADRV937xBuilder`) parses the
 topology extracted from a Vivado ``.xsa`` archive, constructs the
 same Pydantic device models you wrote, and feeds them into the same
 :class:`~adidt.model.renderer.BoardModelRenderer`.  The output path

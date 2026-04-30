@@ -9,7 +9,7 @@ from unittest.mock import patch
 import pytest
 
 from adidt.xsa.pipeline import XsaPipeline
-from adidt.xsa.topology import XsaParser
+from adidt.xsa.parse.topology import XsaParser
 from test.xsa.kuiper_release import (
     extract_project_xsa,
     download_project_xsa,

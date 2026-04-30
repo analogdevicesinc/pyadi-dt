@@ -1,9 +1,9 @@
 # test/xsa/test_node_builder_templates.py
 from types import SimpleNamespace
 
-from adidt.xsa.builders.adrv9009 import ADRV9009Builder
-from adidt.xsa.node_builder import NodeBuilder
-from adidt.xsa.topology import ConverterInstance, Jesd204Instance, XsaTopology
+from adidt.xsa.build.builders.adrv9009 import ADRV9009Builder
+from adidt.xsa.build.node_builder import NodeBuilder
+from adidt.xsa.parse.topology import ConverterInstance, Jesd204Instance, XsaTopology
 
 
 def test_wrap_spi_bus_produces_overlay():
