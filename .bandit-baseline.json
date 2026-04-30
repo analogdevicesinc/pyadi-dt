@@ -1252,7 +1252,7 @@
       "code": "15 import shutil\n16 import subprocess\n17 from dataclasses import dataclass, field\n",
       "col_offset": 0,
       "end_col_offset": 17,
-      "filename": "adidt/xsa/clock_graph.py",
+      "filename": "adidt/xsa/viz/clock_graph.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1272,7 +1272,7 @@
       "code": "588             return False\n589         res = subprocess.run(cmd, capture_output=True, text=True, check=False)\n590         return res.returncode == 0\n",
       "col_offset": 14,
       "end_col_offset": 78,
-      "filename": "adidt/xsa/clock_graph.py",
+      "filename": "adidt/xsa/viz/clock_graph.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1292,7 +1292,7 @@
       "code": "5 import re\n6 import subprocess\n7 import warnings\n",
       "col_offset": 0,
       "end_col_offset": 17,
-      "filename": "adidt/xsa/merger.py",
+      "filename": "adidt/xsa/merge/merger.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1312,7 +1312,7 @@
       "code": "625                 ]\n626                 cpp_result = subprocess.run(\n627                     cpp_cmd,\n628                     capture_output=True,\n629                     text=True,\n630                     check=False,\n631                 )\n632                 if cpp_result.returncode != 0:\n",
       "col_offset": 29,
       "end_col_offset": 17,
-      "filename": "adidt/xsa/merger.py",
+      "filename": "adidt/xsa/merge/merger.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1337,7 +1337,7 @@
       "code": "635                 compile_input = preprocessed\n636             result = subprocess.run(\n637                 [\n638                     \"dtc\",\n639                     \"-I\",\n640                     \"dts\",\n641                     \"-O\",\n642                     \"dtb\",\n643                     \"-o\",\n644                     str(dtb_path),\n645                     str(compile_input),\n646                 ],\n647                 capture_output=True,\n648                 text=True,\n649                 check=False,\n650             )\n651             if result.returncode != 0:\n",
       "col_offset": 21,
       "end_col_offset": 13,
-      "filename": "adidt/xsa/merger.py",
+      "filename": "adidt/xsa/merge/merger.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1371,7 +1371,7 @@
       "code": "635                 compile_input = preprocessed\n636             result = subprocess.run(\n637                 [\n638                     \"dtc\",\n639                     \"-I\",\n640                     \"dts\",\n641                     \"-O\",\n642                     \"dtb\",\n643                     \"-o\",\n644                     str(dtb_path),\n645                     str(compile_input),\n646                 ],\n647                 capture_output=True,\n648                 text=True,\n649                 check=False,\n650             )\n651             if result.returncode != 0:\n",
       "col_offset": 21,
       "end_col_offset": 13,
-      "filename": "adidt/xsa/merger.py",
+      "filename": "adidt/xsa/merge/merger.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1405,7 +1405,7 @@
       "code": "6 import stat\n7 import subprocess\n8 from pathlib import Path\n",
       "col_offset": 0,
       "end_col_offset": 17,
-      "filename": "adidt/xsa/sdtgen.py",
+      "filename": "adidt/xsa/parse/sdtgen.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1425,7 +1425,7 @@
       "code": "72         if self._sourced_vitis_settings is None:\n73             return subprocess.run(\n74                 command,\n75                 capture_output=True,\n76                 text=True,\n77                 timeout=timeout,\n78                 check=check,\n79             )\n80         return subprocess.run(\n",
       "col_offset": 19,
       "end_col_offset": 13,
-      "filename": "adidt/xsa/sdtgen.py",
+      "filename": "adidt/xsa/parse/sdtgen.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1451,7 +1451,7 @@
       "code": "79             )\n80         return subprocess.run(\n81             [\"bash\", \"-lc\", self._command_shell(command)],\n82             capture_output=True,\n83             text=True,\n84             timeout=timeout,\n85             check=check,\n86         )\n87 \n",
       "col_offset": 15,
       "end_col_offset": 9,
-      "filename": "adidt/xsa/sdtgen.py",
+      "filename": "adidt/xsa/parse/sdtgen.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1477,7 +1477,7 @@
       "code": "79             )\n80         return subprocess.run(\n81             [\"bash\", \"-lc\", self._command_shell(command)],\n82             capture_output=True,\n83             text=True,\n84             timeout=timeout,\n85             check=check,\n86         )\n87 \n",
       "col_offset": 15,
       "end_col_offset": 9,
-      "filename": "adidt/xsa/sdtgen.py",
+      "filename": "adidt/xsa/parse/sdtgen.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 78,
@@ -1503,7 +1503,7 @@
       "code": "6 import zipfile\n7 import xml.etree.ElementTree as ET\n8 from dataclasses import dataclass, field\n",
       "col_offset": 0,
       "end_col_offset": 34,
-      "filename": "adidt/xsa/topology.py",
+      "filename": "adidt/xsa/parse/topology.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 20,
@@ -1523,7 +1523,7 @@
       "code": "186         \"\"\"Parse a HWH XML string into an IP-instance map and write debug diagram files.\"\"\"\n187         root = ET.fromstring(hwh_content)\n188 \n",
       "col_offset": 15,
       "end_col_offset": 41,
-      "filename": "adidt/xsa/topology.py",
+      "filename": "adidt/xsa/parse/topology.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 20,
@@ -1543,7 +1543,7 @@
       "code": "292 \n293         root = ET.fromstring(hwh_content)\n294         # with open(\"root.txt\", \"w\") as f:\n",
       "col_offset": 15,
       "end_col_offset": 41,
-      "filename": "adidt/xsa/topology.py",
+      "filename": "adidt/xsa/parse/topology.py",
       "issue_confidence": "HIGH",
       "issue_cwe": {
         "id": 20,
