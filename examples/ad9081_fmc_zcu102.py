@@ -30,22 +30,19 @@ system.connect_spi(bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi
 system.add_link(
     source=fmc.converter.adc,
     sink=fpga.gt[0],
-    sink_reference_clock=fmc.clock.clk_out[0],
-    sink_core_clock=fmc.clock.clk_out[1],
-    sink_sysref=fmc.clock.clk_out[2],
+    sink_reference_clock=fmc.dev_refclk,
+    sink_core_clock=fmc.core_clk_rx,
+    sink_sysref=fmc.dev_sysref,
 )
 ### FPGA -> DAC
 system.add_link(
     source=fpga.gt[1],
-    source_reference_clock=fmc.clock.clk_out[2],
-    source_core_clock=fmc.clock.clk_out[3],
     sink=fmc.converter.dac,
-    sink_sysref=fmc.clock.clk_out[4],
+    source_reference_clock=fmc.fpga_refclk_tx,
+    source_core_clock=fmc.core_clk_tx,
+    sink_sysref=fmc.fpga_sysref,
 )
 
 # 2. Generate device tree source
 dts = system.generate_dts()
 print(dts)
-
-# dts_overlay = system.generate_dts_overlay()
-# print(dts_overlay)
