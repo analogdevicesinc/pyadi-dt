@@ -130,7 +130,7 @@ def ty(session):
         if session.posargs
         else [
             "adidt/model/",
-            "adidt/xsa/builders/",
+            "adidt/xsa/build/builders/",
             "adidt/devices/",
             "adidt/system.py",
             "adidt/tools/",

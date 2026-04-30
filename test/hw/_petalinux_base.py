@@ -414,7 +414,7 @@ def _assert_zynqmp_platform_inferred(spec: BoardSystemProfile, topology) -> None
 
     :class:`PetalinuxFormatter` only rewrites ``&amba`` → ``&amba_pl`` for
     platforms in its ``_ZYNQMP_PLATFORMS`` set
-    (``adidt/xsa/petalinux.py:13-21``).  If inference fails on a ZynqMP
+    (``adidt/xsa/merge/petalinux.py:13-21``).  If inference fails on a ZynqMP
     XSA the build fails later with a phandle error — fail fast here with
     a clearer hint.
     """

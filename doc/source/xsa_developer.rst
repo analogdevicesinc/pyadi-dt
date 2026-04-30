@@ -770,7 +770,7 @@ The ``BoardModelRenderer`` handles SPI bus grouping, template rendering,
 and assembly automatically.
 
 If it is a new board family entirely, create a new builder module in
-``adidt/xsa/builders/`` implementing the ``BoardBuilder`` protocol with a
+``adidt/xsa/build/builders/`` implementing the ``BoardBuilder`` protocol with a
 ``build_model()`` method.  See ``fmcdaq2.py`` as the reference
 implementation.  Add the builder to ``NodeBuilder._DEFAULT_BUILDERS``.
 
@@ -788,7 +788,7 @@ daughter card (e.g. ``ad_new_zcu102``).  Adding board support involves:
 Step 1 — Create the board JSON profile
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create ``adidt/xsa/profiles/ad_new_zcu102.json``.  A profile supplies default
+Create ``adidt/xsa/config/profiles/ad_new_zcu102.json``.  A profile supplies default
 values for all board-wiring keys so that users only need to override what
 differs:
 
