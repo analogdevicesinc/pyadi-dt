@@ -71,12 +71,24 @@ nodes = BoardModelRenderer().render(model)
 ### Generate a DTS for an FPGA board
 
 ```python
-from adidt.boards.daq2 import daq2
+import adidt
 
-board = daq2(platform="zcu102")
-board.output_filename = "fmcdaq2.dts"
-board.gen_dt_from_config(solver_config)
+fmc = adidt.eval.ad9081_fmc()
+fmc.converter.set_jesd204_mode(1, "jesd204c")
+fpga = adidt.fpga.zcu102()
+system = adidt.System(name="ad9081_zcu102", components=[fmc, fpga])
+system.connect_spi(bus_index=0, primary=fpga.spi[0], secondary=fmc.clock.spi, cs=0)
+system.connect_spi(bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi, cs=0)
+system.add_link(
+    source=fmc.converter.adc, sink=fpga.gt[0],
+    sink_reference_clock=fmc.dev_refclk,
+    sink_core_clock=fmc.core_clk_rx,
+    sink_sysref=fmc.dev_sysref,
+)
+print(system.generate_dts())
 ```
+
+See `examples/ad9081_fmc_zcu102.py` for the full RX+TX wiring.
 
 ### List Kuiper-supported boards
 
