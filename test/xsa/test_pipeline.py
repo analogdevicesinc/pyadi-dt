@@ -1003,8 +1003,41 @@ def test_pipeline_default_result_has_report_and_clock_keys(xsa_path, cfg, tmp_pa
     with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
         MockRunner.return_value.run.side_effect = _fake_sdtgen_run
         result = XsaPipeline().run(xsa_path, cfg, tmp_path)
-    # With emit_report=True and emit_clock_graphs=True as defaults, the
-    # pipeline result includes the report and clock-graph keys by default.
-    # "clock_dot_svg" / "clock_d2_svg" are only present when dot/d2 are on
-    # PATH, so they are optional here.
-    assert {"base_dir", "overlay", "merged", "report", "clock_dot", "clock_d2"} <= set(result.keys())
+    # With emit_report=True, emit_clock_graphs=True, and emit_wiring_graph=True
+    # as defaults, the pipeline result includes the report and graph keys by
+    # default.  "*_svg" keys are only present when dot/d2 are on PATH, so they
+    # are optional here.
+    assert {
+        "base_dir", "overlay", "merged", "report",
+        "clock_dot", "clock_d2", "wiring_dot", "wiring_d2",
+    } <= set(result.keys())
+
+
+def test_pipeline_wiring_graph_present_by_default(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path)
+    assert "wiring_dot" in result
+    assert "wiring_d2" in result
+    assert result["wiring_dot"].exists()
+    assert result["wiring_d2"].exists()
+
+
+def test_pipeline_emit_wiring_graph_false_omits_wiring_keys(xsa_path, cfg, tmp_path):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        result = XsaPipeline().run(xsa_path, cfg, tmp_path, emit_wiring_graph=False)
+    assert "wiring_dot" not in result
+    assert "wiring_d2" not in result
+    assert "wiring_dot_svg" not in result
+    assert "wiring_d2_svg" not in result
+
+
+def test_pipeline_emit_wiring_graph_false_does_not_invoke_generator(
+    xsa_path, cfg, tmp_path
+):
+    with patch("adidt.xsa.pipeline.SdtgenRunner") as MockRunner:
+        MockRunner.return_value.run.side_effect = _fake_sdtgen_run
+        with patch("adidt.xsa.pipeline.WiringGraphGenerator") as MockWGG:
+            XsaPipeline().run(xsa_path, cfg, tmp_path, emit_wiring_graph=False)
+    MockWGG.return_value.generate.assert_not_called()
