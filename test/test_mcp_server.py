@@ -33,6 +33,7 @@ def test_server_has_tools():
         "list_xsa_profiles",
         "show_xsa_profile",
         "read_dt_property",
+        "lint_devicetree",
     }
     assert expected.issubset(tool_names), f"Missing tools: {expected - tool_names}"
 
@@ -287,3 +288,185 @@ def test_generate_devicetree_returns_canonical_merged_dts_and_pl_dtsi(tmp_path):
         assert data["dts_path"] == str(output_dir / "test.dts")
         assert data["pl_dtsi_path"] == str(pl_dtsi)
         assert data["merged"] == str(output_dir / "test.dts")
+
+
+# ---------------------------------------------------------------------------
+# lint_devicetree
+# ---------------------------------------------------------------------------
+
+
+_CLEAN_DTS = """\
+/dts-v1/;
+
+/ {
+    compatible = "test,clean";
+    model = "Clean";
+    #address-cells = <1>;
+    #size-cells = <1>;
+};
+"""
+
+
+# DTS containing a `<&undefined_phandle>` reference with no matching label —
+# the linter's phandle-unresolved rule should flag this as an error.
+_BAD_PHANDLE_DTS = """\
+/dts-v1/;
+
+/ {
+    compatible = "test,bad";
+    #address-cells = <1>;
+    #size-cells = <1>;
+
+    consumer {
+        compatible = "test,consumer";
+        clocks = <&undefined_phandle 0>;
+    };
+};
+"""
+
+
+def test_lint_devicetree_clean_dts_returns_no_errors(tmp_path):
+    dts_path = tmp_path / "clean.dts"
+    dts_path.write_text(_CLEAN_DTS)
+
+    tool = asyncio.run(mcp.get_tool("lint_devicetree"))
+    result = asyncio.run(tool.run({"dts_path": str(dts_path)}))
+    data = _tool_data(result)
+
+    assert "diagnostics" in data
+    assert isinstance(data["diagnostics"], list)
+    assert "summary" in data
+    assert data["summary"]["errors"] == 0
+
+
+def test_lint_devicetree_reports_phandle_error(tmp_path):
+    dts_path = tmp_path / "bad.dts"
+    dts_path.write_text(_BAD_PHANDLE_DTS)
+
+    tool = asyncio.run(mcp.get_tool("lint_devicetree"))
+    result = asyncio.run(tool.run({"dts_path": str(dts_path)}))
+    data = _tool_data(result)
+
+    assert "diagnostics" in data
+    rules_seen = {d.get("rule") for d in data["diagnostics"]}
+    assert "phandle-unresolved" in rules_seen
+    assert data["summary"]["errors"] >= 1
+    error_diags = [d for d in data["diagnostics"] if d.get("severity") == "error"]
+    assert error_diags, "expected at least one error-severity diagnostic"
+
+
+def test_lint_devicetree_missing_file_returns_error():
+    tool = asyncio.run(mcp.get_tool("lint_devicetree"))
+    result = asyncio.run(tool.run({"dts_path": "/tmp/does_not_exist.dts"}))
+    data = _tool_data(result)
+
+    assert "error" in data
+    assert "not found" in data["error"].lower()
+
+
+# ---------------------------------------------------------------------------
+# read_dt_property
+# ---------------------------------------------------------------------------
+
+
+def _fake_dt_with_node(node_name, props):
+    """Build a mock dt-class instance whose .fdt walker yields one node.
+
+    The MCP wrapper accesses ``d.fdt.walk()`` then ``d.fdt.get_node(path)``.
+    The returned node exposes ``.props`` — an iterable of objects with
+    ``.name`` and a string representation.
+    """
+    fake_dt = MagicMock()
+
+    class _FakeProp:
+        def __init__(self, name, value):
+            self.name = name
+            self._value = value
+
+        def __str__(self):
+            return self._value
+
+    fake_node = MagicMock()
+    fake_node.props = [_FakeProp(k, v) for k, v in props.items()]
+
+    path = "/" + node_name
+    fake_dt.fdt.walk.return_value = [(path, [], list(props.keys()))]
+    fake_dt.fdt.get_node.return_value = fake_node
+    fake_dt.get_node_by_compatible.return_value = fake_node
+    return fake_dt
+
+
+def test_read_dt_property_returns_specific_property():
+    fake_dt = _fake_dt_with_node(
+        "ad9081", {"compatible": "adi,ad9081", "reg": "<0 0 0 0x10000>"}
+    )
+
+    with patch("adidt.dt.dt", return_value=fake_dt):
+        tool = asyncio.run(mcp.get_tool("read_dt_property"))
+        result = asyncio.run(
+            tool.run(
+                {
+                    "node_name": "ad9081",
+                    "property_name": "compatible",
+                    "filepath": "/tmp/fake.dtb",
+                }
+            )
+        )
+        data = _tool_data(result)
+
+    assert data.get("property") == "compatible"
+    assert "adi,ad9081" in data.get("value", "")
+
+
+def test_read_dt_property_returns_all_properties_when_property_omitted():
+    fake_dt = _fake_dt_with_node(
+        "ad9081", {"compatible": "adi,ad9081", "reg": "<0 0 0 0x10000>"}
+    )
+
+    with patch("adidt.dt.dt", return_value=fake_dt):
+        tool = asyncio.run(mcp.get_tool("read_dt_property"))
+        result = asyncio.run(
+            tool.run({"node_name": "ad9081", "filepath": "/tmp/fake.dtb"})
+        )
+        data = _tool_data(result)
+
+    assert "properties" in data
+    assert set(data["properties"].keys()) == {"compatible", "reg"}
+
+
+def test_read_dt_property_unknown_node_returns_error():
+    fake_dt = MagicMock()
+    fake_dt.fdt.walk.return_value = []
+    fake_dt.get_node_by_compatible.return_value = None
+
+    with patch("adidt.dt.dt", return_value=fake_dt):
+        tool = asyncio.run(mcp.get_tool("read_dt_property"))
+        result = asyncio.run(
+            tool.run({"node_name": "missing_node", "filepath": "/tmp/fake.dtb"})
+        )
+        data = _tool_data(result)
+
+    assert "error" in data
+    assert "missing_node" in data["error"]
+
+
+def test_read_dt_property_invalid_filepath_returns_error():
+    """When the underlying dt loader raises, the MCP wrapper should return an
+    error dict instead of propagating the exception."""
+
+    def _raise(*args, **kwargs):
+        raise FileNotFoundError("no such DTB on disk")
+
+    with patch("adidt.dt.dt", side_effect=_raise):
+        tool = asyncio.run(mcp.get_tool("read_dt_property"))
+        result = asyncio.run(
+            tool.run(
+                {
+                    "node_name": "anything",
+                    "filepath": "/tmp/definitely_not_a_real_dtb.dtb",
+                }
+            )
+        )
+        data = _tool_data(result)
+
+    assert "error" in data
