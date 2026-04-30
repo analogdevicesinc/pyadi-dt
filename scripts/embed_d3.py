@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # scripts/embed_d3.py
-"""Download and inline D3.js v7.9.0 into adidt/xsa/d3_bundle.js.
+"""Download and inline D3.js v7.9.0 into adidt/xsa/viz/d3_bundle.js.
 
 Run once (or to update the pinned version):
     python scripts/embed_d3.py

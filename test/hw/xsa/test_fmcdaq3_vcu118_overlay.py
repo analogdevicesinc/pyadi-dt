@@ -65,7 +65,7 @@ from test.hw.xsa._overlay_spec import BoardOverlayProfile, local_xsa_or_skip
 def _fmcdaq3_vcu118_cfg() -> dict[str, Any]:
     """FMCDAQ3+VCU118 XSA pipeline cfg.
 
-    The profile JSON ``adidt/xsa/profiles/fmcdaq3_vcu118.json`` already
+    The profile JSON ``adidt/xsa/config/profiles/fmcdaq3_vcu118.json`` already
     supplies the full ``fmcdaq3_board`` defaults and the JESD framing
     (RX & TX both M=2 L=4 F=1 Np=16 S=1, the FMCDAQ3 reference HDL
     default).  We re-state the framing here only so

@@ -6,7 +6,7 @@ You have a board + carrier combination running JESD204 + IIO + a Linux kernel wi
 
 - A labgrid place exposing the board with serial console, power control, and (for SoC boots) SD or TFTP staging. The place's `features:` list must include the `lg_features` tuple you'll declare in the SPEC.
 - An XSA from the HDL build, either committed under `test/hw/xsa/` or downloadable from a Kuiper boot-partition release.
-- A profile JSON in `adidt/xsa/profiles/<profile>.json` if the board's SPI / clock / JESD topology is not already supported by an existing builder.
+- A profile JSON in `adidt/xsa/config/profiles/<profile>.json` if the board's SPI / clock / JESD topology is not already supported by an existing builder.
 - A working `LG_COORDINATOR` (or `LG_ENV`) — see `.env.example`.
 
 ## Steps

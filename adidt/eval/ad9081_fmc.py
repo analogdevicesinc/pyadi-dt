@@ -20,7 +20,7 @@ from .base import EvalBoard
 
 # AD9081-FMC-EBZ schematic wiring of the HMC7044 14 outputs.
 #
-# The dividers below match the XSA builder (adidt/xsa/builders/ad9081.py)
+# The dividers below match the XSA builder (adidt/xsa/build/builders/ad9081.py)
 # and the stock Kuiper ``zynqmp-zcu102-rev10-ad9081-m8-l4`` reference DTS.
 # With PLL2 at 3000 MHz this gives:
 #

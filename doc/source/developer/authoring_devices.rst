@@ -450,7 +450,7 @@ converges — the only difference is who picked the configuration.
 Compare the smallest builder side-by-side with its device class to
 see the pattern:
 
-- ``adidt/xsa/builders/adrv937x.py`` — builder side.
+- ``adidt/xsa/build/builders/adrv937x.py`` — builder side.
 - ``adidt/devices/transceivers/adrv9009.py`` — device side (reused
   here because AD9371 silicon shares the DT layout).
 

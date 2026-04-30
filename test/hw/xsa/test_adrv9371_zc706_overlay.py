@@ -21,7 +21,7 @@ bitstream that ``bq`` loads:
 1. **ILAS framing mismatch** — the AD9371 deframer's "received-ILAS"
    registers were stale zeros because the FPGA TX framer never emitted
    a valid ILAS sequence.  Fixed in
-   ``adidt/xsa/builders/adrv937x.py`` ``tx_core_second`` block.
+   ``adidt/xsa/build/builders/adrv937x.py`` ``tx_core_second`` block.
 2. **AXI DMAC IRQ number wrong in DT** — sdtgen extracted SPI 31/32
    from the XSA but the bitstream wires the DMAC IRQ to SPI 57/56.
    Fixed by setting ``dma_interrupts_str`` on the RX/TX
@@ -69,7 +69,7 @@ def _adrv9371_cfg() -> dict[str, Any]:
     JESD framing matches the Kuiper reference design
     ``zynq-zc706-adv7511-adrv937x``: RX = M=4 L=2 S=1 → F=4;
     TX = M=4 L=4 S=1 → F=2.  Mykonos profile properties come from
-    ``adidt/xsa/profiles/adrv937x_zc706.json``.
+    ``adidt/xsa/config/profiles/adrv937x_zc706.json``.
     """
     cfg: dict[str, Any] = {
         "adrv9009_board": {
