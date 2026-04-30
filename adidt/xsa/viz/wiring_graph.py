@@ -141,24 +141,41 @@ _GPIO_FIELD_NAMES = (
 )
 
 
-def _device_label(obj: Any) -> str:
-    """Best-effort device label for a System endpoint.
+def _device_label(obj: Any, system: Any | None = None) -> str:
+    """Best-effort, DOT-identifier-safe label for a System endpoint.
 
-    Endpoints are either Devices (have ``label``), :class:`SpiPort` /
-    :class:`ClockOutput` / :class:`GtLane` (have ``device`` /
-    ``fpga`` attributes), or a :class:`ConverterSide`.
+    Endpoints can be:
+
+    * a Device (``label`` is a string),
+    * :class:`SpiPort` / :class:`ClockOutput` (have a ``device`` attribute),
+    * :class:`GtLane` (has ``fpga`` + ``index`` — render as
+      ``<fpga>_gt<index>``),
+    * a :class:`ConverterSide` (an ADC or DAC sub-model).  Has no back-
+      reference, so when *system* is provided we walk
+      ``system._all_devices()`` to find the parent converter and append
+      ``_adc`` / ``_dac``.
     """
     if hasattr(obj, "label") and isinstance(getattr(obj, "label"), str):
         return obj.label
-    inner = getattr(obj, "device", None) or getattr(obj, "fpga", None)
+
+    fpga = getattr(obj, "fpga", None)
+    index = getattr(obj, "index", None)
+    if fpga is not None and hasattr(fpga, "label") and index is not None:
+        return f"{fpga.label}_gt{index}"
+
+    inner = getattr(obj, "device", None)
     if inner is not None and hasattr(inner, "label"):
         return inner.label
-    # ConverterSide: traverse to its parent converter via the closest device.
-    for attr in ("device", "_parent"):
-        parent = getattr(obj, attr, None)
-        if parent is not None and hasattr(parent, "label"):
-            return parent.label
-    return repr(obj)
+
+    if system is not None and hasattr(system, "_all_devices"):
+        for dev in system._all_devices():
+            if getattr(dev, "adc", None) is obj:
+                return f"{dev.label}_adc"
+            if getattr(dev, "dac", None) is obj:
+                return f"{dev.label}_dac"
+
+    # Last-resort sanitization — type name only, no pydantic repr.
+    return type(obj).__name__
 
 
 def _gpio_label(system: Any) -> str:
@@ -189,8 +206,8 @@ def _extract_spi_from_system(system: Any, graph: WiringGraph) -> list[WiringEdge
 def _extract_jesd_from_system(system: Any, graph: WiringGraph) -> list[WiringEdge]:
     edges: list[WiringEdge] = []
     for link in getattr(system, "_links", []):
-        src = _device_label(link.source)
-        dst = _device_label(link.sink)
+        src = _device_label(link.source, system)
+        dst = _device_label(link.sink, system)
         graph.add_node(src)
         graph.add_node(dst)
         edges.append(WiringEdge(src=src, dst=dst, kind="jesd", label="JESD204"))
@@ -377,6 +394,22 @@ _KIND_NODE_STYLE: dict[str, dict[str, str]] = {
     "other": {"fillcolor": "#2a2a2a", "shape": "box"},
 }
 
+# D2 uses ``oval`` / ``rectangle`` rather than Graphviz's ``ellipse`` / ``box``.
+_D2_KIND_NODE_STYLE: dict[str, dict[str, str]] = {
+    "spi_master": {"fill": "#2a4d6e", "shape": "oval"},
+    "gpio_controller": {"fill": "#6e4d2a", "shape": "oval"},
+    "i2c_master": {"fill": "#5a2a6e", "shape": "oval"},
+    "interrupt_controller": {"fill": "#6e2a2a", "shape": "oval"},
+    "ps_clock": {"fill": "#7a3800", "shape": "oval"},
+    "clock_chip": {"fill": "#1a3d5c", "shape": "rectangle"},
+    "xcvr": {"fill": "#4a1a5c", "shape": "rectangle"},
+    "jesd": {"fill": "#1a4a20", "shape": "rectangle"},
+    "clkgen": {"fill": "#1a4a4a", "shape": "rectangle"},
+    "converter": {"fill": "#5c1a1a", "shape": "rectangle"},
+    "dma": {"fill": "#3a3a3a", "shape": "rectangle"},
+    "other": {"fill": "#2a2a2a", "shape": "rectangle"},
+}
+
 _DOT_EDGE_KIND_STYLE: dict[EdgeKind, str] = {
     "spi": 'color="#4ac4d8" fontcolor="#4ac4d8"',
     "jesd": 'color="#44cc44" fontcolor="#44cc44"',
@@ -423,13 +456,13 @@ class _WiringD2Renderer:
     def render(self, graph: WiringGraph, name: str) -> str:
         lines = [f"# {name}_wiring", "direction: right", ""]
         for n in graph.nodes:
-            style = _KIND_NODE_STYLE.get(n.kind, _KIND_NODE_STYLE["other"])
+            style = _D2_KIND_NODE_STYLE.get(n.kind, _D2_KIND_NODE_STYLE["other"])
             display = d2_label(n.label, n.node_name)
             lines.extend([
                 f"{n.label}: {{",
                 f'  label: "{display}"',
                 f"  shape: {style['shape']}",
-                f"  style.fill: \"{style['fillcolor']}\"",
+                f"  style.fill: \"{style['fill']}\"",
                 "  style.font-color: \"#ffffff\"",
                 "}",
             ])
