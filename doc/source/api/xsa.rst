@@ -50,6 +50,14 @@ HTML Visualizer
    :undoc-members:
    :show-inheritance:
 
+Wiring Graph
+------------
+
+.. automodule:: adidt.xsa.viz.wiring_graph
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 SDT Generator Runner
 --------------------
 

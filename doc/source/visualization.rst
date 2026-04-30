@@ -238,6 +238,113 @@ always written.  Install the tools to get SVG output:
    # D2 (D2 → SVG)
    curl -fsSL https://d2lang.com/install.sh | sh -s --
 
+Control-plane wiring graphs
+----------------------------
+
+In addition to the clock tree, the pipeline emits a **wiring graph**
+showing the control-plane connections of the design — which devices
+sit on which SPI bus and chip-select, how JESD204 cores connect to
+their transceivers and converters, where each JESD core's IRQ goes,
+and (best-effort) which I2C devices are routed by the merged DTS.
+GPIO control lines (``reset``, ``sysref-req``, ``rx{1,2}-enable``,
+``tx{1,2}-enable``) are extracted from device-class fields when
+generated via the System API and from ``*-gpios = <&gpio N flag>;``
+properties when generated from the merged DTS.
+
+Like the clock-tree generator, two output formats are always written:
+
+- **Graphviz DOT** (``{name}_wiring.dot``) — rendered to SVG when
+  ``dot`` is on PATH.
+- **D2** (``{name}_wiring.d2``) — rendered to SVG when ``d2`` is on
+  PATH.
+
+Edges are color-coded by kind:
+
+.. list-table::
+   :widths: 18 20 62
+   :header-rows: 1
+
+   * - Kind
+     - Color
+     - Source
+   * - SPI
+     - cyan (``#4ac4d8``)
+     - SPI master → secondary, label = ``cs=N``.
+   * - JESD
+     - green (``#44cc44``)
+     - Converter ↔ JESD core, label = ``L<lanes>``.
+   * - GPIO
+     - orange (``#cc9944``)
+     - GPIO controller → device, label = ``<gpio-name>=<line>``.
+   * - IRQ
+     - red dashed (``#cc4444``)
+     - JESD core → ``interrupt_controller``, label = ``IRQ N``.  XSA
+       topology only (System path has no IRQ field today).
+   * - I2C
+     - purple (``#a04ac4``)
+     - I2C master → child, best-effort regex parse of merged DTS.
+
+From the System API
+~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: python
+
+   from pathlib import Path
+   import adidt
+
+   fmc = adidt.eval.ad9081_fmc()
+   fmc.converter.set_jesd204_mode(1, "jesd204c")
+   fpga = adidt.fpga.zcu102()
+   system = adidt.System(name="ad9081_zcu102", components=[fmc, fpga])
+   system.connect_spi(bus_index=0, primary=fpga.spi[0], secondary=fmc.clock.spi, cs=0)
+   system.connect_spi(bus_index=1, primary=fpga.spi[1], secondary=fmc.converter.spi, cs=0)
+   system.add_link(
+       source=fmc.converter.adc, sink=fpga.gt[0],
+       sink_reference_clock=fmc.dev_refclk,
+       sink_core_clock=fmc.core_clk_rx,
+       sink_sysref=fmc.dev_sysref,
+   )
+
+   result = system.generate_wiring_graph(Path("out"))
+   print(result["wiring_dot"])  # always present
+   if "wiring_dot_svg" in result:
+       print(result["wiring_dot_svg"])
+
+From the XSA pipeline
+~~~~~~~~~~~~~~~~~~~~~
+
+The pipeline emits the wiring artifacts alongside the clock-graph
+artifacts when ``emit_wiring_graph=True`` (the default):
+
+.. code-block:: python
+
+   from adidt.xsa.pipeline import XsaPipeline
+   result = XsaPipeline().run(
+       xsa_path="design.xsa",
+       cfg=cfg,
+       output_dir="out",
+       emit_wiring_graph=True,   # default
+   )
+   print(result["wiring_dot"])
+   print(result["wiring_d2"])
+
+The same data drives the **Control-Plane Wiring** panel in the HTML
+report (see "HTML topology report" above), which renders the graph as
+an interactive D3 force-layout with five kind-toggle checkboxes.
+
+Limitations
+~~~~~~~~~~~
+
+- **I2C** edges in v1 come from a regex pass over the merged DTS;
+  there is no structured ``System.connect_i2c()`` API yet.  XSA-path
+  designs that route I2C masters in the HWH netlist but do not
+  declare child devices in the DTS will not show I2C edges.
+- **IRQ** edges come only from the XSA topology (``Jesd204Instance.irq``);
+  the System path does not currently model IRQs and will not emit IRQ
+  edges.
+- DMA-channel IRQs live as cell-strings inside ``JesdLinkModel`` and
+  are not rendered as separate edges in v1.
+
 DTS structural linter
 ----------------------
 
