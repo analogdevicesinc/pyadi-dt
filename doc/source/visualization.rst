@@ -12,7 +12,7 @@ HTML topology report
 ---------------------
 
 The HTML report is a self-contained interactive page (no CDN or
-external dependencies) built with D3.js.  It contains five panels:
+external dependencies) built with D3.js.  It contains six panels:
 
 1. **DTS Node Tree** — searchable list of all device tree nodes from the
    merged DTS, with highlighting for ADI-specific nodes (JESD, AD9081,
@@ -25,6 +25,10 @@ external dependencies) built with D3.js.  It contains five panels:
    output nets, color-coded by component type
 5. **JESD204 Data Path** — D3.js diagram showing JESD RX/TX cores,
    converters, and data flow connections with lane count annotations
+6. **Control-Plane Wiring** — D3.js force-directed diagram of SPI / JESD /
+   GPIO / IRQ / I2C edges with five kind-toggle checkboxes for
+   per-kind visibility.  Same data the standalone DOT/D2 wiring graph
+   uses (see :ref:`control-plane-wiring-graphs`).
 
 Example report layout
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -129,6 +133,19 @@ The following diagram shows the clock distribution for an FMCDAQ2 design
      style JESD fill:#1a4a20,color:#fff
      style XCVR fill:#4a1a5c,color:#fff
      style CONV fill:#5c1a1a,color:#fff
+
+Generated example: AD9081 + ZCU102
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following SVG is the literal Graphviz output produced by
+``ClockGraphGenerator`` for the ``examples/ad9081_fmc_zcu102.py``
+design — no manual layout, no abstract schematic.  Source DOT and D2
+files are checked in next to the SVG under ``doc/source/_static/viz/``.
+
+.. image:: _static/viz/ad9081_zcu102_clocks.dot.svg
+   :alt: AD9081 + ZCU102 clock tree (Graphviz DOT)
+   :align: center
+   :width: 95%
 
 Node color coding
 ~~~~~~~~~~~~~~~~~~
@@ -238,6 +255,8 @@ always written.  Install the tools to get SVG output:
    # D2 (D2 → SVG)
    curl -fsSL https://d2lang.com/install.sh | sh -s --
 
+.. _control-plane-wiring-graphs:
+
 Control-plane wiring graphs
 ----------------------------
 
@@ -284,6 +303,26 @@ Edges are color-coded by kind:
      - purple (``#a04ac4``)
      - I2C master → child, best-effort regex parse of merged DTS.
 
+Generated example: AD9081 + ZCU102
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following SVG is the literal Graphviz output produced by
+``WiringGraphGenerator`` for the ``examples/ad9081_fmc_zcu102.py``
+design.  Cyan edges are SPI buses, green are JESD links, orange are
+GPIO control lines, dashed red would be JESD-core IRQs, and purple
+would be I2C children.  This particular design has no I2C devices on
+the AD9081-FMC card, so no purple edges appear.  Source DOT and D2
+files are checked in next to the SVG under ``doc/source/_static/viz/``.
+
+.. image:: _static/viz/ad9081_zcu102_wiring.dot.svg
+   :alt: AD9081 + ZCU102 control-plane wiring graph (Graphviz DOT)
+   :align: center
+   :width: 95%
+
+The same data drives the **Control-Plane Wiring** panel in the HTML
+report (see "HTML topology report" above), which renders the graph as
+an interactive D3 force-layout with five kind-toggle checkboxes.
+
 From the System API
 ~~~~~~~~~~~~~~~~~~~
 
@@ -327,10 +366,6 @@ artifacts when ``emit_wiring_graph=True`` (the default):
    )
    print(result["wiring_dot"])
    print(result["wiring_d2"])
-
-The same data drives the **Control-Plane Wiring** panel in the HTML
-report (see "HTML topology report" above), which renders the graph as
-an interactive D3 force-layout with five kind-toggle checkboxes.
 
 Limitations
 ~~~~~~~~~~~

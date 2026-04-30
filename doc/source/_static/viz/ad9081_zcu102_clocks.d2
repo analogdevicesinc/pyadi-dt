@@ -1,0 +1,88 @@
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+direction: right
+
+axi_mxfe_rx_jesd_rx_axi: {
+  label: "axi_mxfe_rx_jesd_rx_axi"
+  shape: rectangle
+  style.fill: "#1a4a20"
+  style.font-color: white
+}
+axi_mxfe_rx_xcvr: {
+  label: "axi_mxfe_rx_xcvr"
+  shape: rectangle
+  style.fill: "#4a1a5c"
+  style.font-color: white
+}
+axi_mxfe_tx_jesd_tx_axi: {
+  label: "axi_mxfe_tx_jesd_tx_axi"
+  shape: rectangle
+  style.fill: "#1a4a20"
+  style.font-color: white
+}
+axi_mxfe_tx_xcvr: {
+  label: "axi_mxfe_tx_xcvr"
+  shape: rectangle
+  style.fill: "#4a1a5c"
+  style.font-color: white
+}
+hmc7044: {
+  label: "hmc7044"
+  shape: rectangle
+  style.fill: "#1a3d5c"
+  style.font-color: white
+}
+trx0_ad9081: {
+  label: "trx0_ad9081\n(ad9081)"
+  shape: rectangle
+  style.fill: "#5c1a1a"
+  style.font-color: white
+}
+tx_mxfe_tpl_core_dac_tpl_core: {
+  label: "tx_mxfe_tpl_core_dac_tpl_core"
+  shape: rectangle
+  style.fill: "#2a2a2a"
+  style.font-color: white
+}
+zynqmp_clk: {
+  label: "zynqmp_clk"
+  shape: oval
+  style.fill: "#7a3800"
+  style.font-color: white
+}
+
+hmc7044 -> trx0_ad9081: "dev_clk[2]" {
+  style.stroke: "#888888"
+}
+zynqmp_clk -> axi_mxfe_rx_jesd_rx_axi: "s_axi_aclk[71]" {
+  style.stroke: "#555555"
+  style.stroke-dash: 5
+}
+hmc7044 -> axi_mxfe_rx_jesd_rx_axi: "device_clk[0]" {
+  style.stroke: "#4a9eff"
+}
+axi_mxfe_rx_xcvr -> axi_mxfe_rx_jesd_rx_axi: "lane_clk[0]" {
+  style.stroke: "#44cc44"
+}
+zynqmp_clk -> axi_mxfe_tx_jesd_tx_axi: "s_axi_aclk[71]" {
+  style.stroke: "#555555"
+  style.stroke-dash: 5
+}
+hmc7044 -> axi_mxfe_tx_jesd_tx_axi: "device_clk[6]" {
+  style.stroke: "#4a9eff"
+}
+axi_mxfe_tx_xcvr -> axi_mxfe_tx_jesd_tx_axi: "lane_clk[0]" {
+  style.stroke: "#44cc44"
+}
+hmc7044 -> axi_mxfe_rx_xcvr: "conv[2]" {
+  style.stroke: "#cc9944"
+}
+trx0_ad9081 -> tx_mxfe_tpl_core_dac_tpl_core: "sampl_clk[1]" {
+  style.stroke: "#cc44cc"
+}
+hmc7044 -> axi_mxfe_tx_xcvr: "conv[12]" {
+  style.stroke: "#cc9944"
+}
