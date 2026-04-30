@@ -147,6 +147,13 @@ files are checked in next to the SVG under ``doc/source/_static/viz/``.
    :align: center
    :width: 95%
 
+D2 rendering (ELK orthogonal layout) of the same data:
+
+.. image:: _static/viz/ad9081_zcu102_clocks.d2.svg
+   :alt: AD9081 + ZCU102 clock tree (D2)
+   :align: center
+   :width: 95%
+
 Node color coding
 ~~~~~~~~~~~~~~~~~~
 
@@ -306,16 +313,48 @@ Edges are color-coded by kind:
 Generated example: AD9081 + ZCU102
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The following SVG is the literal Graphviz output produced by
+The following SVGs are the literal generator outputs produced by
 ``WiringGraphGenerator`` for the ``examples/ad9081_fmc_zcu102.py``
 design.  Cyan edges are SPI buses, green are JESD links, orange are
 GPIO control lines, dashed red would be JESD-core IRQs, and purple
 would be I2C children.  This particular design has no I2C devices on
 the AD9081-FMC card, so no purple edges appear.  Source DOT and D2
-files are checked in next to the SVG under ``doc/source/_static/viz/``.
+files are checked in next to the SVGs under
+``doc/source/_static/viz/``.
+
+Graphviz DOT rendering (left-to-right hierarchical layout):
 
 .. image:: _static/viz/ad9081_zcu102_wiring.dot.svg
    :alt: AD9081 + ZCU102 control-plane wiring graph (Graphviz DOT)
+   :align: center
+   :width: 95%
+
+D2 rendering (ELK orthogonal layout) for the same graph:
+
+.. image:: _static/viz/ad9081_zcu102_wiring.d2.svg
+   :alt: AD9081 + ZCU102 control-plane wiring graph (D2)
+   :align: center
+   :width: 95%
+
+Filtered views via ``kinds=``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+``WiringGraphGenerator.generate(graph, output_dir, name, kinds=...)``
+filters the rendered edges to a subset of kinds without re-deriving
+the graph.  Useful when the full graph is too dense to read in a PR
+diff and you only want to discuss one wiring kind at a time.
+
+SPI bus only (``kinds={"spi"}``):
+
+.. image:: _static/viz/ad9081_zcu102_spi_only_wiring.dot.svg
+   :alt: AD9081 + ZCU102 SPI-only wiring graph
+   :align: center
+   :width: 70%
+
+JESD links + GPIO control (``kinds={"jesd", "gpio"}``):
+
+.. image:: _static/viz/ad9081_zcu102_jesd_gpio_wiring.dot.svg
+   :alt: AD9081 + ZCU102 JESD + GPIO wiring graph
    :align: center
    :width: 95%
 
