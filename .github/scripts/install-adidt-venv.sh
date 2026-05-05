@@ -19,3 +19,10 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+
+# pyadi-build lives in a private GitHub repo and requires a token to fetch.
+# Install the [build] extras only when the token has been made available via
+# GIT_CONFIG_* (set by the caller when PYADI_BUILD_TOKEN is non-empty).
+if [[ -n "${GIT_CONFIG_COUNT:-}" ]]; then
+    uv pip install --quiet --python "$VENV/bin/python" -e ".[build]"
+fi
