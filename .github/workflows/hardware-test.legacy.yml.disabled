@@ -1,0 +1,321 @@
+name: Hardware Tests
+
+permissions:
+  contents: read
+  # `dorny/test-reporter` needs to create Check Runs for the per-leg
+  # test reports; these show as individual PR checks.
+  checks: write
+  pull-requests: write
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  COORDINATOR: 10.0.0.41:20408
+
+concurrency:
+  group: hw-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    # Runs on the coordinator host itself so the labgrid-client query
+    # has a route to the coordinator daemon.  GitHub-hosted runners
+    # cannot reach the private lab network.
+    runs-on: [self-hosted, hw-coordinator]
+    timeout-minutes: 3
+    outputs:
+      available_nodes: ${{ steps.probe.outputs.available_nodes }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Bootstrap uv
+        run: bash .github/scripts/bootstrap-uv.sh
+
+      - id: probe
+        timeout-minutes: 2
+        env:
+          LABGRID_PIP: 'labgrid @ git+https://github.com/tfcollins/labgrid.git@tfcollins/plugin-support'
+        run: |
+          set -euo pipefail
+          MANIFEST=.github/hw-nodes.json
+          HOST="${COORDINATOR%%:*}"
+          PORT="${COORDINATOR##*:}"
+          if ! timeout 10 bash -c "</dev/tcp/$HOST/$PORT" 2>/dev/null; then
+            echo "Coordinator $COORDINATOR unreachable — marking all nodes unavailable." >&2
+            echo 'available_nodes=[]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          export PATH="$HOME/.local/bin:$PATH"
+          # uv-managed persistent venv for labgrid-client.  Fresh hosts
+          # build it once (~10 s); subsequent runs skip straight to
+          # the probe.
+          VENV="$HOME/.cache/adidt-ci/labgrid-venv"
+          if [[ ! -x "$VENV/bin/labgrid-client" ]]; then
+            echo "Creating labgrid venv at $VENV" >&2
+            uv venv --quiet "$VENV"
+            uv pip install --quiet --python "$VENV/bin/python" "$LABGRID_PIP"
+          fi
+          LGCLIENT="$VENV/bin/labgrid-client"
+          echo "Using labgrid-client: $LGCLIENT" >&2
+          echo "--- places output ---" >&2
+          PLACES_OUT=$(timeout 30 "$LGCLIENT" -x "$COORDINATOR" places 2>&1 || true)
+          echo "$PLACES_OUT" >&2
+          echo "--- end places output ---" >&2
+          python3 - "$MANIFEST" "$PLACES_OUT" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, sys
+          manifest = json.load(open(sys.argv[1]))
+          # `labgrid-client places` prints one place name per line.
+          # Any non-alphanumeric-heavy line (e.g. error banners) is
+          # filtered out by requiring each token to look like an
+          # identifier.
+          raw = sys.argv[2]
+          places = {
+              line.strip()
+              for line in raw.splitlines()
+              if line.strip() and all(c.isalnum() or c in "-_" for c in line.strip())
+          }
+          avail = [n for n in manifest if n["place"] in places]
+          print("available_nodes=" + json.dumps(avail))
+          PY
+
+  hw-direct:
+    needs: preflight
+    if: needs.preflight.outputs.available_nodes != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
+    name: hw-direct (${{ matrix.node.place }})
+    runs-on: [self-hosted, "${{ matrix.node.runner_label }}"]
+    timeout-minutes: 40
+    concurrency:
+      group: hw-direct-${{ matrix.node.place }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check LG_DIRECT_ENV on runner
+        id: check_direct_env
+        run: |
+          # If the runner hasn't been configured with a node-local
+          # labgrid YAML (LG_DIRECT_ENV in ~/actions-runner/.env),
+          # mark the job to skip gracefully rather than fail.  Until
+          # each node's lab owner authors its direct YAML the
+          # hw-direct leg is a no-op on that runner; the hw-coord leg
+          # still exercises the same tests via the coordinator.
+          if [ -z "${LG_DIRECT_ENV:-}" ]; then
+            echo "LG_DIRECT_ENV is not set on this runner — skipping direct-mode tests." >&2
+            echo "To enable: add LG_DIRECT_ENV=<path> to ~/actions-runner/.env" >&2
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ ! -f "$LG_DIRECT_ENV" ]; then
+            echo "LG_DIRECT_ENV=$LG_DIRECT_ENV does not exist." >&2
+            exit 1
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Bootstrap uv
+        if: steps.check_direct_env.outputs.skip != 'true'
+        run: bash .github/scripts/bootstrap-uv.sh
+
+      - name: Install adidt into host venv
+        if: steps.check_direct_env.outputs.skip != 'true'
+        env:
+          PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${PYADI_BUILD_TOKEN:-}" ]]; then
+            # Route any git clone of github.com through the token.
+            # GIT_CONFIG_* env-vars are per-process and don't persist
+            # into the runner's ~/.gitconfig, so the secret isn't left
+            # behind after the step.
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="url.https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/.insteadOf"
+            export GIT_CONFIG_VALUE_0="https://github.com/"
+          fi
+          bash .github/scripts/install-adidt-venv.sh
+
+      - name: Run direct-mode tests
+        if: steps.check_direct_env.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          if [ -f /tools/Xilinx/2025.1/Vivado/settings64.sh ]; then
+            # Xilinx settings scripts reference PYTHONPATH/XILINX_*
+            # unconditionally; drop `set -u` while sourcing them.
+            set +u
+            # shellcheck disable=SC1091
+            source /tools/Xilinx/2025.1/Vivado/settings64.sh
+            set -u
+          fi
+          export LG_ENV="$LG_DIRECT_ENV"
+          "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }} \
+            --junitxml=junit-hw-direct-${{ matrix.node.place }}.xml
+
+      - name: Publish hw-direct test results to PR
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: dorny/test-reporter@v1
+        with:
+          name: Tests (hw-direct ${{ matrix.node.place }})
+          path: junit-hw-direct-${{ matrix.node.place }}.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload JUnit XML (standalone for PR comment aggregation)
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-hw-direct-${{ matrix.node.place }}
+          path: junit-hw-direct-${{ matrix.node.place }}.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload test output artifacts
+        if: always() && steps.check_direct_env.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: hw-direct-${{ matrix.node.place }}-output
+          path: |
+            test/hw/output/**/*.dts
+            test/hw/output/**/*.pp.dts
+            test/hw/output/**/*.dtb
+            test/hw/output/**/*.dtbo
+            test/hw/output/**/*.log
+            test/hw/output/**/uart_log_*.txt
+            uart_log_*.txt
+            junit-hw-direct-${{ matrix.node.place }}.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  hw-coord:
+    needs: preflight
+    if: needs.preflight.outputs.available_nodes != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(needs.preflight.outputs.available_nodes) }}
+    name: hw-coord (${{ matrix.node.place }})
+    # Run on the per-node runner (same label as hw-direct) so the
+    # Xilinx toolchain (sdtgen, xsct) available there can drive the
+    # XSA pipeline.  The coordinator host (lbvm) lacks Vivado, so
+    # running pytest there silently skips every XSA-dependent test.
+    runs-on: [self-hosted, "${{ matrix.node.runner_label }}"]
+    timeout-minutes: 40
+    concurrency:
+      group: hw-coord-${{ matrix.node.place }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Bootstrap uv
+        run: bash .github/scripts/bootstrap-uv.sh
+
+      - name: Install adidt into host venv
+        env:
+          PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -n "${PYADI_BUILD_TOKEN:-}" ]]; then
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="url.https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/.insteadOf"
+            export GIT_CONFIG_VALUE_0="https://github.com/"
+          fi
+          bash .github/scripts/install-adidt-venv.sh
+
+      - name: Acquire coordinator place
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+        run: |
+          set -euo pipefail
+          # labgrid-client is a transitive dep of adidt's dev extras,
+          # so it lands in the per-node adidt-venv.
+          LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
+          "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" acquire
+
+      - name: Run coordinator-mode tests
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LG_ENV: ${{ github.workspace }}/${{ matrix.node.env_remote }}
+        run: |
+          set -euo pipefail
+          # Source Vivado settings so sdtgen / xsct / xsdb are on PATH
+          # for XSA-pipeline tests.
+          if [ -f /tools/Xilinx/2025.1/Vivado/settings64.sh ]; then
+            # Xilinx settings scripts reference PYTHONPATH/XILINX_*
+            # unconditionally; drop `set -u` while sourcing them.
+            set +u
+            # shellcheck disable=SC1091
+            source /tools/Xilinx/2025.1/Vivado/settings64.sh
+            set -u
+          fi
+          "$HOME/.cache/adidt-ci/adidt-venv/bin/pytest" \
+            -p no:genalyzer -v -s ${{ join(matrix.node.tests, ' ') }} \
+            --junitxml=junit-hw-coord-${{ matrix.node.place }}.xml
+
+      - name: Release coordinator place
+        if: always()
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+        run: |
+          set -euo pipefail
+          LGCLIENT="$HOME/.cache/adidt-ci/adidt-venv/bin/labgrid-client"
+          "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
+
+      - name: Publish hw-coord test results to PR
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Tests (hw-coord ${{ matrix.node.place }})
+          path: junit-hw-coord-${{ matrix.node.place }}.xml
+          reporter: java-junit
+          fail-on-error: false
+
+      - name: Upload JUnit XML (standalone for PR comment aggregation)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-hw-coord-${{ matrix.node.place }}
+          path: junit-hw-coord-${{ matrix.node.place }}.xml
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Upload test output artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hw-coord-${{ matrix.node.place }}-output
+          path: |
+            test/hw/output/**/*.dts
+            test/hw/output/**/*.pp.dts
+            test/hw/output/**/*.dtb
+            test/hw/output/**/*.dtbo
+            test/hw/output/**/*.log
+            test/hw/output/**/uart_log_*.txt
+            uart_log_*.txt
+            junit-hw-coord-${{ matrix.node.place }}.xml
+          if-no-files-found: ignore
+          retention-days: 14
+
+  publish-pr-test-summary:
+    name: PR Test Summary
+    needs: [hw-direct, hw-coord]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: junit-hw-*
+          path: junit
+          merge-multiple: true
+
+      - uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: 'junit/**/*.xml'
+          check_name: 'Hardware Test Results'
+          comment_mode: always
+          report_individual_runs: true
