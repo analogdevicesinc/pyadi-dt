@@ -60,7 +60,7 @@ jobs:
 
     - name: Publish test results to PR
       if: always()
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v3
       with:
         name: Tests (Kuiper64)
         # working-directory tells the reporter where to run git
