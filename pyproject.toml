@@ -48,7 +48,6 @@ dev = [
     "adidt[test]",
     "adi-labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git",
     "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
-    "pytest-prism @ git+https://github.com/analogdevicesinc/prism.git#subdirectory=clients/python-pytest",
     "usbsdmux",
 ]
 mcp = ["fastmcp"]
