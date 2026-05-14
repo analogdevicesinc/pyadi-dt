@@ -45,7 +45,7 @@ jobs:
 
     - name: Upload JUnit XML
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: junit-py${{ matrix.python-version }}
         path: junit-py${{ matrix.python-version }}.xml
