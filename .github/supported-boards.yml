@@ -1,0 +1,8 @@
+# Boards (coordinator `daughter-board` tag) pyadi-dt runs HW tests against.
+# Dynamic-mode hw-matrix discovers coordinator places and keeps those whose
+# daughter-board is listed here. Each maps to test/hw/*<board>*<carrier>*_hw.py.
+boards:
+  - ad9081
+  - adrv9371
+  - adrv9009
+  - daq3

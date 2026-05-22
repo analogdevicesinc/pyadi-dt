@@ -1,32 +1,54 @@
 name: Hardware Tests
 
+# Triggered by:
+#   * workflow_dispatch (manual)
+#   * push to `main` — validate hardware on every landed change
+#   * PRs labeled `hw-test` — keeps every push from burning lab time
+#   * Nightly cron at 08:00 UTC
+#
+# Dynamic mode: the matrix is discovered from the coordinator at preflight
+# and gated by .github/supported-boards.yml; one leg per matching place. The
+# reusable workflow lives in tfcollins/labgrid-plugins (hw-matrix.yml).
+
 permissions:
   contents: read
   checks: write
   pull-requests: write
 
 on:
+  workflow_dispatch:
   push:
     branches: [main]
   pull_request:
-  workflow_dispatch:
-
-concurrency:
-  group: hw-${{ github.ref }}
-  cancel-in-progress: false
+    types: [labeled, opened, synchronize, reopened]
+  schedule:
+    - cron: "0 8 * * *"
 
 jobs:
-  hw:
-    # Thin caller; the real workflow lives in tfcollins/labgrid-plugins.
-    # See its docs/source/user-guide/hw-ci.md for the contract.
-    # Rollback path: rename hardware-test.legacy.yml.disabled back to .yml
-    # and disable this file.
-    uses: tfcollins/labgrid-plugins/.github/workflows/hw-matrix.yml@v1
+  hardware:
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'hw-test')
+    uses: tfcollins/labgrid-plugins/.github/workflows/hw-matrix.yml@main
     with:
-      manifest_path: .github/hw-nodes.json
+      dynamic_mode: true
+      # nuc has no `runner` tag on the coordinator; default its leg to the
+      # hw-nuc runner (the nuc lab host has git creds + the board) rather than
+      # the hw-coordinator runner on lbvm, which can't fetch private git deps.
+      dynamic_runner_label_default: hw-nuc
+      supported_boards_path: .github/supported-boards.yml
       venv_install_cmd: 'bash .github/scripts/install-adidt-venv.sh'
       venv_dir: $HOME/.cache/adidt-ci/adidt-venv
+      # Dynamic mode exports $BOARD + $CARRIER (no manifest test list). Select
+      # this place's HW tests by filename convention test/hw/*<board>*<carrier>*_hw.py
+      # (e.g. daq3 matches fmcdaq3_vcu118), excluding the slow petalinux builds.
+      # The labgrid pytest plugin reads LG_ENV / LG_COORDINATOR from the env.
       pytest_cmd_template: >-
+        set -euo pipefail;
+        export PATH="$HOME/.local/bin:$PATH";
+        TESTS=$(ls test/hw/*"$BOARD"*"$CARRIER"*_hw.py 2>/dev/null | grep -v petalinux | tr '\n' ' ');
+        if [ -z "$TESTS" ]; then echo "::warning::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 0; fi;
+        echo "Selected: $TESTS" >&2;
         "$VENV_DIR/bin/pytest" -p no:genalyzer -v -s $TESTS --junitxml="$JUNIT"
       artifact_glob: |
         test/hw/output/**/*.dts
@@ -38,4 +60,24 @@ jobs:
         uart_log_*.txt
         junit-hw-*.xml
       prism_project: pyadi-dt
-    secrets: inherit
+      prism_upload: ${{ vars.PRISM_UPLOAD_ENABLED == 'true' }}
+      # Vendored tfcollins/prism uploader (private repo; can't pip-install on
+      # the runner). The reusable workflow exports PRISM_URL/EMAIL/PASSWORD/
+      # PROJECT/JUNIT/RUN_NAME/BOARD/CARRIER/PLACE.
+      prism_upload_cmd: >-
+        python3 .github/scripts/prism_upload_run.py "$PRISM_JUNIT"
+        --url "$PRISM_URL" --project "$PRISM_PROJECT" --run-name "$PRISM_RUN_NAME"
+        --auto-create-project
+        --tag "board=$PRISM_BOARD" --tag "carrier=$PRISM_CARRIER"
+        --tag "place=$PRISM_PLACE" --tag "sha=$GITHUB_SHA"
+    # Pass Prism creds explicitly: secrets: inherit does not cross orgs
+    # (this repo is analogdevicesinc; the reusable workflow is tfcollins).
+    secrets:
+      PRISM_EMAIL: ${{ secrets.PRISM_EMAIL }}
+      PRISM_PASSWORD: ${{ secrets.PRISM_PASSWORD }}
+      # Injected as a github.com `insteadOf` credential during venv install so
+      # the credential-less hosts (nuc, lbvm) can clone the private pyadi-build /
+      # labgrid-plugins deps. MUST be a valid PAT — an expired/invalid token's
+      # insteadOf clobbers the working git creds on hosts that have their own
+      # (mini2/bq/nemo), reddening every leg.
+      PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
