@@ -22,7 +22,8 @@ Per-family hooks pulled in from :mod:`test.hw.xsa._overlay_hooks`:
 * :func:`resolve_adrv9009_rx_tpl` — picks the RX TPL by reg address
   when the OBS TPL shares the same IIO name (sdtgen DTB).
 
-LG_ENV: ``test/hw/env/nemo.yaml``.
+LG_ENV: fetch the coordinator-generated env for place ``nemo`` (e.g.
+``curl http://10.0.0.41:8000/api/places/nemo/env-yaml?tier=boot``).
 """
 
 from __future__ import annotations

@@ -102,11 +102,15 @@ The standard verify covers: dmesg gating (no kernel faults, no probe errors), pr
 
 ### 4. Verify
 
-Run the test against the lab.  Hardware tests are excluded from the default pytest discovery via `--ignore-glob=*_hw.py`, so pass the file by exact path:
+Run the test against the lab.  Hardware tests are excluded from the default pytest discovery via `--ignore-glob=*_hw.py`, so pass the file by exact path.
+
+The labgrid env is no longer committed in-repo — fetch the coordinator-generated env for your place (the exact source CI uses), then point `LG_ENV` at it:
 
 ```sh
+curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp/lg-<place>.yaml
+
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=test/hw/env/<place>.yaml \
+LG_ENV=/tmp/lg-<place>.yaml \
 uv run pytest test/hw/test_<board>_<carrier>_hw.py -v -s
 ```
 
@@ -194,28 +198,34 @@ The `out_label` rename keeps the PetaLinux-variant `dmesg_<label>.log` files dis
 
 ### Run commands
 
-| Board | Place | Env yaml | Run from |
-|---|---|---|---|
-| AD9081 / ZCU102 | `mini2` | `test/hw/env/mini2.yaml` | any host (USBSDMux) |
-| ADRV9009 / ZC706 | `nemo`  | `test/hw/env/nemo.yaml`  | `nemo` (local TFTP) |
-| ADRV9371 / ZC706 | `bq`    | `test/hw/env/bq.yaml`    | `bq` (local TFTP) |
+| Board | Place | Run from |
+|---|---|---|
+| AD9081 / ZCU102 | `mini2` | any host (USBSDMux) |
+| ADRV9009 / ZC706 | `nemo`  | `nemo` (local TFTP) |
+| ADRV9371 / ZC706 | `bq`    | `bq` (local TFTP) |
+
+Fetch each place's env from the coordinator first (`<place>` = `mini2` / `nemo` / `bq`):
+
+```sh
+curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp/lg-<place>.yaml
+```
 
 ```sh
 # AD9081 / ZCU102 — any host
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=test/hw/env/mini2.yaml \
+LG_ENV=/tmp/lg-mini2.yaml \
 PETALINUX_INSTALL=/opt/Xilinx/PetaLinux/2023.2 \
 uv run pytest test/hw/test_ad9081_zcu102_petalinux_hw.py -v -s
 
 # ADRV9009 / ZC706 — run on the nemo host
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=test/hw/env/nemo.yaml \
+LG_ENV=/tmp/lg-nemo.yaml \
 PETALINUX_INSTALL=/opt/Xilinx/PetaLinux/2023.2 \
 uv run pytest test/hw/test_adrv9009_zc706_petalinux_hw.py -v -s
 
 # ADRV9371 / ZC706 — run on the bq host
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=test/hw/env/bq.yaml \
+LG_ENV=/tmp/lg-bq.yaml \
 PETALINUX_INSTALL=/opt/Xilinx/PetaLinux/2023.2 \
 uv run pytest test/hw/test_adrv9371_zc706_petalinux_hw.py -v -s
 ```

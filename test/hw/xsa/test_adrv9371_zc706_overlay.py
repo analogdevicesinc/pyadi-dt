@@ -29,7 +29,8 @@ bitstream that ``bq`` loads:
    ``/delete-property/ interrupts;`` + ``interrupts = <0 57 4>`` (RX)
    / ``<0 56 4>`` (TX) override matching upstream Kuiper.
 
-LG_ENV: ``test/hw/env/bq.yaml``.
+LG_ENV: fetch the coordinator-generated env for place ``bq`` (e.g.
+``curl http://10.0.0.41:8000/api/places/bq/env-yaml?tier=boot``).
 """
 
 from __future__ import annotations

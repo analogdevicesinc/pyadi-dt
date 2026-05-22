@@ -4,8 +4,10 @@ PetaLinux variant of :mod:`test.hw.test_adrv9371_zc706_hw`.  Reuses the
 same SPEC and the same ZC706+ADRV9371-specific diagnostic tail (TPL
 descriptor regs, AXI DMAC state, AD9371 phy snapshot).
 
-LG_ENV: ``test/hw/env/bq.yaml``.  The ``bq`` host owns the local
-``TFTPServerResource`` so this test must be invoked from there.
+LG_ENV: fetch the coordinator-generated env for place ``bq`` (e.g.
+``curl http://10.0.0.41:8000/api/places/bq/env-yaml?tier=boot``).  The
+``bq`` host owns the local ``TFTPServerResource`` so this test must be
+invoked from there.
 """
 
 from __future__ import annotations

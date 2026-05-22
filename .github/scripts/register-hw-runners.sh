@@ -31,9 +31,10 @@ set -euo pipefail
 #   runner_label  Label the workflow uses in `runs-on: [self-hosted, <label>]`.
 #                 Convention: `hw-<alias>` for per-board runners;
 #                 `hw-coordinator` for the one runner that drives the
-#                 RemotePlace `hw-coord` matrix legs.  Must match the
-#                 `runner_label` column in `.github/hw-nodes.json`
-#                 (except `hw-coordinator`, which is workflow-hardcoded).
+#                 preflight job.  In dynamic mode (the mode this repo uses)
+#                 the label MUST match the place's `runner` tag on the
+#                 coordinator — that tag is the single source of truth for
+#                 runner routing; nothing in this repo names a runner.
 #
 #   runner_name   Name shown in the GitHub "Actions → Runners" UI and
 #                 returned by `gh api /repos/.../actions/runners`.
@@ -44,13 +45,11 @@ set -euo pipefail
 #                 uncommitted labgrid YAML that the hw-direct workflow
 #                 leg uses (`LG_ENV=<this>`).  The script writes
 #                 `LG_DIRECT_ENV=<path>` into `~/actions-runner/.env`
-#                 so the runner service picks it up.  Leave EMPTY for
-#                 the coordinator-host runner (hw-coord legs use the
-#                 committed test/hw/env/*.yaml instead) and for any
-#                 node where the direct YAML doesn't exist yet — the
-#                 hw-direct job will then fail its explicit
-#                 LG_DIRECT_ENV guard, which is the intended loud
-#                 failure mode.
+#                 so the runner service picks it up.  Only the legacy
+#                 manifest-driven (non-dynamic) hw-direct leg uses this.
+#                 In dynamic mode each leg fetches its LG_ENV fresh from
+#                 the coordinator API, so leave EMPTY unless you are
+#                 wiring up a node for the legacy direct leg.
 #
 HOSTS=(
     "bq:bq:hw-bq:bq:/home/tcollins/dev/dt-fix/lg_adrv9371_zc706_tftp.yaml"

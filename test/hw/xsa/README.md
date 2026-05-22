@@ -114,11 +114,13 @@ uv run pytest test/hw/xsa/test_<board>_<carrier>_overlay.py::test_overlay_genera
 
 This exercises the XSA → pipeline → DTSO → DTBO chain. If the XSA isn't on disk and Kuiper download fails, the test skips with a clear message.
 
-Run the full suite against the lab:
+Run the full suite against the lab.  Fetch the coordinator-generated env for your place first (the source CI uses), then point `LG_ENV` at it:
 
 ```sh
+curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp/lg-<place>.yaml
+
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=test/hw/env/<place>.yaml \
+LG_ENV=/tmp/lg-<place>.yaml \
 uv run pytest test/hw/xsa/test_<board>_<carrier>_overlay.py -v -s
 ```
 

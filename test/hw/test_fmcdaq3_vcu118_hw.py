@@ -13,10 +13,12 @@ serial, network, and Vesync-outlet resources; the Kuiper-built
 :class:`XilinxDeviceJTAG` resource.  The smoke test below drives the
 whole boot-and-verify cycle through those published resources.
 
-LG_ENV / LG_COORDINATOR: see ``.env.example``.  Typical invocation::
+LG_ENV / LG_COORDINATOR: see ``.env.example``.  Fetch the env from the
+coordinator (the source CI uses), then point ``LG_ENV`` at it::
 
+    curl -fsSL "http://10.0.0.41:8000/api/places/nuc/env-yaml?tier=boot" -o /tmp/lg-nuc.yaml
     LG_COORDINATOR=10.0.0.41:20408 \\
-    LG_ENV=test/hw/env/nuc.yaml \\
+    LG_ENV=/tmp/lg-nuc.yaml \\
     pytest -p no:genalyzer test/hw/test_fmcdaq3_vcu118_hw.py -v -s
 """
 
