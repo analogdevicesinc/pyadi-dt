@@ -32,7 +32,8 @@ Differences encoded in :data:`SPEC`:
   before the test can run; ``local_xsa_or_skip`` ``pytest.skip``s with
   a clear message until that file is present.
 
-LG_ENV: ``test/hw/env/nuc.yaml``.
+LG_ENV: fetch the coordinator-generated env for place ``nuc`` (e.g.
+``curl http://10.0.0.41:8000/api/places/nuc/env-yaml?tier=boot``).
 """
 
 from __future__ import annotations

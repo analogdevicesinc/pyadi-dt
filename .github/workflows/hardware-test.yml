@@ -32,10 +32,8 @@ jobs:
     uses: tfcollins/labgrid-plugins/.github/workflows/hw-matrix.yml@main
     with:
       dynamic_mode: true
-      # nuc has no `runner` tag on the coordinator; default its leg to the
-      # hw-nuc runner (the nuc lab host has git creds + the board) rather than
-      # the hw-coordinator runner on lbvm, which can't fetch private git deps.
-      dynamic_runner_label_default: hw-nuc
+      # Runner routing is owned entirely by the coordinator: each place's
+      # `runner` tag selects its self-hosted runner. No in-repo runner names.
       supported_boards_path: .github/supported-boards.yml
       venv_install_cmd: 'bash .github/scripts/install-adidt-venv.sh'
       venv_dir: $HOME/.cache/adidt-ci/adidt-venv

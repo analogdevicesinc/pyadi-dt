@@ -4,8 +4,10 @@ PetaLinux variant of :mod:`test.hw.test_adrv9009_zc706_hw`.  Same SPEC,
 same diagnostic tail (JESD sysfs status + ILAS report), only the DTB
 source differs.
 
-LG_ENV: ``test/hw/env/nemo.yaml``.  The ``nemo`` host owns the local
-``TFTPServerResource`` so this test must be invoked from there.
+LG_ENV: fetch the coordinator-generated env for place ``nemo`` (e.g.
+``curl http://10.0.0.41:8000/api/places/nemo/env-yaml?tier=boot``).  The
+``nemo`` host owns the local ``TFTPServerResource`` so this test must be
+invoked from there.
 """
 
 from __future__ import annotations
