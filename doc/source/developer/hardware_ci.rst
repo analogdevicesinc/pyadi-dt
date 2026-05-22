@@ -93,7 +93,18 @@ strategy is in a broken state from a prior failure.
 Node manifest
 -------------
 
-``.github/hw-nodes.json`` is the single source of truth for per-node
+.. note::
+
+   Under the current ``dynamic_mode`` workflow, the CI **matrix** is
+   discovered from the coordinator's live places at preflight and gated
+   by ``.github/supported-boards.yml`` — test selection is **not** read
+   from ``hw-nodes.json``. The manifest is still kept current because
+   ``.github/scripts/register-hw-runners.sh`` consumes it for
+   self-hosted runner registration, and it documents the
+   place→runner→env→tests mapping for humans. Keep every coordinator
+   place listed here (``mini2``, ``bq``, ``nemo``, ``nuc``).
+
+``.github/hw-nodes.json`` is the source of truth for per-node
 CI configuration:
 
 .. code-block:: json
@@ -353,6 +364,40 @@ as a process-local ``GIT_CONFIG_COUNT`` / ``GIT_CONFIG_KEY_0`` /
 to ``https://x-access-token:<token>@github.com/`` for the duration
 of that step.  The secret is never written to the runner's
 ``~/.gitconfig`` so it doesn't leak to later jobs.
+
+Prism results upload
+--------------------
+
+Each matrix leg can post its JUnit XML to a `Prism
+<https://github.com/tfcollins/prism>`_ results dashboard after pytest
+finishes.  The upload is **opt-in** and runs ``continue-on-error`` — a
+Prism outage or missing config never reddens a hw run.  No workflow
+edit is needed to enable it; it is gated purely by repo/org
+configuration:
+
+- Variable ``PRISM_UPLOAD_ENABLED`` = ``true`` — flips the
+  ``prism_upload`` input on.
+- Variable ``PRISM_URL`` = the Prism base URL (e.g.
+  ``http://10.0.0.113:8088``).
+- Secrets ``PRISM_EMAIL`` and ``PRISM_PASSWORD`` — Prism credentials.
+  These must be set on **this** repo: the reusable workflow lives in
+  ``tfcollins/labgrid-plugins`` (a different org), and ``secrets:
+  inherit`` does not deliver secrets across orgs, so they are passed
+  explicitly caller-side.
+
+.. code-block:: bash
+
+   gh variable set PRISM_UPLOAD_ENABLED --repo analogdevicesinc/pyadi-dt --body true
+   gh variable set PRISM_URL --repo analogdevicesinc/pyadi-dt --body 'http://10.0.0.113:8088'
+   gh secret   set PRISM_EMAIL    --repo analogdevicesinc/pyadi-dt --body 'ci@example.com'
+   gh secret   set PRISM_PASSWORD --repo analogdevicesinc/pyadi-dt --body '...'
+
+The upload runs the vendored stdlib-only uploader
+``.github/scripts/prism_upload_run.py`` (no pip install / private-repo
+clone on the runner).  Each run is tagged ``board``, ``carrier``,
+``place``, and ``sha`` so the dashboard can group history per board.
+See ``labgrid-plugins/docs/source/user-guide/hardware-ci.rst`` for the
+cross-repo Prism results-sink design.
 
 Debug artifacts
 ---------------

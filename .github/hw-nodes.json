@@ -18,6 +18,16 @@
     ]
   },
   {
+    "place": "nemo",
+    "runner_label": "hw-nemo",
+    "env_remote": "test/hw/env/nemo.yaml",
+    "tests": [
+      "test/hw/test_adrv9009_zc706_hw.py",
+      "test/hw/test_cli_dts_gen_adrv9009_zc706_hw.py",
+      "test/hw/test_cli_live_adrv9009_zc706_hw.py"
+    ]
+  },
+  {
     "place": "nuc",
     "runner_label": "hw-nuc",
     "env_remote": "test/hw/env/nuc.yaml",
