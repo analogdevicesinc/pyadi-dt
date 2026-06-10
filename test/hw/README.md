@@ -68,12 +68,16 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["<board>"])
+@pytest.mark.iio_carrier(["<carrier>"])
 def test_<board>_<carrier>_hw(board, tmp_path, request):
     """End-to-end pyadi-dt <board>+<carrier> via the XSA pipeline."""
     run_xsa_boot_and_verify(SPEC, board=board, request=request, tmp_path=tmp_path)
 ```
 
 The test function takes `board, tmp_path, request` — the kernel-image fixture is pulled by name through `request.getfixturevalue(SPEC.kernel_fixture_name)` so the function signature stays the same across boards.
+
+The `iio_hardware` / `iio_carrier` markers are the hardware-CI discovery contract — see [Hardware CI](#hardware-ci-hw-request-reserve-mode).  They must be **literal string lists** (the CI preflight AST-parses the test files without importing them), so don't compute them from `SPEC` the way `lg_feature` is.
 
 ### 2. Pick a boot mode
 
@@ -125,6 +129,41 @@ A clean run reports `1 passed`.  Common failure shapes:
 - `AssertionError: IIO device 'X' not present` — the SPEC names don't match what the board exposes.  Compare the assert's `Devices: [...]` list against your `iio_required_all` / `iio_required_any_groups`.
 - `AssertionError: <probe sig> not found in dmesg` — the kernel didn't probe the chip.  Check the merged DTS, GPIO numbers, SPI bus assignments.
 - Pipeline-stage `pytest.skip` (XSA missing, pyadi-jif missing) — install the dependency or commit the XSA.
+
+## Hardware CI (hw-request reserve mode)
+
+`.github/workflows/hw-request.yml` runs these tests via the reusable
+`hw-request.yml@v3.1` workflow from labgrid-plugins in **reserve mode**:
+
+- **Discovery** — the preflight AST-parses the files under `test/hw` for
+  `@pytest.mark.iio_hardware([...])` / `@pytest.mark.iio_carrier([...])`
+  markers to build the board×carrier matrix.  Because it parses (never
+  imports), the marker arguments must be **literal lists of string
+  literals** — no `list(SPEC.lg_features)`, no variables, no
+  comprehensions.  Every `test_*` function in a file carries both markers.
+- **Deliberately unmarked** — the `test_*_petalinux_hw.py` files carry no
+  `iio_hardware`/`iio_carrier` markers.  They are excluded from CI on
+  purpose (PetaLinux builds are too slow and host-bound for the nightly
+  lab run), preserving the old workflow's `grep -v petalinux` behaviour.
+  Run them locally per the [PetaLinux variant](#petalinux-variant) section.
+- **Reserve mode** — per matrix leg, `adi-lg request` acquires a matching
+  place and exports `LG_ENV`, `LG_COORDINATOR`, `HW_DAUGHTER`, and
+  `HW_CARRIER`, then runs pytest.  It does **not** boot the board: the
+  labgrid pytest plugin reads `LG_ENV`/`LG_COORDINATOR` and the test
+  suite drives boot per-test exactly as it always has (see the `board`
+  fixture in `conftest.py`).  `HW_DAUGHTER`/`HW_CARRIER` narrow the
+  marker-selected tests to the leg's actual board+carrier (replacing the
+  old filename glob).
+
+To reproduce a CI leg locally (with `adi-labgrid-plugins` installed):
+
+```sh
+adi-lg request --part ad9081 --carrier zcu102 --mode reserve \
+  --run "pytest test/hw -m iio_hardware -p no:genalyzer -v -s"
+```
+
+This acquires the place, exports the same four env vars CI gets, runs
+the marker-selected suite, and releases the place afterwards.
 
 ## Worked example: AD9081 + ZCU102
 
@@ -193,6 +232,8 @@ SPEC = dataclasses.replace(XSA_SPEC, out_label="<board>_<carrier>_petalinux")
 def test_<board>_<carrier>_petalinux_hw(board, tmp_path, request):
     run_petalinux_build_and_verify(SPEC, board=board, request=request, tmp_path=tmp_path)
 ```
+
+Do **not** add `iio_hardware`/`iio_carrier` markers here — PetaLinux tests stay out of hardware CI by design (see [Hardware CI](#hardware-ci-hw-request-reserve-mode)).
 
 The `out_label` rename keeps the PetaLinux-variant `dmesg_<label>.log` files distinct from the XSA-variant ones in `test/hw/output/`.  If the XSA test appends a per-board diagnostic tail (ILAS dump, sysfs snapshots), copy that tail into the PetaLinux test verbatim — the helper returns the same `(shell, ctx, dmesg_txt)` tuple as `run_xsa_boot_and_verify`.
 
