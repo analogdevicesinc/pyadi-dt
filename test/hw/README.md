@@ -159,8 +159,11 @@ To reproduce a CI leg locally (with `adi-labgrid-plugins` installed):
 
 ```sh
 adi-lg request --part ad9081 --carrier zcu102 --mode reserve \
-  --run "pytest test/hw -m iio_hardware -p no:genalyzer -v -s"
+  --run "pytest test/hw -m iio_hardware -o addopts= -p no:genalyzer -v -s"
 ```
+
+(`-o addopts=` neutralizes the repo-wide `--ignore-glob=*_hw.py`, which otherwise
+hides the hardware tests from a plain `pytest` invocation.)
 
 This acquires the place, exports the same four env vars CI gets, runs
 the marker-selected suite, and releases the place afterwards.

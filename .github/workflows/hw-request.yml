@@ -32,7 +32,9 @@ jobs:
       test-root: "test/hw"
       runner-label: ${{ vars.HW_REQUEST_RUNNER }}
       preflight-runner-label: ${{ vars.HW_PREFLIGHT_RUNNER }}
-      pytest-args: "-p no:genalyzer -v -s"
+      # -o addopts= neutralizes pyproject's `--ignore-glob=*_hw.py` (meant for
+      # ordinary dev runs) — without it the marker run would select nothing.
+      pytest-args: "-o addopts= -p no:genalyzer -v -s"
       venv-dir: $HOME/.cache/adidt-ci/adidt-venv
       install-cmd: |
         set -euo pipefail
