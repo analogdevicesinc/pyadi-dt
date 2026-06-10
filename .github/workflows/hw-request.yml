@@ -1,0 +1,56 @@
+name: Hardware Tests (hw-request v3.1)
+
+# Successor to hardware-test.yml (hw-matrix dynamic mode), side-by-side
+# during migration (staggered cron). reserve mode: the leg acquires the
+# place and exports LG_ENV/LG_COORDINATOR; pytest's labgrid plugin drives
+# boot per-test exactly as before. Selection: iio_hardware/iio_carrier
+# markers + HW_DAUGHTER/HW_CARRIER narrowing (replaces the filename glob).
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    types: [labeled, opened, synchronize, reopened]
+  schedule:
+    - cron: "30 4 * * *"   # old workflow at 08:00; pyadi-iio's new one at 04:00
+
+jobs:
+  hardware:
+    if: >-
+      github.event_name != 'pull_request' ||
+      contains(github.event.pull_request.labels.*.name, 'hw-test')
+    uses: tfcollins/labgrid-plugins/.github/workflows/hw-request.yml@v3.1
+    with:
+      coordinator: ${{ vars.LG_COORDINATOR }}
+      request-mode: reserve
+      test-root: "test/hw"
+      runner-label: ${{ vars.HW_REQUEST_RUNNER }}
+      preflight-runner-label: ${{ vars.HW_PREFLIGHT_RUNNER }}
+      pytest-args: "-p no:genalyzer -v -s"
+      venv-dir: $HOME/.cache/adidt-ci/adidt-venv
+      install-cmd: |
+        set -euo pipefail
+        bash .github/scripts/install-adidt-venv.sh
+        # plugin narrowing (HW_DAUGHTER/HW_CARRIER) + labgrid drivers
+        uv pip install --quiet --python "$VENV_DIR/bin/python" \
+          "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@v3.1"
+      prism-upload: ${{ vars.PRISM_UPLOAD_ENABLED == 'true' }}
+      prism-project: pyadi-dt
+      prism-upload-cmd: >-
+        python3 .github/scripts/prism_upload_run.py "$PRISM_JUNIT"
+        --url "$PRISM_URL" --project "$PRISM_PROJECT" --run-name "$PRISM_RUN_NAME"
+        --auto-create-project
+        --tag "board=$PRISM_BOARD" --tag "carrier=$PRISM_CARRIER"
+        --tag "place=$PRISM_PLACE" --tag "sha=$GITHUB_SHA"
+    secrets:
+      PRISM_EMAIL: ${{ secrets.PRISM_EMAIL }}
+      PRISM_PASSWORD: ${{ secrets.PRISM_PASSWORD }}
+      # [dev] pulls private pyadi-build; the reusable workflow exposes the
+      # token as a step-scoped git insteadOf credential during install.
+      INSTALL_GIT_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
