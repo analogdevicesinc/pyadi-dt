@@ -106,6 +106,8 @@ addopts = "-v --ignore-glob=*_hw.py"
 markers = [
     "network: tests requiring internet downloads",
     "slow: reboot-heavy hw tests; opt out via -m 'not slow'",
+    "iio_hardware(boards): hardware-CI discovery — daughter-boards this test exercises",
+    "iio_carrier(carriers): hardware-CI discovery — carriers this test is valid on",
 ]
 
 [tool.ty.rules]

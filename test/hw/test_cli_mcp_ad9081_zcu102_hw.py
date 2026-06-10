@@ -35,6 +35,8 @@ SPEC = dataclasses.replace(XSA_SPEC, out_label="ad9081_cli_mcp")
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["ad9081"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_mcp_generate_devicetree_produces_bootable_dtb(board, tmp_path: Path, request):
     """``mcp_server.generate_devicetree`` -> merged DTS -> dtc -> boot + verify."""
     from adidt.mcp_server import generate_devicetree

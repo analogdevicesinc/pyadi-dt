@@ -90,6 +90,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9371"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_adrv9371_zc706_xsa_hw(board, tmp_path, request):
     """End-to-end pyadi-dt ADRV9371+ZC706 via the XSA pipeline."""
     from test.hw.hw_helpers import (

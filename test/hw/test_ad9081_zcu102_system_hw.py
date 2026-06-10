@@ -142,6 +142,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["ad9081"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_ad9081_zcu102_system_hw(board, tmp_path, request):
     """Compose an AD9081+ZCU102 design via the System API and boot it."""
     out_dir = DEFAULT_OUT_DIR

@@ -124,6 +124,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["ad9081"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_ad9081_zcu102_xsa_hw(board, tmp_path, request):
     """End-to-end pyadi-dt AD9081+ZCU102 boot + IIO verification (XSA path)."""
     run_xsa_boot_and_verify(SPEC, board=board, request=request, tmp_path=tmp_path)

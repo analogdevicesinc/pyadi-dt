@@ -155,6 +155,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_adrv9009_zcu102_hw(board, tmp_path, request):
     """End-to-end pyadi-dt ADRV9009+ZCU102 boot + IIO verification."""
     from test.hw.hw_helpers import (

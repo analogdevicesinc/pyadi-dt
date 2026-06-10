@@ -46,6 +46,8 @@ from test.hw.hw_helpers import (  # noqa: E402
 
 
 @pytest.mark.lg_feature(["daq3", "vcu118"])
+@pytest.mark.iio_hardware(["daq3"])
+@pytest.mark.iio_carrier(["vcu118"])
 def test_fmcdaq3_vcu118_boot_hw(board):
     """Boot FMCDAQ3+VCU118 with the prebuilt Kuiper image and verify IIO."""
     out_dir = DEFAULT_OUT_DIR

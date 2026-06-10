@@ -60,6 +60,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_xsa2dt_cli_produces_bootable_dtb(board, tmp_path, request):
     """``adidtc xsa2dt`` for ADRV9009+ZC706 -> merged DTS -> TFTP boot + verify."""
     xsa_path = SPEC.xsa_resolver(tmp_path)
@@ -108,6 +110,8 @@ def test_xsa2dt_cli_produces_bootable_dtb(board, tmp_path, request):
     )
 
 
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_gen_dts_cli_rejects_unsupported_combo(tmp_path: Path):
     """``adidtc gen-dts -b adrv9009_fmc -p zc706`` errors clearly.
 

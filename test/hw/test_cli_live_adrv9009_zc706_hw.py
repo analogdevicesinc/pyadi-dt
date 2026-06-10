@@ -49,6 +49,8 @@ def booted(board, tmp_path_factory, request):
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_prop_read_compatible(booted):
     """``adidtc prop -cp adi,adrv9009 compatible`` reads the live ADRV9009 node."""
     _shell, ip = booted
@@ -73,6 +75,8 @@ def test_prop_read_compatible(booted):
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_props_read_amba(booted):
     """``adidtc props amba`` lists nodes under amba on the live board."""
     _shell, ip = booted
@@ -100,6 +104,8 @@ def test_props_read_amba(booted):
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_sd_remote_copy_dry_run(booted, tmp_path: Path):
     """``adidtc sd-remote-copy --dry-run --show`` prints planned scp; no copy."""
     _shell, ip = booted
@@ -144,6 +150,8 @@ def test_sd_remote_copy_dry_run(booted, tmp_path: Path):
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_jif_clock_dry_run(booted, tmp_path: Path):
     """``adidtc jif clock --dry-run`` prints planned dividers, writes nothing."""
     _shell, ip = booted
@@ -173,6 +181,8 @@ def test_jif_clock_dry_run(booted, tmp_path: Path):
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_sd_move_dry_run(booted):
     """``adidtc sd-move <bogus> --dry-run --show`` runs without raising; SD untouched."""
     _shell, ip = booted
@@ -203,6 +213,8 @@ def test_sd_move_dry_run(booted):
 @requires_lg
 @pytest.mark.slow
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_sd_remote_copy_with_reboot(booted, board, tmp_path: Path):
     """``sd-remote-copy --reboot`` lands the file and the board returns to SSH."""
     # A board whose boot-mode strap is set to JTAG (e.g. the nemo ZC706,
@@ -262,6 +274,8 @@ def test_sd_remote_copy_with_reboot(booted, board, tmp_path: Path):
 @requires_lg
 @pytest.mark.slow
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_prop_write_with_reboot(booted):
     """Reserved for ``adidtc prop --reboot`` validation.
 
@@ -277,6 +291,8 @@ def test_prop_write_with_reboot(booted):
 @requires_lg
 @pytest.mark.slow
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_jif_clock_with_reboot(booted):
     """Reserved for ``adidtc jif clock --reboot`` validation.
 
@@ -290,6 +306,8 @@ def test_jif_clock_with_reboot(booted):
 @requires_lg
 @pytest.mark.slow
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["adrv9009"])
+@pytest.mark.iio_carrier(["zc706"])
 def test_sd_move_with_reboot(booted):
     """Reserved for ``adidtc sd-move --reboot`` validation.
 

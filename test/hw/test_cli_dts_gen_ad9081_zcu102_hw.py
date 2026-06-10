@@ -71,6 +71,8 @@ SPEC = BoardSystemProfile(
 
 @requires_lg
 @pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.iio_hardware(["ad9081"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_xsa2dt_cli_produces_bootable_dtb(board, tmp_path, request):
     """``adidtc xsa2dt`` -> merged DTS -> dtc -> labgrid boot + verify."""
     xsa_path = SPEC.xsa_resolver(tmp_path)
@@ -119,6 +121,8 @@ def test_xsa2dt_cli_produces_bootable_dtb(board, tmp_path, request):
     )
 
 
+@pytest.mark.iio_hardware(["ad9081"])
+@pytest.mark.iio_carrier(["zcu102"])
 def test_gen_dts_cli_compiles_to_dtb(tmp_path: Path):
     """``adidtc gen-dts --compile`` for ad9081_fmc+zcu102 emits a valid DTB.
 
