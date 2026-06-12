@@ -1,4 +1,4 @@
-name: Hardware Tests (hw-request v3.3)
+name: Hardware Tests (hw-request v3.4)
 
 # Successor to hardware-test.yml (hw-matrix dynamic mode), side-by-side
 # during migration (staggered cron). reserve mode: the leg acquires the
@@ -25,7 +25,7 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'hw-test')
-    uses: tfcollins/labgrid-plugins/.github/workflows/hw-request.yml@v3.3
+    uses: tfcollins/labgrid-plugins/.github/workflows/hw-request.yml@v3.4
     with:
       coordinator: ${{ vars.LG_COORDINATOR }}
       request-mode: reserve
@@ -41,7 +41,7 @@ jobs:
         bash .github/scripts/install-adidt-venv.sh
         # plugin narrowing (HW_DAUGHTER/HW_CARRIER) + labgrid drivers
         uv pip install --quiet --python "$VENV_DIR/bin/python" \
-          "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@v3.3"
+          "adi-labgrid-plugins @ git+https://github.com/tfcollins/labgrid-plugins.git@v3.4"
       prism-upload: ${{ vars.PRISM_UPLOAD_ENABLED == 'true' }}
       prism-project: pyadi-dt
       prism-upload-cmd: >-
