@@ -279,16 +279,21 @@ System-tool prerequisites on each hw-node runner:
 .. code-block:: bash
 
    sudo apt-get install -y device-tree-compiler cpp u-boot-tools
-   # For ZynqMP nodes:
+   # If Vitis is not installed, provide SDTGen separately on PATH:
    pip install --user xilinx-sdt-gen
-   # For ZCU102/AD9081 (USB SD-mux mode):
-   sudo apt-get install -y usbsdmux
 
 On **every** hw-node runner (including the coordinator host), the
 workflow uses `uv <https://github.com/astral-sh/uv>`_ to build two
 persistent venvs under ``~/.cache/adidt-ci/``: one for
 ``labgrid-client`` on the coordinator host, and one holding an
 editable ``pip install -e ".[dev]"`` of adidt on every runner.
+The dev extra installs ``usbsdmux`` into the persistent test venv; it
+does not need a separate system package. Before pytest, the workflow
+sources ``.github/scripts/setup-hw-tool-path.sh``. This prepends the
+venv's ``bin`` directory and, when ``sdtgen`` is not already available,
+sources ``$XILINX_VITIS/settings64.sh`` or the newest Vitis installation
+under ``/tools/Xilinx`` / ``/opt/Xilinx``. Set ``XILINX_VITIS`` on hosts
+which use a non-standard installation path.
 ``.github/scripts/bootstrap-uv.sh`` curl-installs ``uv`` into
 ``~/.local/bin`` on first use, so no distro Python packaging is
 required — only ``curl`` and a working ``python3`` interpreter (both

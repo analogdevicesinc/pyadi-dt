@@ -19,3 +19,11 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+
+# Fail during setup rather than skipping or failing after labgrid acquisition.
+for tool in pytest labgrid-client usbsdmux; do
+    if [[ ! -x "$VENV/bin/$tool" ]]; then
+        echo "ERROR: $tool was not installed into $VENV/bin" >&2
+        exit 1
+    fi
+done

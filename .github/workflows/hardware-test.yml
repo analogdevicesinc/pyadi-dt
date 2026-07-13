@@ -43,7 +43,9 @@ jobs:
       # The labgrid pytest plugin reads LG_ENV / LG_COORDINATOR from the env.
       pytest_cmd_template: >-
         set -euo pipefail;
-        export PATH="$HOME/.local/bin:$PATH";
+        source .github/scripts/setup-hw-tool-path.sh;
+        echo "sdtgen=$(command -v sdtgen || echo absent)" >&2;
+        echo "usbsdmux=$(command -v usbsdmux || echo absent)" >&2;
         TESTS=$(ls test/hw/*"$BOARD"*"$CARRIER"*_hw.py 2>/dev/null | grep -v petalinux | tr '\n' ' ');
         if [ -z "$TESTS" ]; then echo "::warning::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 0; fi;
         echo "Selected: $TESTS" >&2;
