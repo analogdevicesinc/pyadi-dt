@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import base64
 import shutil
-import subprocess
+# The only child process is an absolute, shutil-resolved tclsh executable with
+# an argv list and shell=False.
+import subprocess  # nosec B404
 import tempfile
 from pathlib import Path
 
@@ -123,7 +125,8 @@ def load_tcl_definition(
     driver_path = Path(path).resolve()
     if not driver_path.is_file():
         raise FileNotFoundError(driver_path)
-    if shutil.which("tclsh") is None:
+    tclsh = shutil.which("tclsh")
+    if tclsh is None:
         raise RuntimeError("tclsh is required to inspect SDT driver definitions")
     proc = definition_proc or f"::adidt::sdt::{driver_path.stem}::definition"
     with tempfile.NamedTemporaryFile(
@@ -131,8 +134,8 @@ def load_tcl_definition(
     ) as harness:
         harness.write(_HARNESS)
         harness.flush()
-        result = subprocess.run(
-            ["tclsh", harness.name, str(driver_path), proc],
+        result = subprocess.run(  # nosec B603
+            [tclsh, harness.name, str(driver_path), proc],
             capture_output=True,
             text=True,
             timeout=30,

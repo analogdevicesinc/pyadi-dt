@@ -53,7 +53,8 @@ set -euo pipefail
 #
 HOSTS=(
     "bq:bq:hw-bq:bq:/home/tcollins/dev/dt-fix/lg_adrv9371_zc706_tftp.yaml"
-    "mini2:mini2:hw-mini2:mini2:"
+    # mini2 is intentionally driven by hw-coordinator; its SD-mux path is remote.
+    "nemo:nemo.local:hw-nemo:nemo:"
     "nuc:nuc:hw-nuc:nuc:"
     "coordinator:10.0.0.41:hw-coordinator:coordinator:"
 )
