@@ -10,9 +10,21 @@ fi
 
 VENV_DIR="${VENV_DIR:-$HOME/.cache/adidt-ci/adidt-venv}"
 
+# Remove inherited user shims before adding hardware tools. GitHub runners save
+# their registration-time PATH, so merely avoiding a new prepend is not enough.
+clean_path=""
+IFS=: read -ra path_entries <<<"$PATH"
+for entry in "${path_entries[@]}"; do
+    [[ "$entry" == "$HOME/.local/bin" ]] && continue
+    clean_path="${clean_path:+$clean_path:}$entry"
+done
+export PATH="$clean_path"
+
 # Prefer the persistent CI environment. Its console scripts include pytest,
-# labgrid-client, and usbsdmux installed by the project's dev extra.
-export PATH="$VENV_DIR/bin:$HOME/.local/bin:$PATH"
+# labgrid-client, and usbsdmux installed by the project's dev extra. Keep
+# ~/.local/bin out of runtime PATH: user command shims such as an unrelated
+# `as` agent CLI can shadow GNU binutils during kernel builds.
+export PATH="$VENV_DIR/bin:$PATH"
 
 # sdtgen is supplied either by a standalone installation already on PATH or by
 # Vitis. Source the explicitly configured installation first; otherwise select
@@ -45,4 +57,4 @@ if ! command -v sdtgen >/dev/null 2>&1; then
 fi
 
 # Vitis prepends its own paths, so restore the test venv to highest priority.
-export PATH="$VENV_DIR/bin:$HOME/.local/bin:$PATH"
+export PATH="$VENV_DIR/bin:$PATH"
