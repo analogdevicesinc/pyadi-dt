@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -294,23 +295,31 @@ def unload_overlay(shell, name: str) -> str:
     )
 
 
-def require_hw_prereqs() -> None:
+def _strategy_requires_usbsdmux(strategy) -> bool:
+    """Return whether *strategy* declares a USB SD-mux driver binding."""
+    bindings = getattr(type(strategy), "bindings", {})
+    return "sdmux" in bindings or "USBSDMuxDriver" in bindings.values()
+
+
+def require_hw_prereqs(strategy) -> None:
     """Skip the current test if required system tools are missing.
 
-    Checks for ``sdtgen``, ``dtc``, and ``usbsdmux`` on ``PATH``.  Also
-    probes the local ``venv/bin/usbsdmux`` path as a fallback before giving
-    up on ``usbsdmux``.
+    ``sdtgen`` and ``dtc`` are common requirements. ``usbsdmux`` is only
+    required by strategies which declare an ``sdmux`` binding; TFTP/JTAG
+    strategies such as ADRV9009+ZC706 must not be skipped for lacking it.
+    For SD-mux strategies, also probe the active Python environment's bin
+    directory before skipping.
     """
     if shutil.which("sdtgen") is None:
         pytest.skip("sdtgen not found on PATH (Vivado tools required)")
     if shutil.which("dtc") is None:
         pytest.skip("dtc not found on PATH")
-    if shutil.which("usbsdmux") is None:
-        local_usbsdmux = Path.cwd() / "venv" / "bin" / "usbsdmux"
-        if local_usbsdmux.exists():
-            os.environ["PATH"] = f"{local_usbsdmux.parent}:{os.environ.get('PATH', '')}"
-    if shutil.which("usbsdmux") is None:
-        pytest.skip("usbsdmux not found on PATH")
+    if _strategy_requires_usbsdmux(strategy) and shutil.which("usbsdmux") is None:
+        environment_bin = Path(sys.executable).resolve().parent
+        if (environment_bin / "usbsdmux").is_file():
+            os.environ["PATH"] = f"{environment_bin}:{os.environ.get('PATH', '')}"
+        if shutil.which("usbsdmux") is None:
+            pytest.skip("usbsdmux not found on PATH (required by SD-mux strategy)")
 
 
 # Known-benign ``dmesg`` lines unrelated to our ADC/DAC/JESD flow.  These
