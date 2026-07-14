@@ -25,7 +25,10 @@ if [[ "$current_version" != "$PYTHON_VERSION" ]]; then
     uv python install "$PYTHON_VERSION"
     uv venv --quiet --clear --python "$PYTHON_VERSION" "$VENV"
 fi
-
+# pytest-prism is vendored in-tree so hardware runners do not need access to
+# the private Prism repository. Remove stale wheel installs from persistent
+# environments before loading the vendored plugin explicitly.
+uv pip uninstall --python "$VENV/bin/python" pytest-prism >/dev/null 2>&1 || true
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
 
 # Fail during setup rather than skipping or failing after labgrid acquisition.
