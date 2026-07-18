@@ -46,4 +46,10 @@ def test_saved_ad9680_contract_and_bindings_validate_together() -> None:
 
     bindings.check(contract)
     assert contract.jesd_links[0].lane_rate_hz == 10_000_000_000
-    assert {binding.output_index for binding in bindings.clocks} == {5, 13}
+    assert {clock.id for clock in contract.clock_requirements} == {
+        "ad9680.device-clock",
+        "ad9680.sysref",
+        "ad9680.fpga-ref",
+        "ad9680.fpga-link",
+    }
+    assert {binding.output_index for binding in bindings.clocks} == {1, 4, 5, 13}
