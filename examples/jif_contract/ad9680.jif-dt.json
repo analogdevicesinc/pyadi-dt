@@ -1,0 +1,57 @@
+{
+  "schema": "adi.jif-dt",
+  "version": "1.0",
+  "producer": {
+    "name": "pyadi-jif",
+    "version": "0.1.6"
+  },
+  "jesd_links": [
+    {
+      "id": "ad9680.rx",
+      "direction": "adc-to-fpga",
+      "converter": "AD9680",
+      "fpga": "zc706",
+      "standard": "jesd204b",
+      "sample_rate_hz": 1000000000,
+      "lane_rate_hz": 10000000000,
+      "parameters": {
+        "F": 1,
+        "K": 32,
+        "L": 4,
+        "M": 2,
+        "N": 14,
+        "Np": 16,
+        "S": 1,
+        "HD": 0,
+        "CS": 0,
+        "CF": 0
+      },
+      "fpga_config": {
+        "type": "qpll",
+        "sys_clk_select": "XCVR_QPLL0"
+      }
+    }
+  ],
+  "clock_requirements": [
+    {
+      "id": "ad9680.device-clock",
+      "role": "converter-device",
+      "sink": "AD9680",
+      "source": "HMC7044",
+      "rate_hz": 1000000000,
+      "divider": 3
+    },
+    {
+      "id": "ad9680.sysref",
+      "role": "converter-sysref",
+      "sink": "AD9680",
+      "source": "HMC7044",
+      "rate_hz": 7812500,
+      "divider": 384
+    }
+  ],
+  "metadata": {
+    "solver": "CPLEX",
+    "example": "AD9680 on ZC706"
+  }
+}

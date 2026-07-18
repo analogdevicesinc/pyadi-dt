@@ -181,6 +181,46 @@ The check is required before render or apply. Keeping bindings separate permits
 one electrical solution to be used with multiple carrier/profile placements
 without teaching pyadi-jif about DT labels.
 
+## Runnable examples
+
+The examples under `examples/jif_contract/` are executed by the test suite, so
+the documented API and checked-in JSON cannot drift silently.
+
+### Consume a saved AD9680 handoff
+
+This example loads solver output and board bindings from separate JSON files.
+It validates both documents and their one-to-one semantic join without
+importing pyadi-jif or a solver backend:
+
+```bash
+python examples/jif_contract/consume_ad9680.py
+```
+
+```{literalinclude} ../../../examples/jif_contract/consume_ad9680.py
+:language: python
+:caption: examples/jif_contract/consume_ad9680.py
+```
+
+The portable electrical result is
+`examples/jif_contract/ad9680.jif-dt.json`; the independent ZC706 placement is
+`examples/jif_contract/ad9680.bindings.json`. A different carrier can reuse the
+contract with a different bindings document.
+
+### Build a bidirectional ADRV9009 handoff
+
+The second example constructs RX and TX links with the typed API, binds their
+AD9528 and FPGA endpoints, and checks the whole handoff before any pipeline or
+device-tree operation:
+
+```bash
+python examples/jif_contract/adrv9009_bidirectional.py
+```
+
+```{literalinclude} ../../../examples/jif_contract/adrv9009_bidirectional.py
+:language: python
+:caption: examples/jif_contract/adrv9009_bidirectional.py
+```
+
 ## Required validation
 
 ### Contract checks
