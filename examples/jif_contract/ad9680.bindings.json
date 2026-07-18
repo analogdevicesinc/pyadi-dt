@@ -9,6 +9,16 @@
       "requirement_id": "ad9680.sysref",
       "dt_label": "hmc7044",
       "output_index": 5
+    },
+    {
+      "requirement_id": "ad9680.fpga-ref",
+      "dt_label": "hmc7044",
+      "output_index": 4
+    },
+    {
+      "requirement_id": "ad9680.fpga-link",
+      "dt_label": "hmc7044",
+      "output_index": 1
     }
   ],
   "jesd_links": [
