@@ -9,5 +9,6 @@ board builders.
    :maxdepth: 2
 
    authoring_devices
+   jif_dt_contract
    hardware_ci
    labgrid_exporter

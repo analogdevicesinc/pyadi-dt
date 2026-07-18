@@ -3,6 +3,12 @@
 This tutorial covers deriving XSA pipeline JESD/clock inputs from `pyadi-jif`
 before passing them into the XSA conversion flow.
 
+For new integrations, use the versioned [pyadi-jif to pyadi-dt interface
+contract](../developer/jif_dt_contract.md). It keeps solved electrical intent
+separate from physical board placement and validates the complete handoff before
+DTS generation. The direct dictionary mapping below documents the current
+transitional pipeline API.
+
 ## 1) Install dependencies
 
 ```bash
@@ -23,6 +29,13 @@ The core idea is:
 4. Map values to `cfg["jesd"]`.
 5. Map clock labels/channels to `cfg["clock"]`.
 6. Call `XsaPipeline.run()`.
+
+```{warning}
+Do not interpret the position of a pyadi-jif `out_dividers` entry as a physical
+clock-chip channel. Requested-clock order is solver state; clock output channel
+placement must come from a pyadi-dt board profile or an explicit
+`JifDtBindings` mapping.
+```
 
 ### Minimal example
 
