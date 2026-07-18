@@ -1,0 +1,22 @@
+{
+  "clocks": [
+    {
+      "requirement_id": "ad9680.device-clock",
+      "dt_label": "hmc7044",
+      "output_index": 13
+    },
+    {
+      "requirement_id": "ad9680.sysref",
+      "dt_label": "hmc7044",
+      "output_index": 5
+    }
+  ],
+  "jesd_links": [
+    {
+      "link_id": "ad9680.rx",
+      "converter_label": "ad9680",
+      "jesd_label": "axi_ad9680_jesd204_rx",
+      "xcvr_label": "axi_ad9680_adxcvr"
+    }
+  ]
+}
