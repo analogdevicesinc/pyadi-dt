@@ -81,6 +81,12 @@ myst_enable_extensions = [
 
 # -- Autodoc configuration ---------------------------------------------------
 
+# Importing FastMCP has process-wide logging side effects and Sphinx 9's
+# autodoc reload pass can re-evaluate MCP's Pydantic models with incomplete
+# module globals. The API page documents pyadi-dt's wrappers, so mock only the
+# optional framework dependency while importing ``adidt.mcp_server``.
+autodoc_mock_imports = ["fastmcp"]
+
 autodoc_default_options = {
     "members": True,
     "member-order": "bysource",
