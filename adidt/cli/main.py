@@ -798,9 +798,9 @@ def xsa2dt(
 
     \b
     Output artifacts (written to -o directory):
-      *.dtso          — Generated overlay
-      *.dts           — Merged device tree source
-      *_report.html   — Interactive visualization report
+      ``*.dtso``        — Generated overlay
+      ``*.dts``         — Merged device tree source
+      ``*_report.html`` — Interactive visualization report
 
     \b
     Examples:

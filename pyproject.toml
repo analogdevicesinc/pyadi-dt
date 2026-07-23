@@ -7,20 +7,21 @@ name = "adidt"
 version = "0.0.1"
 description = "Device tree management tools for ADI hardware"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = "EPL-2.0"
+license-files = ["LICENSE"]
 authors = [
     {name = "Analog Devices Inc."}
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: Eclipse Public License 2.0 (EPL-2.0)",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 dependencies = [
     "Click",
     "fdt",
@@ -46,11 +47,16 @@ test = [
 ]
 dev = [
     "adidt[test]",
-    "adi-labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git",
+    "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git",
     "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
     "usbsdmux",
 ]
 mcp = ["fastmcp"]
+
+[project.urls]
+Documentation = "https://analogdevicesinc.github.io/pyadi-dt/"
+Issues = "https://github.com/analogdevicesinc/pyadi-dt/issues"
+Repository = "https://github.com/analogdevicesinc/pyadi-dt"
 
 #[tool.uv.sources]
 #pyadi-build = { path = "./pyadi-build", editable = true }

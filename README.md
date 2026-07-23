@@ -5,10 +5,10 @@
 <h3 align="center">Device Tree Generation for Analog Devices Hardware</h3>
 
 <p align="center">
-<a href="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/build_pip.yml"><img src="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/build_pip.yml/badge.svg" alt="CI"></a>
+<a href="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/test.yml"><img src="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/test.yml/badge.svg" alt="CI"></a>
 <a href="https://analogdevicesinc.github.io/pyadi-dt/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Docs"></a>
 <a href="https://github.com/analogdevicesinc/pyadi-dt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EPL--2.0-green.svg" alt="License"></a>
-<a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10%2B-blue.svg" alt="Python 3.10+"></a>
+<a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10--3.13-blue.svg" alt="Python 3.10 through 3.13"></a>
 </p>
 
 ---
@@ -29,13 +29,13 @@
 ## Quick Install
 
 ```bash
-pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
+pip install adidt
 ```
 
 With XSA pipeline support (requires Vivado `sdtgen`):
 
 ```bash
-pip install "git+https://github.com/analogdevicesinc/pyadi-dt.git#egg=adidt[xsa]"
+pip install "adidt[xsa]"
 ```
 
 ## Quick Examples
@@ -121,10 +121,10 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 ## Documentation
 
 - [Quick Start](https://analogdevicesinc.github.io/pyadi-dt/quickstart.html)
-- [Device Tree Generation (non-XSA)](https://analogdevicesinc.github.io/pyadi-dt/board_class_workflow.html)
+- [Device-centric API](https://analogdevicesinc.github.io/pyadi-dt/api/devices.html)
 - [XSA Pipeline Guide](https://analogdevicesinc.github.io/pyadi-dt/xsa.html)
 - [BoardModel API Reference](https://analogdevicesinc.github.io/pyadi-dt/api/model.html)
-- [Creating Templates from Bindings](https://analogdevicesinc.github.io/pyadi-dt/creating_templates.html)
+- [Authoring Devices](https://analogdevicesinc.github.io/pyadi-dt/developer/authoring_devices.html)
 - [Visualization & Diagnostics](https://analogdevicesinc.github.io/pyadi-dt/visualization.html)
 - [Developer Guide](https://analogdevicesinc.github.io/pyadi-dt/xsa_developer.html)
 

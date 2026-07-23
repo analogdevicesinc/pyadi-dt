@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from fastmcp import FastMCP
 
+from adidt.dt import dt as _load_dt
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.config.profiles import ProfileManager
 
@@ -145,12 +146,10 @@ def read_dt_property(
         Dict with property values, or an error dict if the node/property is not found.
     """
     try:
-        from adidt.dt import dt
-
         if filepath:
-            d = dt(dt_source="local_file", local_dt_filepath=filepath)
+            d = _load_dt(dt_source="local_file", local_dt_filepath=filepath)
         else:
-            d = dt(dt_source="local_sysfs")
+            d = _load_dt(dt_source="local_sysfs")
 
         # Use fdt-based lookup: find node by name in the parsed tree
         node = None

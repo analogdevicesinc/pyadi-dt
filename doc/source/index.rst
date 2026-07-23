@@ -10,7 +10,7 @@ clock distribution ICs, RF transceivers, and FPGA-based JESD204 data paths.
 
 .. code-block:: bash
 
-   pip install git+https://github.com/analogdevicesinc/pyadi-dt.git
+   pip install adidt
 
 Key capabilities
 ----------------

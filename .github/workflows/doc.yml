@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements/requirements_doc.txt
-          pip install -e .
+          pip install -e ".[mcp]"
 
       - name: Install pyd2lang-native
         run: |
@@ -41,7 +41,7 @@ jobs:
       - name: Build documentation
         run: |
           cd doc
-          make html
+          make SPHINXOPTS="-W --keep-going" html
 
       - name: Check documentation coverage
         run: |
@@ -51,8 +51,7 @@ jobs:
       - name: Check links
         run: |
           cd doc
-          make linkcheck
-        continue-on-error: true
+          make SPHINXOPTS="-W --keep-going" linkcheck
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

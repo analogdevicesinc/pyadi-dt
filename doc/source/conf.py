@@ -63,6 +63,8 @@ coverage_show_missing_items = True
 # Link check configuration
 linkcheck_ignore = [
     r"https://ez.analog.com.*",
+    # Prism is an internal deployment and its repository is intentionally private.
+    r"https://github.com/tfcollins/prism",
 ]
 
 # -- MyST-Parser configuration -----------------------------------------------
