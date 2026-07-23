@@ -2,10 +2,14 @@
 set -euo pipefail
 
 . myenv/bin/activate
-dpkg -L python3-adidt | grep -E '/bin/adidtc$|/adidt/__init__\.py$|dist-info/METADATA$'
+package_files=$(dpkg -L python3-adidt)
+printf '%s\n' "$package_files" | grep -E '/bin/adidtc$|/adidt/__init__\.py$|dist-info/METADATA$'
+package_init=$(printf '%s\n' "$package_files" | grep '/adidt/__init__\.py$')
+package_cli=$(printf '%s\n' "$package_files" | grep '/bin/adidtc$')
+package_site=$(dirname "$(dirname "$package_init")")
 (
     cd /tmp
-    PYTHONPATH= python - <<'PY'
+    PYTHONPATH="$package_site" python - <<'PY'
 import importlib.metadata as metadata
 from pathlib import Path
 
@@ -18,7 +22,8 @@ print(f"verified adidt {adidt.__version__} from {adidt.__file__}")
 PY
     # The Debian artifact is intentionally thin and its post-install hook tells
     # users to provide Python dependencies. Exercise the installed launcher
-    # with this dependency-complete verification environment.
-    PYTHONPATH= python /usr/local/bin/adidtc --help >/dev/null
+    # with this dependency-complete verification environment. PYTHONPATH also
+    # makes the smoke test independent of the Kuiper image's /opt/venv prefix.
+    PYTHONPATH="$package_site" python "$package_cli" --help >/dev/null
 )
 deactivate
