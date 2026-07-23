@@ -1,12 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
 version=$1
 architecture=$2
 
-sudo apt update && sudo apt install -y libffi-dev python3-dev build-essential ruby
+sudo apt update && sudo apt install -y libffi-dev python3-dev python3-venv build-essential ruby
 sudo gem install fpm
-python3 -m venv myenv
+python3 -m venv --system-site-packages myenv
 . myenv/bin/activate
 python3 -m pip install --upgrade pip
-pip install -r requirements/requirements_dev.txt
+python3 - <<'PY'
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+dependencies = tomllib.loads(Path("pyproject.toml").read_text())["project"]["dependencies"]
+subprocess.run([sys.executable, "-m", "pip", "install", *dependencies], check=True)
+PY
 deactivate
 
 fpm -s python -t deb \
