@@ -401,7 +401,7 @@ def test_read_dt_property_returns_specific_property():
         "ad9081", {"compatible": "adi,ad9081", "reg": "<0 0 0 0x10000>"}
     )
 
-    with patch("adidt.dt.dt", return_value=fake_dt):
+    with patch("adidt.mcp_server._load_dt", return_value=fake_dt):
         tool = asyncio.run(mcp.get_tool("read_dt_property"))
         result = asyncio.run(
             tool.run(
@@ -423,7 +423,7 @@ def test_read_dt_property_returns_all_properties_when_property_omitted():
         "ad9081", {"compatible": "adi,ad9081", "reg": "<0 0 0 0x10000>"}
     )
 
-    with patch("adidt.dt.dt", return_value=fake_dt):
+    with patch("adidt.mcp_server._load_dt", return_value=fake_dt):
         tool = asyncio.run(mcp.get_tool("read_dt_property"))
         result = asyncio.run(
             tool.run({"node_name": "ad9081", "filepath": "/tmp/fake.dtb"})
@@ -439,7 +439,7 @@ def test_read_dt_property_unknown_node_returns_error():
     fake_dt.fdt.walk.return_value = []
     fake_dt.get_node_by_compatible.return_value = None
 
-    with patch("adidt.dt.dt", return_value=fake_dt):
+    with patch("adidt.mcp_server._load_dt", return_value=fake_dt):
         tool = asyncio.run(mcp.get_tool("read_dt_property"))
         result = asyncio.run(
             tool.run({"node_name": "missing_node", "filepath": "/tmp/fake.dtb"})
@@ -457,7 +457,7 @@ def test_read_dt_property_invalid_filepath_returns_error():
     def _raise(*args, **kwargs):
         raise FileNotFoundError("no such DTB on disk")
 
-    with patch("adidt.dt.dt", side_effect=_raise):
+    with patch("adidt.mcp_server._load_dt", side_effect=_raise):
         tool = asyncio.run(mcp.get_tool("read_dt_property"))
         result = asyncio.run(
             tool.run(

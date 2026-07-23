@@ -10,6 +10,7 @@ device-centric API share one rendering path.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Iterable
 
 from ._naming import jesd_labels, out_clk_select, sys_clk_select
@@ -499,9 +500,9 @@ class System:
 
     def generate_wiring_graph(
         self,
-        output_dir: "Path",
+        output_dir: Path,
         name: str | None = None,
-    ) -> "dict[str, Path]":
+    ) -> dict[str, Path]:
         """Render the SPI/JESD/GPIO control-plane wiring to DOT + D2 files.
 
         Returns the artifact dict described by
@@ -509,11 +510,9 @@ class System:
         ``wiring_dot`` and ``wiring_d2`` (always), plus ``wiring_dot_svg``
         / ``wiring_d2_svg`` when the corresponding renderer is on PATH.
         """
-        from pathlib import Path as _Path
-
         from .xsa.viz.wiring_graph import WiringGraph, WiringGraphGenerator
 
         graph = WiringGraph.from_system(self)
         return WiringGraphGenerator().generate(
-            graph, _Path(output_dir), name or self.name
+            graph, Path(output_dir), name or self.name
         )

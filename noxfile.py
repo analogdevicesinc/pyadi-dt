@@ -6,7 +6,7 @@ import nox
 
 nox.options.default_venv_backend = "uv"
 
-PYTHON_VERSIONS = ["3.10"]
+PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
 
 
 def _install_local_pyd2lang(session):
@@ -80,8 +80,16 @@ def docs(session):
         "linkify-it-py",
         "pyd2lang-native>=0.1.1",
     )
-    session.install(".")
-    session.run("sphinx-build", "-vv", "-b", "html", "doc/source", "doc/build/html")
+    session.install(".[mcp]")
+    session.run(
+        "sphinx-build",
+        "-W",
+        "--keep-going",
+        "-b",
+        "html",
+        "doc/source",
+        "doc/build/html",
+    )
 
 
 @nox.session(python="3.11")

@@ -14,10 +14,10 @@ fpm -s python -t deb \
     --url "https://github.com/analogdevicesinc/pyadi-dt" \
     --version "$version-1" \
     --maintainer "Engineerzone <https://ez.analog.com/sw-interface-tools>" \
-    --license "" \
+    --license "EPL-2.0" \
     --no-auto-depends \
     --python-package-name-prefix python3 \
     --after-install .github/scripts/postinstall.sh \
     --description "Device tree management tools for ADI hardware
         Documentation at 
-        https://analogdevicesinc.github.io/pyadi-dt/main/" .
+        https://analogdevicesinc.github.io/pyadi-dt/" .

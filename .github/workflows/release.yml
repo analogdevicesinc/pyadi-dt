@@ -1,0 +1,186 @@
+name: Publish Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v-prefixed tag to validate and publish
+        required: true
+        type: string
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate release tag
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Validate tag and package versions
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          python - <<'PY'
+          import ast
+          import os
+          import re
+          import tomllib
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          if not re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:[-+][0-9A-Za-z.-]+)?", tag):
+              raise SystemExit(f"invalid release tag: {tag!r}")
+          project_version = tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"]
+          tree = ast.parse(Path("adidt/__init__.py").read_text())
+          import_version = next(
+              ast.literal_eval(node.value)
+              for node in tree.body
+              if isinstance(node, ast.Assign)
+              and any(
+                  isinstance(target, ast.Name) and target.id == "__version__"
+                  for target in node.targets
+              )
+          )
+          tag_version = tag.removeprefix("v")
+          if len({tag_version, project_version, import_version}) != 1:
+              raise SystemExit(
+                  f"version mismatch: tag={tag_version}, pyproject={project_version}, "
+                  f"adidt.__version__={import_version}"
+              )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
+              output.write(f"tag={tag}\nversion={tag_version}\n")
+          PY
+
+      - name: Verify tag belongs to main
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          git fetch origin main --tags
+          TAG_SHA=$(git rev-list -n 1 "$RELEASE_TAG")
+          git merge-base --is-ancestor "$TAG_SHA" origin/main
+
+  test:
+    name: Test Python ${{ matrix.python-version }}
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install ".[test]"
+      - run: pytest -q
+
+  build:
+    name: Build and inspect distributions
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build twine
+      - run: python -m build
+      - run: twine check dist/*
+      - name: Verify wheel in a clean environment
+        run: |
+          python -m venv /tmp/adidt-release-smoke
+          /tmp/adidt-release-smoke/bin/pip install dist/*.whl
+          cd /tmp
+          /tmp/adidt-release-smoke/bin/python -c \
+            'import importlib.metadata as m, adidt; assert m.version("adidt") == adidt.__version__'
+          /tmp/adidt-release-smoke/bin/adidtc --help >/dev/null
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-distributions
+          path: dist/
+          if-no-files-found: error
+
+  github-release:
+    name: Create GitHub release
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-distributions
+          path: dist
+      - name: Extract release notes
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          version = re.escape(os.environ["VERSION"])
+          changelog = Path("CHANGELOG.md").read_text()
+          match = re.search(
+              rf"^## \[{version}\].*?\n(?P<body>.*?)(?=^## \[|^\[Unreleased\]:)",
+              changelog,
+              re.MULTILINE | re.DOTALL,
+          )
+          if not match:
+              raise SystemExit(f"CHANGELOG.md has no section for {os.environ['VERSION']}")
+          Path("release-notes.md").write_text(match.group("body").strip() + "\n")
+          PY
+      - name: Create release and attach Python artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+          else
+            gh release create "$RELEASE_TAG" dist/* \
+              --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md
+          fi
+
+  pypi:
+    name: Publish to PyPI
+    needs: [validate, build]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/adidt
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: python-distributions
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
