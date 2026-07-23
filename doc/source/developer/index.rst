@@ -12,3 +12,4 @@ board builders.
    jif_dt_contract
    hardware_ci
    labgrid_exporter
+   release_runbook
