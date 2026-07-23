@@ -30,7 +30,8 @@ dependencies = [
     "rich",
     "numpy",
     "xmltodict",
-    "pydantic>=2",
+    # MCP 1.x currently fails to import with Pydantic 2.13.
+    "pydantic>=2,<2.13",
 ]
 
 [project.optional-dependencies]
