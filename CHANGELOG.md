@@ -32,6 +32,9 @@ First public alpha release.
 - XSA support requires Lopper/SDTGen and board-specific profiles.
 - PetaLinux and hardware workflows depend on external AMD/ADI toolchains and
   lab resources that are not installed by the core Python package.
+- Debian artifacts are thin packages: Python runtime dependencies listed in
+  `pyproject.toml` must be supplied separately. They are not standalone
+  application bundles.
 
 [Unreleased]: https://github.com/analogdevicesinc/pyadi-dt/compare/v0.0.1...HEAD
 [0.0.1]: https://github.com/analogdevicesinc/pyadi-dt/releases/tag/v0.0.1
