@@ -64,7 +64,7 @@ jobs:
 
     - name: Post audit report to PR
       if: github.event_name == 'pull_request' || steps.find-pr.outputs.number != ''
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       with:
         header: binding-audit
         number: ${{ github.event_name == 'pull_request' && github.event.number || steps.find-pr.outputs.number }}
