@@ -2,7 +2,6 @@ import os
 import subprocess
 from pathlib import Path
 
-import yaml
 from click.testing import CliRunner
 
 from adidt.cli.main import cli
@@ -29,9 +28,10 @@ PUBLIC_COMMANDS = {
 }
 
 
-def _frontmatter(text: str) -> dict:
+def _frontmatter(text: str) -> dict[str, str]:
     assert text.startswith("---\n")
-    return yaml.safe_load(text.split("---\n", 2)[1])
+    block = text.split("---\n", 2)[1]
+    return dict(line.split(": ", 1) for line in block.splitlines())
 
 
 def test_skill_has_valid_frontmatter_and_linked_files():
