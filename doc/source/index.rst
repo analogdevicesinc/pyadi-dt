@@ -83,6 +83,8 @@ Where to start
   walkthrough of Vivado XSA-based generation.
 - **PetaLinux?** See :doc:`petalinux` for generating ``system-user.dtsi``
   files from XSA archives.
+- **Using pyadi-dt through an AI coding agent?** See :doc:`ai_skill` for
+  installing the bundled ``adidtc`` Agent Skill and its hardware-safety rules.
 - **Adding a new device class?** See :doc:`developer/authoring_devices`
   for the end-to-end walkthrough — class design, rendering pipeline,
   and cookbook recipes for clocks, converters, and eval / FPGA boards.
@@ -123,5 +125,6 @@ Table of contents
    :caption: Reference
 
    cli
+   ai_skill
    mcp_server
    api/index
