@@ -128,6 +128,28 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 - [Visualization & Diagnostics](https://analogdevicesinc.github.io/pyadi-dt/visualization.html)
 - [Developer Guide](https://analogdevicesinc.github.io/pyadi-dt/xsa_developer.html)
 
+## AI agent skill
+
+The repository includes an [Agent Skill](skills/pyadi-dt-cli/SKILL.md) that
+teaches compatible coding agents to discover and use `adidtc`, select the least
+invasive device-tree access context, generate and validate XSA outputs, and
+handle hardware-changing commands safely.
+
+Install it for Agent Skills-compatible tools and Claude Code:
+
+```bash
+./skills/pyadi-dt-cli/scripts/install.sh
+```
+
+Install for only one skill directory with `agents` or `claude`, for example:
+
+```bash
+./skills/pyadi-dt-cli/scripts/install.sh agents
+```
+
+The installer creates a symlink, so the installed skill follows the checked-out
+version. Start a new agent session after installation.
+
 ## Development
 
 ```bash
