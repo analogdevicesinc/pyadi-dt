@@ -18,10 +18,48 @@ os.environ.setdefault("LG_ENV", "unit-test-noop")
 
 from test.hw.hw_helpers import (  # noqa: E402
     IlasMismatch,
+    _strategy_requires_usbsdmux,
     assert_ilas_aligned,
     check_jesd_framing_plausibility,
     parse_ilas_status,
+    require_hw_prereqs,
 )
+
+
+class _TftpStrategy:
+    bindings = {"tftp_driver": "TFTPServerDriver"}
+
+
+class _SdMuxStrategy:
+    bindings = {"sdmux": "USBSDMuxDriver"}
+
+
+def test_tftp_strategy_does_not_require_usbsdmux(monkeypatch):
+    requested = []
+
+    def fake_which(command):
+        requested.append(command)
+        return f"/tools/{command}" if command in {"sdtgen", "dtc"} else None
+
+    monkeypatch.setattr("test.hw.hw_helpers.shutil.which", fake_which)
+    require_hw_prereqs(_TftpStrategy())
+    assert requested == ["sdtgen", "dtc"]
+
+
+def test_sd_mux_strategy_requires_usbsdmux(monkeypatch):
+    monkeypatch.setattr(
+        "test.hw.hw_helpers.shutil.which",
+        lambda command: f"/tools/{command}" if command in {"sdtgen", "dtc"} else None,
+    )
+    monkeypatch.setattr("test.hw.hw_helpers.Path.is_file", lambda _path: False)
+
+    with pytest.raises(pytest.skip.Exception, match="required by SD-mux strategy"):
+        require_hw_prereqs(_SdMuxStrategy())
+
+
+def test_strategy_prerequisite_detection_uses_bindings():
+    assert not _strategy_requires_usbsdmux(_TftpStrategy())
+    assert _strategy_requires_usbsdmux(_SdMuxStrategy())
 
 
 _DMESG_WITH_ILAS_MISMATCH = """\

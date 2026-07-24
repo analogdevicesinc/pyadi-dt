@@ -10,12 +10,31 @@
 set -euo pipefail
 
 VENV="$HOME/.cache/adidt-ci/adidt-venv"
+PYTHON_VERSION="${ADIDT_CI_PYTHON_VERSION:-3.12}"
 
 export PATH="$HOME/.local/bin:$PATH"
 
-if [[ ! -x "$VENV/bin/python" ]]; then
-    echo "Creating adidt venv at $VENV" >&2
-    uv venv --quiet "$VENV"
+if [[ -x "$VENV/bin/python" ]]; then
+    current_version="$($VENV/bin/python -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+else
+    current_version=""
 fi
 
+if [[ "$current_version" != "$PYTHON_VERSION" ]]; then
+    echo "Creating adidt Python $PYTHON_VERSION venv at $VENV" >&2
+    uv python install "$PYTHON_VERSION"
+    uv venv --quiet --clear --python "$PYTHON_VERSION" "$VENV"
+fi
+# pytest-prism is vendored in-tree so hardware runners do not need access to
+# the private Prism repository. Remove stale wheel installs from persistent
+# environments before loading the vendored plugin explicitly.
+uv pip uninstall --python "$VENV/bin/python" pytest-prism >/dev/null 2>&1 || true
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+
+# Fail during setup rather than skipping or failing after labgrid acquisition.
+for tool in pytest labgrid-client usbsdmux; do
+    if [[ ! -x "$VENV/bin/$tool" ]]; then
+        echo "ERROR: $tool was not installed into $VENV/bin" >&2
+        exit 1
+    fi
+done

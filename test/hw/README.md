@@ -210,6 +210,15 @@ Fetch each place's env from the coordinator first (`<place>` = `mini2` / `nemo` 
 curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp/lg-<place>.yaml
 ```
 
+For manual runs using the persistent CI environment, configure both its
+console scripts (`pytest`, `labgrid-client`, `usbsdmux`) and Vitis/SDTGen in
+the current shell before invoking pytest:
+
+```sh
+export VENV_DIR="$HOME/.cache/adidt-ci/adidt-venv"
+source .github/scripts/setup-hw-tool-path.sh
+```
+
 ```sh
 # AD9081 / ZCU102 — any host
 LG_COORDINATOR=10.0.0.41:20408 \

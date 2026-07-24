@@ -43,11 +43,14 @@ jobs:
       # The labgrid pytest plugin reads LG_ENV / LG_COORDINATOR from the env.
       pytest_cmd_template: >-
         set -euo pipefail;
-        export PATH="$HOME/.local/bin:$PATH";
+        source .github/scripts/setup-hw-tool-path.sh;
+        echo "sdtgen=$(command -v sdtgen || echo absent)" >&2;
+        echo "usbsdmux=$(command -v usbsdmux || echo absent)" >&2;
         TESTS=$(ls test/hw/*"$BOARD"*"$CARRIER"*_hw.py 2>/dev/null | grep -v petalinux | tr '\n' ' ');
         if [ -z "$TESTS" ]; then echo "::warning::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 0; fi;
         echo "Selected: $TESTS" >&2;
-        "$VENV_DIR/bin/pytest" -p no:genalyzer -v -s $TESTS --junitxml="$JUNIT"
+        bash .github/scripts/run-hw-pytest-with-prism.sh
+        "$VENV_DIR/bin/python" "$JUNIT" -p no:genalyzer -v -s $TESTS
       artifact_glob: |
         test/hw/output/**/*.dts
         test/hw/output/**/*.pp.dts
@@ -57,15 +60,19 @@ jobs:
         test/hw/output/**/uart_log_*.txt
         uart_log_*.txt
         junit-hw-*.xml
+        prism-hw-*/terminal.log
+        prism-hw-*/manifest.json
+        prism-hw-*.zip
       prism_project: pyadi-dt
       prism_upload: ${{ vars.PRISM_UPLOAD_ENABLED == 'true' }}
-      # Vendored tfcollins/prism uploader (private repo; can't pip-install on
-      # the runner). The reusable workflow exports PRISM_URL/EMAIL/PASSWORD/
-      # PROJECT/JUNIT/RUN_NAME/BOARD/CARRIER/PLACE.
+      # Upload the pytest-prism artifact archive after the test step, where the
+      # reusable workflow injects Prism credentials. The uploader remains
+      # vendored so this post-test path does not need another private checkout.
       prism_upload_cmd: >-
         python3 .github/scripts/prism_upload_run.py "$PRISM_JUNIT"
         --url "$PRISM_URL" --project "$PRISM_PROJECT" --run-name "$PRISM_RUN_NAME"
         --auto-create-project
+        --archive "prism-hw-${PRISM_PLACE}.zip"
         --tag "board=$PRISM_BOARD" --tag "carrier=$PRISM_CARRIER"
         --tag "place=$PRISM_PLACE" --tag "sha=$GITHUB_SHA"
     # Pass Prism creds explicitly: secrets: inherit does not cross orgs

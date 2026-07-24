@@ -58,7 +58,7 @@ def board(strategy):
         The labgrid *strategy* object after the board has been
         transitioned to the ``powered_off`` state.
     """
-    require_hw_prereqs()
+    require_hw_prereqs(strategy)
     strategy.transition("powered_off")
     try:
         yield strategy
