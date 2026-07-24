@@ -11,6 +11,7 @@ import pytest
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.parse.topology import XsaParser
 from test.xsa.kuiper_release import (
+    download_boot_partition_release,
     extract_project_xsa,
     download_project_xsa,
     KuiperXsaError,
@@ -18,6 +19,38 @@ from test.xsa.kuiper_release import (
 
 
 FIXTURE_CFG = Path(__file__).parent / "fixtures" / "ad9081_config.json"
+
+
+def test_boot_partition_download_uses_current_adi_url(tmp_path, monkeypatch):
+    """The helper must not depend on removed labgrid driver class attributes."""
+    requested = {}
+
+    class Response:
+        ok = True
+        status_code = 200
+
+        @staticmethod
+        def iter_content(chunk_size):
+            assert chunk_size == 1024 * 1024
+            yield b"archive"
+
+    def fake_get(url, *, stream, timeout):
+        requested.update(url=url, stream=stream, timeout=timeout)
+        return Response()
+
+    monkeypatch.setattr("test.xsa.kuiper_release.requests.get", fake_get)
+
+    result = download_boot_partition_release("2023_r2", tmp_path)
+
+    assert requested == {
+        "url": (
+            "https://swdownloads.analog.com/cse/boot_partition_files/"
+            "2023_r2/latest_boot_partition.tar.gz"
+        ),
+        "stream": True,
+        "timeout": 120,
+    }
+    assert result.read_bytes() == b"archive"
 
 
 def _fake_sdtgen_run(xsa_path, output_dir, timeout=120):

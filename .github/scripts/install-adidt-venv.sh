@@ -19,3 +19,29 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+
+# ``sdtgen`` ships with Vivado rather than the Python ``lopper`` package.
+# Publish the host installation inside the persistent venv so the dynamic test
+# command has one stable PATH contract on every hardware runner.
+rm -f "$VENV/bin/sdtgen"
+for candidate in \
+    /tools/Xilinx/2025.1/Vivado/bin/sdtgen \
+    /opt/Xilinx/2025.1/Vivado/bin/sdtgen; do
+    if [[ -x "$candidate" ]]; then
+        # Vivado's launcher resolves setupEnv.sh relative to $0, so a symlink
+        # from the venv is invalid. Use a tiny wrapper that runs from bin/.
+        printf '#!/usr/bin/env bash\nset -e\ncd %q\nexec ./sdtgen "$@"\n' \
+            "$(dirname "$candidate")" > "$VENV/bin/sdtgen"
+        chmod +x "$VENV/bin/sdtgen"
+        break
+    fi
+done
+
+# Fail setup before place acquisition if the persistent runner is incomplete;
+# otherwise pytest can turn infrastructure defects into skip-only green jobs.
+if [[ ! -x "$VENV/bin/sdtgen" ]]; then
+    echo "sdtgen not found in the venv or a supported Vivado 2025.1 path" >&2
+    exit 1
+fi
+"$VENV/bin/sdtgen" -help >/dev/null
+"$VENV/bin/python" -c "import adi_lg_plugins, lopper"

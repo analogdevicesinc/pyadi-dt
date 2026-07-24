@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import NoReturn
 
 import pytest
 
@@ -294,23 +295,30 @@ def unload_overlay(shell, name: str) -> str:
     )
 
 
+def hardware_prereq_unavailable(message: str) -> NoReturn:
+    """Skip locally, but fail coordinator CI when a prerequisite is unavailable."""
+    if os.environ.get("LG_COORDINATOR"):
+        pytest.fail(message)
+    pytest.skip(message)
+
+
 def require_hw_prereqs() -> None:
-    """Skip the current test if required system tools are missing.
+    """Stop the current test if required system tools are missing.
 
     Checks for ``sdtgen``, ``dtc``, and ``usbsdmux`` on ``PATH``.  Also
     probes the local ``venv/bin/usbsdmux`` path as a fallback before giving
     up on ``usbsdmux``.
     """
     if shutil.which("sdtgen") is None:
-        pytest.skip("sdtgen not found on PATH (Vivado tools required)")
+        hardware_prereq_unavailable("sdtgen not found on PATH (lopper required)")
     if shutil.which("dtc") is None:
-        pytest.skip("dtc not found on PATH")
+        hardware_prereq_unavailable("dtc not found on PATH")
     if shutil.which("usbsdmux") is None:
         local_usbsdmux = Path.cwd() / "venv" / "bin" / "usbsdmux"
         if local_usbsdmux.exists():
             os.environ["PATH"] = f"{local_usbsdmux.parent}:{os.environ.get('PATH', '')}"
     if shutil.which("usbsdmux") is None:
-        pytest.skip("usbsdmux not found on PATH")
+        hardware_prereq_unavailable("usbsdmux not found on PATH")
 
 
 # Known-benign ``dmesg`` lines unrelated to our ADC/DAC/JESD flow.  These
