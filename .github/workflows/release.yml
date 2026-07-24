@@ -95,6 +95,10 @@ jobs:
       - run: python -m pip install build twine
       - run: python -m build
       - run: twine check dist/*
+      - name: Generate and verify SHA-256 distribution manifest
+        run: |
+          python .github/scripts/release_manifest.py generate --dir dist --output dist/SHA256SUMS
+          python .github/scripts/release_manifest.py verify --manifest dist/SHA256SUMS --dir dist
       - name: Verify wheel in a clean environment
         run: |
           python -m venv /tmp/adidt-release-smoke
@@ -120,6 +124,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ needs.validate.outputs.tag }}
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
       - uses: actions/download-artifact@v8
         with:
           name: python-distributions
@@ -129,17 +136,16 @@ jobs:
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
         run: |
           python .github/scripts/release_preflight.py --tag "$RELEASE_TAG" --notes-output release-notes.md
-      - name: Create release and attach Python artifacts
+      - name: Upsert release, attach Python artifacts, and update manifest
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
         run: |
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release upload "$RELEASE_TAG" dist/* --clobber
-          else
-            gh release create "$RELEASE_TAG" dist/* \
-              --verify-tag --title "$RELEASE_TAG" --notes-file release-notes.md
-          fi
+          python .github/scripts/release_manifest.py upsert-release \
+            --tag "$RELEASE_TAG" \
+            --files dist/* \
+            --notes-file release-notes.md \
+            --title "$RELEASE_TAG"
 
   pypi:
     name: Publish to PyPI
