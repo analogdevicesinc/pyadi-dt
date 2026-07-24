@@ -5,6 +5,9 @@ Command Line Interface
 trees on live hardware, generating device tree source files from Vivado XSA
 designs or board class configurations, and managing boot files on remote boards.
 
+AI coding agents can use the bundled :doc:`ai_skill`, which adds task routing,
+runnable recipes, and dry-run safeguards around this command surface.
+
 .. code-block:: bash
 
    pip install adidt          # core commands

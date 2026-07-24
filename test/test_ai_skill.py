@@ -12,6 +12,9 @@ SKILL_ROOT = ROOT / "skills" / "pyadi-dt-cli"
 SKILL = SKILL_ROOT / "SKILL.md"
 COMMANDS = SKILL_ROOT / "reference" / "commands.md"
 INSTALLER = SKILL_ROOT / "scripts" / "install.sh"
+SPHINX_INDEX = ROOT / "doc" / "source" / "index.rst"
+SPHINX_CLI = ROOT / "doc" / "source" / "cli.rst"
+SPHINX_SKILL = ROOT / "doc" / "source" / "ai_skill.rst"
 
 PUBLIC_COMMANDS = {
     "deps",
@@ -87,3 +90,17 @@ def test_installer_supports_agents_claude_and_is_idempotent(tmp_path):
         installed = tmp_path / parent / "skills" / "pyadi-dt-cli"
         assert installed.is_symlink()
         assert installed.resolve() == SKILL_ROOT.resolve()
+
+
+def test_sphinx_documents_and_links_the_skill():
+    index = SPHINX_INDEX.read_text()
+    cli_docs = SPHINX_CLI.read_text()
+    skill_docs = SPHINX_SKILL.read_text()
+
+    assert "   ai_skill" in index
+    assert ":doc:`ai_skill`" in index
+    assert ":doc:`ai_skill`" in cli_docs
+    assert "skills/pyadi-dt-cli/SKILL.md" in skill_docs
+    assert "./skills/pyadi-dt-cli/scripts/install.sh" in skill_docs
+    assert "--dry-run --show" in skill_docs
+    assert "explicit approval" in skill_docs
