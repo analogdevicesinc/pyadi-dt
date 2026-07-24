@@ -21,7 +21,7 @@ from typing import Any, Callable, Literal, Optional, Sequence
 
 import pytest
 
-from test.hw.hw_helpers import acquire_xsa
+from test.hw.hw_helpers import acquire_xsa, hardware_prereq_unavailable
 
 
 BootMode = Literal["tftp", "sd", "fabric_jtag"]
@@ -169,7 +169,9 @@ def acquire_or_local_xsa(
                 project,
                 tmp_path,
             )
-        except Exception as exc:  # noqa: BLE001 — any IO/download failure → skip
-            pytest.skip(f"could not acquire XSA ({project}@{release}): {exc}")
+        except Exception as exc:  # noqa: BLE001 — preserve the concrete cause
+            hardware_prereq_unavailable(
+                f"could not acquire XSA ({project}@{release}): {exc}"
+            )
 
     return _resolver

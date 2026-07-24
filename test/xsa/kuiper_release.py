@@ -4,31 +4,25 @@ import io
 import tarfile
 from pathlib import Path
 
+import requests
+
 
 class KuiperXsaError(RuntimeError):
     """Raised when Kuiper release download or XSA extraction fails."""
 
 
-def _require_kuiper_plugin():
-    try:
-        from adi_lg_plugins.drivers.kuiperdldriver import Downloader, KuiperDLDriver
-    except ImportError as ex:
-        raise KuiperXsaError(
-            "adi-labgrid-plugins is required for Kuiper XSA download tests"
-        ) from ex
-    return Downloader, KuiperDLDriver
-
-
 def download_boot_partition_release(release: str, cache_dir: Path) -> Path:
     """Download (or reuse) the Kuiper boot-partition tarball for a release."""
-    Downloader, KuiperDLDriver = _require_kuiper_plugin()
     cache_dir.mkdir(parents=True, exist_ok=True)
     tarball_path = cache_dir / f"{release}_latest_boot_partition.tar.gz"
     if tarball_path.exists():
         return tarball_path
 
-    url = KuiperDLDriver.sw_downloads_template.format(release=release)
-    response = Downloader().retry_session().get(url, stream=True, timeout=120)
+    url = (
+        "https://swdownloads.analog.com/cse/boot_partition_files/"
+        f"{release}/latest_boot_partition.tar.gz"
+    )
+    response = requests.get(url, stream=True, timeout=120)
     if not response.ok:
         raise KuiperXsaError(
             f"failed to download Kuiper boot partition: release={release} "
