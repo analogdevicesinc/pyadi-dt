@@ -7,7 +7,9 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'
+      - main
+      - '20[1-9][0-9]_R[1-9]'
+      - 'staging/*'
   pull_request:
     branches:
       - '**'
