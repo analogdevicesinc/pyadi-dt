@@ -84,8 +84,17 @@ are correct.
 2. Confirm the Debian workflow completed for the same tag and attached its
    `.deb` artifacts to the GitHub Release.
 3. Verify the GitHub Release contains the wheel, source distribution, release
-   notes, and Debian artifacts.
-4. Verify PyPI and smoke-test the immutable published package:
+   notes, Debian artifacts, and `SHA256SUMS` manifest file.
+4. Verify checksum manifest integrity:
+
+   ```bash
+   gh release download vX.Y.Z -D /tmp/adidt-verify-assets
+   cd /tmp/adidt-verify-assets
+   sha256sum -c SHA256SUMS
+   python .github/scripts/release_manifest.py verify --manifest SHA256SUMS --dir .
+   ```
+
+5. Verify PyPI and smoke-test the immutable published package:
 
    ```bash
    python -m venv /tmp/adidt-release-verify
@@ -95,7 +104,7 @@ are correct.
    /tmp/adidt-release-verify/bin/adidtc --help
    ```
 
-5. Verify the public documentation still serves successfully.
+6. Verify the public documentation still serves successfully.
 
 ## Recover from partial failure
 
@@ -110,9 +119,14 @@ artifact for it has been accepted by PyPI.
   Do not rebuild different bytes for the same version.
 - **GitHub Release failed after PyPI succeeded:** rerun the failed job. The
   workflow creates a missing release or uploads artifacts to an existing one
-  with `--clobber`.
+  with `--clobber` and updates `SHA256SUMS`.
 - **Debian attachment failed:** rerun the Debian workflow for the original tag;
   do not retag.
+- **Checksum manifest out of sync:** re-sync the release manifest using the
+  helper script:
+  ```bash
+  python .github/scripts/release_manifest.py upsert-release --tag vX.Y.Z
+  ```
 - **A bad package was fully published:** keep the tag and release as an audit
   record, document the problem, bump to a new version, and publish a corrective
   release. PyPI versions cannot be replaced safely.
