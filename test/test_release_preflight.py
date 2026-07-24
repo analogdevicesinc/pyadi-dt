@@ -126,3 +126,20 @@ def test_manual_dispatch_cannot_publish():
     assert "Candidate v-prefixed tag to validate and dry-run from main" in workflow
     assert "Manual release dry runs must be dispatched from main" in workflow
     assert "github.event_name == 'workflow_dispatch' && github.sha" in workflow
+
+
+def test_workflows_use_release_manifest_without_sleep_loops():
+    release_wf = (repo_root / ".github" / "workflows" / "release.yml").read_text()
+    debian_wf = (repo_root / ".github" / "workflows" / "build_debian.yaml").read_text()
+
+    assert "release_manifest.py generate" in release_wf
+    assert "release_manifest.py verify" in release_wf
+    assert "release_manifest.py upsert-release" in release_wf
+
+    assert debian_wf.count("release_manifest.py upsert-release") == 1
+    assert "needs: [identify_version, build_and_deploy_for_kuiper, build_and_deploy_for_ubuntu]" in debian_wf
+    assert "Expected three Debian artifacts" in debian_wf
+    assert "group: release-${{ github.ref_name }}" in debian_wf
+    assert "group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" in release_wf
+    assert "sleep 10" not in debian_wf
+    assert "for attempt in {1..30}" not in debian_wf
