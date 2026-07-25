@@ -86,6 +86,7 @@ jobs:
           test/devices/test_examples_smoke.py \
           test/devices/test_examples_ad9081_parity.py \
           test/test_examples_xsa_smoke.py \
+          test/xsa/test_example_adrv9009_profile_file.py \
           test/xsa/test_example_fmcdaq2_zc706.py \
           test/test_jif_contract_examples.py \
           test/test_examples_ci_contract.py \

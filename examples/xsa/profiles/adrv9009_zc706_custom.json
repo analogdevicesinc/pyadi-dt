@@ -1,0 +1,8 @@
+{
+  "name": "adrv9009_zc706_custom",
+  "defaults": {
+    "adrv9009_board": {
+      "trx_spi_max_frequency": 10000000
+    }
+  }
+}
