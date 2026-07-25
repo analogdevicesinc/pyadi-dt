@@ -88,6 +88,32 @@ Example variations by board:
 These scripts print a final artifact summary and are a good starting point for
 platform-specific defaults.
 
+### ADRV9009 custom profile files
+
+The ADRV9009 profile-file example combines the checked-in
+`adrv9009_zc706` board defaults with a small user-owned JSON override file.
+Inspect the effective configuration without an XSA, network access, or Vivado:
+
+```bash
+python examples/xsa/adrv9009_profile_file.py \
+  --profile-file examples/xsa/profiles/adrv9009_zc706_custom.json \
+  --show-config
+```
+
+Then use the same validated profile file for a complete XSA pipeline run:
+
+```bash
+python examples/xsa/adrv9009_profile_file.py \
+  --profile-file my-adrv9009.json \
+  --xsa /path/to/system_top.xsa \
+  --output-dir build/adrv9009
+```
+
+The custom file only needs to contain values that differ from the built-in
+profile. Explicit custom values win; SPI assignments, GPIOs, link IDs, and
+other omitted wiring values continue to come from `adrv9009_zc706`. Profile
+keys and value types are validated before SDTGen runs.
+
 ## Tutorial 3: Use the Python API directly
 
 For custom integrations (CI, scripts, internal tools), call `XsaPipeline.run()`:
