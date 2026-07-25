@@ -63,15 +63,61 @@ jobs:
         reporter: java-junit
         fail-on-error: false
 
+  examples-test:
+    name: Test examples
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v7
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Install example dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ".[test,xsa]"
+
+    - name: Run executable example tests
+      run: |
+        pytest -v \
+          test/devices/test_examples_smoke.py \
+          test/devices/test_examples_ad9081_parity.py \
+          test/test_examples_xsa_smoke.py \
+          test/xsa/test_example_fmcdaq2_zc706.py \
+          test/test_jif_contract_examples.py \
+          test/test_examples_ci_contract.py \
+          --junitxml=junit-examples.xml
+
+    - name: Upload example JUnit XML
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: junit-examples
+        path: junit-examples.xml
+        retention-days: 14
+        if-no-files-found: error
+
+    - name: Publish example results to PR
+      if: always()
+      uses: dorny/test-reporter@v3
+      with:
+        name: Example Tests
+        path: junit-examples.xml
+        reporter: java-junit
+        fail-on-error: false
+
   publish-pr-test-summary:
     name: PR Test Summary
-    needs: python-test
+    needs: [python-test, examples-test]
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v8
         with:
-          pattern: junit-py*
+          pattern: junit-*
           path: junit
           merge-multiple: true
 
@@ -83,7 +129,7 @@ jobs:
           report_individual_runs: true
 
   build-package:
-    needs: [python-test]
+    needs: [python-test, examples-test]
     runs-on: ubuntu-latest
     name: Build Package for PyPI
     steps:
