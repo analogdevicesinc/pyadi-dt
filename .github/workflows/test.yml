@@ -92,6 +92,13 @@ jobs:
           test/test_examples_ci_contract.py \
           --junitxml=junit-examples.xml
 
+    - name: Pull canonical ADRV9009 Talise profile
+      run: |
+        python examples/xsa/adrv9009_profile_file.py \
+          --talise-profile tx100-rx100-orx100 \
+          --download-talise-profile \
+          --output-dir "$RUNNER_TEMP/adrv9009-example"
+
     - name: Upload example JUnit XML
       if: always()
       uses: actions/upload-artifact@v7

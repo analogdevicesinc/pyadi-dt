@@ -24,6 +24,8 @@ def test_examples_have_a_dedicated_blocking_ci_job() -> None:
 
     assert "examples-test:" in workflow
     assert 'pip install ".[test,xsa]"' in workflow
+    assert "Pull canonical ADRV9009 Talise profile" in workflow
+    assert "--download-talise-profile" in workflow
     for test_group in EXAMPLE_TEST_GROUPS:
         assert test_group in workflow
     assert "needs: [python-test, examples-test]" in workflow

@@ -88,31 +88,62 @@ Example variations by board:
 These scripts print a final artifact summary and are a good starting point for
 platform-specific defaults.
 
-### ADRV9009 custom profile files
+### ADRV9009 board and Talise profile files
 
-The ADRV9009 profile-file example combines the checked-in
-`adrv9009_zc706` board defaults with a small user-owned JSON override file.
-Inspect the effective configuration without an XSA, network access, or Vivado:
+ADRV9009 uses two distinct kinds of profile. The built-in `adrv9009_zc706`
+JSON **board profile** supplies device-tree wiring. A Talise XML **filter
+profile** configures the running transceiver through the driver's
+`profile_config` attribute.
+
+The example retrieves all four canonical ADRV9009 filter profiles from
+[`analogdevicesinc/iio-oscilloscope`](https://github.com/analogdevicesinc/iio-oscilloscope/tree/main/filters/adrv9009).
+Downloads use a reviewed commit and SHA-256 manifest rather than mutable
+`main`, so changed or truncated hardware profiles fail closed.
+
+List the available aliases:
+
+```bash
+python examples/xsa/adrv9009_profile_file.py --list-talise-profiles
+```
+
+Download and verify one profile without an XSA, Vivado, or hardware access:
 
 ```bash
 python examples/xsa/adrv9009_profile_file.py \
-  --profile-file examples/xsa/profiles/adrv9009_zc706_custom.json \
+  --talise-profile tx200-rx200-orx200 \
+  --download-talise-profile \
+  --output-dir build/adrv9009
+```
+
+The script prints the downloaded path and explicit target-side steps for
+copying it and writing it to `profile_config`; it does not modify hardware
+automatically.
+
+The checked-in JSON override is still available to demonstrate board-profile
+merging. Inspect the effective board configuration without running SDTGen:
+
+```bash
+python examples/xsa/adrv9009_profile_file.py \
+  --board-profile-file examples/xsa/profiles/adrv9009_zc706_custom.json \
   --show-config
 ```
 
-Then use the same validated profile file for a complete XSA pipeline run:
+Run the complete XSA pipeline and retrieve the selected runtime profile in one
+command:
 
 ```bash
 python examples/xsa/adrv9009_profile_file.py \
-  --profile-file my-adrv9009.json \
+  --board-profile-file my-adrv9009-board.json \
+  --talise-profile tx200-rx200-orx200 \
   --xsa /path/to/system_top.xsa \
   --output-dir build/adrv9009
 ```
 
-The custom file only needs to contain values that differ from the built-in
-profile. Explicit custom values win; SPI assignments, GPIOs, link IDs, and
-other omitted wiring values continue to come from `adrv9009_zc706`. Profile
-keys and value types are validated before SDTGen runs.
+The custom JSON file only needs values that differ from the built-in board
+profile. Explicit custom values win; omitted SPI assignments, GPIOs, and link
+IDs continue to come from `adrv9009_zc706`. JSON keys and types are validated
+before SDTGen runs. The selected Talise file remains separate and is applied
+after the generated device tree has booted.
 
 ## Tutorial 3: Use the Python API directly
 
