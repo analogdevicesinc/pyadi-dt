@@ -20,7 +20,7 @@ case "$package_type" in
         ;;
     osxpkg)
         sudo installer -pkg "$package_file" -target /
-        package_files=$(pkgutil --files com.analogdevices.adidt)
+        package_files=$(pkgutil --files com.analogdevices.python3-adidt)
         ;;
     *)
         echo "unsupported package type: $package_type" >&2

@@ -60,7 +60,7 @@ mkdir -p "$(dirname "$output_file")"
 
 extra_args=()
 if [[ "$package_type" == "osxpkg" ]]; then
-    extra_args+=(--identifier com.analogdevices.adidt)
+    extra_args+=(--osxpkg-identifier-prefix com.analogdevices)
 fi
 
 fpm -s python -t "$package_type" \
