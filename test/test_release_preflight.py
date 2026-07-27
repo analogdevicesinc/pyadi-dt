@@ -131,6 +131,9 @@ def test_manual_dispatch_cannot_publish():
 def test_workflows_use_release_manifest_without_sleep_loops():
     release_wf = (repo_root / ".github" / "workflows" / "release.yml").read_text()
     debian_wf = (repo_root / ".github" / "workflows" / "build_debian.yaml").read_text()
+    system_wf = (
+        repo_root / ".github" / "workflows" / "build_system_packages.yml"
+    ).read_text()
 
     assert "release_manifest.py generate" in release_wf
     assert "release_manifest.py verify" in release_wf
@@ -143,3 +146,35 @@ def test_workflows_use_release_manifest_without_sleep_loops():
     assert "group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" in release_wf
     assert "sleep 10" not in debian_wf
     assert "for attempt in {1..30}" not in debian_wf
+
+    assert system_wf.count("release_manifest.py upsert-release") == 1
+    assert "group: release-${{ github.ref_name }}" in system_wf
+    assert "Expected three native system packages" in system_wf
+    assert "sleep 10" not in system_wf
+
+
+def test_native_system_package_ci_contract():
+    """Build each package in its native OS or distribution and smoke-test it."""
+    workflow = (
+        repo_root / ".github" / "workflows" / "build_system_packages.yml"
+    ).read_text()
+    builder = (repo_root / ".github" / "scripts" / "create_system_package.sh").read_text()
+    verifier = (repo_root / ".github" / "scripts" / "verify_system_package.sh").read_text()
+
+    assert "debian:12" in workflow
+    assert "fedora:42" in workflow
+    assert "runs-on: macos-14" in workflow
+    assert 'package_type: "deb"' in workflow
+    assert 'package_type: "rpm"' in workflow
+    assert "create_system_package.sh osxpkg" in workflow
+    assert workflow.count("actions/upload-artifact@v7") == 2
+    assert "Install and verify package" in workflow
+    assert "if-no-files-found: error" in workflow
+
+    assert 'fpm -s python -t "$package_type"' in builder
+    assert '--package "$output_file"' in builder
+    assert "--no-auto-depends" in builder
+    assert "dpkg -L python3-adidt" in verifier
+    assert "rpm -ql python3-adidt" in verifier
+    assert "pkgutil --files com.analogdevices.adidt" in verifier
+    assert '"$package_test_python" "$package_cli" --help' in verifier
