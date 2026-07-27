@@ -230,11 +230,17 @@ def parse_ad9371_profile(path: str | Path) -> AD9371Profile:
     header = _HEADER_RE.search(text)
     if not header or header.group("device").upper() != "AD9371":
         raise ValueError(f"Not an AD9371 profile: {profile_path}")
+    version = _number(header.group("version"))
+    if version != 0:
+        raise ValueError(f"Unsupported AD9371 profile version: {version}")
 
     sections: dict[str, dict[str, Any]] = {}
     for match in _SECTION_RE.finditer(text):
+        name = match.group("name").lower()
+        if name in sections:
+            raise ValueError(f"AD9371 profile has duplicate {name} section")
         body = match.group("body")
-        sections[match.group("name").lower()] = {
+        sections[name] = {
             "scalars": _scalars(body),
             "arrays": _arrays(body),
         }
@@ -243,6 +249,6 @@ def parse_ad9371_profile(path: str | Path) -> AD9371Profile:
         raise ValueError(f"AD9371 profile is missing: {', '.join(missing)}")
     return AD9371Profile(
         name=header.group("name").strip(),
-        version=_number(header.group("version")),
+        version=version,
         sections=sections,
     )

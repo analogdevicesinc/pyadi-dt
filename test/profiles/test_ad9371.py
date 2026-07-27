@@ -125,3 +125,21 @@ def test_rejects_out_of_range_coefficient(tmp_path):
     malformed.write_text(source.read_text().replace("-5\n", "40000\n", 1))
     with pytest.raises(ValueError, match="outside signed 16-bit range"):
         parse_ad9371_profile(malformed).to_dt_properties()
+
+
+def test_rejects_unsupported_profile_version(tmp_path):
+    source = PROFILES / "profile_TxBW200_ORxBW200_RxBW100.txt"
+    malformed = tmp_path / "version.txt"
+    malformed.write_text(source.read_text().replace("version=0", "version=1", 1))
+    with pytest.raises(ValueError, match="Unsupported AD9371 profile version"):
+        parse_ad9371_profile(malformed)
+
+
+def test_rejects_duplicate_section(tmp_path):
+    source = PROFILES / "profile_TxBW200_ORxBW200_RxBW100.txt"
+    text = source.read_text()
+    clocks = text[text.index("<clocks>") : text.index("</clocks>") + len("</clocks>")]
+    malformed = tmp_path / "duplicate.txt"
+    malformed.write_text(text.replace("</clocks>", f"</clocks>\n{clocks}", 1))
+    with pytest.raises(ValueError, match="duplicate clocks section"):
+        parse_ad9371_profile(malformed)
