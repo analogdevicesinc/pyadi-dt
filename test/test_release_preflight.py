@@ -142,13 +142,18 @@ def test_workflows_use_release_manifest_without_sleep_loops():
     assert debian_wf.count("release_manifest.py upsert-release") == 1
     assert "needs: [identify_version, build_and_deploy_for_kuiper, build_and_deploy_for_ubuntu]" in debian_wf
     assert "Expected three Debian artifacts" in debian_wf
-    assert "group: release-${{ github.ref_name }}" in debian_wf
+    concurrency_group = (
+        "group: ${{ github.ref_type == 'tag' && "
+        "format('release-{0}', github.ref_name) || "
+        "format('{0}-{1}', github.workflow, github.ref) }}"
+    )
+    assert concurrency_group in debian_wf
     assert "group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" in release_wf
     assert "sleep 10" not in debian_wf
     assert "for attempt in {1..30}" not in debian_wf
 
     assert system_wf.count("release_manifest.py upsert-release") == 1
-    assert "group: release-${{ github.ref_name }}" in system_wf
+    assert concurrency_group in system_wf
     assert "Expected three native system packages" in system_wf
     assert "sleep 10" not in system_wf
 
@@ -174,6 +179,8 @@ def test_native_system_package_ci_contract():
     assert 'fpm -s python -t "$package_type"' in builder
     assert '--package "$output_file"' in builder
     assert "--no-auto-depends" in builder
+    assert 'cd "$package_source"' in builder
+    assert '"*.egg-info", "build", "dist"' in builder
     assert "dpkg -L python3-adidt" in verifier
     assert "rpm -ql python3-adidt" in verifier
     assert "--osxpkg-identifier-prefix com.analogdevices" in builder

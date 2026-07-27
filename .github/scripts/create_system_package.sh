@@ -57,6 +57,30 @@ subprocess.run([sys.executable, "-m", "pip", "install", *dependencies], check=Tr
 PY
 
 mkdir -p "$(dirname "$output_file")"
+output_dir=$(cd "$(dirname "$output_file")" && pwd)
+output_file="$output_dir/$(basename "$output_file")"
+
+# fpm's Python source adapter runs setuptools and writes egg-info into its input
+# tree. Build from a disposable copy so container jobs (which run as root) never
+# leave root-owned generated files in the checked-out source tree.
+package_source=$(mktemp -d "${RUNNER_TEMP:-/tmp}/adidt-package-source.XXXXXX")
+trap 'rm -rf "$package_source"' EXIT
+PACKAGE_SOURCE="$package_source" python3 - <<'PY'
+import os
+import shutil
+from pathlib import Path
+
+ignored = shutil.ignore_patterns(
+    ".git", ".pytest_cache", ".ruff_cache", ".venv", "__pycache__",
+    "*.egg-info", "build", "dist",
+)
+shutil.copytree(
+    Path.cwd(),
+    os.environ["PACKAGE_SOURCE"],
+    dirs_exist_ok=True,
+    ignore=ignored,
+)
+PY
 
 extra_args=()
 if [[ "$package_type" == "osxpkg" ]]; then
@@ -72,22 +96,25 @@ if [[ "$package_type" == "osxpkg" ]]; then
     export PATH="$pkgbuild_shim:$PATH"
 fi
 
-fpm -s python -t "$package_type" \
-    --force \
-    --architecture "$architecture" \
-    --name python3-adidt \
-    --package "$output_file" \
-    --url "https://github.com/analogdevicesinc/pyadi-dt" \
-    --version "$version" \
-    --iteration 1 \
-    --maintainer "EngineerZone <https://ez.analog.com/sw-interface-tools>" \
-    --license "EPL-2.0" \
-    --no-auto-depends \
-    --python-bin python3 \
-    --python-package-name-prefix python3 \
-    --description "Device tree management tools for ADI hardware ($distro build)" \
-    "${extra_args[@]}" \
-    .
+(
+    cd "$package_source"
+    fpm -s python -t "$package_type" \
+        --force \
+        --architecture "$architecture" \
+        --name python3-adidt \
+        --package "$output_file" \
+        --url "https://github.com/analogdevicesinc/pyadi-dt" \
+        --version "$version" \
+        --iteration 1 \
+        --maintainer "EngineerZone <https://ez.analog.com/sw-interface-tools>" \
+        --license "EPL-2.0" \
+        --no-auto-depends \
+        --python-bin python3 \
+        --python-package-name-prefix python3 \
+        --description "Device tree management tools for ADI hardware ($distro build)" \
+        "${extra_args[@]}" \
+        .
+)
 
 test -s "$output_file"
 printf 'created %s\n' "$output_file"
