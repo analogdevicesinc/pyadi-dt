@@ -439,6 +439,7 @@ class ADRV9009BoardConfig:
     tx_link_id: int = 2
     tx_octets_per_frame: Optional[int] = None
     rx_os_octets_per_frame: Optional[int] = None
+    ad9371_profile_path: Optional[str] = None
     trx_profile_props: Optional[list[Any]] = None
     ad9528_channel_blocks: Optional[list[Any]] = None
 
@@ -446,6 +447,10 @@ class ADRV9009BoardConfig:
         _validate_non_empty_str(self.spi_bus, "spi_bus")
         _validate_non_negative_int(self.clk_cs, "clk_cs")
         _validate_non_negative_int(self.trx_cs, "trx_cs")
+        if self.ad9371_profile_path is not None:
+            _validate_non_empty_str(
+                self.ad9371_profile_path, "ad9371_profile_path"
+            )
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "ADRV9009BoardConfig":

@@ -10,4 +10,5 @@ from adidt.model.renderer import BoardModelRenderer as BoardModelRenderer
 from adidt import devices as devices
 from adidt import eval as eval
 from adidt import fpga as fpga
+from adidt import profiles as profiles
 from adidt.system import System as System

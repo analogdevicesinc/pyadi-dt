@@ -90,6 +90,14 @@ Pipeline Configuration
    :undoc-members:
    :show-inheritance:
 
+AD9371 Profiles
+---------------
+
+.. automodule:: adidt.profiles.ad9371
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Builders
 --------
 

@@ -19,6 +19,7 @@ LG_ENV: lg_adrv9371_zc706_tftp.yaml.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -34,6 +35,10 @@ from test.hw._system_base import (
 DEFAULT_KUIPER_RELEASE = "2023_R2_P1"
 DEFAULT_KUIPER_PROJECT = "zynq-zc706-adv7511-adrv937x"
 DEFAULT_VCXO_HZ = 122_880_000
+PROFILE_PATH = (
+    Path(__file__).parents[2]
+    / "examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt"
+)
 
 
 def _adrv9371_cfg() -> dict[str, Any]:
@@ -55,6 +60,10 @@ def _adrv9371_cfg() -> dict[str, Any]:
             "ad9528_vcxo_freq": DEFAULT_VCXO_HZ,
             "rx_link_id": 1,
             "tx_link_id": 0,
+            # Override the built-in hand-transcribed property list with the
+            # canonical profile parser under test.
+            "trx_profile_props": None,
+            "ad9371_profile_path": str(PROFILE_PATH),
         },
         "jesd": {
             "rx": {"F": 4, "K": 32, "M": 4, "L": 2},

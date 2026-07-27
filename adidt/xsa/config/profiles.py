@@ -37,6 +37,7 @@ _ADRV9009_BOARD_ALLOWED_KEYS = {
     "tx_link_id",
     "tx_octets_per_frame",
     "rx_os_octets_per_frame",
+    "ad9371_profile_path",
     "trx_profile_props",
     "ad9528_channel_blocks",
 }
@@ -192,7 +193,7 @@ _AD9084_BOARD_INT_KEYS = {
     "subclass",
     "hsci_speed_mhz",
 }
-_ADRV9009_BOARD_STR_KEYS = {"spi_bus"}
+_ADRV9009_BOARD_STR_KEYS = {"spi_bus", "ad9371_profile_path"}
 _AD9084_BOARD_STR_KEYS = {
     "converter_spi",
     "clock_spi",
