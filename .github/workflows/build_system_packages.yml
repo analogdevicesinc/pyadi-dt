@@ -18,9 +18,10 @@ permissions:
   contents: read
 
 concurrency:
-  # Serialize every tag-triggered release finalizer with release.yml and the
-  # Kuiper/Ubuntu Debian workflow while they update one checksum manifest.
-  group: release-${{ github.ref_name }}
+  # Tag runs serialize with release.yml and build_debian.yaml while they update
+  # one release manifest. Branch and PR runs stay isolated by workflow so one
+  # packaging workflow cannot cancel another workflow while it is still queued.
+  group: ${{ github.ref_type == 'tag' && format('release-{0}', github.ref_name) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: false
 
 jobs:

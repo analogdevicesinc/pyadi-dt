@@ -4,9 +4,9 @@ permissions:
   contents: read
 
 concurrency:
-  # Match release.yml on tag pushes so Python and Debian assets cannot race
-  # while creating the release or replacing its checksum manifest.
-  group: release-${{ github.ref_name }}
+  # Match release.yml only on tag pushes. Branch and PR runs stay isolated by
+  # workflow so this job and native-system packaging can both reach execution.
+  group: ${{ github.ref_type == 'tag' && format('release-{0}', github.ref_name) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: false
 
 env:
