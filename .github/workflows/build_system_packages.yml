@@ -1,0 +1,157 @@
+name: Build native system packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - '20[1-9][0-9]_R[1-9]'
+      - staging/*
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+      - '20[1-9][0-9]_R[1-9]'
+
+permissions:
+  contents: read
+
+concurrency:
+  # Serialize every tag-triggered release finalizer with release.yml and the
+  # Kuiper/Ubuntu Debian workflow while they update one checksum manifest.
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  identify_version:
+    runs-on: ubuntu-latest
+    outputs:
+      app-version: ${{ steps.set_version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set package version
+        id: set_version
+        run: |
+          set -euo pipefail
+          package_version=$(python3 - <<'PY'
+          import tomllib
+          from pathlib import Path
+          print(tomllib.loads(Path("pyproject.toml").read_text())["project"]["version"])
+          PY
+          )
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            app_version="${{ github.ref_name }}"
+            app_version="${app_version#v}"
+            [[ "$app_version" == "$package_version" ]] || {
+              echo "Tag version $app_version does not match package version $package_version" >&2
+              exit 1
+            }
+          else
+            app_version="${package_version}+${GITHUB_SHA}"
+          fi
+          echo "version=$app_version" >> "$GITHUB_OUTPUT"
+
+  linux-packages:
+    name: ${{ matrix.distro }} ${{ matrix.package_type }}
+    needs: identify_version
+    runs-on: ubuntu-latest
+    container: ${{ matrix.container }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian12
+            container: debian:12
+            package_type: "deb"
+            architecture: amd64
+            extension: deb
+          - distro: fedora42
+            container: fedora:42
+            package_type: "rpm"
+            architecture: x86_64
+            extension: rpm
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build native package
+        env:
+          VERSION: ${{ needs.identify_version.outputs.app-version }}
+        run: |
+          output="dist/system/python3-adidt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
+          .github/scripts/create_system_package.sh \
+            "${{ matrix.package_type }}" "$VERSION" "${{ matrix.architecture }}" \
+            "${{ matrix.distro }}" "$output"
+      - name: Install and verify package
+        env:
+          VERSION: ${{ needs.identify_version.outputs.app-version }}
+        run: |
+          package="dist/system/python3-adidt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
+          .github/scripts/verify_system_package.sh "${{ matrix.package_type }}" "$package"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: adidt-system-${{ matrix.distro }}-${{ matrix.architecture }}
+          path: dist/system/*.${{ matrix.extension }}
+          if-no-files-found: error
+
+  macos-package:
+    name: macOS 14 installer package
+    needs: identify_version
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Build native package
+        env:
+          VERSION: ${{ needs.identify_version.outputs.app-version }}
+        run: |
+          architecture=$(uname -m)
+          output="dist/system/python3-adidt-${VERSION}-1-macos14-${architecture}.pkg"
+          .github/scripts/create_system_package.sh osxpkg "$VERSION" "$architecture" macos14 "$output"
+      - name: Install and verify package
+        env:
+          VERSION: ${{ needs.identify_version.outputs.app-version }}
+        run: |
+          architecture=$(uname -m)
+          package="dist/system/python3-adidt-${VERSION}-1-macos14-${architecture}.pkg"
+          .github/scripts/verify_system_package.sh osxpkg "$package"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: adidt-system-macos14
+          path: dist/system/*.pkg
+          if-no-files-found: error
+
+  attach_system_release_assets:
+    name: Attach verified native packages to release
+    if: github.ref_type == 'tag'
+    needs: [identify_version, linux-packages, macos-package]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout release helper
+        uses: actions/checkout@v7
+        with:
+          path: source
+      - name: Download all native system packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: adidt-system-*
+          path: release-assets
+          merge-multiple: true
+      - name: Validate and attach native system packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          artifacts=(release-assets/*.deb release-assets/*.rpm release-assets/*.pkg)
+          if [[ "${#artifacts[@]}" -ne 3 ]]; then
+            echo "Expected three native system packages, found ${#artifacts[@]}" >&2
+            printf '  %s\n' "${artifacts[@]}" >&2
+            exit 1
+          fi
+          python3 source/.github/scripts/release_manifest.py upsert-release \
+            --tag "${{ github.ref_name }}" \
+            --files "${artifacts[@]}"

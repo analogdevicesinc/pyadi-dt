@@ -55,8 +55,10 @@ this environment; no PyPI API token is required.
 
    Confirm the validation, Python 3.10–3.13, build, wheel-install, and CLI
    smoke-test jobs pass. The GitHub Release and PyPI jobs must be skipped.
-4. Confirm all required `main` workflows—including hardware and Debian—are
-   green for the exact commit to be tagged.
+4. Confirm all required `main` workflows—including hardware, Kuiper/Ubuntu
+   Debian packaging, and native system packaging—are green for the exact commit
+   to be tagged. The native workflow builds on Debian 12, Fedora 42, and macOS
+   14 rather than cross-packaging those artifacts on Ubuntu.
 
 ## Tag and publish
 
@@ -81,10 +83,12 @@ are correct.
 ## Verify the published release
 
 1. Confirm **Publish Release** completed successfully for the tagged SHA.
-2. Confirm the Debian workflow completed for the same tag and attached its
-   `.deb` artifacts to the GitHub Release.
+2. Confirm both packaging workflows completed for the same tag. The release
+   must contain Kuiper/Ubuntu `.deb` files plus the Debian 12 `.deb`, Fedora 42
+   `.rpm`, and macOS 14 `.pkg` artifacts. Each job installs and smoke-tests its
+   package before upload.
 3. Verify the GitHub Release contains the wheel, source distribution, release
-   notes, Debian artifacts, and `SHA256SUMS` manifest file.
+   notes, all native system packages, and the `SHA256SUMS` manifest file.
 4. Verify checksum manifest integrity:
 
    ```bash
@@ -120,8 +124,8 @@ artifact for it has been accepted by PyPI.
 - **GitHub Release failed after PyPI succeeded:** rerun the failed job. The
   workflow creates a missing release or uploads artifacts to an existing one
   with `--clobber` and updates `SHA256SUMS`.
-- **Debian attachment failed:** rerun the Debian workflow for the original tag;
-  do not retag.
+- **System-package attachment failed:** rerun the failed Debian or native-system
+  package workflow for the original tag; do not retag.
 - **Checksum manifest out of sync:** re-sync the release manifest using the
   helper script:
   ```bash
