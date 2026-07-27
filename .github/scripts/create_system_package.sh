@@ -61,6 +61,15 @@ mkdir -p "$(dirname "$output_file")"
 extra_args=()
 if [[ "$package_type" == "osxpkg" ]]; then
     extra_args+=(--osxpkg-identifier-prefix com.analogdevices)
+
+    # setup-python's toolcache can place another `pkgbuild` executable ahead of
+    # Apple's packaging utility. fpm resolves pkgbuild through PATH, so provide
+    # a private shim that unambiguously invokes the native macOS tool.
+    pkgbuild_shim="${RUNNER_TEMP:-/tmp}/adidt-package-tools"
+    rm -rf "$pkgbuild_shim"
+    mkdir -p "$pkgbuild_shim"
+    ln -s /usr/bin/pkgbuild "$pkgbuild_shim/pkgbuild"
+    export PATH="$pkgbuild_shim:$PATH"
 fi
 
 fpm -s python -t "$package_type" \

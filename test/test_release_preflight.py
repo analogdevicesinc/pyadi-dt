@@ -177,5 +177,6 @@ def test_native_system_package_ci_contract():
     assert "dpkg -L python3-adidt" in verifier
     assert "rpm -ql python3-adidt" in verifier
     assert "--osxpkg-identifier-prefix com.analogdevices" in builder
+    assert 'ln -s /usr/bin/pkgbuild "$pkgbuild_shim/pkgbuild"' in builder
     assert "pkgutil --files com.analogdevices.python3-adidt" in verifier
     assert '"$package_test_python" "$package_cli" --help' in verifier
