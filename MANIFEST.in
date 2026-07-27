@@ -1,1 +1,2 @@
 include CHANGELOG.md
+recursive-include examples/xsa/profiles/ad9371_5 *.md *.txt

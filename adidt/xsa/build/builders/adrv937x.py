@@ -372,9 +372,16 @@ class ADRV937xBuilder:
                 f"<&{tx_xcvr_label} 0 {tx_link_id}>, "
                 f"<&{clock_chip_label} 0 {ad9528_sysref_link_id}>"
             )
-        profile_props = tuple(
-            board_cfg.get("trx_profile_props", _DEFAULT_MYKONOS_PROFILE_PROPS)
-        )
+        explicit_profile_props = board_cfg.get("trx_profile_props")
+        profile_path = board_cfg.get("ad9371_profile_path")
+        if profile_path:
+            from ....profiles import parse_ad9371_profile
+
+            profile_props = tuple(parse_ad9371_profile(profile_path).to_dt_properties())
+        else:
+            profile_props = tuple(
+                explicit_profile_props or _DEFAULT_MYKONOS_PROFILE_PROPS
+            )
         phy_context = {
             "gpio_label": gpio_label,
             "clocks_value": trx_clocks_value,

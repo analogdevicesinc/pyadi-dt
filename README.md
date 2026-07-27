@@ -18,6 +18,7 @@
 ## Key Features
 
 - **XSA-to-DTS pipeline** — Generate device trees from Vivado `.xsa` archives using built-in board profiles
+- **AD9371 profile import** — Translate canonical iio-oscilloscope AD9371 profile-wizard files into Linux device-tree properties
 - **BoardModel API** — Build, edit, and render device tree overlays programmatically
 - **88 Kuiper boards** — Full manifest of ADI Kuiper 2023-R2 supported boards
 - **RPi support** — Generate overlays for ADI sensors on Raspberry Pi (ADIS16495, ADXL345, AD7124, etc.)
@@ -90,6 +91,22 @@ print(system.generate_dts())
 
 See `examples/ad9081_fmc_zcu102.py` for the full RX+TX wiring.
 
+### Generate AD9371 profile properties from a canonical profile
+
+```python
+from adidt.profiles import parse_ad9371_profile
+
+profile = parse_ad9371_profile(
+    "examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt"
+)
+for statement in profile.to_dt_properties():
+    print(statement)
+```
+
+The XSA pipeline accepts the same file through
+`adrv9009_board.ad9371_profile_path`. See
+`examples/xsa/adrv937x_zc706.py --help` for a runnable end-to-end example.
+
 ### List Kuiper-supported boards
 
 ```bash
@@ -111,6 +128,7 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 | AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 ✓ |
 | AD9084 | VCU118, VPK180 | |
 | ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102 ✓ |
+| AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 ✓ |
 | ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | |
 | ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | |

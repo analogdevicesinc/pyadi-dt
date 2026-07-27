@@ -14,8 +14,8 @@ DEFAULT_KUIPER_RELEASE = "2023_r2"
 DEFAULT_KUIPER_PROJECT = "zynq-zc706-adv7511-adrv937x"
 
 
-def _default_config() -> dict:
-    return {
+def _default_config(ad9371_profile: Path | None = None) -> dict:
+    config = {
         "jesd": {
             "rx": {"F": 4, "K": 32, "M": 4, "L": 4, "Np": 16, "S": 1},
             "tx": {"F": 2, "K": 32, "M": 4, "L": 4, "Np": 16, "S": 1},
@@ -27,6 +27,11 @@ def _default_config() -> dict:
             "hmc7044_tx_channel": 0,
         },
     }
+    if ad9371_profile is not None:
+        config["adrv9009_board"] = {
+            "ad9371_profile_path": str(ad9371_profile.resolve())
+        }
+    return config
 
 
 def _download_kuiper_xsa(
@@ -53,6 +58,12 @@ def main() -> None:
     )
     parser.add_argument("--release", default=DEFAULT_KUIPER_RELEASE)
     parser.add_argument("--project", default=DEFAULT_KUIPER_PROJECT)
+    parser.add_argument(
+        "--ad9371-profile",
+        type=Path,
+        default=None,
+        help="Canonical AD9371 profile-wizard text file to render into the DTS",
+    )
     args = parser.parse_args()
 
     out_dir = args.output_dir.resolve()
@@ -72,7 +83,7 @@ def main() -> None:
 
     result = XsaPipeline().run(
         xsa_path=xsa_path,
-        cfg=_default_config(),
+        cfg=_default_config(args.ad9371_profile),
         output_dir=out_dir,
         profile="adrv937x_zc706",
     )
