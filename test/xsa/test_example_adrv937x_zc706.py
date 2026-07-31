@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
+
+from adidt.profiles import resolve_ad9371_jif_config
 
 ROOT = Path(__file__).parents[2]
 EXAMPLE = ROOT / "examples" / "xsa" / "adrv937x_zc706.py"
@@ -22,14 +23,6 @@ PROFILE = (
 )
 
 
-def _load_example():
-    spec = importlib.util.spec_from_file_location("adrv937x_zc706_example", EXAMPLE)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
 def _require_new_adijif() -> None:
     import adijif
 
@@ -40,9 +33,7 @@ def _require_new_adijif() -> None:
 def test_ad9371_profile_drives_all_mykonos_links() -> None:
     """The new pyadi-jif model must replace the old hard-coded framing."""
     _require_new_adijif()
-    module = _load_example()
-
-    cfg, summary = module._resolve_config_from_adijif(PROFILE, solve=False)
+    cfg, summary = resolve_ad9371_jif_config(PROFILE, solve=False)
 
     assert cfg["jesd"]["rx"] == {
         "F": 4,
@@ -88,9 +79,8 @@ def test_ad9371_profile_drives_all_mykonos_links() -> None:
 def test_ad9371_profile_can_be_solved_with_shared_sysref() -> None:
     """Exercise the corrected three-link solver result when CPLEX is available."""
     _require_new_adijif()
-    module = _load_example()
     try:
-        cfg, summary = module._resolve_config_from_adijif(PROFILE, solve=True)
+        cfg, summary = resolve_ad9371_jif_config(PROFILE, solve=True)
     except Exception as exc:
         if "CPLEX" in str(exc) or "docplex" in str(exc):
             pytest.skip(f"CPLEX unavailable: {exc}")

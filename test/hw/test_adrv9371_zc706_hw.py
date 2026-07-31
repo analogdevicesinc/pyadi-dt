@@ -19,11 +19,14 @@ LG_ENV: lg_adrv9371_zc706_tftp.yaml.
 
 from __future__ import annotations
 
+import copy
+from functools import cache
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+from adidt.profiles import resolve_ad9371_jif_config
 from test.hw._system_base import (
     BoardSystemProfile,
     acquire_or_local_xsa,
@@ -34,22 +37,24 @@ from test.hw._system_base import (
 
 DEFAULT_KUIPER_RELEASE = "2023_R2_P1"
 DEFAULT_KUIPER_PROJECT = "zynq-zc706-adv7511-adrv937x"
-DEFAULT_VCXO_HZ = 122_880_000
 PROFILE_PATH = (
     Path(__file__).parents[2]
     / "examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt"
 )
 
 
-def _adrv9371_cfg() -> dict[str, Any]:
-    """ADRV9371+ZC706 XSA pipeline cfg.
+@cache
+def _solved_ad9371_config() -> tuple[dict[str, Any], dict[str, Any]]:
+    """Solve the canonical profile once for this hardware-test process."""
+    return resolve_ad9371_jif_config(PROFILE_PATH, solve=True)
 
-    JESD framing matches the Kuiper reference
-    ``zynq-zc706-adv7511-adrv937x``: RX = M=4 L=2 S=1 → F=4;
-    TX = M=4 L=4 S=1 → F=2.
-    """
-    return {
-        "adrv9009_board": {
+
+def _adrv9371_cfg() -> dict[str, Any]:
+    """Return the real solved pyadi-jif configuration plus board wiring."""
+    cfg, _summary = _solved_ad9371_config()
+    cfg = copy.deepcopy(cfg)
+    cfg["adrv9009_board"].update(
+        {
             "misc_clk_hz": 122_880_000,
             "spi_bus": "spi0",
             "clk_cs": 0,
@@ -57,19 +62,12 @@ def _adrv9371_cfg() -> dict[str, Any]:
             "trx_reset_gpio": 106,
             "trx_sysref_req_gpio": 112,
             "ad9528_reset_gpio": 113,
-            "ad9528_vcxo_freq": DEFAULT_VCXO_HZ,
             "rx_link_id": 1,
+            "rx_os_link_id": 2,
             "tx_link_id": 0,
-            # Override the built-in hand-transcribed property list with the
-            # canonical profile parser under test.
-            "trx_profile_props": None,
-            "ad9371_profile_path": str(PROFILE_PATH),
-        },
-        "jesd": {
-            "rx": {"F": 4, "K": 32, "M": 4, "L": 2},
-            "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
-        },
-    }
+        }
+    )
+    return cfg
 
 
 def _topology_assert(topology) -> None:
@@ -90,10 +88,15 @@ SPEC = BoardSystemProfile(
     kernel_fixture_name="built_kernel_image_zynq",
     out_label="adrv9371_xsa",
     dmesg_grep_pattern="ad9371|ad9528|jesd204|mykonos|probe|failed|error",
-    merged_dts_must_contain=('compatible = "adi,ad9371"',),
+    merged_dts_must_contain=(
+        'compatible = "adi,ad9371"',
+        'compatible = "adi,axi-ad9371-obs-1.0"',
+    ),
     probe_signature_any=("ad9371", "mykonos"),
     probe_signature_message="AD9371 driver probe signature not found in dmesg",
     iio_required_all=("ad9371-phy", "ad9528-1"),
+    expected_rx_jesd_links=2,
+    rx_capture_target_names=("axi-ad9371-rx-hpc", "ad_ip_jesd204_tpl_adc"),
 )
 
 
@@ -108,6 +111,16 @@ def test_adrv9371_zc706_xsa_hw(board, tmp_path, request):
         read_jesd_status,
         shell_out,
     )
+
+    cfg, solver_summary = _solved_ad9371_config()
+    assert solver_summary["solver_succeeded"] is True
+    clocks = solver_summary["clock_output_clocks"]
+    assert clocks["adc_sysref"]["rate"] == clocks["obs_sysref"]["rate"]
+    assert clocks["obs_sysref"]["rate"] == clocks["dac_sysref"]["rate"]
+    assert {cfg[name]["type"] for name in ("fpga_adc", "fpga_obs", "fpga_dac")} == {
+        "qpll"
+    }
+    print(f"pyadi-jif solved clock outputs: {clocks}")
 
     shell, _ctx, dmesg_txt = run_xsa_boot_and_verify(
         SPEC, board=board, request=request, tmp_path=tmp_path
@@ -126,7 +139,9 @@ def test_adrv9371_zc706_xsa_hw(board, tmp_path, request):
         for name in ilas_report.fields:
             print(f"  mismatched: {name}")
     assert_ilas_aligned(dmesg_txt, context="adrv9371_xsa")
-    assert_jesd_links_data(shell, context="adrv9371_xsa")
+    assert_jesd_links_data(
+        shell, context="adrv9371_xsa", expected_rx_links=2
+    )
 
     # HDL compile-time framing — TPL descriptor registers.
     # Descriptor 1 @ +0x240: [31:24]=F, [23:16]=S, [15:8]=L, [7:0]=M

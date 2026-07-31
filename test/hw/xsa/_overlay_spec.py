@@ -90,6 +90,8 @@ class BoardOverlayProfile:
     iio_required_all: tuple[str, ...] = ()
     iio_required_any: tuple[str, ...] = ()
     iio_frontend_label: str = "RX frontend"
+    expected_rx_jesd_links: int = 1
+    expected_tx_jesd_links: int = 1
 
     dmesg_filter: DmesgFilter = _identity
 
@@ -134,6 +136,7 @@ def local_xsa_or_skip(*candidate_filenames: str) -> XsaResolver:
             for parent in (here, here / "ref_data")
         )
         pytest.skip(f"XSA fixture missing — looked at: {searched}")
+        raise AssertionError("pytest.skip returned unexpectedly")  # pragma: no cover
 
     return _resolver
 

@@ -293,5 +293,7 @@ The TFTP-boot boards (`nemo`, `bq`) don't need ssh access to the exporter host (
 | `iio_required_any_groups` | `()` | Tuple of groups; each inner tuple is "any of these names must be present".  Express multiple independent any-of asserts (e.g. RX frontend group + TX frontend group). |
 | `jesd_rx_glob` | default | sysfs glob for the RX JESD platform device.  `None` uses a permissive default. |
 | `jesd_tx_glob` | default | Same for TX. |
+| `expected_rx_jesd_links` | `1` | Number of RX cores that must independently report `Link status: DATA`; AD9371 uses `2` for primary + observation RX. |
+| `expected_tx_jesd_links` | `1` | Number of TX cores that must independently report `Link status: DATA`. |
 | `dmesg_filter` | identity | `(text) -> text` to strip benign noise before `assert_no_probe_errors`. |
 | `rx_capture_target_names` | `()` | Tuple of IIO device names to try for the RX capture smoke test; empty skips the capture. |

@@ -17,8 +17,11 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
 
     assert '"adidt[test,xsa]"' in pyproject
     assert '"$VENV/bin/sdtgen" -help' in installer
+    assert "requirements/pyadi-jif-ad9371.txt" in installer
+    assert "hasattr(adijif, 'ad9371')" in installer
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
     assert "source .github/scripts/prepare-hardware-env.sh" in workflow
+    assert 'test/hw/xsa -maxdepth 1 -type f -name "test_*${BOARD}*${CARRIER}*_overlay.py"' in workflow
     assert '[[ "$entry" == "$HOME/.local/bin" ]] && continue' in environment
     assert 'export PATH="$VENV_DIR/bin:/usr/bin' in environment
     assert '"$(command -v as)" != "/usr/bin/as"' in environment

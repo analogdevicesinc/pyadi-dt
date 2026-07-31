@@ -11,8 +11,8 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from typing import Any
 
+from adidt.profiles import resolve_ad9371_jif_config
 from adidt.xsa.parse.kuiper import download_kuiper_xsa
 from adidt.xsa.pipeline import XsaPipeline
 
@@ -26,115 +26,6 @@ DEFAULT_AD9371_PROFILE = (
     / "ad9371_5"
     / "profile_TxBW200_ORxBW200_RxBW100.txt"
 )
-
-# The profile contains datapath rates and interpolation/decimation but not JESD
-# transport framing.  These are ADI's standard Mykonos transport modes.  The
-# corrected pyadi-jif AD9371 model validates them and supplies F/N/CS details.
-_RX_JESD = {"M": 4, "L": 2, "S": 1, "Np": 16}
-_OBS_JESD = {"M": 2, "L": 2, "S": 1, "Np": 16}
-_TX_JESD = {"M": 4, "L": 4, "S": 1, "Np": 16}
-
-
-def _jesd_config(path: Any) -> dict[str, int]:
-    """Return pyadi-dt framing fields from one configured pyadi-jif path."""
-    return {
-        key: int(getattr(path, key))
-        for key in ("F", "K", "M", "L", "N", "Np", "S", "CS")
-    }
-
-
-def _resolve_config_from_adijif(
-    profile_path: Path, *, solve: bool = False
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Apply an AD9371 profile to the corrected pyadi-jif Mykonos model.
-
-    Args:
-        profile_path: Canonical AD9371 profile-wizard text file.
-        solve: Run the full AD9528 + FPGA CPLEX solve when true.  Profile and
-            quick-mode validation do not require a solver.
-
-    Returns:
-        A pyadi-dt pipeline configuration and a human-readable solver summary.
-
-    Raises:
-        RuntimeError: If the installed pyadi-jif predates AD9371 support.
-    """
-    import adijif
-
-    if not hasattr(adijif, "ad9371"):
-        raise RuntimeError(
-            "Installed pyadi-jif does not provide the AD9371 profile model. "
-            "Install the AD9371-capable revision documented for this example."
-        )
-
-    resolved_profile = profile_path.expanduser().resolve()
-    if not resolved_profile.is_file():
-        raise FileNotFoundError(f"AD9371 profile file not found: {resolved_profile}")
-
-    system = adijif.system("ad9371", "ad9528", "xilinx", 122_880_000)
-    system.converter.apply_profile_settings(
-        str(resolved_profile),
-        rx_jesd=_RX_JESD,
-        obs_jesd=_OBS_JESD,
-        tx_jesd=_TX_JESD,
-    )
-    system.fpga.setup_by_dev_kit_name("zc706")
-    system.fpga.force_qpll = True
-
-    converter = system.converter
-    metadata = converter.get_config()
-    cfg: dict[str, Any] = {
-        "jesd": {
-            "rx": _jesd_config(converter.adc),
-            "obs": _jesd_config(converter.obs),
-            "tx": _jesd_config(converter.dac),
-        },
-        "clock": {
-            "rx_device_clk_label": "clkgen",
-            "tx_device_clk_label": "clkgen",
-        },
-        "adrv9009_board": {
-            "ad9371_profile_path": str(resolved_profile),
-            "ad9528_vcxo_freq": int(metadata["device_clock"]),
-            "ad9528_jesd204_max_sysref_hz": int(
-                metadata["jesd204_max_sysref_hz"]
-            ),
-        },
-    }
-    summary: dict[str, Any] = {
-        "profile": str(resolved_profile),
-        "rates_hz": {
-            "rx": int(converter.adc.sample_clock),
-            "obs": int(converter.obs.sample_clock),
-            "tx": int(converter.dac.sample_clock),
-        },
-        "lane_rates_hz": {
-            "rx": int(converter.adc.bit_clock),
-            "obs": int(converter.obs.bit_clock),
-            "tx": int(converter.dac.bit_clock),
-        },
-        "solver_attempted": solve,
-        "solver_succeeded": False,
-        "clock_output_clocks": None,
-    }
-
-    if solve:
-        solved = system.solve()
-        summary["solver_succeeded"] = True
-        summary["clock_output_clocks"] = solved["clock"]["output_clocks"]
-        for cfg_name, solved_name in (
-            ("rx", "adc"),
-            ("obs", "obs"),
-            ("tx", "dac"),
-        ):
-            solved_jesd = solved[f"jesd_{solved_name}"]
-            for key in ("F", "K", "M", "L", "N", "Np", "S", "CS"):
-                if key in solved_jesd:
-                    cfg["jesd"][cfg_name][key] = int(solved_jesd[key])
-            cfg[f"fpga_{solved_name}"] = solved[f"fpga_{solved_name}"]
-
-    return cfg, summary
-
 
 def _download_kuiper_xsa(
     release: str, project: str, cache_dir: Path, out_dir: Path
@@ -178,7 +69,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    cfg, summary = _resolve_config_from_adijif(
+    cfg, summary = resolve_ad9371_jif_config(
         args.ad9371_profile, solve=args.solve_adijif
     )
     if args.show_jif_config:

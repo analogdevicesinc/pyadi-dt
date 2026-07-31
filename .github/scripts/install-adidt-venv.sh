@@ -19,6 +19,8 @@ if [[ ! -x "$VENV/bin/python" ]]; then
 fi
 
 uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+uv pip install --quiet --python "$VENV/bin/python" \
+    -r requirements/pyadi-jif-ad9371.txt
 
 # ``sdtgen`` ships with Vivado rather than the Python ``lopper`` package.
 # Publish the host installation inside the persistent venv so the dynamic test
@@ -44,4 +46,4 @@ if [[ ! -x "$VENV/bin/sdtgen" ]]; then
     exit 1
 fi
 "$VENV/bin/sdtgen" -help >/dev/null
-"$VENV/bin/python" -c "import adi_lg_plugins, lopper"
+"$VENV/bin/python" -c "import adi_lg_plugins, adijif, lopper; assert hasattr(adijif, 'ad9371')"
