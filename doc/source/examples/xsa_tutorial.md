@@ -145,6 +145,45 @@ IDs continue to come from `adrv9009_zc706`. JSON keys and types are validated
 before SDTGen runs. The selected Talise file remains separate and is applied
 after the generated device tree has booted.
 
+### AD9371 profiles with the corrected pyadi-jif model
+
+The `adrv937x_zc706.py` example sends the same canonical Mykonos profile to
+both tools: pyadi-jif derives and validates the primary RX, observation RX, TX,
+FPGA, and shared-SYSREF intent, while pyadi-dt renders the complete profile
+coefficients and places the links on the ZC706/AD9528 hardware.
+
+Until the AD9371 model is included in a pyadi-jif release, install the reviewed
+upstream revision used by CI:
+
+```bash
+pip install -r requirements/pyadi-jif-ad9371.txt
+```
+
+Inspect the profile-derived settings without an XSA, Vivado, network, or
+hardware access:
+
+```bash
+python examples/xsa/adrv937x_zc706.py \
+  --ad9371-profile \
+    examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt \
+  --show-jif-config
+```
+
+The output includes the corrected Mykonos framing (`RX M=4/L=2/F=4`,
+`OBS M=2/L=2/F=2`, and `TX M=4/L=4/F=2`), 14-bit converter resolution with
+two control bits, profile sample rates, and the 78.125 kHz pulsed-SYSREF limit.
+Add `--solve-adijif` to run the full CPLEX AD9528/FPGA solve and verify that all
+three links use a common SYSREF.
+
+Generate the DTS from an XSA using that electrical intent:
+
+```bash
+python examples/xsa/adrv937x_zc706.py \
+  --ad9371-profile path/to/profile.txt \
+  --xsa path/to/system_top.xsa \
+  --output-dir build/adrv937x
+```
+
 ## Tutorial 3: Use the Python API directly
 
 For custom integrations (CI, scripts, internal tools), call `XsaPipeline.run()`:

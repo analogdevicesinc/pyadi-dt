@@ -12,6 +12,7 @@ EXAMPLE_TEST_GROUPS = (
     "test/devices/test_examples_ad9081_parity.py",
     "test/test_examples_xsa_smoke.py",
     "test/xsa/test_example_adrv9009_profile_file.py",
+    "test/xsa/test_example_adrv937x_zc706.py",
     "test/xsa/test_example_fmcdaq2_zc706.py",
     "test/test_jif_contract_examples.py",
     "test/test_examples_ci_contract.py",
@@ -24,6 +25,7 @@ def test_examples_have_a_dedicated_blocking_ci_job() -> None:
 
     assert "examples-test:" in workflow
     assert 'pip install ".[test,xsa]"' in workflow
+    assert "pip install -r requirements/pyadi-jif-ad9371.txt" in workflow
     assert "Pull canonical ADRV9009 Talise profile" in workflow
     assert "--download-talise-profile" in workflow
     for test_group in EXAMPLE_TEST_GROUPS:
