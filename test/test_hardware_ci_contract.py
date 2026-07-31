@@ -21,10 +21,23 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
     assert "hasattr(adijif, 'ad9371')" in installer
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
     assert "source .github/scripts/prepare-hardware-env.sh" in workflow
-    assert 'test/hw/xsa -maxdepth 1 -type f -name "test_*${BOARD}*${CARRIER}*_overlay.py"' in workflow
+    assert (
+        'test/hw/xsa -maxdepth 1 -type f -name '
+        '"test_*${BOARD}*${CARRIER}*_overlay.py"' in workflow
+    )
     assert '[[ "$entry" == "$HOME/.local/bin" ]] && continue' in environment
     assert 'export PATH="$VENV_DIR/bin:/usr/bin' in environment
     assert '"$(command -v as)" != "/usr/bin/as"' in environment
+
+
+def test_labgrid_plugins_dependency_is_immutable() -> None:
+    pyproject = (ROOT / "pyproject.toml").read_text()
+
+    assert (
+        "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
+        "labgrid-plugins.git@d21e5a94b4eebd3bedeb7cd16cd12504b11b5aba"
+        in pyproject
+    )
 
 
 def test_missing_hardware_prerequisite_fails_in_coordinator_mode(monkeypatch):
