@@ -670,13 +670,15 @@ def read_jesd_status(
     """Return ``(rx_status, tx_status)`` from the platform-device sysfs nodes."""
     rx_status = shell_out(
         shell,
-        f"cat /sys/bus/platform/devices/{rx_glob}/status 2>/dev/null "
-        "| head -n 20 || true",
+        f"for f in /sys/bus/platform/devices/{rx_glob}/status; do "
+        '  [ -f "$f" ] || continue; echo "=== $f ==="; cat "$f"; '
+        "done 2>/dev/null || true",
     )
     tx_status = shell_out(
         shell,
-        f"cat /sys/bus/platform/devices/{tx_glob}/status 2>/dev/null "
-        "| head -n 20 || true",
+        f"for f in /sys/bus/platform/devices/{tx_glob}/status; do "
+        '  [ -f "$f" ] || continue; echo "=== $f ==="; cat "$f"; '
+        "done 2>/dev/null || true",
     )
     return rx_status, tx_status
 

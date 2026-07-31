@@ -23,6 +23,7 @@ from test.hw.hw_helpers import (  # noqa: E402
     assert_jesd_links_data,
     check_jesd_framing_plausibility,
     parse_ilas_status,
+    read_jesd_status,
 )
 
 
@@ -182,3 +183,20 @@ def test_assert_jesd_links_data_accepts_primary_and_observation_rx(monkeypatch):
     )
 
     assert_jesd_links_data(object(), expected_rx_links=2)
+
+
+def test_read_jesd_status_does_not_truncate_multi_link_output():
+    class FakeShell:
+        def __init__(self):
+            self.commands = []
+
+        def run(self, command):
+            self.commands.append(command)
+            return (["Link status: DATA", "Link status: DATA"], [], 0)
+
+    shell = FakeShell()
+    rx_status, _tx_status = read_jesd_status(shell)
+
+    assert rx_status.count("Link status: DATA") == 2
+    assert all("head -n" not in command for command in shell.commands)
+    assert all('echo "=== $f ==="' in command for command in shell.commands)
