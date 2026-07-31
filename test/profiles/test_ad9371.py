@@ -52,7 +52,15 @@ def _topology() -> XsaTopology:
                 irq=106,
                 link_clk="axi_rx_clkgen_clk",
                 direction="rx",
-            )
+            ),
+            Jesd204Instance(
+                name="axi_ad9371_rx_os_jesd_rx_axi",
+                base_addr=0x44AB0000,
+                num_lanes=2,
+                irq=104,
+                link_clk="axi_rx_os_clkgen_clk",
+                direction="rx",
+            ),
         ],
         jesd204_tx=[
             Jesd204Instance(
@@ -104,6 +112,33 @@ def test_profile_path_overrides_merged_board_profile_properties():
     merged = "\n".join(nodes["converters"])
     assert "adi,test = <1>;" not in merged
     assert "adi,rx-profile-iq-rate_khz = <0x1e000>;" in merged
+
+
+def test_ad9371_builder_prefers_three_link_jif_framing():
+    cfg = {
+        "jesd": {
+            "rx": {"F": 4, "K": 32},
+            "obs": {"F": 6, "K": 16},
+            "tx": {"F": 5, "K": 24, "M": 4},
+        },
+        "adrv9009_board": {
+            "tx_octets_per_frame": 7,
+            "rx_os_octets_per_frame": 8,
+        },
+    }
+    merged = "\n".join(NodeBuilder().build(_topology(), cfg)["converters"])
+
+    obs_start = merged.index("&axi_ad9371_rx_os_jesd_rx_axi {")
+    obs_end = merged.index("\n\t};", obs_start)
+    obs = merged[obs_start:obs_end]
+    assert "adi,octets-per-frame = <6>;" in obs
+    assert "adi,frames-per-multiframe = <16>;" in obs
+
+    tx_start = merged.index("&axi_ad9371_tx_jesd_tx_axi {")
+    tx_end = merged.index("\n\t};", tx_start)
+    tx = merged[tx_start:tx_end]
+    assert "adi,octets-per-frame = <5>;" in tx
+    assert "adi,frames-per-multiframe = <24>;" in tx
 
 
 def test_board_config_rejects_empty_ad9371_profile_path():

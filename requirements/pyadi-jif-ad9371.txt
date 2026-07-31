@@ -1,0 +1,3 @@
+# AD9371 profile model plus corrected Mykonos link/SYSREF constraints.
+# Pin the reviewed upstream revision until these commits are in a pyadi-jif release.
+pyadi-jif[cplex,draw] @ git+https://github.com/analogdevicesinc/pyadi-jif.git@0a315f03e2325f286157f33fc4652c17095b5376

@@ -266,15 +266,25 @@ class ADRV937xBuilder:
         tx_link_id = int(board_cfg.get("tx_link_id", 0))
         rx_os_link_id = int(board_cfg.get("rx_os_link_id", 2))
         tx_octets_per_frame = int(board_cfg.get("tx_octets_per_frame", 2))
-        rx_os_octets_per_frame = int(board_cfg.get("rx_os_octets_per_frame", 2))
-        rx_os_k = int(board_cfg.get("rx_os_k", 32))
-
-        # JESD framing parameters (from pipeline cfg, not board_cfg)
+        # JESD framing parameters.  Explicit pyadi-jif link data owns the
+        # electrical intent; legacy board-profile fields remain fallbacks for
+        # callers that have not migrated to the AD9371 three-link model.
         jesd_cfg = cfg.get("jesd", {})
         rx_f = int(jesd_cfg.get("rx", {}).get("F", 4))
         rx_k = int(jesd_cfg.get("rx", {}).get("K", 32))
+        tx_f = int(
+            jesd_cfg.get("tx", {}).get(
+                "F", board_cfg.get("tx_octets_per_frame", tx_octets_per_frame)
+            )
+        )
         tx_k = int(jesd_cfg.get("tx", {}).get("K", 32))
         tx_m = int(jesd_cfg.get("tx", {}).get("M", 4))
+        rx_os_f = int(
+            jesd_cfg.get("obs", {}).get(
+                "F", board_cfg.get("rx_os_octets_per_frame", 2)
+            )
+        )
+        rx_os_k = int(jesd_cfg.get("obs", {}).get("K", 32))
 
         # --- Clock chip (AD9528_1, single-chip path only) ---
         clock_chip_label = "clk0_ad9528"
@@ -439,7 +449,7 @@ class ADRV937xBuilder:
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
             clock_output_name="jesd_tx_lane_clk",
-            f=tx_octets_per_frame,
+            f=tx_f,
             k=tx_k,
             jesd204_inputs=f"{tx_xcvr_label} 0 {tx_link_id}",
             converter_resolution=14,
@@ -462,7 +472,7 @@ class ADRV937xBuilder:
                 ),
                 clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
                 clock_output_name="jesd_rx_os_lane_clk",
-                f=rx_os_octets_per_frame,
+                f=rx_os_f,
                 k=rx_os_k,
                 jesd204_inputs=f"{rx_os_xcvr_label} 0 {rx_os_link_id}",
             )
