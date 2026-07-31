@@ -16,11 +16,14 @@ import pytest
 # Ensure a skip-gating env var doesn't fire accidentally here.
 os.environ.setdefault("LG_ENV", "unit-test-noop")
 
+import test.hw.hw_helpers as hw_helpers  # noqa: E402
 from test.hw.hw_helpers import (  # noqa: E402
     IlasMismatch,
     assert_ilas_aligned,
+    assert_jesd_links_data,
     check_jesd_framing_plausibility,
     parse_ilas_status,
+    read_jesd_status,
 )
 
 
@@ -109,9 +112,10 @@ def test_assert_ilas_aligned_raises_on_mismatch():
 
 
 def test_check_jesd_framing_plausibility_adrv9371_hdl_defaults():
-    # Documented HDL default: RX M=4 L=2 F=4, TX M=4 L=4 F=2, Np=16.
+    # Documented HDL defaults include the independent observation path.
     cfg = {
         "rx": {"F": 4, "K": 32, "M": 4, "L": 2},
+        "obs": {"F": 2, "K": 32, "M": 2, "L": 2},
         "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
     }
     assert check_jesd_framing_plausibility(cfg) == []
@@ -125,6 +129,13 @@ def test_check_jesd_framing_plausibility_detects_typo():
     assert "jesd.tx" in warnings[0]
     assert "F=1" in warnings[0]
     assert "= 2" in warnings[0]
+
+
+def test_check_jesd_framing_plausibility_checks_observation_path():
+    cfg = {"obs": {"F": 4, "K": 32, "M": 2, "L": 2}}
+    warnings = check_jesd_framing_plausibility(cfg)
+    assert len(warnings) == 1
+    assert "jesd.obs" in warnings[0]
 
 
 def test_check_jesd_framing_plausibility_skips_missing_fields():
@@ -145,3 +156,47 @@ def test_ilas_mismatch_summary_omits_none_fields():
     assert "fields=[x]" in report.summary()
     assert "deframerStatus" not in report.summary()
     assert "mask" not in report.summary()
+
+
+def test_assert_jesd_links_data_requires_every_expected_rx(monkeypatch):
+    monkeypatch.setattr(
+        hw_helpers,
+        "read_jesd_status",
+        lambda *_args, **_kwargs: (
+            "Link status: DATA\nLink status: disabled\n",
+            "Link status: DATA\n",
+        ),
+    )
+
+    with pytest.raises(AssertionError, match="Expected 2 RX JESD link"):
+        assert_jesd_links_data(object(), expected_rx_links=2)
+
+
+def test_assert_jesd_links_data_accepts_primary_and_observation_rx(monkeypatch):
+    monkeypatch.setattr(
+        hw_helpers,
+        "read_jesd_status",
+        lambda *_args, **_kwargs: (
+            "Link status: DATA\nLink status: DATA\n",
+            "Link status: DATA\n",
+        ),
+    )
+
+    assert_jesd_links_data(object(), expected_rx_links=2)
+
+
+def test_read_jesd_status_does_not_truncate_multi_link_output():
+    class FakeShell:
+        def __init__(self):
+            self.commands = []
+
+        def run(self, command):
+            self.commands.append(command)
+            return (["Link status: DATA", "Link status: DATA"], [], 0)
+
+    shell = FakeShell()
+    rx_status, _tx_status = read_jesd_status(shell)
+
+    assert rx_status.count("Link status: DATA") == 2
+    assert all("head -n" not in command for command in shell.commands)
+    assert all('echo "=== $f ==="' in command for command in shell.commands)

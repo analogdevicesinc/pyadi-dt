@@ -35,10 +35,14 @@ LG_ENV: fetch the coordinator-generated env for place ``bq`` (e.g.
 
 from __future__ import annotations
 
+import copy
+from functools import cache
+from pathlib import Path
 from typing import Any
 
 import pytest
 
+from adidt.profiles import resolve_ad9371_jif_config
 from test.hw.hw_helpers import check_jesd_framing_plausibility, shell_out
 from test.hw.xsa._overlay_base import (  # noqa: F401 — pytest collects these
     booted_board,
@@ -56,7 +60,15 @@ from test.hw.xsa._overlay_spec import BoardOverlayProfile, acquire_or_local_xsa
 
 DEFAULT_KUIPER_RELEASE = "2023_R2_P1"
 DEFAULT_KUIPER_PROJECT = "zynq-zc706-adv7511-adrv937x"
-DEFAULT_VCXO_HZ = 122_880_000
+PROFILE_PATH = (
+    Path(__file__).parents[3]
+    / "examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt"
+)
+
+
+@cache
+def _solved_ad9371_config() -> tuple[dict[str, Any], dict[str, Any]]:
+    return resolve_ad9371_jif_config(PROFILE_PATH, solve=True)
 
 
 def _adrv9371_cfg() -> dict[str, Any]:
@@ -72,8 +84,10 @@ def _adrv9371_cfg() -> dict[str, Any]:
     TX = M=4 L=4 S=1 → F=2.  Mykonos profile properties come from
     ``adidt/xsa/config/profiles/adrv937x_zc706.json``.
     """
-    cfg: dict[str, Any] = {
-        "adrv9009_board": {
+    cfg, _summary = _solved_ad9371_config()
+    cfg = copy.deepcopy(cfg)
+    cfg["adrv9009_board"].update(
+        {
             "misc_clk_hz": 122_880_000,
             "spi_bus": "spi0",
             "clk_cs": 0,
@@ -81,15 +95,11 @@ def _adrv9371_cfg() -> dict[str, Any]:
             "trx_reset_gpio": 106,
             "trx_sysref_req_gpio": 112,
             "ad9528_reset_gpio": 113,
-            "ad9528_vcxo_freq": DEFAULT_VCXO_HZ,
             "rx_link_id": 1,
+            "rx_os_link_id": 2,
             "tx_link_id": 0,
-        },
-        "jesd": {
-            "rx": {"F": 4, "K": 32, "M": 4, "L": 2},
-            "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
-        },
-    }
+        }
+    )
     framing_warnings = check_jesd_framing_plausibility(cfg["jesd"])
     assert not framing_warnings, (
         "JESD cfg is structurally inconsistent (will fail ILAS):\n  "
@@ -164,6 +174,7 @@ SPEC = BoardOverlayProfile(
     iio_required_all=("ad9528-1", "ad9371-phy"),
     iio_required_any=("axi-ad9371-rx-hpc", "ad_ip_jesd204_tpl_adc"),
     iio_frontend_label="AD9371 RX frontend",
+    expected_rx_jesd_links=2,
     fft_mode="optional",
     capture_target_names=("axi-ad9371-rx-hpc", "ad_ip_jesd204_tpl_adc"),
     pyadi_class_name="adrv9371",

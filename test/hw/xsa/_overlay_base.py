@@ -283,7 +283,12 @@ def test_load_overlay(overlay_spec, booted_board, tmp_path):
     ctx, _ = open_iio_context(shell)
     _assert_iio_devices_present(spec, ctx, context="after overlay load")
 
-    rx_status, tx_status = assert_jesd_links_data(shell, context="after overlay load")
+    rx_status, tx_status = assert_jesd_links_data(
+        shell,
+        context="after overlay load",
+        expected_rx_links=spec.expected_rx_jesd_links,
+        expected_tx_links=spec.expected_tx_jesd_links,
+    )
     print(f"$ cat .../*.axi?jesd204?rx/status\n{rx_status}")
     print(f"$ cat .../*.axi?jesd204?tx/status\n{tx_status}")
 
@@ -311,7 +316,12 @@ def test_dma_loopback(overlay_spec, booted_board, tmp_path):
     if spec.pre_capture_hook is not None:
         did_something = spec.pre_capture_hook(shell, tmp_path)
         if did_something:
-            assert_jesd_links_data(shell, context="after pre-capture hook")
+            assert_jesd_links_data(
+                shell,
+                context="after pre-capture hook",
+                expected_rx_links=spec.expected_rx_jesd_links,
+                expected_tx_links=spec.expected_tx_jesd_links,
+            )
         else:
             print(
                 f"{spec.skip_reason_label}: pre-capture hook found nothing to "
@@ -391,4 +401,9 @@ def test_reload_overlay(overlay_spec, booted_board):
     _apply_and_wait(shell, spec)
     ctx, _ = open_iio_context(shell)
     _assert_iio_devices_present(spec, ctx, context="after overlay reload")
-    assert_jesd_links_data(shell, context="after overlay reload")
+    assert_jesd_links_data(
+        shell,
+        context="after overlay reload",
+        expected_rx_links=spec.expected_rx_jesd_links,
+        expected_tx_links=spec.expected_tx_jesd_links,
+    )

@@ -132,6 +132,8 @@ class BoardSystemProfile:
 
     jesd_rx_glob: Optional[str] = None
     jesd_tx_glob: Optional[str] = None
+    expected_rx_jesd_links: int = 1
+    expected_tx_jesd_links: int = 1
 
     dmesg_filter: DmesgFilter = _identity
 
@@ -235,6 +237,8 @@ def boot_and_verify_from_dtb(
         context=spec.out_label,
         rx_glob=rx_glob,
         tx_glob=tx_glob,
+        expected_rx_links=spec.expected_rx_jesd_links,
+        expected_tx_links=spec.expected_tx_jesd_links,
     )
     print(f"$ cat .../{rx_glob}/status\n{rx_status}")
     print(f"$ cat .../{tx_glob}/status\n{tx_status}")

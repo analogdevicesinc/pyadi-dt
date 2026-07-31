@@ -38,13 +38,15 @@ jobs:
       venv_install_cmd: 'bash .github/scripts/install-adidt-venv.sh'
       venv_dir: $HOME/.cache/adidt-ci/adidt-venv
       # Dynamic mode exports $BOARD + $CARRIER (no manifest test list). Select
-      # this place's HW tests by filename convention test/hw/*<board>*<carrier>*_hw.py
-      # (e.g. daq3 matches fmcdaq3_vcu118), excluding the slow petalinux builds.
+      # this place's full-DTB and runtime-overlay tests by filename convention
+      # (e.g. daq3 matches fmcdaq3_vcu118), excluding slow PetaLinux builds.
       # The labgrid pytest plugin reads LG_ENV / LG_COORDINATOR from the env.
       pytest_cmd_template: >-
         set -euo pipefail;
         source .github/scripts/prepare-hardware-env.sh;
-        TESTS=$(ls test/hw/*"$BOARD"*"$CARRIER"*_hw.py 2>/dev/null | grep -v petalinux | tr '\n' ' ');
+        TESTS=$( { find test/hw -maxdepth 1 -type f -name "*${BOARD}*${CARRIER}*_hw.py";
+        find test/hw/xsa -maxdepth 1 -type f -name "test_*${BOARD}*${CARRIER}*_overlay.py"; }
+        | grep -v petalinux | sort -u | tr '\n' ' ');
         if [ -z "$TESTS" ]; then echo "::warning::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 0; fi;
         echo "Selected: $TESTS" >&2;
         "$VENV_DIR/bin/pytest" -p no:genalyzer -v -s $TESTS --junitxml="$JUNIT"

@@ -300,6 +300,7 @@ def hardware_prereq_unavailable(message: str) -> NoReturn:
     if os.environ.get("LG_COORDINATOR"):
         pytest.fail(message)
     pytest.skip(message)
+    raise AssertionError("pytest.skip returned unexpectedly")  # pragma: no cover
 
 
 def require_hw_prereqs() -> None:
@@ -543,7 +544,7 @@ def check_jesd_framing_plausibility(jesd_cfg: dict) -> list[str]:
     fast with a clear message.
     """
     warnings: list[str] = []
-    for side in ("rx", "tx"):
+    for side in ("rx", "obs", "tx"):
         sub = jesd_cfg.get(side)
         if not isinstance(sub, dict):
             continue
@@ -669,13 +670,15 @@ def read_jesd_status(
     """Return ``(rx_status, tx_status)`` from the platform-device sysfs nodes."""
     rx_status = shell_out(
         shell,
-        f"cat /sys/bus/platform/devices/{rx_glob}/status 2>/dev/null "
-        "| head -n 20 || true",
+        f"for f in /sys/bus/platform/devices/{rx_glob}/status; do "
+        '  [ -f "$f" ] || continue; echo "=== $f ==="; cat "$f"; '
+        "done 2>/dev/null || true",
     )
     tx_status = shell_out(
         shell,
-        f"cat /sys/bus/platform/devices/{tx_glob}/status 2>/dev/null "
-        "| head -n 20 || true",
+        f"for f in /sys/bus/platform/devices/{tx_glob}/status; do "
+        '  [ -f "$f" ] || continue; echo "=== $f ==="; cat "$f"; '
+        "done 2>/dev/null || true",
     )
     return rx_status, tx_status
 
@@ -685,15 +688,21 @@ def assert_jesd_links_data(
     context: str = "",
     rx_glob: str = "*.axi[_-]jesd204[_-]rx",
     tx_glob: str = "*.axi[_-]jesd204[_-]tx",
+    expected_rx_links: int = 1,
+    expected_tx_links: int = 1,
 ) -> tuple[str, str]:
-    """Read RX + TX JESD status and assert both show ``Link status: DATA``."""
+    """Assert every expected RX/TX JESD core reports ``Link status: DATA``."""
     rx_status, tx_status = read_jesd_status(shell, rx_glob, tx_glob)
     suffix = f" ({context})" if context else ""
-    assert "Link status: DATA" in rx_status, (
-        f"RX JESD link not in DATA{suffix}:\n{rx_status}"
+    rx_data = rx_status.count("Link status: DATA")
+    tx_data = tx_status.count("Link status: DATA")
+    assert rx_data >= expected_rx_links, (
+        f"Expected {expected_rx_links} RX JESD link(s) in DATA{suffix}, "
+        f"found {rx_data}:\n{rx_status}"
     )
-    assert "Link status: DATA" in tx_status, (
-        f"TX JESD link not in DATA{suffix}:\n{tx_status}"
+    assert tx_data >= expected_tx_links, (
+        f"Expected {expected_tx_links} TX JESD link(s) in DATA{suffix}, "
+        f"found {tx_data}:\n{tx_status}"
     )
     return rx_status, tx_status
 
