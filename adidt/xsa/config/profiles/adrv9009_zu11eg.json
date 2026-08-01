@@ -1,0 +1,33 @@
+{
+  "name": "adrv9009_zu11eg",
+  "defaults": {
+    "adrv9009_board": {
+      "misc_clk_hz": 245760000,
+      "spi_bus": "spi0",
+      "clk_cs": 0,
+      "trx_cs": 1,
+      "trx2_cs": 2,
+      "trx_reset_gpio": 130,
+      "trx2_reset_gpio": 135,
+      "trx_sysref_req_gpio": 136,
+      "trx_spi_max_frequency": 25000000,
+      "hmc7044_vcxo_frequency": 122880000,
+      "hmc7044_pll2_output_frequency": 2949120000,
+      "hmc7044_rx_channel": 9,
+      "hmc7044_tx_channel": 8,
+      "hmc7044_xcvr_channel": 5,
+      "hmc7044_tx_xcvr_channel": 4,
+      "hmc7044_trx0_dev_channel": 0,
+      "hmc7044_trx0_sysref_dev_channel": 1,
+      "hmc7044_trx0_sysref_fmc_channel": 6,
+      "hmc7044_trx1_dev_channel": 2,
+      "hmc7044_trx1_sysref_dev_channel": 3,
+      "hmc7044_trx1_sysref_fmc_channel": 7,
+      "rx_link_id": 1,
+      "rx_os_link_id": 2,
+      "tx_link_id": 0,
+      "tx_octets_per_frame": 2,
+      "rx_os_octets_per_frame": 2
+    }
+  }
+}

@@ -572,37 +572,37 @@
       "converter": "adrv9009",
       "platform": "zu11eg",
       "arch": "arm64",
-      "profile": null,
-      "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "profile": "adrv9009_zu11eg",
+      "board_class": "adrv9009_zu11eg",
+      "builder": "ADRV9009Builder",
+      "status": "full"
     },
     "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge": {
       "converter": "adrv9009",
       "platform": "zu11eg",
       "arch": "arm64",
-      "profile": null,
+      "profile": "adrv9009_zu11eg",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
     },
     "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8": {
       "converter": "adrv9009",
       "platform": "zu11eg",
       "arch": "arm64",
-      "profile": null,
+      "profile": "adrv9009_zu11eg",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
     },
     "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave": {
       "converter": "adrv9009",
       "platform": "zu11eg",
       "arch": "arm64",
-      "profile": null,
+      "profile": "adrv9009_zu11eg",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "ADRV9009Builder",
+      "status": "profile_only"
     },
     "zynqmp-jupiter-sdr": {
       "converter": "jupiter",
