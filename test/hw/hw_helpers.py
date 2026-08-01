@@ -570,6 +570,38 @@ def check_jesd_framing_plausibility(jesd_cfg: dict) -> list[str]:
     return warnings
 
 
+_SYSREF_ALIGN_ERR_RX = _re.compile(
+    r"SYSREF alignment error:\s*(yes|true|1|error)", _re.IGNORECASE
+)
+_LINK_NOT_DATA_RX = _re.compile(
+    r"Link status:\s*(?!DATA)(disabled|lost|error|reset|init)", _re.IGNORECASE
+)
+
+
+def detect_sysref_alignment_error(dmesg_or_status: str) -> bool:
+    """Return ``True`` if a SYSREF alignment error is reported.
+
+    The AD937x/JESD stack prints ``SYSREF alignment error: No`` when the
+    SYSREF is aligned; any affirmative value (``Yes`` / ``error``) means
+    the multi-chip SYSREF distribution failed and the link cannot reach
+    a deterministic DATA phase.  Used by fault-detection coverage to prove
+    the negative signal is recognisable, and available to hardware tests
+    that want to assert SYSREF health explicitly.
+    """
+    return bool(_SYSREF_ALIGN_ERR_RX.search(dmesg_or_status))
+
+
+def detect_link_loss(status_txt: str) -> bool:
+    """Return ``True`` if any JESD link reports a non-DATA (lost) state.
+
+    Complements :func:`assert_jesd_links_data` for fault paths: given a
+    status blob, report whether a link dropped out of DATA (disabled /
+    lost / reset / init) so a recovery test can distinguish a genuine
+    link-loss from a healthy link.
+    """
+    return bool(_LINK_NOT_DATA_RX.search(status_txt))
+
+
 def shell_out(shell, cmd: str) -> str:
     """Run *cmd* via an ``ADIShellDriver`` and return the output as a string.
 
@@ -838,6 +870,243 @@ def assert_rx_capture_valid(
         f"non-zero={list(nonzero)}, max |std|={max_std:.2f}"
     )
     return per_channel
+
+
+# Candidate IIO device names for the AD9371 observation receiver, most
+# specific first.  pyadi-iio's ``adi.ad9371`` hardcodes the production
+# name ``axi-ad9371-rx-obs-hpc``; sdtgen-derived merged DTBs may instead
+# expose the obs TPL core under its generic label.  The obs path lives at
+# HDL address ``0x44a08000`` (TPL) / ``0x7c440000`` (DMAC).
+OBS_DEVICE_CANDIDATES: tuple[str, ...] = (
+    "axi-ad9371-rx-obs-hpc",
+    "axi-ad9371-rx-os-hpc",
+    "axi-ad9371-obs-hpc",
+)
+OBS_TPL_ADDR = "44a08000"
+OBS_DMAC_ADDR = "7c440000"
+
+
+def find_obs_capture_device(ctx):
+    """Return the observation-receiver IIO device, or ``None``.
+
+    Distinguishes the AD9371 observation path from the primary RX path
+    by name and by reg-address suffix (``44a08000`` TPL core).  A device
+    only qualifies when it actually exposes an input (RX) scan element —
+    a control-plane node that merely carries the name does not count.
+    """
+
+    def _has_rx_scan(d):
+        return any(c.scan_element and not c.output for c in d.channels)
+
+    # 1. Exact/known obs device names.
+    for name in OBS_DEVICE_CANDIDATES:
+        dev = ctx.find_device(name)
+        if dev is not None and _has_rx_scan(dev):
+            return dev
+
+    # 2. Any buffered device whose id/name ties it to the obs HDL block.
+    for dev in ctx.devices:
+        if not dev.name or not _has_rx_scan(dev):
+            continue
+        haystack = f"{dev.name} {getattr(dev, 'id', '') or ''}".lower()
+        if OBS_TPL_ADDR in haystack or "obs" in haystack or "rx-os" in haystack:
+            return dev
+    return None
+
+
+def probe_obs_enumeration(ctx) -> dict:
+    """Snapshot how the observation receiver is (or is not) enumerated.
+
+    Returns a diagnostic dict — never raises — so a caller can decide
+    whether missing obs enumeration is a hard failure or a documented,
+    driver-side gap.  Keys:
+
+    * ``all_devices`` — sorted IIO device names present.
+    * ``obs_device`` — the resolved obs device name, or ``None``.
+    * ``obs_has_rx_scan`` — whether it exposes input scan channels.
+    * ``primary_rx`` — the primary RX device name, if present.
+    """
+    all_names = sorted(d.name for d in ctx.devices if d.name)
+    obs = find_obs_capture_device(ctx)
+    primary = next(
+        (
+            n
+            for n in ("axi-ad9371-rx-hpc", "ad_ip_jesd204_tpl_adc")
+            if ctx.find_device(n) is not None
+        ),
+        None,
+    )
+    return {
+        "all_devices": all_names,
+        "obs_device": obs.name if obs is not None else None,
+        "obs_has_rx_scan": obs is not None,
+        "primary_rx": primary,
+    }
+
+
+def attempt_obs_capture(ctx, obs_dev, n_samples: int = 2**12) -> dict:
+    """Try to capture from the observation device; classify the result.
+
+    Unlike :func:`assert_rx_capture_valid`, this never raises on an
+    all-zero / latched buffer — the AD9371 ORx path is gated off unless
+    the Mykonos ENSM is in ``radio_on`` and the ORx port is actively
+    selected/receiving, so on a bench board with nothing driving ORx a
+    zero buffer is *expected*, not a pyadi-dt regression.  A hard failure
+    (missing device, no scan channels, DMA refill timeout) is still
+    reported so a real transport break is distinguishable.
+
+    Returns a dict with:
+
+    * ``status`` — ``"data"`` (non-zero varying samples),
+      ``"zero"`` (buffer returned but inert), or
+      ``"error"`` (device/transport problem — treat as failure).
+    * ``detail`` — human-readable explanation.
+    * ``max_std`` — max |std| across channels when a buffer was read.
+    """
+    import iio
+    import numpy as np
+
+    if obs_dev is None:
+        return {"status": "error", "detail": "obs device is None", "max_std": 0.0}
+
+    scan_channels = [c for c in obs_dev.channels if c.scan_element and not c.output]
+    if not scan_channels:
+        return {
+            "status": "error",
+            "detail": f"{obs_dev.name!r} has no RX scan channels",
+            "max_std": 0.0,
+        }
+
+    buf = None
+    try:
+        for ch in scan_channels:
+            ch.enabled = True
+        buf = iio.Buffer(obs_dev, n_samples, False)
+        try:
+            buf.refill()
+        except TimeoutError:
+            return {
+                "status": "error",
+                "detail": (
+                    f"DMA refill timed out on {obs_dev.name!r} — obs AXI-DMA "
+                    "transport stalled"
+                ),
+                "max_std": 0.0,
+            }
+        per_channel = {
+            ch.id: np.frombuffer(ch.read(buf), dtype=np.int16) for ch in scan_channels
+        }
+    finally:
+        if buf is not None:
+            del buf
+        for ch in scan_channels:
+            try:
+                ch.enabled = False
+            except Exception:  # noqa: BLE001 — best-effort cleanup
+                pass
+
+    max_std = max((float(np.abs(a).std()) for a in per_channel.values()), default=0.0)
+    any_nonzero = any(a.any() for a in per_channel.values())
+    if any_nonzero and max_std >= 1.0:
+        return {
+            "status": "data",
+            "detail": (
+                f"obs capture delivered varying samples (max |std|={max_std:.2f})"
+            ),
+            "max_std": max_std,
+        }
+    return {
+        "status": "zero",
+        "detail": (
+            f"obs buffer returned but inert (max |std|={max_std:.2f}) — "
+            "ORx path gated off / no signal into ORx on this bench setup"
+        ),
+        "max_std": max_std,
+    }
+
+
+# Candidate IIO device names for the AD9371 transmit DDS/DAC frontend.
+TX_DEVICE_CANDIDATES: tuple[str, ...] = (
+    "axi-ad9371-tx-hpc",
+    "axi-ad9371-tx",
+)
+
+
+def find_tx_dds_device(ctx):
+    """Return the transmit DDS/DAC IIO device, or ``None``.
+
+    The TX frontend exposes ``altvoltage`` *output* channels (the DDS
+    tone generators).  A device qualifies only when it has at least one
+    output channel — that distinguishes the DAC frontend from RX cores.
+    """
+    def _has_output(d):
+        return any(c.output for c in d.channels)
+
+    for name in TX_DEVICE_CANDIDATES:
+        dev = ctx.find_device(name)
+        if dev is not None and _has_output(dev):
+            return dev
+    for dev in ctx.devices:
+        if not dev.name or not _has_output(dev):
+            continue
+        if "tx" in dev.name.lower() and "9371" in dev.name:
+            return dev
+    return None
+
+
+def drive_tx_dds_tone(tx_dev, *, scale: float = 0.5, freq_hz: int = 1_000_000) -> dict:
+    """Enable a single DDS tone on the TX frontend via raw libiio.
+
+    Sets ``raw`` (enable), ``scale``, and ``frequency`` on the DDS
+    ``altvoltage`` output channels.  Returns a diagnostic dict:
+
+    * ``status`` — ``"driven"`` if at least one altvoltage tone was
+      programmed, ``"error"`` if the device exposed no DDS controls.
+    * ``channels`` — the altvoltage channel ids that were programmed.
+    * ``detail`` — human-readable explanation.
+    """
+    if tx_dev is None:
+        return {"status": "error", "channels": [], "detail": "tx device is None"}
+
+    dds_channels = [
+        c
+        for c in tx_dev.channels
+        if c.output and (c.id or "").startswith("altvoltage")
+    ]
+    if not dds_channels:
+        return {
+            "status": "error",
+            "channels": [],
+            "detail": f"{tx_dev.name!r} exposes no DDS altvoltage output channels",
+        }
+
+    programmed = []
+    for ch in dds_channels:
+        attrs = {a.name: a for a in ch.attrs.values()} if hasattr(ch, "attrs") else {}
+        try:
+            if "frequency" in attrs:
+                attrs["frequency"].value = str(freq_hz)
+            if "scale" in attrs:
+                attrs["scale"].value = str(scale)
+            if "raw" in attrs:
+                attrs["raw"].value = "1"
+            programmed.append(ch.id)
+        except Exception as exc:  # noqa: BLE001 — some channels are read-only
+            print(f"DDS channel {ch.id} program skipped: {exc}")
+    if not programmed:
+        return {
+            "status": "error",
+            "channels": [],
+            "detail": f"{tx_dev.name!r} DDS channels could not be programmed",
+        }
+    return {
+        "status": "driven",
+        "channels": programmed,
+        "detail": (
+            f"programmed {len(programmed)} DDS tone channel(s) at "
+            f"{freq_hz} Hz scale {scale}"
+        ),
+    }
 
 
 def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:

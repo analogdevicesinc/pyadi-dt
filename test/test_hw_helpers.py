@@ -21,10 +21,97 @@ from test.hw.hw_helpers import (  # noqa: E402
     IlasMismatch,
     assert_ilas_aligned,
     assert_jesd_links_data,
+    attempt_obs_capture,
     check_jesd_framing_plausibility,
+    detect_link_loss,
+    detect_sysref_alignment_error,
+    find_obs_capture_device,
+    find_tx_dds_device,
+    drive_tx_dds_tone,
     parse_ilas_status,
+    probe_obs_enumeration,
     read_jesd_status,
 )
+
+
+class _FakeChannel:
+    def __init__(self, *, scan_element: bool, output: bool):
+        self.scan_element = scan_element
+        self.output = output
+        self.enabled = False
+        self._payload = b""
+        self._id = "voltage0"
+        self.attrs = {}
+
+    @property
+    def id(self):
+        return getattr(self, "_id", "voltage0")
+
+    def read(self, _buf):
+        return self._payload
+
+
+class _FakeAttr:
+    def __init__(self, name, value=""):
+        self.name = name
+        self.value = value
+
+
+def _make_dds_channel(chan_id="altvoltage0_TX1_I_F1"):
+    ch = _FakeChannel(scan_element=False, output=True)
+    ch._id = chan_id
+    ch.attrs = {
+        "raw": _FakeAttr("raw", "0"),
+        "scale": _FakeAttr("scale", "0.0"),
+        "frequency": _FakeAttr("frequency", "0"),
+    }
+    return ch
+
+
+class _FakeDevice:
+    def __init__(self, name, *, id="", rx_scan=True):
+        self.name = name
+        self.id = id
+        # one input scan channel when rx_scan, plus an output channel
+        self.channels = []
+        if rx_scan:
+            self.channels.append(_FakeChannel(scan_element=True, output=False))
+        self.channels.append(_FakeChannel(scan_element=True, output=True))
+
+    def set_rx_payload(self, payload: bytes, chan_id: str = "voltage0") -> None:
+        """Set the bytes the first RX scan channel returns from ``read``."""
+        for ch in self.channels:
+            if ch.scan_element and not ch.output:
+                ch._payload = payload
+                ch._id = chan_id
+                break
+
+
+class _FakeCtx:
+    def __init__(self, devices):
+        self.devices = devices
+
+    def find_device(self, name):
+        return next((d for d in self.devices if d.name == name), None)
+
+
+def _install_fake_iio(monkeypatch, *, refill_raises=False):
+    """Install a minimal fake ``iio`` module exposing ``Buffer``."""
+    import sys
+    import types
+
+    fake = types.ModuleType("iio")
+
+    class _Buffer:
+        def __init__(self, dev, n, cyclic):
+            self.dev = dev
+
+        def refill(self):
+            if refill_raises:
+                raise TimeoutError("refill timed out")
+
+    fake.Buffer = _Buffer
+    monkeypatch.setitem(sys.modules, "iio", fake)
 
 
 _DMESG_WITH_ILAS_MISMATCH = """\
@@ -200,3 +287,198 @@ def test_read_jesd_status_does_not_truncate_multi_link_output():
     assert rx_status.count("Link status: DATA") == 2
     assert all("head -n" not in command for command in shell.commands)
     assert all('echo "=== $f ==="' in command for command in shell.commands)
+
+
+def test_find_obs_capture_device_prefers_named_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("ad9371-phy", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+            _FakeDevice("axi-ad9371-rx-obs-hpc"),
+        ]
+    )
+    dev = find_obs_capture_device(ctx)
+    assert dev is not None
+    assert dev.name == "axi-ad9371-rx-obs-hpc"
+
+
+def test_find_obs_capture_device_matches_tpl_address_in_id():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-hpc", id="iio:device2"),
+            _FakeDevice("ad_ip_jesd204_tpl_adc", id="iio:device3-44a08000"),
+        ]
+    )
+    dev = find_obs_capture_device(ctx)
+    assert dev is not None
+    assert dev.id == "iio:device3-44a08000"
+
+
+def test_find_obs_capture_device_ignores_control_plane_only():
+    # An obs-named device with no RX scan element does not qualify.
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-obs-hpc", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+        ]
+    )
+    assert find_obs_capture_device(ctx) is None
+
+
+def test_probe_obs_enumeration_reports_missing_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("ad9371-phy", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+        ]
+    )
+    snap = probe_obs_enumeration(ctx)
+    assert snap["primary_rx"] == "axi-ad9371-rx-hpc"
+    assert snap["obs_device"] is None
+    assert snap["obs_has_rx_scan"] is False
+    assert "axi-ad9371-rx-hpc" in snap["all_devices"]
+
+
+def test_probe_obs_enumeration_reports_present_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-hpc"),
+            _FakeDevice("axi-ad9371-rx-obs-hpc"),
+        ]
+    )
+    snap = probe_obs_enumeration(ctx)
+    assert snap["primary_rx"] == "axi-ad9371-rx-hpc"
+    assert snap["obs_device"] == "axi-ad9371-rx-obs-hpc"
+    assert snap["obs_has_rx_scan"] is True
+
+
+def test_attempt_obs_capture_classifies_live_data(monkeypatch):
+    import numpy as np
+
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    varying = np.arange(1024, dtype=np.int16).tobytes()
+    obs.set_rx_payload(varying)
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "data"
+    assert result["max_std"] > 1.0
+
+
+def test_attempt_obs_capture_classifies_inert_buffer(monkeypatch):
+    import numpy as np
+
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    obs.set_rx_payload(np.zeros(1024, dtype=np.int16).tobytes())
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "zero"
+    assert result["max_std"] == 0.0
+
+
+def test_attempt_obs_capture_reports_refill_timeout_as_error(monkeypatch):
+    _install_fake_iio(monkeypatch, refill_raises=True)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "error"
+    assert "timed out" in result["detail"]
+
+
+def test_attempt_obs_capture_errors_on_no_scan_channels(monkeypatch):
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc", rx_scan=False)
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "error"
+    assert "no RX scan channels" in result["detail"]
+
+
+def test_attempt_obs_capture_errors_on_none_device(monkeypatch):
+    _install_fake_iio(monkeypatch)
+    result = attempt_obs_capture(_FakeCtx([]), None, n_samples=1024)
+    assert result["status"] == "error"
+
+
+def test_find_tx_dds_device_prefers_named_tx():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    tx.channels = [_make_dds_channel()]
+    ctx = _FakeCtx([_FakeDevice("axi-ad9371-rx-hpc"), tx])
+    dev = find_tx_dds_device(ctx)
+    assert dev is not None
+    assert dev.name == "axi-ad9371-tx-hpc"
+
+
+def test_find_tx_dds_device_ignores_rx_only():
+    # The RX-only device has no 'tx' in its name, so neither the named
+    # lookup nor the fallback name rule should match it.
+    ctx = _FakeCtx([_FakeDevice("axi-ad9371-rx-hpc")])
+    assert find_tx_dds_device(ctx) is None
+
+
+def test_drive_tx_dds_tone_programs_altvoltage_channels():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    ch = _make_dds_channel()
+    tx.channels = [ch]
+    result = drive_tx_dds_tone(tx, scale=0.5, freq_hz=2_000_000)
+    assert result["status"] == "driven"
+    assert ch.attrs["raw"].value == "1"
+    assert ch.attrs["scale"].value == "0.5"
+    assert ch.attrs["frequency"].value == "2000000"
+    assert result["channels"] == [ch.id]
+
+
+def test_drive_tx_dds_tone_errors_without_altvoltage():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    # only a plain output voltage channel, no altvoltage DDS channel
+    plain = _FakeChannel(scan_element=False, output=True)
+    plain._id = "voltage0"
+    tx.channels = [plain]
+    result = drive_tx_dds_tone(tx)
+    assert result["status"] == "error"
+
+
+def test_drive_tx_dds_tone_errors_on_none():
+    result = drive_tx_dds_tone(None)
+    assert result["status"] == "error"
+
+
+# --- negative / fault-detection coverage ---------------------------------
+
+
+def test_framing_validator_rejects_corrupted_rx_framing():
+    # Deliberately break RX F (should be 4 for M=4/L=2/Np=16/S=1).
+    cfg = {
+        "rx": {"F": 8, "K": 32, "M": 4, "L": 2},
+        "obs": {"F": 2, "K": 32, "M": 2, "L": 2},
+        "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
+    }
+    warnings = check_jesd_framing_plausibility(cfg)
+    assert any("jesd.rx" in w for w in warnings)
+    assert not any("jesd.obs" in w for w in warnings)
+    assert not any("jesd.tx" in w for w in warnings)
+
+
+def test_framing_validator_rejects_corruption_on_every_link():
+    for link, good in (
+        ("rx", {"F": 4, "M": 4, "L": 2}),
+        ("obs", {"F": 2, "M": 2, "L": 2}),
+        ("tx", {"F": 2, "M": 4, "L": 4}),
+    ):
+        bad = dict(good, F=good["F"] + 1)
+        warnings = check_jesd_framing_plausibility({link: bad})
+        assert any(f"jesd.{link}" in w for w in warnings), (
+            f"corrupted {link} framing was not flagged: {warnings}"
+        )
+
+
+def test_detect_sysref_alignment_error_positive_and_negative():
+    assert detect_sysref_alignment_error("SYSREF alignment error: Yes") is True
+    assert detect_sysref_alignment_error("SYSREF alignment error: error") is True
+    # The healthy hardware line must NOT trip the detector.
+    assert detect_sysref_alignment_error("SYSREF alignment error: No") is False
+    assert detect_sysref_alignment_error("all good here") is False
+
+
+def test_detect_link_loss_positive_and_negative():
+    assert detect_link_loss("Link status: disabled") is True
+    assert detect_link_loss("Link status: reset") is True
+    assert detect_link_loss("Link status: DATA") is False
+    assert detect_link_loss("Link status: DATA\nLink status: DATA") is False
