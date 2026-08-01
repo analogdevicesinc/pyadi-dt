@@ -570,6 +570,38 @@ def check_jesd_framing_plausibility(jesd_cfg: dict) -> list[str]:
     return warnings
 
 
+_SYSREF_ALIGN_ERR_RX = _re.compile(
+    r"SYSREF alignment error:\s*(yes|true|1|error)", _re.IGNORECASE
+)
+_LINK_NOT_DATA_RX = _re.compile(
+    r"Link status:\s*(?!DATA)(disabled|lost|error|reset|init)", _re.IGNORECASE
+)
+
+
+def detect_sysref_alignment_error(dmesg_or_status: str) -> bool:
+    """Return ``True`` if a SYSREF alignment error is reported.
+
+    The AD937x/JESD stack prints ``SYSREF alignment error: No`` when the
+    SYSREF is aligned; any affirmative value (``Yes`` / ``error``) means
+    the multi-chip SYSREF distribution failed and the link cannot reach
+    a deterministic DATA phase.  Used by fault-detection coverage to prove
+    the negative signal is recognisable, and available to hardware tests
+    that want to assert SYSREF health explicitly.
+    """
+    return bool(_SYSREF_ALIGN_ERR_RX.search(dmesg_or_status))
+
+
+def detect_link_loss(status_txt: str) -> bool:
+    """Return ``True`` if any JESD link reports a non-DATA (lost) state.
+
+    Complements :func:`assert_jesd_links_data` for fault paths: given a
+    status blob, report whether a link dropped out of DATA (disabled /
+    lost / reset / init) so a recovery test can distinguish a genuine
+    link-loss from a healthy link.
+    """
+    return bool(_LINK_NOT_DATA_RX.search(status_txt))
+
+
 def shell_out(shell, cmd: str) -> str:
     """Run *cmd* via an ``ADIShellDriver`` and return the output as a string.
 

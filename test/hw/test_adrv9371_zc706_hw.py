@@ -170,6 +170,24 @@ def test_adrv9371_zc706_xsa_hw(board, tmp_path, request):
         shell, context="adrv9371_xsa", expected_rx_links=2
     )
 
+    # Positive fault-signal checks: the healthy board must NOT report a
+    # SYSREF alignment error, and no JESD link may have dropped out of
+    # DATA.  These use the same detectors the negative unit tests cover,
+    # so a real SYSREF/link fault surfaces here as an explicit failure
+    # rather than a silent downstream capture timeout.
+    from test.hw.hw_helpers import detect_link_loss, detect_sysref_alignment_error
+
+    assert not detect_sysref_alignment_error(dmesg_txt), (
+        "SYSREF alignment error reported in dmesg for adrv9371_xsa — "
+        "multi-chip SYSREF distribution failed"
+    )
+    assert not detect_link_loss(rx_status), (
+        f"An RX JESD link dropped out of DATA:\n{rx_status}"
+    )
+    assert not detect_link_loss(tx_status), (
+        f"The TX JESD link dropped out of DATA:\n{tx_status}"
+    )
+
     # HDL compile-time framing — TPL descriptor registers.
     # Descriptor 1 @ +0x240: [31:24]=F, [23:16]=S, [15:8]=L, [7:0]=M
     # Descriptor 2 @ +0x244: [15:8]=Np, [7:0]=N

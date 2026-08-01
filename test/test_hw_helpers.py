@@ -23,6 +23,8 @@ from test.hw.hw_helpers import (  # noqa: E402
     assert_jesd_links_data,
     attempt_obs_capture,
     check_jesd_framing_plausibility,
+    detect_link_loss,
+    detect_sysref_alignment_error,
     find_obs_capture_device,
     find_tx_dds_device,
     drive_tx_dds_tone,
@@ -436,3 +438,47 @@ def test_drive_tx_dds_tone_errors_without_altvoltage():
 def test_drive_tx_dds_tone_errors_on_none():
     result = drive_tx_dds_tone(None)
     assert result["status"] == "error"
+
+
+# --- negative / fault-detection coverage ---------------------------------
+
+
+def test_framing_validator_rejects_corrupted_rx_framing():
+    # Deliberately break RX F (should be 4 for M=4/L=2/Np=16/S=1).
+    cfg = {
+        "rx": {"F": 8, "K": 32, "M": 4, "L": 2},
+        "obs": {"F": 2, "K": 32, "M": 2, "L": 2},
+        "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
+    }
+    warnings = check_jesd_framing_plausibility(cfg)
+    assert any("jesd.rx" in w for w in warnings)
+    assert not any("jesd.obs" in w for w in warnings)
+    assert not any("jesd.tx" in w for w in warnings)
+
+
+def test_framing_validator_rejects_corruption_on_every_link():
+    for link, good in (
+        ("rx", {"F": 4, "M": 4, "L": 2}),
+        ("obs", {"F": 2, "M": 2, "L": 2}),
+        ("tx", {"F": 2, "M": 4, "L": 4}),
+    ):
+        bad = dict(good, F=good["F"] + 1)
+        warnings = check_jesd_framing_plausibility({link: bad})
+        assert any(f"jesd.{link}" in w for w in warnings), (
+            f"corrupted {link} framing was not flagged: {warnings}"
+        )
+
+
+def test_detect_sysref_alignment_error_positive_and_negative():
+    assert detect_sysref_alignment_error("SYSREF alignment error: Yes") is True
+    assert detect_sysref_alignment_error("SYSREF alignment error: error") is True
+    # The healthy hardware line must NOT trip the detector.
+    assert detect_sysref_alignment_error("SYSREF alignment error: No") is False
+    assert detect_sysref_alignment_error("all good here") is False
+
+
+def test_detect_link_loss_positive_and_negative():
+    assert detect_link_loss("Link status: disabled") is True
+    assert detect_link_loss("Link status: reset") is True
+    assert detect_link_loss("Link status: DATA") is False
+    assert detect_link_loss("Link status: DATA\nLink status: DATA") is False
