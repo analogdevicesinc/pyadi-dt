@@ -448,6 +448,60 @@ Regenerate the fixture when the XSA path evolves:
    gh run download <PASSING_RUN_ID> -n hw-coord-mini2-output -D /tmp/ref
    cp /tmp/ref/ad9081_zcu102.dts test/devices/fixtures/ad9081_zcu102_xsa_reference.dts
 
+AD9371 coverage status and known gaps
+-------------------------------------
+
+The AD9371 / ZC706 leg exercises the full three-link Mykonos design.
+What is verified on physical hardware every run:
+
+* **Primary RX** — solved-config boot, JESD DATA on all three links,
+  ILAS alignment, and a non-zero, non-latched buffered DMA capture
+  (``test_adrv9371_zc706_xsa_hw`` + the runtime-overlay suite).
+* **Observation RX** — the obs receiver enumerates as
+  ``axi-ad9371-rx-obs-hpc`` (DMAC ``7c440000.rx-obs-dmac``), its JESD
+  link reaches DATA, and its AXI-DMA transport does not time out
+  (``test_adrv9371_zc706_obs_capture``).
+* **Transmit** — the DDS/DAC path is driven (``altvoltage`` tones) and
+  TX JESD stays in DATA under load (``test_adrv9371_zc706_tx_datapath``).
+* **Fault signals** — a healthy board is asserted to report no SYSREF
+  alignment error and no link-loss; the framing validator rejects
+  corrupted RX/OBS/TX geometry pre-flight.
+
+Documented behavioural gaps (recorded as ``xfail``, not silent passes):
+
+* **Observation sample content** — the Mykonos ORx path is gated off
+  unless the ENSM is in ``radio_on`` with an active ORx port *and* a
+  signal is driven into ORx.  On a bench board with no ORx stimulus the
+  obs buffer is legitimately inert; the test ``xfail``\ s on a
+  zero-but-healthy buffer and auto-upgrades to a real capture in a lab
+  that provides ORx drive.
+* **TX→RX / TX→OBS RF loopback quality** — the ZC706 + AD9371 reference
+  HDL has no internal DAC→ADC loopback, so coherent-tone detection needs
+  an external SMA cable.  The overlay suite's FFT phase runs in
+  ``optional`` mode and reports (does not fail on) a noise-only spectrum.
+
+Gaps blocked on lab hardware / infrastructure, not on pyadi-dt:
+
+* **Alternate AD9371 profiles on hardware** — all six shipped profiles
+  are covered in software (rates + framing + ``--show-jif-config``); the
+  five non-canonical profiles boot on hardware only when the opt-in sweep
+  is enabled (``ADIDT_AD9371_PROFILE_SWEEP=1``), because booting six DTBs
+  serially on the single ZC706 exceeds the per-run budget.
+* **PetaLinux DT-gen/boot** — full ``test_*_petalinux_hw.py`` coverage
+  exists but the ``bq`` runner has no PetaLinux install, so those tests
+  self-skip via ``requires_petalinux``.  They run automatically once a
+  PetaLinux 2023.2+ install is present on the leg runner (or
+  ``PETALINUX_INSTALL`` points at one).
+* **Runtime CLI reboot operations** (``sd-remote-copy --reboot``,
+  ``prop write --reboot``, ``jif clock --reboot``, ``sd-move --reboot``)
+  remain skipped pending a reversible multi-design SD layout and safe
+  SFTP backup/restore, so a failed reboot cannot strand the shared board.
+* **Boards with no physical matrix leg** — only the four boards with a
+  live coordinator place (AD9371/ZC706, ADRV9009/ZC706, AD9081/ZCU102,
+  FMCDAQ3/VCU118) run on hardware.  Other supported parts (AD9082,
+  AD9083, AD9084, AD9172, ADRV9002/8/25, alternate carriers) have no
+  exporter and are limited by lab hardware availability, not test code.
+
 Troubleshooting
 ---------------
 
