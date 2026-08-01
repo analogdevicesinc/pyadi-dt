@@ -5,4 +5,5 @@ boards:
   - ad9081
   - adrv9371
   - adrv9009
+  - adrv9009zu11eg
   - daq3

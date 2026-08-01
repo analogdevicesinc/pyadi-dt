@@ -10,5 +10,6 @@ from .base import FpgaBoard, SpiMaster
 from .vpk180 import vpk180
 from .zc706 import zc706
 from .zcu102 import zcu102
+from .zu11eg import zu11eg
 
-__all__ = ["FpgaBoard", "SpiMaster", "vpk180", "zc706", "zcu102"]
+__all__ = ["FpgaBoard", "SpiMaster", "vpk180", "zc706", "zcu102", "zu11eg"]

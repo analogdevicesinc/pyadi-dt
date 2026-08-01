@@ -17,6 +17,7 @@ def test_profile_manager_lists_builtin_profiles():
     assert "adrv9002_zc706" in names
     assert "adrv9009_zcu102" in names
     assert "adrv9009_zc706" in names
+    assert "adrv9009_zu11eg" in names
     assert "adrv937x_zcu102" in names
     assert "adrv937x_zc706" in names
     assert "adrv9025_zcu102" in names

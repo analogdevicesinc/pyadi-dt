@@ -167,6 +167,7 @@ _ADI_CONVERTER_TYPES = {
 }
 _PART_TO_PLATFORM = {
     "xczu9eg": "zcu102",
+    "xczu11eg": "zu11eg",
     "xczu3eg": "zcu104",
     "xck26": "kv260",
     "xcvp1202": "vpk180",

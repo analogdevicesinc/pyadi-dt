@@ -317,6 +317,11 @@ def test_xsa_topology_infers_platform_from_part_prefix():
     assert topo.inferred_platform() == "zcu102"
 
 
+def test_xsa_topology_infers_zu11eg_platform_from_part_prefix():
+    topo = XsaTopology(fpga_part="xczu11eg-ffvf1517-2")
+    assert topo.inferred_platform() == "zu11eg"
+
+
 def test_xsa_topology_infers_platform_from_part_substring():
     topo = XsaTopology(fpga_part="xilinx,xcvp1202,revA")
     assert topo.inferred_platform() == "vpk180"
