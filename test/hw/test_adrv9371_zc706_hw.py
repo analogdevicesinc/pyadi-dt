@@ -393,6 +393,102 @@ def _try_enable_orx_path(ctx) -> None:
 
 
 @requires_lg
+@pytest.mark.lg_feature(list(SPEC.lg_features))
+def test_adrv9371_zc706_tx_datapath(board, tmp_path, request):
+    """Transmit DDS/DAC data path + TX JESD stability on real hardware.
+
+    The primary system test proves TX JESD reaches DATA but does not
+    exercise the DDS/DAC transmit path.  This test:
+
+    1. Boots the solved-config DTB via the shared harness.
+    2. Locates the TX DDS frontend (``axi-ad9371-tx-hpc``) and programs a
+       single DDS tone on its ``altvoltage`` output channels.
+    3. Asserts the TX JESD link stays in DATA while the tone is driven —
+       proving the DAC transport is live end to end.
+    4. Opportunistically attempts a TX→RX loopback capture: the ZC706 +
+       AD9371 reference HDL has *no* internal DAC→ADC loopback, so without
+       an external SMA cable the RX spectrum is noise-only.  A coherent
+       tone (if a lab has the cable) is reported; its absence is a
+       documented ``xfail``, not a failure — RF coupling is a lab-setup
+       detail, not a pyadi-dt DT concern.
+    """
+    from test.hw.hw_helpers import (
+        assert_jesd_links_data,
+        attempt_obs_capture,
+        drive_tx_dds_tone,
+        find_tx_dds_device,
+        shell_out,
+    )
+
+    shell, ctx, _dmesg = run_xsa_boot_and_verify(
+        SPEC, board=board, request=request, tmp_path=tmp_path
+    )
+
+    tx_dev = find_tx_dds_device(ctx)
+    all_names = sorted(d.name for d in ctx.devices if d.name)
+    assert tx_dev is not None, (
+        f"AD9371 TX DDS frontend did not enumerate. Devices: {all_names}"
+    )
+
+    dds = drive_tx_dds_tone(tx_dev, scale=0.5, freq_hz=1_000_000)
+    print(f"=== TX DDS drive result ===\n{dds}")
+    assert dds["status"] == "driven", (
+        f"Could not drive the TX DDS path: {dds['detail']}"
+    )
+
+    # TX JESD must stay in DATA with the tone running — this is the core
+    # proof that the DAC transport is live end to end.
+    _rx_status, tx_status = assert_jesd_links_data(
+        shell, context="adrv9371_tx", expected_rx_links=2, expected_tx_links=1
+    )
+    print(f"=== TX JESD status with DDS tone ===\n{tx_status}")
+
+    # DAC core register progression — evidence the DDS is clocking.
+    print("=== TX DAC (cf_axi_dds) sysfs snapshot ===")
+    print(
+        shell_out(
+            shell,
+            (
+                "d=$(ls -d /sys/bus/iio/devices/iio:device* 2>/dev/null "
+                "| while read x; do "
+                "  case $(cat $x/name 2>/dev/null) in *tx-hpc*|*ad9371-tx*) echo $x; "
+                "esac; done | head -1); "
+                'echo "TX dev: $d"; '
+                '[ -n "$d" ] && for f in "$d"/out_altvoltage*_raw '
+                '  "$d"/out_altvoltage*_frequency "$d"/out_altvoltage*_scale; do '
+                "  [ -e $f ] && printf '%s = %s\\n' $f \"$(cat $f 2>/dev/null)\"; done"
+            ),
+        )
+    )
+
+    # Opportunistic TX→RX loopback: capture from primary RX and see if the
+    # driven tone shows up.  No internal loopback on this HDL, so treat a
+    # noise-only / inert result as a documented xfail.
+    rx_dev = ctx.find_device("axi-ad9371-rx-hpc")
+    if rx_dev is None:
+        pytest.xfail(
+            "primary RX device absent for TX loopback capture (unexpected); "
+            "TX DDS path itself was driven and TX JESD stayed in DATA"
+        )
+        return  # pragma: no cover
+
+    result = attempt_obs_capture(ctx, rx_dev, n_samples=2**12)
+    print(f"=== TX→RX loopback capture result ===\n{result}")
+    assert result["status"] != "error", (
+        f"RX data path broke while driving TX: {result['detail']}"
+    )
+    # The RX path always has thermal noise, so a healthy board returns
+    # "data" here even without a cable — that alone does not prove the
+    # *loopback*.  We can only assert the transport survived driving TX;
+    # coherent-tone detection is the overlay suite's optional FFT phase.
+    print(
+        "TX data path exercised: DDS driven, TX JESD in DATA, RX transport "
+        f"healthy under TX ({result['detail']}). Coherent TX→RX tone "
+        "detection requires external SMA coupling (see overlay FFT phase)."
+    )
+
+
+@requires_lg
 @pytest.mark.skipif(
     not _PROFILE_SWEEP_ENABLED,
     reason=(

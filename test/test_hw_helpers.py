@@ -24,6 +24,8 @@ from test.hw.hw_helpers import (  # noqa: E402
     attempt_obs_capture,
     check_jesd_framing_plausibility,
     find_obs_capture_device,
+    find_tx_dds_device,
+    drive_tx_dds_tone,
     parse_ilas_status,
     probe_obs_enumeration,
     read_jesd_status,
@@ -36,6 +38,8 @@ class _FakeChannel:
         self.output = output
         self.enabled = False
         self._payload = b""
+        self._id = "voltage0"
+        self.attrs = {}
 
     @property
     def id(self):
@@ -43,6 +47,23 @@ class _FakeChannel:
 
     def read(self, _buf):
         return self._payload
+
+
+class _FakeAttr:
+    def __init__(self, name, value=""):
+        self.name = name
+        self.value = value
+
+
+def _make_dds_channel(chan_id="altvoltage0_TX1_I_F1"):
+    ch = _FakeChannel(scan_element=False, output=True)
+    ch._id = chan_id
+    ch.attrs = {
+        "raw": _FakeAttr("raw", "0"),
+        "scale": _FakeAttr("scale", "0.0"),
+        "frequency": _FakeAttr("frequency", "0"),
+    }
+    return ch
 
 
 class _FakeDevice:
@@ -371,4 +392,47 @@ def test_attempt_obs_capture_errors_on_no_scan_channels(monkeypatch):
 def test_attempt_obs_capture_errors_on_none_device(monkeypatch):
     _install_fake_iio(monkeypatch)
     result = attempt_obs_capture(_FakeCtx([]), None, n_samples=1024)
+    assert result["status"] == "error"
+
+
+def test_find_tx_dds_device_prefers_named_tx():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    tx.channels = [_make_dds_channel()]
+    ctx = _FakeCtx([_FakeDevice("axi-ad9371-rx-hpc"), tx])
+    dev = find_tx_dds_device(ctx)
+    assert dev is not None
+    assert dev.name == "axi-ad9371-tx-hpc"
+
+
+def test_find_tx_dds_device_ignores_rx_only():
+    # The RX-only device has no 'tx' in its name, so neither the named
+    # lookup nor the fallback name rule should match it.
+    ctx = _FakeCtx([_FakeDevice("axi-ad9371-rx-hpc")])
+    assert find_tx_dds_device(ctx) is None
+
+
+def test_drive_tx_dds_tone_programs_altvoltage_channels():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    ch = _make_dds_channel()
+    tx.channels = [ch]
+    result = drive_tx_dds_tone(tx, scale=0.5, freq_hz=2_000_000)
+    assert result["status"] == "driven"
+    assert ch.attrs["raw"].value == "1"
+    assert ch.attrs["scale"].value == "0.5"
+    assert ch.attrs["frequency"].value == "2000000"
+    assert result["channels"] == [ch.id]
+
+
+def test_drive_tx_dds_tone_errors_without_altvoltage():
+    tx = _FakeDevice("axi-ad9371-tx-hpc", rx_scan=False)
+    # only a plain output voltage channel, no altvoltage DDS channel
+    plain = _FakeChannel(scan_element=False, output=True)
+    plain._id = "voltage0"
+    tx.channels = [plain]
+    result = drive_tx_dds_tone(tx)
+    assert result["status"] == "error"
+
+
+def test_drive_tx_dds_tone_errors_on_none():
+    result = drive_tx_dds_tone(None)
     assert result["status"] == "error"

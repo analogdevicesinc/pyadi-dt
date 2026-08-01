@@ -993,6 +993,90 @@ def attempt_obs_capture(ctx, obs_dev, n_samples: int = 2**12) -> dict:
     }
 
 
+# Candidate IIO device names for the AD9371 transmit DDS/DAC frontend.
+TX_DEVICE_CANDIDATES: tuple[str, ...] = (
+    "axi-ad9371-tx-hpc",
+    "axi-ad9371-tx",
+)
+
+
+def find_tx_dds_device(ctx):
+    """Return the transmit DDS/DAC IIO device, or ``None``.
+
+    The TX frontend exposes ``altvoltage`` *output* channels (the DDS
+    tone generators).  A device qualifies only when it has at least one
+    output channel — that distinguishes the DAC frontend from RX cores.
+    """
+    def _has_output(d):
+        return any(c.output for c in d.channels)
+
+    for name in TX_DEVICE_CANDIDATES:
+        dev = ctx.find_device(name)
+        if dev is not None and _has_output(dev):
+            return dev
+    for dev in ctx.devices:
+        if not dev.name or not _has_output(dev):
+            continue
+        if "tx" in dev.name.lower() and "9371" in dev.name:
+            return dev
+    return None
+
+
+def drive_tx_dds_tone(tx_dev, *, scale: float = 0.5, freq_hz: int = 1_000_000) -> dict:
+    """Enable a single DDS tone on the TX frontend via raw libiio.
+
+    Sets ``raw`` (enable), ``scale``, and ``frequency`` on the DDS
+    ``altvoltage`` output channels.  Returns a diagnostic dict:
+
+    * ``status`` — ``"driven"`` if at least one altvoltage tone was
+      programmed, ``"error"`` if the device exposed no DDS controls.
+    * ``channels`` — the altvoltage channel ids that were programmed.
+    * ``detail`` — human-readable explanation.
+    """
+    if tx_dev is None:
+        return {"status": "error", "channels": [], "detail": "tx device is None"}
+
+    dds_channels = [
+        c
+        for c in tx_dev.channels
+        if c.output and (c.id or "").startswith("altvoltage")
+    ]
+    if not dds_channels:
+        return {
+            "status": "error",
+            "channels": [],
+            "detail": f"{tx_dev.name!r} exposes no DDS altvoltage output channels",
+        }
+
+    programmed = []
+    for ch in dds_channels:
+        attrs = {a.name: a for a in ch.attrs.values()} if hasattr(ch, "attrs") else {}
+        try:
+            if "frequency" in attrs:
+                attrs["frequency"].value = str(freq_hz)
+            if "scale" in attrs:
+                attrs["scale"].value = str(scale)
+            if "raw" in attrs:
+                attrs["raw"].value = "1"
+            programmed.append(ch.id)
+        except Exception as exc:  # noqa: BLE001 — some channels are read-only
+            print(f"DDS channel {ch.id} program skipped: {exc}")
+    if not programmed:
+        return {
+            "status": "error",
+            "channels": [],
+            "detail": f"{tx_dev.name!r} DDS channels could not be programmed",
+        }
+    return {
+        "status": "driven",
+        "channels": programmed,
+        "detail": (
+            f"programmed {len(programmed)} DDS tone channel(s) at "
+            f"{freq_hz} Hz scale {scale}"
+        ),
+    }
+
+
 def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:
     """Return a short sha256 over *platform_arch* and the config file bytes."""
     import hashlib
