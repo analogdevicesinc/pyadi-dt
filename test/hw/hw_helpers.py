@@ -912,6 +912,87 @@ def probe_obs_enumeration(ctx) -> dict:
     }
 
 
+def attempt_obs_capture(ctx, obs_dev, n_samples: int = 2**12) -> dict:
+    """Try to capture from the observation device; classify the result.
+
+    Unlike :func:`assert_rx_capture_valid`, this never raises on an
+    all-zero / latched buffer — the AD9371 ORx path is gated off unless
+    the Mykonos ENSM is in ``radio_on`` and the ORx port is actively
+    selected/receiving, so on a bench board with nothing driving ORx a
+    zero buffer is *expected*, not a pyadi-dt regression.  A hard failure
+    (missing device, no scan channels, DMA refill timeout) is still
+    reported so a real transport break is distinguishable.
+
+    Returns a dict with:
+
+    * ``status`` — ``"data"`` (non-zero varying samples),
+      ``"zero"`` (buffer returned but inert), or
+      ``"error"`` (device/transport problem — treat as failure).
+    * ``detail`` — human-readable explanation.
+    * ``max_std`` — max |std| across channels when a buffer was read.
+    """
+    import iio
+    import numpy as np
+
+    if obs_dev is None:
+        return {"status": "error", "detail": "obs device is None", "max_std": 0.0}
+
+    scan_channels = [c for c in obs_dev.channels if c.scan_element and not c.output]
+    if not scan_channels:
+        return {
+            "status": "error",
+            "detail": f"{obs_dev.name!r} has no RX scan channels",
+            "max_std": 0.0,
+        }
+
+    buf = None
+    try:
+        for ch in scan_channels:
+            ch.enabled = True
+        buf = iio.Buffer(obs_dev, n_samples, False)
+        try:
+            buf.refill()
+        except TimeoutError:
+            return {
+                "status": "error",
+                "detail": (
+                    f"DMA refill timed out on {obs_dev.name!r} — obs AXI-DMA "
+                    "transport stalled"
+                ),
+                "max_std": 0.0,
+            }
+        per_channel = {
+            ch.id: np.frombuffer(ch.read(buf), dtype=np.int16) for ch in scan_channels
+        }
+    finally:
+        if buf is not None:
+            del buf
+        for ch in scan_channels:
+            try:
+                ch.enabled = False
+            except Exception:  # noqa: BLE001 — best-effort cleanup
+                pass
+
+    max_std = max((float(np.abs(a).std()) for a in per_channel.values()), default=0.0)
+    any_nonzero = any(a.any() for a in per_channel.values())
+    if any_nonzero and max_std >= 1.0:
+        return {
+            "status": "data",
+            "detail": (
+                f"obs capture delivered varying samples (max |std|={max_std:.2f})"
+            ),
+            "max_std": max_std,
+        }
+    return {
+        "status": "zero",
+        "detail": (
+            f"obs buffer returned but inert (max |std|={max_std:.2f}) — "
+            "ORx path gated off / no signal into ORx on this bench setup"
+        ),
+        "max_std": max_std,
+    }
+
+
 def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:
     """Return a short sha256 over *platform_arch* and the config file bytes."""
     import hashlib

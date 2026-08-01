@@ -21,6 +21,7 @@ from test.hw.hw_helpers import (  # noqa: E402
     IlasMismatch,
     assert_ilas_aligned,
     assert_jesd_links_data,
+    attempt_obs_capture,
     check_jesd_framing_plausibility,
     find_obs_capture_device,
     parse_ilas_status,
@@ -33,6 +34,15 @@ class _FakeChannel:
     def __init__(self, *, scan_element: bool, output: bool):
         self.scan_element = scan_element
         self.output = output
+        self.enabled = False
+        self._payload = b""
+
+    @property
+    def id(self):
+        return getattr(self, "_id", "voltage0")
+
+    def read(self, _buf):
+        return self._payload
 
 
 class _FakeDevice:
@@ -45,6 +55,14 @@ class _FakeDevice:
             self.channels.append(_FakeChannel(scan_element=True, output=False))
         self.channels.append(_FakeChannel(scan_element=True, output=True))
 
+    def set_rx_payload(self, payload: bytes, chan_id: str = "voltage0") -> None:
+        """Set the bytes the first RX scan channel returns from ``read``."""
+        for ch in self.channels:
+            if ch.scan_element and not ch.output:
+                ch._payload = payload
+                ch._id = chan_id
+                break
+
 
 class _FakeCtx:
     def __init__(self, devices):
@@ -52,6 +70,25 @@ class _FakeCtx:
 
     def find_device(self, name):
         return next((d for d in self.devices if d.name == name), None)
+
+
+def _install_fake_iio(monkeypatch, *, refill_raises=False):
+    """Install a minimal fake ``iio`` module exposing ``Buffer``."""
+    import sys
+    import types
+
+    fake = types.ModuleType("iio")
+
+    class _Buffer:
+        def __init__(self, dev, n, cyclic):
+            self.dev = dev
+
+        def refill(self):
+            if refill_raises:
+                raise TimeoutError("refill timed out")
+
+    fake.Buffer = _Buffer
+    monkeypatch.setitem(sys.modules, "iio", fake)
 
 
 _DMESG_WITH_ILAS_MISMATCH = """\
@@ -290,3 +327,48 @@ def test_probe_obs_enumeration_reports_present_obs():
     assert snap["primary_rx"] == "axi-ad9371-rx-hpc"
     assert snap["obs_device"] == "axi-ad9371-rx-obs-hpc"
     assert snap["obs_has_rx_scan"] is True
+
+
+def test_attempt_obs_capture_classifies_live_data(monkeypatch):
+    import numpy as np
+
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    varying = np.arange(1024, dtype=np.int16).tobytes()
+    obs.set_rx_payload(varying)
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "data"
+    assert result["max_std"] > 1.0
+
+
+def test_attempt_obs_capture_classifies_inert_buffer(monkeypatch):
+    import numpy as np
+
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    obs.set_rx_payload(np.zeros(1024, dtype=np.int16).tobytes())
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "zero"
+    assert result["max_std"] == 0.0
+
+
+def test_attempt_obs_capture_reports_refill_timeout_as_error(monkeypatch):
+    _install_fake_iio(monkeypatch, refill_raises=True)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc")
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "error"
+    assert "timed out" in result["detail"]
+
+
+def test_attempt_obs_capture_errors_on_no_scan_channels(monkeypatch):
+    _install_fake_iio(monkeypatch)
+    obs = _FakeDevice("axi-ad9371-rx-obs-hpc", rx_scan=False)
+    result = attempt_obs_capture(_FakeCtx([obs]), obs, n_samples=1024)
+    assert result["status"] == "error"
+    assert "no RX scan channels" in result["detail"]
+
+
+def test_attempt_obs_capture_errors_on_none_device(monkeypatch):
+    _install_fake_iio(monkeypatch)
+    result = attempt_obs_capture(_FakeCtx([]), None, n_samples=1024)
+    assert result["status"] == "error"
