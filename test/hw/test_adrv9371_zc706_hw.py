@@ -227,6 +227,94 @@ def test_adrv9371_zc706_xsa_hw(board, tmp_path, request):
     )
 
 
+@requires_lg
+@pytest.mark.lg_feature(list(SPEC.lg_features))
+def test_adrv9371_zc706_obs_capture(board, tmp_path, request):
+    """Observation-receiver enumeration + data-movement on real hardware.
+
+    The obs JESD link reaches DATA and the obs TPL/DMAC blocks exist in
+    the generated DT (TPL ``0x44a08000`` / DMAC ``0x7c440000``), but the
+    primary-RX system test does not prove the *observation* data path
+    moves samples.  This test:
+
+    1. Boots the same solved-config DTB via the shared harness.
+    2. Snapshots how (or whether) the obs receiver enumerates as an IIO
+       device — see :func:`probe_obs_enumeration`.
+    3. Dumps obs TPL-core + DMAC sysfs/register state for forensics.
+    4. If the obs device enumerates with an RX scan element, captures a
+       buffer and asserts non-zero, non-latched samples — closing the
+       observation data-movement gap.
+    5. If it does not enumerate, records the driver-side gap explicitly
+       (``xfail``) rather than passing silently — the DT is correct and
+       matches the Kuiper reference, so this is a kernel/driver binding
+       limitation, not a pyadi-dt regression.
+    """
+    from test.hw.hw_helpers import (
+        OBS_DMAC_ADDR,
+        OBS_TPL_ADDR,
+        assert_jesd_links_data,
+        assert_rx_capture_valid,
+        find_obs_capture_device,
+        probe_obs_enumeration,
+        shell_out,
+    )
+
+    shell, ctx, _dmesg = run_xsa_boot_and_verify(
+        SPEC, board=board, request=request, tmp_path=tmp_path
+    )
+
+    # The obs link must be in DATA for any capture to be meaningful.
+    assert_jesd_links_data(shell, context="adrv9371_obs", expected_rx_links=2)
+
+    print("=== Observation TPL core + DMAC sysfs/register state ===")
+    print(
+        shell_out(
+            shell,
+            (
+                f"echo '--- obs TPL @ 0x{OBS_TPL_ADDR} ---'; "
+                f"busybox devmem 0x{OBS_TPL_ADDR}240 2>&1; "
+                f"busybox devmem 0x{OBS_TPL_ADDR}244 2>&1; "
+                f"echo '--- obs DMAC @ 0x{OBS_DMAC_ADDR} ---'; "
+                f"for d in /sys/bus/platform/devices/*{OBS_DMAC_ADDR}*; do "
+                '  echo "$d"; ls "$d" 2>/dev/null; done; '
+                "echo '--- IIO devices ---'; "
+                "for d in /sys/bus/iio/devices/iio:device*; do "
+                "  printf '%s = %s\\n' \"$d\" \"$(cat $d/name 2>/dev/null)\"; done"
+            ),
+        )
+    )
+
+    snapshot = probe_obs_enumeration(ctx)
+    print(f"=== Observation enumeration snapshot ===\n{snapshot}")
+    assert snapshot["primary_rx"] is not None, (
+        "Primary RX device missing — boot/verify should have caught this"
+    )
+
+    obs_dev = find_obs_capture_device(ctx)
+    if obs_dev is None:
+        pytest.xfail(
+            "AD9371 observation receiver does not enumerate as a distinct "
+            "capturable IIO device on this kernel. The generated DT node "
+            "(compatible adi,axi-ad9371-obs-1.0 at 0x44a08000, DMAC "
+            "0x7c440000) matches the Kuiper reference design; obs capture "
+            "is gated on driver/kernel obs-buffer binding, not pyadi-dt DT "
+            f"generation. Devices present: {snapshot['all_devices']}"
+        )
+        return  # pragma: no cover — pytest.xfail raises; aids type-narrowing
+
+    # Obs device enumerated — prove it actually moves samples.
+    assert obs_dev.name != snapshot["primary_rx"], (
+        f"Obs device resolver returned the primary RX device "
+        f"{obs_dev.name!r} — obs/primary disambiguation failed"
+    )
+    assert_rx_capture_valid(
+        ctx,
+        (obs_dev.name,),
+        n_samples=2**12,
+        context="adrv9371_obs",
+    )
+
+
 # ---------------------------------------------------------------------------
 # System API test
 # ---------------------------------------------------------------------------

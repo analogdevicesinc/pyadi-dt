@@ -840,6 +840,78 @@ def assert_rx_capture_valid(
     return per_channel
 
 
+# Candidate IIO device names for the AD9371 observation receiver, most
+# specific first.  pyadi-iio's ``adi.ad9371`` hardcodes the production
+# name ``axi-ad9371-rx-obs-hpc``; sdtgen-derived merged DTBs may instead
+# expose the obs TPL core under its generic label.  The obs path lives at
+# HDL address ``0x44a08000`` (TPL) / ``0x7c440000`` (DMAC).
+OBS_DEVICE_CANDIDATES: tuple[str, ...] = (
+    "axi-ad9371-rx-obs-hpc",
+    "axi-ad9371-rx-os-hpc",
+    "axi-ad9371-obs-hpc",
+)
+OBS_TPL_ADDR = "44a08000"
+OBS_DMAC_ADDR = "7c440000"
+
+
+def find_obs_capture_device(ctx):
+    """Return the observation-receiver IIO device, or ``None``.
+
+    Distinguishes the AD9371 observation path from the primary RX path
+    by name and by reg-address suffix (``44a08000`` TPL core).  A device
+    only qualifies when it actually exposes an input (RX) scan element —
+    a control-plane node that merely carries the name does not count.
+    """
+
+    def _has_rx_scan(d):
+        return any(c.scan_element and not c.output for c in d.channels)
+
+    # 1. Exact/known obs device names.
+    for name in OBS_DEVICE_CANDIDATES:
+        dev = ctx.find_device(name)
+        if dev is not None and _has_rx_scan(dev):
+            return dev
+
+    # 2. Any buffered device whose id/name ties it to the obs HDL block.
+    for dev in ctx.devices:
+        if not dev.name or not _has_rx_scan(dev):
+            continue
+        haystack = f"{dev.name} {getattr(dev, 'id', '') or ''}".lower()
+        if OBS_TPL_ADDR in haystack or "obs" in haystack or "rx-os" in haystack:
+            return dev
+    return None
+
+
+def probe_obs_enumeration(ctx) -> dict:
+    """Snapshot how the observation receiver is (or is not) enumerated.
+
+    Returns a diagnostic dict — never raises — so a caller can decide
+    whether missing obs enumeration is a hard failure or a documented,
+    driver-side gap.  Keys:
+
+    * ``all_devices`` — sorted IIO device names present.
+    * ``obs_device`` — the resolved obs device name, or ``None``.
+    * ``obs_has_rx_scan`` — whether it exposes input scan channels.
+    * ``primary_rx`` — the primary RX device name, if present.
+    """
+    all_names = sorted(d.name for d in ctx.devices if d.name)
+    obs = find_obs_capture_device(ctx)
+    primary = next(
+        (
+            n
+            for n in ("axi-ad9371-rx-hpc", "ad_ip_jesd204_tpl_adc")
+            if ctx.find_device(n) is not None
+        ),
+        None,
+    )
+    return {
+        "all_devices": all_names,
+        "obs_device": obs.name if obs is not None else None,
+        "obs_has_rx_scan": obs is not None,
+        "primary_rx": primary,
+    }
+
+
 def _kernel_cache_key(platform_arch: str, config_path: Path) -> str:
     """Return a short sha256 over *platform_arch* and the config file bytes."""
     import hashlib

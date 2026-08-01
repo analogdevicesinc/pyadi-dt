@@ -22,9 +22,36 @@ from test.hw.hw_helpers import (  # noqa: E402
     assert_ilas_aligned,
     assert_jesd_links_data,
     check_jesd_framing_plausibility,
+    find_obs_capture_device,
     parse_ilas_status,
+    probe_obs_enumeration,
     read_jesd_status,
 )
+
+
+class _FakeChannel:
+    def __init__(self, *, scan_element: bool, output: bool):
+        self.scan_element = scan_element
+        self.output = output
+
+
+class _FakeDevice:
+    def __init__(self, name, *, id="", rx_scan=True):
+        self.name = name
+        self.id = id
+        # one input scan channel when rx_scan, plus an output channel
+        self.channels = []
+        if rx_scan:
+            self.channels.append(_FakeChannel(scan_element=True, output=False))
+        self.channels.append(_FakeChannel(scan_element=True, output=True))
+
+
+class _FakeCtx:
+    def __init__(self, devices):
+        self.devices = devices
+
+    def find_device(self, name):
+        return next((d for d in self.devices if d.name == name), None)
 
 
 _DMESG_WITH_ILAS_MISMATCH = """\
@@ -200,3 +227,66 @@ def test_read_jesd_status_does_not_truncate_multi_link_output():
     assert rx_status.count("Link status: DATA") == 2
     assert all("head -n" not in command for command in shell.commands)
     assert all('echo "=== $f ==="' in command for command in shell.commands)
+
+
+def test_find_obs_capture_device_prefers_named_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("ad9371-phy", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+            _FakeDevice("axi-ad9371-rx-obs-hpc"),
+        ]
+    )
+    dev = find_obs_capture_device(ctx)
+    assert dev is not None
+    assert dev.name == "axi-ad9371-rx-obs-hpc"
+
+
+def test_find_obs_capture_device_matches_tpl_address_in_id():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-hpc", id="iio:device2"),
+            _FakeDevice("ad_ip_jesd204_tpl_adc", id="iio:device3-44a08000"),
+        ]
+    )
+    dev = find_obs_capture_device(ctx)
+    assert dev is not None
+    assert dev.id == "iio:device3-44a08000"
+
+
+def test_find_obs_capture_device_ignores_control_plane_only():
+    # An obs-named device with no RX scan element does not qualify.
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-obs-hpc", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+        ]
+    )
+    assert find_obs_capture_device(ctx) is None
+
+
+def test_probe_obs_enumeration_reports_missing_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("ad9371-phy", rx_scan=False),
+            _FakeDevice("axi-ad9371-rx-hpc"),
+        ]
+    )
+    snap = probe_obs_enumeration(ctx)
+    assert snap["primary_rx"] == "axi-ad9371-rx-hpc"
+    assert snap["obs_device"] is None
+    assert snap["obs_has_rx_scan"] is False
+    assert "axi-ad9371-rx-hpc" in snap["all_devices"]
+
+
+def test_probe_obs_enumeration_reports_present_obs():
+    ctx = _FakeCtx(
+        [
+            _FakeDevice("axi-ad9371-rx-hpc"),
+            _FakeDevice("axi-ad9371-rx-obs-hpc"),
+        ]
+    )
+    snap = probe_obs_enumeration(ctx)
+    assert snap["primary_rx"] == "axi-ad9371-rx-hpc"
+    assert snap["obs_device"] == "axi-ad9371-rx-obs-hpc"
+    assert snap["obs_has_rx_scan"] is True
