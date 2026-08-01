@@ -20,6 +20,7 @@ LG_ENV: lg_adrv9371_zc706_tftp.yaml.
 from __future__ import annotations
 
 import copy
+import os
 from functools import cache
 from pathlib import Path
 from typing import Any
@@ -41,6 +42,21 @@ PROFILE_PATH = (
     Path(__file__).parents[2]
     / "examples/xsa/profiles/ad9371_5/profile_TxBW200_ORxBW200_RxBW100.txt"
 )
+PROFILE_DIR = Path(__file__).parents[2] / "examples/xsa/profiles/ad9371_5"
+
+# Alternate (non-canonical) profiles booted only when the operator opts
+# into the sweep.  Booting six DTBs sequentially on the single ZC706
+# would blow the per-run hardware budget, so the default matrix boots the
+# canonical profile (via ``test_adrv9371_zc706_xsa_hw``) and this sweep is
+# gated behind ``ADIDT_AD9371_PROFILE_SWEEP=1``.
+_ALTERNATE_PROFILES = (
+    "profile_TxBW100_ORxBW100_RxBW100.txt",
+    "profile_TxBW100_ORxBW100_RxBW50.txt",
+    "profile_TxBW100_ORxBW100_RxBW20.txt",
+    "profile_TxBW50_ORxBW50_RxBW50.txt",
+    "profile_TxBW50_ORxBW50_RxBW25.txt",
+)
+_PROFILE_SWEEP_ENABLED = os.environ.get("ADIDT_AD9371_PROFILE_SWEEP") == "1"
 
 
 @cache
@@ -49,9 +65,14 @@ def _solved_ad9371_config() -> tuple[dict[str, Any], dict[str, Any]]:
     return resolve_ad9371_jif_config(PROFILE_PATH, solve=True)
 
 
-def _adrv9371_cfg() -> dict[str, Any]:
-    """Return the real solved pyadi-jif configuration plus board wiring."""
-    cfg, _summary = _solved_ad9371_config()
+@cache
+def _solved_config_for(profile_name: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Solve an arbitrary shipped profile once per hardware-test process."""
+    return resolve_ad9371_jif_config(PROFILE_DIR / profile_name, solve=True)
+
+
+def _board_wiring(cfg: dict[str, Any]) -> dict[str, Any]:
+    """Overlay the ZC706 board wiring onto a solved cfg (in place, copied)."""
     cfg = copy.deepcopy(cfg)
     cfg["adrv9009_board"].update(
         {
@@ -68,6 +89,12 @@ def _adrv9371_cfg() -> dict[str, Any]:
         }
     )
     return cfg
+
+
+def _adrv9371_cfg() -> dict[str, Any]:
+    """Return the real solved pyadi-jif configuration plus board wiring."""
+    cfg, _summary = _solved_ad9371_config()
+    return _board_wiring(cfg)
 
 
 def _topology_assert(topology) -> None:
@@ -312,6 +339,72 @@ def test_adrv9371_zc706_obs_capture(board, tmp_path, request):
         (obs_dev.name,),
         n_samples=2**12,
         context="adrv9371_obs",
+    )
+
+
+@requires_lg
+@pytest.mark.skipif(
+    not _PROFILE_SWEEP_ENABLED,
+    reason=(
+        "AD9371 alternate-profile hardware sweep is opt-in; set "
+        "ADIDT_AD9371_PROFILE_SWEEP=1 to boot + capture all shipped "
+        "profiles (booting six DTBs on one ZC706 is budget-heavy)."
+    ),
+)
+@pytest.mark.lg_feature(list(SPEC.lg_features))
+@pytest.mark.parametrize("profile_name", _ALTERNATE_PROFILES)
+def test_adrv9371_zc706_profile_sweep_hw(profile_name, board, tmp_path, request):
+    """Boot + RX-capture each alternate AD9371 profile on real hardware.
+
+    The default matrix boots only the canonical
+    ``TxBW200_ORxBW200_RxBW100`` profile.  This opt-in sweep proves the
+    remaining shipped profiles also generate a bootable DTB whose primary
+    RX path moves samples at the profile's distinct sample rate.  Each
+    parameter reruns the full XSA → pipeline → boot → verify flow with
+    the profile's own solved configuration.
+    """
+    cfg, summary = _solved_config_for(profile_name)
+    assert summary["solver_succeeded"] is True
+    wired = _board_wiring(cfg)
+
+    # A per-parameter SPEC identical to the canonical one but driven by
+    # this profile's solved cfg and labelled for its dmesg artifacts.
+    label = profile_name.replace("profile_", "").replace(".txt", "").lower()
+    spec = BoardSystemProfile(
+        lg_features=SPEC.lg_features,
+        cfg_builder=lambda: wired,
+        xsa_resolver=SPEC.xsa_resolver,
+        topology_assert=SPEC.topology_assert,
+        boot_mode=SPEC.boot_mode,
+        kernel_fixture_name=SPEC.kernel_fixture_name,
+        out_label=f"adrv9371_{label}",
+        dmesg_grep_pattern=SPEC.dmesg_grep_pattern,
+        merged_dts_must_contain=SPEC.merged_dts_must_contain,
+        probe_signature_any=SPEC.probe_signature_any,
+        probe_signature_message=SPEC.probe_signature_message,
+        iio_required_all=SPEC.iio_required_all,
+        expected_rx_jesd_links=SPEC.expected_rx_jesd_links,
+        rx_capture_target_names=SPEC.rx_capture_target_names,
+    )
+
+    shell, _ctx, _dmesg = run_xsa_boot_and_verify(
+        spec, board=board, request=request, tmp_path=tmp_path
+    )
+
+    from test.hw.hw_helpers import assert_jesd_links_data, shell_out
+
+    assert_jesd_links_data(shell, context=spec.out_label, expected_rx_links=2)
+    print(f"=== {profile_name}: solved rates {summary['rates_hz']} ===")
+    print(
+        "AD9371 phy sample rates: "
+        + shell_out(
+            shell,
+            "phy=$(find /sys/bus/iio/devices -maxdepth 2 -name ensm_mode "
+            "2>/dev/null | xargs dirname 2>/dev/null | head -1); "
+            '[ -n "$phy" ] && '
+            "cat $phy/in_voltage0_sampling_frequency 2>/dev/null || "
+            "echo unavailable",
+        )
     )
 
 
