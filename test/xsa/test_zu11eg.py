@@ -20,6 +20,7 @@ from adidt.xsa.config.profiles import ProfileManager
 from adidt.xsa.parse.topology import (
     ConverterInstance,
     Jesd204Instance,
+    SignalConnection,
     XsaTopology,
 )
 
@@ -76,11 +77,26 @@ def test_profile_manager_loads_adrv9009_zu11eg_profile():
     assert profile["name"] == "adrv9009_zu11eg"
     board = profile["defaults"]["adrv9009_board"]
     # Dual-transceiver (adrv9009-x2) chip-selects + HMC7044 clock.
-    assert board["trx_cs"] == 1
-    assert board["trx2_cs"] == 2
+    assert board["clk_cs"] == 2
+    assert board["trx_cs"] == 0
+    assert board["trx2_cs"] == 1
+    assert board["dual_phy_layout"] == "zu11eg"
+    assert board["trx_reset_gpio"] == 130
+    assert board["trx2_reset_gpio"] == 156
+    assert board["trx_sysref_req_gpio"] == 167
     assert board["hmc7044_vcxo_frequency"] == 122880000
+    assert board["hmc7044_pll2_output_frequency"] == 2949120000
     assert board["hmc7044_rx_channel"] == 9
     assert board["hmc7044_tx_channel"] == 8
+    assert board["rx_os_octets_per_frame"] == 4
+    props = board["trx_profile_props"]
+    assert len(props) == 286
+    assert "adi,rx-profile-rx-output-rate_khz = <245760>;" in props
+    assert "adi,orx-profile-orx-output-rate_khz = <245760>;" in props
+    assert "adi,tx-profile-tx-input-rate_khz = <245760>;" in props
+    assert "adi,jesd204-framer-b-f = <4>;" in props
+    assert "adi,jesd204-framer-a-lmfc-offset = <15>;" in props
+    assert "adi,jesd204-deframer-a-lmfc-offset = <1>;" in props
 
 
 def test_adrv9009_profile_allows_hmc7044_keys():
@@ -93,8 +109,9 @@ def test_adrv9009_profile_allows_hmc7044_keys():
             "adrv9009_board": {
                 "hmc7044_rx_channel": 9,
                 "hmc7044_tx_channel": 8,
-                "trx2_cs": 2,
-                "trx2_reset_gpio": 135,
+                "trx2_cs": 1,
+                "trx2_reset_gpio": 156,
+                "dual_phy_layout": "zu11eg",
             }
         }
     )
@@ -190,13 +207,23 @@ def _topo_adrv9009_zu11eg() -> XsaTopology:
                 spi_cs=None,
             ),
         ],
-        signal_connections=[],
+        signal_connections=[
+            SignalConnection(
+                signal="obs_tpl",
+                producers=["axi_adrv9009_som_obs_tpl_core_adc_tpl_core"],
+            )
+        ],
         fpga_part="xczu11eg-ffvf1517-2",
     )
 
 
 _ZU11EG_CFG = {
-    "adrv9009_board": {"trx_cs": 1, "trx2_cs": 2},
+    "adrv9009_board": {
+        "clk_cs": 2,
+        "trx_cs": 0,
+        "trx2_cs": 1,
+        "dual_phy_layout": "zu11eg",
+    },
     "jesd": {
         "rx": {"F": 4, "K": 32, "M": 4, "L": 2},
         "tx": {"F": 2, "K": 32, "M": 4, "L": 4},
@@ -228,10 +255,19 @@ def test_builder_zu11eg_model_platform_and_links():
     assert model.platform == "zu11eg"
     assert model.name == "adrv9009_zu11eg"
     # A clock chip and the ADRV9009 PHY are both present.
-    assert model.get_component("clock") is not None
+    clock = model.get_component("clock")
+    assert clock is not None
+    assert clock.rendered is not None
+    assert "hmc7044: hmc7044@2" in clock.rendered
+    assert "hmc7044_car: hmc7044@3" in clock.rendered
+    assert "clocks = <&hmc7044_car 2>;" in clock.rendered
+    assert "jesd204-inputs = <&hmc7044_car 0 1>" in clock.rendered
     phy = model.get_component("transceiver")
     assert phy is not None
     assert '"adrv9009"' in phy.rendered
     # ORX path present (rx + rx_os + tx = 3 JESD links).
     assert len(model.jesd_links) == 3
     assert [j.direction for j in model.jesd_links] == ["rx", "rx", "tx"]
+    assert 'compatible = "adi,axi-adrv9009-x2-tx-1.0"' in "\n".join(
+        model.metadata["extra_nodes_before"]
+    )

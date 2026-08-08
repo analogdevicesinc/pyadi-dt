@@ -44,6 +44,11 @@ jobs:
       pytest_cmd_template: >-
         set -euo pipefail;
         source .github/scripts/prepare-hardware-env.sh;
+        if [ "$BOARD" = adrv9009zu11eg ] && [ "$CARRIER" = adrv2crr-fmc ]; then
+          export LG_ENV="$GITHUB_WORKSPACE/test/hw/config/zu11eg-jtag.yaml";
+          export LG_FORCE_LOCAL_XSDB=1;
+          bash .github/scripts/verify-zu11eg-jtag-artifacts.sh;
+        fi;
         TESTS=$( { find test/hw -maxdepth 1 -type f -name "*${BOARD}*${CARRIER}*_hw.py";
         find test/hw/xsa -maxdepth 1 -type f -name "test_*${BOARD}*${CARRIER}*_overlay.py"; }
         | grep -v petalinux | sort -u | tr '\n' ' ');

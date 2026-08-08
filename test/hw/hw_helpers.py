@@ -136,6 +136,48 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         raise RuntimeError(f"dtc failed:\n{res.stderr}")
 
 
+def apply_kuiper_dtb_fixups(dtb_path: Path, *, add_no_1_8_v: bool = False) -> bool:
+    """Make a generated DTB safe for Kuiper's U-Boot/SD boot contract.
+
+    SDT and PetaLinux generators commonly emit a fixed ``/chosen/bootargs``.
+    U-Boot does not replace an existing property, so that value can select the
+    wrong serial console or initramfs instead of Kuiper's SD root filesystem.
+    Remove it so the production U-Boot environment remains authoritative.
+
+    Some ZynqMP carriers also require ``no-1-8-v`` on SDHCI1. Callers opt in
+    because that electrical constraint is board-specific.
+
+    Returns ``True`` when the DTB was rewritten and ``False`` when it already
+    satisfied the requested contract.
+    """
+    import fdt
+
+    tree = fdt.parse_dtb(dtb_path.read_bytes())
+    changed = False
+
+    try:
+        chosen = tree.get_node("/chosen")
+    except ValueError:
+        chosen = None
+    if chosen is not None and chosen.exist_property("bootargs"):
+        chosen.remove_property("bootargs")
+        changed = True
+
+    if add_no_1_8_v:
+        stack = [tree.root]
+        while stack:
+            node = stack.pop()
+            if node.name and "@ff170000" in node.name:
+                if not node.exist_property("no-1-8-v"):
+                    node.append(fdt.Property("no-1-8-v"))
+                    changed = True
+            stack.extend(node.nodes)
+
+    if changed:
+        dtb_path.write_bytes(tree.to_dtb(version=17))
+    return changed
+
+
 def stage_dtb_as_devicetree(dtb: Path, staging_dir: Path) -> Path:
     """Copy *dtb* into *staging_dir* renamed to ``devicetree.dtb``.
 
@@ -1175,7 +1217,9 @@ def build_kernel_image(platform_arch: str) -> Path | None:
         path = Path(override)
         if not path.is_file():
             pytest.skip(f"{override_var}={override!s} does not exist")
-        print(f"Using pre-built {platform_arch} kernel image from {override_var}: {path}")
+        print(
+            f"Using pre-built {platform_arch} kernel image from {override_var}: {path}"
+        )
         return path
 
     if not DEFAULT_BUILD_KERNEL:

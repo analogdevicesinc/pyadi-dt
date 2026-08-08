@@ -41,7 +41,7 @@ from test.hw._system_base import (
     local_xsa_or_skip,
     requires_lg,
 )
-from test.hw.hw_helpers import DEFAULT_OUT_DIR
+from test.hw.hw_helpers import DEFAULT_OUT_DIR, apply_kuiper_dtb_fixups
 
 
 __all__ = [
@@ -57,9 +57,11 @@ __all__ = [
 _DEFAULT_PETALINUX_INSTALL = "/opt/Xilinx/PetaLinux/2023.2"
 
 
-DEFAULT_PROJECT_CACHE = os.environ.get(
-    "PETALINUX_PROJECT_CACHE", "1"
-).lower() not in {"0", "false", "no"}
+DEFAULT_PROJECT_CACHE = os.environ.get("PETALINUX_PROJECT_CACHE", "1").lower() not in {
+    "0",
+    "false",
+    "no",
+}
 
 PROJECT_CACHE_DIR = Path(
     os.environ.get(
@@ -210,9 +212,7 @@ def _project_has_hw(project_dir: Path) -> bool:
     XSA filename — so its presence is a reliable indicator that the
     hw-description step completed successfully.
     """
-    return (
-        project_dir / "project-spec" / "hw-description" / "system.xsa"
-    ).is_file()
+    return (project_dir / "project-spec" / "hw-description" / "system.xsa").is_file()
 
 
 def _petalinux_create(
@@ -249,9 +249,7 @@ def _petalinux_create(
         timeout=300,
         label="petalinux-create",
     )
-    assert project_dir.exists(), (
-        f"petalinux-create did not produce {project_dir}"
-    )
+    assert project_dir.exists(), f"petalinux-create did not produce {project_dir}"
 
 
 def _petalinux_get_hw_description(
@@ -306,7 +304,9 @@ def _install_pyadi_outputs(
     Skips the copy entirely when source bytes already match destination.
     """
     validate_petalinux_project(project_dir)
-    dt_recipe = project_dir / "project-spec" / "meta-user" / "recipes-bsp" / "device-tree"
+    dt_recipe = (
+        project_dir / "project-spec" / "meta-user" / "recipes-bsp" / "device-tree"
+    )
     dt_files = dt_recipe / "files"
     dt_files.mkdir(parents=True, exist_ok=True)
 
@@ -374,39 +374,7 @@ def _apply_dtb_fixups(spec: BoardSystemProfile, dtb: Path) -> None:
     Both fixups are no-ops when the property/node is already in the
     desired state, so the function is safe to call unconditionally.
     """
-    import fdt
-
-    text = dtb.read_bytes()
-    tree = fdt.parse_dtb(text)
-    changed = False
-
-    chosen = tree.get_node("/chosen")
-    if chosen is not None and chosen.exist_property("bootargs"):
-        chosen.remove_property("bootargs")
-        changed = True
-
-    if spec.boot_mode == "sd":
-        # SDHCI1 lives under different bus paths depending on PetaLinux
-        # template / version (e.g. ``/axi/mmc@ff170000`` in 2023.2).
-        # Walk all subtrees once and patch the @ff170000 node.
-        for node in _walk_nodes(tree):
-            if node.name and "@ff170000" in node.name:
-                if not node.exist_property("no-1-8-v"):
-                    node.append(fdt.Property("no-1-8-v"))
-                    changed = True
-
-    if changed:
-        dtb.write_bytes(tree.to_dtb(version=17))
-
-
-def _walk_nodes(tree):
-    """Yield every node in *tree*, depth-first."""
-    stack = [tree.root]
-    while stack:
-        node = stack.pop()
-        yield node
-        for child in node.nodes:
-            stack.append(child)
+    apply_kuiper_dtb_fixups(dtb, add_no_1_8_v=spec.boot_mode == "sd")
 
 
 def _assert_zynqmp_platform_inferred(spec: BoardSystemProfile, topology) -> None:

@@ -1,0 +1,65 @@
+## ADRV9009-ZU11EG fixed-JTAG production environment for the tron place.
+## Payloads are staged on the hw-tron runner by the lab setup runbook.
+imports:
+  - adi_lg_plugins
+  # The merged strategy predates its inclusion in strategies.__init__; importing
+  # the module explicitly guarantees labgrid target_factory registration.
+  - adi_lg_plugins.strategies.bootzynqmpjtag
+
+targets:
+  main:
+    resources:
+      RemotePlace:
+        name: tron
+    features:
+      - adrv9009zu11eg
+      - adrv2crr-fmc
+    drivers:
+      HomeAssistantPowerDriver: {}
+      SerialDriver: {}
+      ADIShellDriver:
+        prompt: 'root@[^:]+:[^ ]+[#] '
+        login_prompt: 'analog login:'
+        username: root
+        password: analog
+      XilinxJTAGDriver: {}
+      BootZynqMPJTAG:
+        jtag_url: 'TCP:tron.local:3121'
+        serial_host_override: tron.local
+        serial_protocol_override: raw
+        psu_init_tcl: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/psu_init.tcl
+        spl_elf: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/u-boot-spl-mini-sd1.elf
+        pmufw_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/pmufw.bin
+        uboot_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/u-boot.bin
+        handoff_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/el3-to-uboot-el2.bin
+        bl31_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/bl31.bin
+        atf_handoff_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/atf-handoff.bin
+        pm_config_bin: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/zu11-pm-config-object.bin
+        bitstream_path: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/system-top-xsdb.bin
+        ddr_scrub_elf: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/ddr_ecc_scrub_4g.elf
+        ddr_scrub_done_address: '0xFFFC0054'
+        ddr_scrub_settle_ms: 120000
+        # BL31 is built for UART0; U-Boot and the external console use UART1.
+        bl31_console_uart_base: '0xFF000000'
+        bl31_console_ref_ctrl_address: '0xFF5E0074'
+        bl31_console_reset_mask: '0x00000002'
+        recovery_trampoline_elf: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/el3_to_el2.elf
+        recovery_kernel_image: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/Image
+        recovery_initramfs: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/initramfs.cpio.gz
+        recovery_dtb: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/system-recovery.dtb
+        recovery_ddr_scrub_elf: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/ddr_ecc_scrub.elf
+        recovery_ddr_scrub_done_address: '0xFFFC002C'
+        recovery_ddr_scrub_settle_ms: 30000
+        recovery_bitstream_path: /home/tcollins/.cache/adidt-ci/zu11eg-recovery/system-top-xsdb.bin
+        recovery_post_init_mask_writes:
+          - ['0xFF5E0238', '0x00000002', '0x00000000']
+        recovery_marker: RECOVERY_READY
+        recovery_prompt: 'root@zu11eg-recovery:.*#'
+        production_uboot_prompt: 'ZynqMP>'
+        sd_boot_command: 'setenv partid 1; run sdboot'
+        kuiper_shell_marker: 'root@analog:.*#'
+        production_prompt_timeout: 90
+        kuiper_boot_timeout: 300
+        production_settle_ms: 15000
+        power_off_settle_s: 10
+        power_on_settle_s: 8

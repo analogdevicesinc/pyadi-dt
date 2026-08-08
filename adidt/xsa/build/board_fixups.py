@@ -178,3 +178,79 @@ def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
         )
 
     return content
+
+
+# ---------------------------------------------------------------------------
+# ADRV9009-ZU11EG Rev.B SD pinmux fixup
+# ---------------------------------------------------------------------------
+
+_ZU11EG_SD_FIXUP = r"""
+
+/* ADRV9009-ZU11EG Rev.B board wiring not represented in the XSA. */
+&pinctrl0 {
+	pinctrl_sdhci1_default: sdhci1-default {
+		mux {
+			groups = "sdio1_0_grp";
+			function = "sdio1";
+		};
+		conf {
+			groups = "sdio1_0_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+			bias-disable;
+		};
+		mux-cd {
+			groups = "sdio1_cd_0_grp";
+			function = "sdio1_cd";
+		};
+		conf-cd {
+			groups = "sdio1_cd_0_grp";
+			bias-high-impedance;
+			bias-pull-up;
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+		mux-wp {
+			groups = "sdio1_wp_0_grp";
+			function = "sdio1_wp";
+		};
+		conf-wp {
+			groups = "sdio1_wp_0_grp";
+			bias-high-impedance;
+			bias-pull-up;
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+	};
+};
+
+&sdhci1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdhci1_default>;
+	no-1-8-v;
+	disable-wp;
+	xlnx,mio_bank = <1>;
+};
+"""
+
+
+@register_fixup("adrv9009_zu11eg")
+def _fix_zu11eg_sd_pinmux(content: str, pl_dtsi: Path) -> str:
+    """Add the production SD1 pinmux omitted by SDT's XSA-only output."""
+    pcw_dtsi = pl_dtsi.parent / "pcw.dtsi"
+    if pcw_dtsi.exists():
+        pcw_content = pcw_dtsi.read_text()
+        bad_bus_width = "\t\txlnx,bus-width = <8>;\n"
+        if pcw_content.count(bad_bus_width) == 1:
+            pcw_dtsi.write_text(pcw_content.replace(bad_bus_width, "", 1))
+            logger.info("Removed invalid ZU11EG SD1 8-bit width from %s", pcw_dtsi)
+        elif bad_bus_width in pcw_content:
+            logger.warning(
+                "ZU11EG SD1 width fix is ambiguous in %s; leaving it unchanged",
+                pcw_dtsi,
+            )
+    if "pinctrl_sdhci1_default: sdhci1-default" in content:
+        return content
+    logger.info("Applied ZU11EG SD1 pinmux fix to %s", pl_dtsi)
+    return content.rstrip() + "\n" + _ZU11EG_SD_FIXUP
