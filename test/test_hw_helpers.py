@@ -8,6 +8,7 @@ can be iterated on without needing a bring-up board.
 from __future__ import annotations
 
 import os
+import shutil
 
 import pytest
 
@@ -482,6 +483,7 @@ def test_detect_link_loss_positive_and_negative():
     assert detect_link_loss("Link status: DATA\nLink status: DATA") is False
 
 
+@pytest.mark.skipif(shutil.which("dtc") is None, reason="dtc is required")
 def test_apply_kuiper_dtb_fixups_removes_generator_bootargs(tmp_path):
     dts = tmp_path / "input.dts"
     dtb = tmp_path / "input.dtb"
@@ -502,6 +504,7 @@ def test_apply_kuiper_dtb_fixups_removes_generator_bootargs(tmp_path):
     assert apply_kuiper_dtb_fixups(dtb) is False
 
 
+@pytest.mark.skipif(shutil.which("dtc") is None, reason="dtc is required")
 def test_apply_kuiper_dtb_fixups_adds_requested_sdhci_constraint(tmp_path):
     dts = tmp_path / "input.dts"
     dtb = tmp_path / "input.dtb"
