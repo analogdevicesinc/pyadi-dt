@@ -91,11 +91,15 @@ class hmc7044_dt(dt, clock_dt):
         if ("coarse-delay" in clk):
             node.append(fdt.PropWords("adi,coarse-digital-delay", clk["coarse-delay"]))
 
-        # in CMOS mode, the impedance property describes the output status
+        # In CMOS mode the driver reuses the impedance field as a per-leg
+        # output enable, so "CMOS" and "driver-impedance-mode" describe the
+        # same property and the legs win. set_property rather than append:
+        # appending a second time raises, which would abort the whole node.
         if ("CMOS" in clk):
-            prop_val = (clk["CMOS"]["P"] << self.cmos_outputs_reg_field_map[reg]["P"])
-            propval = prop_val | (clk["CMOS"]["N"] << self.cmos_outputs_reg_field_map[reg]["N"])
-            node.append(fdt.PropWords("adi,driver-impedance-mode", prop_val))
+            cmos_field = self.cmos_outputs_reg_field_map[reg]
+            leg_enables = (clk["CMOS"]["P"] << cmos_field["P"]) \
+                | (clk["CMOS"]["N"] << cmos_field["N"])
+            node.set_property("adi,driver-impedance-mode", leg_enables)
 
         parent.append(node)
 

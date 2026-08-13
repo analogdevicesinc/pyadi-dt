@@ -50,7 +50,7 @@ def test_hmc7044_add_nodes():
 
         # MSB (Fourth priority input [1:0]) .... (First priority input [1:0]) LSB
         for ref_nr in clock["reference_selection_order"]:
-            if (ref_nr > 4):
+            if (ref_nr >= 4):
                 raise Exception("Refernce number:" + str(ref_nr) + " invalid.")
             ref_order.append((ref_order_prop_val >> (priority * 2)) & 0x3)
             priority += 1
@@ -122,8 +122,8 @@ def test_hmc7044_add_nodes():
             prop = output_node.get_property("adi,output-mux-mode")
             assert prop.value == mux_mode
 
-        if ("driver-impedance-mode" in output_dict):
-            impedance_mode = self.driver_impedances[output_dict["driver-impedance-mode"]]
+        if ("driver-impedance-mode" in output_dict and "CMOS" not in output_dict):
+            impedance_mode = d.driver_impedances[output_dict["driver-impedance-mode"]]
             prop = output_node.get_property("adi,driver-impedance-mode")
             assert prop.value == impedance_mode
 
@@ -136,9 +136,14 @@ def test_hmc7044_add_nodes():
             assert fine_delay == output_dict["coarse-delay"]
 
         if "CMOS" in output_dict:
+            # Key the field map on the channel's own reg, not its position in
+            # the node list: the two agree only while nodes are emitted in
+            # register order, and the P/N bit assignment alternates per reg.
+            reg = output_node.get_property("reg").value
+            cmos_field = dt.hmc7044_dt.cmos_outputs_reg_field_map[reg]
             impedance_prop_val = output_node.get_property("adi,driver-impedance-mode").value
-            val_p = (output_dict["CMOS"]["P"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["P"])
-            val_n = (output_dict["CMOS"]["N"] << dt.hmc7044_dt.cmos_outputs_reg_field_map[i]["N"])
+            val_p = (output_dict["CMOS"]["P"] << cmos_field["P"])
+            val_n = (output_dict["CMOS"]["N"] << cmos_field["N"])
             impedance_prop_dict = val_p | val_n
             assert impedance_prop_val == impedance_prop_dict
 
