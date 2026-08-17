@@ -8,7 +8,7 @@
 <a href="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/test.yml"><img src="https://github.com/analogdevicesinc/pyadi-dt/actions/workflows/test.yml/badge.svg" alt="CI"></a>
 <a href="https://analogdevicesinc.github.io/pyadi-dt/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg" alt="Docs"></a>
 <a href="https://github.com/analogdevicesinc/pyadi-dt/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-EPL--2.0-green.svg" alt="License"></a>
-<a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10--3.13-blue.svg" alt="Python 3.10 through 3.13"></a>
+<a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10--3.14-blue.svg" alt="Python 3.10 through 3.14"></a>
 </p>
 
 ---
@@ -123,18 +123,18 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 
 ## Supported Hardware
 
-| Converter Family | Platforms | HW Validated |
-|---|---|---|
-| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 ✓ |
-| AD9084 | VCU118, VPK180 | |
-| ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102 ✓ |
-| AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 ✓ |
-| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | |
-| AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | |
-| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | |
-| FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 ✓ |
-| FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 | ZCU102 ✓ |
-| Precision ADCs / Sensors | Zedboard, Raspberry Pi | |
+| Converter Family | Platforms |
+|---|---|
+| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 |
+| AD9084 | VCU118, VPK180 |
+| ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG |
+| AD9371 / ADRV937x | ZC706, ZCU102 |
+| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier |
+| AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers |
+| FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 |
+| FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 |
+| Precision ADCs / Sensors | Zedboard, Raspberry Pi |
 
 ## Documentation
 

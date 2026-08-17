@@ -53,7 +53,7 @@ this environment; no PyPI API token is required.
    gh run watch --exit-status
    ```
 
-   Confirm the validation, Python 3.10–3.13, build, wheel-install, and CLI
+   Confirm the validation, Python 3.10–3.14, build, wheel-install, and CLI
    smoke-test jobs pass. The GitHub Release and PyPI jobs must be skipped.
 4. Confirm all required `main` workflows—including hardware, Kuiper/Ubuntu
    Debian packaging, and native system packaging—are green for the exact commit

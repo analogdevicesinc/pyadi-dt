@@ -297,3 +297,21 @@ The TFTP-boot boards (`nemo`, `bq`) don't need ssh access to the exporter host (
 | `expected_tx_jesd_links` | `1` | Number of TX cores that must independently report `Link status: DATA`. |
 | `dmesg_filter` | identity | `(text) -> text` to strip benign noise before `assert_no_probe_errors`. |
 | `rx_capture_target_names` | `()` | Tuple of IIO device names to try for the RX capture smoke test; empty skips the capture. |
+
+## Target Hardware Matrix & Validation Status
+
+The table below tracks target hardware platforms, current hardware test validation coverage, and remaining/future test work.
+
+| Converter Family | Platforms | HW Validation Status | Existing Hardware Tests / Future Work |
+|---|---|---|---|
+| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 Validated | `test_ad9081_zcu102_system_hw.py`, `test_ad9081_zcu102_xsa_hw.py`, `test_ad9081_zcu102_petalinux_hw.py`, `test_cli_live_ad9081_zcu102_hw.py`, `test_cli_dts_gen_ad9081_zcu102_hw.py`, `test_cli_mcp_ad9081_zcu102_hw.py`. Future: ZC706, VPK180 |
+| AD9084 | VCU118, VPK180 | Pending | Future work: Add VCU118 and VPK180 labgrid test profiles |
+| ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102, ZC706 Validated | `test_adrv9009_zcu102_hw.py`, `test_adrv9009_zc706_hw.py`, `test_adrv9009_zc706_petalinux_hw.py`, `test_cli_live_adrv9009_zc706_hw.py`, `test_cli_dts_gen_adrv9009_zc706_hw.py`. Future: Arria10, ZU11EG |
+| AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 Validated | `test_adrv9371_zc706_hw.py`, `test_adrv9371_zc706_petalinux_hw.py`. Future: ZCU102 |
+| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | Validated | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
+| AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | Pending | Future work: Add test fixtures for AD9361/AD9364 SDR carrier flows |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | Pending | Future work: Add SOM carrier test fixtures |
+| FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 Validated | Future work: Add dedicated ZC706 and Arria10 hardware test suites |
+| FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706, VCU118 | ZCU102, VCU118 Validated | `test_fmcdaq3_vcu118_hw.py`. Future: ZC706 |
+| Precision ADCs / Sensors | Zedboard, Raspberry Pi | Pending | Future work: Add hardware test fixtures for SPI/I2C sensor overlays (ADIS16495, ADXL345, AD7124) |
+
