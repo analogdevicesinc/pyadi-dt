@@ -12,15 +12,15 @@ package_file=$2
 case "$package_type" in
     deb)
         dpkg -i "$package_file"
-        package_files=$(dpkg -L python3-adidt)
+        package_files=$(dpkg -L python3-pyadi-dt)
         ;;
     rpm)
         rpm -i "$package_file"
-        package_files=$(rpm -ql python3-adidt)
+        package_files=$(rpm -ql python3-pyadi-dt)
         ;;
     osxpkg)
         sudo installer -pkg "$package_file" -target /
-        package_files=$(pkgutil --files com.analogdevices.python3-adidt)
+        package_files=$(pkgutil --files com.analogdevices.python3-pyadi-dt)
         ;;
     *)
         echo "unsupported package type: $package_type" >&2
@@ -47,9 +47,9 @@ from pathlib import Path
 
 import adidt
 
-assert metadata.version("adidt") == adidt.__version__
+assert metadata.version("pyadi-dt") == adidt.__version__
 assert Path(adidt.__file__).is_file()
-print(f"verified adidt {adidt.__version__} from {adidt.__file__}")
+print(f"verified pyadi-dt {adidt.__version__} from {adidt.__file__}")
 PY
     PYTHONPATH="$package_site" "$package_test_python" "$package_cli" --help >/dev/null
 )

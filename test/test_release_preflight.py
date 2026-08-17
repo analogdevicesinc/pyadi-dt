@@ -36,7 +36,7 @@ def test_validate_tag_format():
 
 def test_run_preflight_success(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "adidt"\nversion = "1.2.3"\n'
+        '[project]\nname = "pyadi-dt"\nversion = "1.2.3"\n'
     )
     init_dir = tmp_path / "adidt"
     init_dir.mkdir()
@@ -53,7 +53,7 @@ def test_run_preflight_success(tmp_path):
 
 def test_version_mismatch(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "adidt"\nversion = "1.2.3"\n'
+        '[project]\nname = "pyadi-dt"\nversion = "1.2.3"\n'
     )
     init_dir = tmp_path / "adidt"
     init_dir.mkdir()
@@ -66,7 +66,7 @@ def test_version_mismatch(tmp_path):
 
 def test_missing_changelog_section(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "adidt"\nversion = "1.2.3"\n'
+        '[project]\nname = "pyadi-dt"\nversion = "1.2.3"\n'
     )
     init_dir = tmp_path / "adidt"
     init_dir.mkdir()
@@ -79,7 +79,7 @@ def test_missing_changelog_section(tmp_path):
 
 def test_cli_main(tmp_path):
     (tmp_path / "pyproject.toml").write_text(
-        '[project]\nname = "adidt"\nversion = "0.5.0"\n'
+        '[project]\nname = "pyadi-dt"\nversion = "0.5.0"\n'
     )
     init_dir = tmp_path / "adidt"
     init_dir.mkdir()
@@ -181,9 +181,9 @@ def test_native_system_package_ci_contract():
     assert "--no-auto-depends" in builder
     assert 'cd "$package_source"' in builder
     assert '"*.egg-info", "build", "dist"' in builder
-    assert "dpkg -L python3-adidt" in verifier
-    assert "rpm -ql python3-adidt" in verifier
+    assert "dpkg -L python3-pyadi-dt" in verifier
+    assert "rpm -ql python3-pyadi-dt" in verifier
     assert "--osxpkg-identifier-prefix com.analogdevices" in builder
     assert 'ln -s /usr/bin/pkgbuild "$pkgbuild_shim/pkgbuild"' in builder
-    assert "pkgutil --files com.analogdevices.python3-adidt" in verifier
+    assert "pkgutil --files com.analogdevices.python3-pyadi-dt" in verifier
     assert '"$package_test_python" "$package_cli" --help' in verifier

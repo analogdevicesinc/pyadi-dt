@@ -101,7 +101,7 @@ fi
     fpm -s python -t "$package_type" \
         --force \
         --architecture "$architecture" \
-        --name python3-adidt \
+        --name python3-pyadi-dt \
         --package "$output_file" \
         --url "https://github.com/analogdevicesinc/pyadi-dt" \
         --version "$version" \

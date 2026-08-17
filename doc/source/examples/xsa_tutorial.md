@@ -11,7 +11,7 @@ examples.
 ### 1) Install the required tooling
 
 ```bash
-pip install "adidt[xsa]"
+pip install "pyadi-dt[xsa]"
 
 # Optional: needed for auto-deriving JESD/clock settings in example scripts
 pip install pyadi-jif[cplex]   # or pyadi-jif[gekko]

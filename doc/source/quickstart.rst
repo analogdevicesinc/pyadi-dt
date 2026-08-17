@@ -14,7 +14,7 @@ For XSA pipeline support (requires Vivado ``sdtgen`` / lopper on PATH):
 
 .. code-block:: bash
 
-   pip install "git+https://github.com/analogdevicesinc/pyadi-dt.git#egg=adidt[xsa]"
+   pip install "git+https://github.com/analogdevicesinc/pyadi-dt.git#egg=pyadi-dt[xsa]"
 
 For development with all test dependencies:
 

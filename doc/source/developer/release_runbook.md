@@ -102,9 +102,9 @@ are correct.
 
    ```bash
    python -m venv /tmp/adidt-release-verify
-   /tmp/adidt-release-verify/bin/python -m pip install --no-cache-dir adidt==X.Y.Z
+   /tmp/adidt-release-verify/bin/python -m pip install --no-cache-dir pyadi-dt==X.Y.Z
    /tmp/adidt-release-verify/bin/python -c \
-     'import adidt, importlib.metadata as m; assert adidt.__version__ == m.version("adidt") == "X.Y.Z"'
+     'import adidt, importlib.metadata as m; assert adidt.__version__ == m.version("pyadi-dt") == "X.Y.Z"'
    /tmp/adidt-release-verify/bin/adidtc --help
    ```
 

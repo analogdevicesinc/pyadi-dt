@@ -15,7 +15,7 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
     environment = (ROOT / ".github/scripts/prepare-hardware-env.sh").read_text()
     workflow = (ROOT / ".github/workflows/hardware-test.yml").read_text()
 
-    assert '"adidt[test,xsa]"' in pyproject
+    assert '"pyadi-dt[test,xsa]"' in pyproject
     assert '"$VENV/bin/sdtgen" -help' in installer
     assert "requirements/pyadi-jif-ad9371.txt" in installer
     assert "hasattr(adijif, 'ad9371')" in installer

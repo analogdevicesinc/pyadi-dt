@@ -10,8 +10,8 @@ runnable recipes, and dry-run safeguards around this command surface.
 
 .. code-block:: bash
 
-   pip install adidt          # core commands
-   pip install "adidt[xsa]"   # adds xsa2dt and profile commands
+   pip install pyadi-dt          # core commands
+   pip install "pyadi-dt[xsa]"   # adds xsa2dt and profile commands
 
 Command Overview
 ----------------

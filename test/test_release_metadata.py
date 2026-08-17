@@ -7,4 +7,4 @@ import adidt
 
 def test_package_and_distribution_versions_match():
     """Keep the importable and built-distribution versions synchronized."""
-    assert adidt.__version__ == version("adidt")
+    assert adidt.__version__ == version("pyadi-dt")

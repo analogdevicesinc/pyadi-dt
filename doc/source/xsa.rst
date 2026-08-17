@@ -195,7 +195,7 @@ generator). Install the optional dependency group:
 
 .. code-block:: bash
 
-   pip install "adidt[xsa]"
+   pip install "pyadi-dt[xsa]"
 
 Usage
 -----

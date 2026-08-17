@@ -844,7 +844,7 @@ def xsa2dt(
     except ImportError:
         click.echo(
             click.style(
-                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                "Error: xsa support not installed. Run: pip install pyadi-dt[xsa]",
                 fg="red",
             )
         )
@@ -1118,7 +1118,7 @@ def xsa_profiles():
     except ImportError:
         click.echo(
             click.style(
-                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                "Error: xsa support not installed. Run: pip install pyadi-dt[xsa]",
                 fg="red",
             )
         )
@@ -1165,7 +1165,7 @@ def xsa_profile_show(name):
     except ImportError:
         click.echo(
             click.style(
-                "Error: xsa support not installed. Run: pip install adidt[xsa]",
+                "Error: xsa support not installed. Run: pip install pyadi-dt[xsa]",
                 fg="red",
             )
         )

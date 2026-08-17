@@ -12,7 +12,7 @@ transitional pipeline API.
 ## 1) Install dependencies
 
 ```bash
-pip install "adidt[xsa]"
+pip install "pyadi-dt[xsa]"
 pip install pyadi-jif[cplex]   # or pyadi-jif[gekko]
 ```
 

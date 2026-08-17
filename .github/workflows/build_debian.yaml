@@ -1,4 +1,4 @@
-name: Build and Deploy adidt (debian)
+name: Build and Deploy pyadi-dt (debian)
 
 permissions:
   contents: read
@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  APP_NAME: adidt
+  APP_NAME: pyadi-dt
   
 on:
   workflow_dispatch:
@@ -170,7 +170,7 @@ jobs:
     - name: Download all Debian artifacts
       uses: actions/download-artifact@v8
       with:
-        pattern: adidt-*
+        pattern: pyadi-dt-*
         path: release-assets
         merge-multiple: true
     - name: Validate and attach Debian assets

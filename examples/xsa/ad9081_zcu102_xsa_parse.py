@@ -15,7 +15,7 @@ Pipeline
 Usage::
 
     # install the optional xsa dependency group first
-    pip install "adidt[xsa]"
+    pip install "pyadi-dt[xsa]"
 
     # adijif must also be available (pyadi-jif)
     pip install pyadi-jif[cplex]   # or [gekko]

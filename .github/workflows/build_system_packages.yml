@@ -78,7 +78,7 @@ jobs:
         env:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
-          output="dist/system/python3-adidt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
+          output="dist/system/python3-pyadi-dt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
           .github/scripts/create_system_package.sh \
             "${{ matrix.package_type }}" "$VERSION" "${{ matrix.architecture }}" \
             "${{ matrix.distro }}" "$output"
@@ -86,11 +86,11 @@ jobs:
         env:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
-          package="dist/system/python3-adidt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
+          package="dist/system/python3-pyadi-dt-${VERSION}-1-${{ matrix.distro }}-${{ matrix.architecture }}.${{ matrix.extension }}"
           .github/scripts/verify_system_package.sh "${{ matrix.package_type }}" "$package"
       - uses: actions/upload-artifact@v7
         with:
-          name: adidt-system-${{ matrix.distro }}-${{ matrix.architecture }}
+          name: pyadi-dt-system-${{ matrix.distro }}-${{ matrix.architecture }}
           path: dist/system/*.${{ matrix.extension }}
           if-no-files-found: error
 
@@ -108,18 +108,18 @@ jobs:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
           architecture=$(uname -m)
-          output="dist/system/python3-adidt-${VERSION}-1-macos14-${architecture}.pkg"
+          output="dist/system/python3-pyadi-dt-${VERSION}-1-macos14-${architecture}.pkg"
           .github/scripts/create_system_package.sh osxpkg "$VERSION" "$architecture" macos14 "$output"
       - name: Install and verify package
         env:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
           architecture=$(uname -m)
-          package="dist/system/python3-adidt-${VERSION}-1-macos14-${architecture}.pkg"
+          package="dist/system/python3-pyadi-dt-${VERSION}-1-macos14-${architecture}.pkg"
           .github/scripts/verify_system_package.sh osxpkg "$package"
       - uses: actions/upload-artifact@v7
         with:
-          name: adidt-system-macos14
+          name: pyadi-dt-system-macos14
           path: dist/system/*.pkg
           if-no-files-found: error
 
@@ -138,7 +138,7 @@ jobs:
       - name: Download all native system packages
         uses: actions/download-artifact@v8
         with:
-          pattern: adidt-system-*
+          pattern: pyadi-dt-system-*
           path: release-assets
           merge-multiple: true
       - name: Validate and attach native system packages

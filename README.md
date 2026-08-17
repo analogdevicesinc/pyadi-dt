@@ -30,13 +30,13 @@
 ## Quick Install
 
 ```bash
-pip install adidt
+pip install pyadi-dt
 ```
 
 With XSA pipeline support (requires Vivado `sdtgen`):
 
 ```bash
-pip install "adidt[xsa]"
+pip install "pyadi-dt[xsa]"
 ```
 
 ## Quick Examples

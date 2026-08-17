@@ -12,7 +12,7 @@ Install with the ``mcp`` extra:
 
 .. code-block:: bash
 
-   pip install "adidt[mcp]"
+   pip install "pyadi-dt[mcp]"
 
 This pulls in `FastMCP <https://github.com/jlowin/fastmcp>`_ as the
 server framework.

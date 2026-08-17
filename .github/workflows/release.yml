@@ -105,7 +105,7 @@ jobs:
           /tmp/adidt-release-smoke/bin/pip install dist/*.whl
           cd /tmp
           /tmp/adidt-release-smoke/bin/python -c \
-            'import importlib.metadata as m, adidt; assert m.version("adidt") == adidt.__version__'
+            'import importlib.metadata as m, adidt; assert m.version("pyadi-dt") == adidt.__version__'
           /tmp/adidt-release-smoke/bin/adidtc --help >/dev/null
       - uses: actions/upload-artifact@v7
         with:
@@ -154,7 +154,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/adidt
+      url: https://pypi.org/p/pyadi-dt
     permissions:
       id-token: write
     steps:

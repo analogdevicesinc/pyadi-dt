@@ -21,7 +21,7 @@ for this board.
 ## Prerequisites
 
 ```bash
-pip install "adidt[xsa]"
+pip install "pyadi-dt[xsa]"
 pip install pyadi-jif[cplex]   # or [gekko] – solver only needed for clock opt
 ```
 
