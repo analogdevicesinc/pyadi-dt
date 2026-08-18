@@ -73,6 +73,8 @@ class ADRV9009(ConverterDevice):
                 f"sysref-req-gpios = <&{gpio_label} {int(self.sysref_req_gpio)} 0>;"
             )
 
+        lines.extend(str(line) for line in ctx.get("extra_dt_lines", []))
+
         link_ids = ctx.get("link_ids")
         if link_ids:
             lines.append(f"jesd204-link-ids = <{link_ids}>;")

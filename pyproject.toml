@@ -49,7 +49,7 @@ test = [
 ]
 dev = [
     "pyadi-dt[test,xsa]",
-    "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@20283e751c11085b99bccfe5a9f2d77cfed8e1eb",
+    "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@e9c89616013f008122370dba59af4758be5ae7da",
     "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
     "usbsdmux",
 ]

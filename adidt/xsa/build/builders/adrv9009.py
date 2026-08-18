@@ -28,6 +28,22 @@ from ....model.renderer import BoardModelRenderer
 from ...parse.topology import XsaTopology
 
 _ADRV90XX_KEYWORDS = ("adrv9009", "adrv9025", "adrv9026")
+_ZU11EG_CARRIER_CLOCK_OUTPUT_NAMES = [
+    "hmc7044_c_out0_REFCLK_OUT0",
+    "hmc7044_c_out1",
+    "hmc7044_c_out2_REFCLK_OUT2",
+    "hmc7044_c_out3",
+    "hmc7044_c_out4",
+    "hmc7044_c_out5_SYNC_OUT1",
+    "hmc7044_c_out6_SYNC_OUT2",
+    "hmc7044_c_out7",
+    "hmc7044_c_out8_REFCLK_OUT3",
+    "hmc7044_c_out9_REFCLK_OUT4",
+    "hmc7044_c_out10_REFCLK_QSFP",
+    "hmc7044_c_out11_REFCLK_SFP",
+    "hmc7044_c_out12",
+    "hmc7044_c_out13",
+]
 
 
 def _is_adrv90xx_name(value: str) -> bool:
@@ -169,6 +185,8 @@ class ADRV9009Builder:
 
         labels = _topology_instance_names(topology)
         is_fmcomms8 = _is_fmcomms8_layout(labels)
+        dual_phy_layout = str(board_cfg.get("dual_phy_layout", ""))
+        is_zu11eg_dual = dual_phy_layout == "zu11eg"
 
         if not any(_is_adrv90xx_name(lbl) for lbl in labels):
             return None
@@ -306,7 +324,7 @@ class ADRV9009Builder:
         raw_clock_chip_node: str | None = None
         custom_clock_chip_blocks = None
         if is_fmcomms8:
-            clock_chip_label = "hmc7044_fmc"
+            clock_chip_label = "hmc7044" if is_zu11eg_dual else "hmc7044_fmc"
             hmc7044_rx_channel = int(board_cfg.get("hmc7044_rx_channel", 9))
             hmc7044_tx_channel = int(board_cfg.get("hmc7044_tx_channel", 8))
             hmc7044_xcvr_channel = int(board_cfg.get("hmc7044_xcvr_channel", 5))
@@ -364,6 +382,11 @@ class ADRV9009Builder:
                 f"<&{clock_chip_label} {hmc7044_trx1_sysref_dev_channel}>",
                 f"<&{clock_chip_label} {hmc7044_trx1_sysref_fmc_channel}>",
             ]
+            if is_zu11eg_dual:
+                # Both ZU11EG Talise devices also consume the shared TX/ORX
+                # reference on HMC7044 channel 4 (``fmc2_clk``).
+                trx_clocks.append(f"<&{clock_chip_label} {hmc7044_tx_xcvr_channel}>")
+                trx1_clocks.append(f"<&{clock_chip_label} {hmc7044_tx_xcvr_channel}>")
             ad9528_vcxo_freq = None
         else:
             clock_chip_label = "clk0_ad9528"
@@ -426,7 +449,10 @@ class ADRV9009Builder:
         rx_xcvr_conv_clk_ref = rx_xcvr_clkgen_ref
         tx_xcvr_conv_clk_ref = tx_xcvr_clkgen_ref
         rx_os_xcvr_conv_clk_ref = rx_os_xcvr_clkgen_ref
-        if is_fmcomms8:
+        # FMComms8 needs distinct ``conv`` and ``div40`` inputs.  ZU11EG's
+        # production DT supplies only ``conv`` to each ADXCVR; treating its
+        # dual-Talise topology as FMComms8 makes lane-clock enable fail with -EIO.
+        if is_fmcomms8 and not is_zu11eg_dual:
             rx_xcvr_div40_ref: str | None = rx_xcvr_div40_clk_ref
             tx_xcvr_div40_ref: str | None = tx_xcvr_div40_clk_ref
             rx_os_xcvr_div40_ref: str | None = rx_os_xcvr_div40_clk_ref
@@ -460,8 +486,16 @@ class ADRV9009Builder:
             if rx_os_jesd_label:
                 trx_link_ids.insert(1, str(rx_os_link_id))
                 trx_jesd_inputs.insert(1, f"<&{rx_os_jesd_label} 0 {rx_os_link_id}>")
+        elif is_zu11eg_dual and rx_jesd_label and tx_jesd_label:
+            # The ZU11EG first PHY is the JESD top device and fans through
+            # the second PHY. The second PHY points at the fabric endpoints.
+            trx_jesd_inputs = [
+                f"<&trx1_{phy_family} 0 {rx_link_id}>",
+                f"<&trx1_{phy_family} 0 {rx_os_link_id}>",
+                f"<&trx1_{phy_family} 0 {tx_link_id}>",
+            ]
         else:
-            # FMComms8 / fallback: keep the original xcvr-pointing topology.
+            # Generic FMComms8 / fallback topology points at the XCVRs.
             trx_jesd_inputs = [
                 f"<&{rx_xcvr_label} 0 {rx_link_id}>",
                 f"<&{tx_xcvr_label} 0 {tx_link_id}>",
@@ -470,12 +504,18 @@ class ADRV9009Builder:
                 trx_link_ids.insert(1, str(rx_os_link_id))
                 trx_jesd_inputs.insert(1, f"<&{rx_os_xcvr_label} 0 {rx_os_link_id}>")
 
+        if is_zu11eg_dual:
+            # Production order is TX, RX, ORX for the top-device link list.
+            trx_link_ids = [str(tx_link_id), str(rx_link_id), str(rx_os_link_id)]
+
         trx_clock_names = [
             '"dev_clk"',
             '"fmc_clk"',
             '"sysref_dev_clk"',
             '"sysref_fmc_clk"',
         ]
+        if is_zu11eg_dual:
+            trx_clock_names.append('"fmc2_clk"')
 
         # Prepend JESD lane-clock refs so the adrv9009 driver defers
         # probe (and FSM start) until axi-jesd204-{rx,tx,rx_os} have
@@ -486,12 +526,16 @@ class ADRV9009Builder:
         # jesd204_fsm_start on a link in opt_post_running and crashes
         # with a NULL deref in jesd204_validate_lnk_state.  Matches the
         # Kuiper production zynq-zc706-adv7511-adrv9009 DT.
-        if not is_fmcomms8 and rx_jesd_label and tx_jesd_label:
+        if (not is_fmcomms8 or is_zu11eg_dual) and rx_jesd_label and tx_jesd_label:
             jesd_clock_refs = [f"<&{rx_jesd_label}>", f"<&{tx_jesd_label}>"]
             jesd_clock_names = ['"jesd_rx_clk"', '"jesd_tx_clk"']
             if rx_os_jesd_label:
-                jesd_clock_refs.insert(1, f"<&{rx_os_jesd_label}>")
-                jesd_clock_names.insert(1, '"jesd_rx_os_clk"')
+                if is_zu11eg_dual:
+                    jesd_clock_refs.append(f"<&{rx_os_jesd_label}>")
+                    jesd_clock_names.append('"jesd_rx_os_clk"')
+                else:
+                    jesd_clock_refs.insert(1, f"<&{rx_os_jesd_label}>")
+                    jesd_clock_names.insert(1, '"jesd_rx_os_clk"')
             trx_clocks = jesd_clock_refs + trx_clocks
             trx1_clocks = jesd_clock_refs + trx1_clocks
             trx_clock_names = jesd_clock_names + trx_clock_names
@@ -650,48 +694,110 @@ class ADRV9009Builder:
                 "hmc7044_fmc_out12",
                 "hmc7044_fmc_out13",
             ]
+            if is_zu11eg_dual:
+                hmc7044_clock_output_names = [
+                    "hmc7044_out0_DEV_REFCLK_A",
+                    "hmc7044_out1_DEV_SYSREF_A",
+                    "hmc7044_out2_DEV_REFCLK_B",
+                    "hmc7044_out3_DEV_SYSREF_B",
+                    "hmc7044_out4_JESD_REFCLK_TX_OBS_AB",
+                    "hmc7044_out5_JESD_REFCLK_RX_AB",
+                    "hmc7044_out6_CORE_CLK_TX_OBS_AB",
+                    "hmc7044_out7_CORE_CLK_RX_AB",
+                    "hmc7044_out8_FPGA_SYSREF_TX_OBS_AB",
+                    "hmc7044_out9_FPGA_SYSREF_RX_AB",
+                    "hmc7044_out10",
+                    "hmc7044_out11",
+                    "hmc7044_out12",
+                    "hmc7044_out13",
+                ]
             if custom_clock_chip_blocks:
                 raw_channels_block = "".join(
                     _format_nested_block(str(block))
                     for block in custom_clock_chip_blocks
                 )
             else:
-                raw_channels_block = _build_default_hmc7044_channels(
-                    hmc7044_pll2_out_freq
+                raw_channels_block = (
+                    _build_zu11eg_hmc7044_channels(hmc7044_pll2_out_freq)
+                    if is_zu11eg_dual
+                    else _build_default_hmc7044_channels(hmc7044_pll2_out_freq)
                 )
             from ....devices.clocks import HMC7044
 
             hmc7044_dev = HMC7044(
                 label=clock_chip_label,
                 spi_max_hz=10_000_000,
-                pll1_clkin_frequencies=hmc7044_pll1_clkin_freqs,
+                pll1_clkin_frequencies=(
+                    [30_720_000, 30_720_000, 0, 0]
+                    if is_zu11eg_dual
+                    else hmc7044_pll1_clkin_freqs
+                ),
                 vcxo_hz=hmc7044_vcxo_freq,
                 pll2_output_hz=hmc7044_pll2_out_freq,
                 clock_output_names=hmc7044_clock_output_names,
                 raw_channels=raw_channels_block,
-                jesd204_sysref_provider=True,
-                jesd204_max_sysref_hz=2_000_000,
+                jesd204_sysref_provider=not is_zu11eg_dual,
+                jesd204_max_sysref_hz=None if is_zu11eg_dual else 2_000_000,
+                jesd204_inputs=(
+                    "<&hmc7044_car 0 1>, <&hmc7044_car 0 2>, <&hmc7044_car 0 0>"
+                    if is_zu11eg_dual
+                    else None
+                ),
+                two_level_tree_sync=is_zu11eg_dual,
+                clkin0_ref="hmc7044_car 2" if is_zu11eg_dual else None,
+                clkin_name="clkin1" if is_zu11eg_dual else "clkin0",
                 pll1_loop_bandwidth_hz=200,
-                pll1_ref_prio_ctrl="0x1E",
+                pll1_charge_pump_ua=1920 if is_zu11eg_dual else None,
+                pfd1_max_freq_hz=30_720_000 if is_zu11eg_dual else None,
+                pll1_ref_prio_ctrl="0xE5" if is_zu11eg_dual else "0x1E",
                 pll1_ref_autorevert=False,
                 sysref_timer_divider=3840,
-                pulse_generator_mode=7,
-                clkin0_buffer_mode="0x07",
-                clkin1_buffer_mode="0x09",
-                clkin2_buffer_mode="0x05",
-                clkin3_buffer_mode="0x11",
+                pulse_generator_mode=5 if is_zu11eg_dual else 7,
+                clkin0_buffer_mode="0x09" if is_zu11eg_dual else "0x07",
+                clkin1_buffer_mode="0x0B" if is_zu11eg_dual else "0x09",
+                clkin2_buffer_mode=None if is_zu11eg_dual else "0x05",
+                clkin3_buffer_mode=None if is_zu11eg_dual else "0x11",
                 oscin_buffer_mode="0x15",
                 gpi_controls=hmc7044_gpi_controls,
                 gpo_controls=hmc7044_gpo_controls,
                 sync_pin_mode=1,
                 high_perf_mode_dist_enable=True,
             )
+            rendered_clock = hmc7044_dev.render_dt(cs=clk_cs)
+            if is_zu11eg_dual:
+                carrier_hmc7044 = HMC7044(
+                    label="hmc7044_car",
+                    spi_max_hz=10_000_000,
+                    pll1_clkin_frequencies=[122_880_000, 30_720_000, 0, 38_400_000],
+                    pll1_ref_prio_ctrl="0xB1",
+                    pll1_ref_autorevert=True,
+                    pll1_loop_bandwidth_hz=200,
+                    pll1_charge_pump_ua=1920,
+                    pfd1_max_freq_hz=30_720_000,
+                    vcxo_hz=122_880_000,
+                    pll2_output_hz=hmc7044_pll2_out_freq,
+                    sysref_timer_divider=3840,
+                    pulse_generator_mode=5,
+                    clkin0_buffer_mode="0x07",
+                    clkin1_buffer_mode="0x07",
+                    clkin3_buffer_mode="0x11",
+                    oscin_buffer_mode="0x15",
+                    sync_pin_mode=0,
+                    gpi_controls=[0x00, 0x00, 0x00, 0x11],
+                    gpo_controls=[0x1F, 0x2B, 0x00, 0x00],
+                    clock_output_names=_ZU11EG_CARRIER_CLOCK_OUTPUT_NAMES,
+                    raw_channels=_build_zu11eg_carrier_hmc7044_channels(),
+                    jesd204_sysref_provider=True,
+                    jesd204_max_sysref_hz=None,
+                    two_level_tree_sync=True,
+                )
+                rendered_clock += "\n" + carrier_hmc7044.render_dt(cs=3)
             clock_component = ComponentModel(
                 role="clock",
                 part="hmc7044",
                 spi_bus=spi_bus,
                 spi_cs=clk_cs,
-                rendered=hmc7044_dev.render_dt(cs=clk_cs),
+                rendered=rendered_clock,
             )
         else:
             if custom_clock_chip_blocks:
@@ -834,8 +940,20 @@ class ADRV9009Builder:
             compatible_strings=phy_compatible_list,
             spi_max_hz=trx_spi_max_frequency,
             reset_gpio=trx_reset_gpio,
-            sysref_req_gpio=trx_sysref_req_gpio,
+            sysref_req_gpio=None if is_zu11eg_dual else trx_sysref_req_gpio,
         )
+        if is_zu11eg_dual:
+            shared_ctx["extra_dt_lines"] = [
+                "#address-cells = <1>;",
+                "#size-cells = <0>;",
+                f"interrupt-parent = <&{gpio_label}>;",
+                f"test-gpios = <&{gpio_label} 131 0>;",
+                f"rx1-enable-gpios = <&{gpio_label} 132 0>;",
+                f"rx2-enable-gpios = <&{gpio_label} 133 0>;",
+                f"tx1-enable-gpios = <&{gpio_label} 134 0>;",
+                f"tx2-enable-gpios = <&{gpio_label} 135 0>;",
+                f"sysref-req-gpio = <&{gpio_label} {trx_sysref_req_gpio} 0>;",
+            ]
         phy_rendered = phy_dev.render_dt(cs=trx_cs, context=shared_ctx)
 
         if is_fmcomms8:
@@ -847,7 +965,9 @@ class ADRV9009Builder:
             assert trx2_cs is not None
             phy2_dev = ADRV9009(
                 label=f"trx1_{phy_family}",
-                node_name_base=f"{phy_family}-phy",
+                node_name_base=(
+                    f"{phy_family}-phy-b" if is_zu11eg_dual else f"{phy_family}-phy"
+                ),
                 compatible_strings=[phy_family],
                 spi_max_hz=trx_spi_max_frequency,
                 reset_gpio=trx2_reset_gpio,
@@ -855,9 +975,30 @@ class ADRV9009Builder:
             )
             phy2_ctx = dict(shared_ctx)
             phy2_ctx["clocks_value"] = trx1_clocks_value
-            phy_rendered = (
-                phy_rendered + "\n" + phy2_dev.render_dt(cs=trx2_cs, context=phy2_ctx)
-            )
+            if is_zu11eg_dual:
+                phy2_ctx["link_ids"] = None
+                phy2_ctx["extra_dt_lines"] = [
+                    "#address-cells = <1>;",
+                    "#size-cells = <0>;",
+                    f"interrupt-parent = <&{gpio_label}>;",
+                    f"test-gpios = <&{gpio_label} 157 0>;",
+                    f"rx1-enable-gpios = <&{gpio_label} 158 0>;",
+                    f"rx2-enable-gpios = <&{gpio_label} 159 0>;",
+                    f"tx1-enable-gpios = <&{gpio_label} 160 0>;",
+                    f"tx2-enable-gpios = <&{gpio_label} 161 0>;",
+                ]
+                phy2_inputs = [
+                    f"<&{rx_jesd_label} 0 {rx_link_id}>",
+                    f"<&{rx_os_jesd_label} 0 {rx_os_link_id}>",
+                    f"<&{tx_core_label} 0 {tx_link_id}>",
+                ]
+                phy2_ctx["jesd204_inputs"] = ", ".join(phy2_inputs)
+            phy2_rendered = phy2_dev.render_dt(cs=trx2_cs, context=phy2_ctx)
+            if is_zu11eg_dual:
+                phy2_rendered = phy2_rendered.replace(
+                    "\t\t\tjesd204-top-device = <0>;\n", "", 1
+                )
+            phy_rendered = phy_rendered + "\n" + phy2_rendered
 
         phy_component = ComponentModel(
             role="transceiver",
@@ -893,6 +1034,8 @@ class ADRV9009Builder:
             k=rx_k,
             jesd204_inputs=f"{rx_xcvr_label} 0 {rx_link_id}",
         )
+        tx_converter_resolution = 14 if is_zu11eg_dual else 16
+        tx_control_bits_per_sample = 2 if is_zu11eg_dual else 0
         tx_jesd_overlay_ctx = build_jesd204_overlay_ctx(
             label=tx_jesd_label,
             direction="tx",
@@ -905,10 +1048,10 @@ class ADRV9009Builder:
             f=tx_octets_per_frame,
             k=tx_k,
             jesd204_inputs=f"{tx_xcvr_label} 0 {tx_link_id}",
-            converter_resolution=16,
+            converter_resolution=tx_converter_resolution,
             converters_per_device=tx_m,
             bits_per_sample=16,
-            control_bits_per_sample=0,
+            control_bits_per_sample=tx_control_bits_per_sample,
         )
 
         jesd_links: list[JesdLinkModel] = [
@@ -1044,9 +1187,12 @@ class ADRV9009Builder:
         # to produce the per-link rate (61.44 MHz for L=4) instead of
         # passing through the input rate.  Production DT also has
         # ``adi,axi-pl-fifo-enable`` for the PL DDR FIFO bypass mode.
+        tx_tpl_compatible = (
+            "adi,axi-adrv9009-x2-tx-1.0" if is_fmcomms8 else "adi,axi-adrv9009-tx-1.0"
+        )
         tx_core_first = (
             f"\t&{tx_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-adrv9009-tx-1.0";\n'
+            f'\t\tcompatible = "{tx_tpl_compatible}";\n'
             "\t\tadi,axi-interpolation-core-available;\n"
             f"\t\tdmas = <&{tx_dma_label} 0>;\n"
             '\t\tdma-names = "tx";\n'
@@ -1055,7 +1201,13 @@ class ADRV9009Builder:
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             f"\t\tjesd204-inputs = <&{tx_jesd_label} 0 {tx_link_id}>;\n"
-            "\t};"
+            + (
+                "\t\tadi,axi-pl-fifo-enable;\n"
+                f"\t\tplddrbypass-gpios = <&{gpio_label} 168 0>;\n"
+                if is_zu11eg_dual
+                else ""
+            )
+            + "\t};"
         )
 
         # TPL core second pass (spibus-connected + phy clocks).
@@ -1070,7 +1222,8 @@ class ADRV9009Builder:
             f"\t\tspibus-connected = <&{phy_label}>;\n"
             f"\t\tclocks = <&{phy_label} 0>;\n"
             '\t\tclock-names = "sampl_clk";\n'
-            "\t};"
+            + ("\t\tadi,axi-pl-fifo-enable;\n" if is_zu11eg_dual else "")
+            + "\t};"
         )
         rx_os_core_second = ""
         if has_rx_os:
@@ -1263,6 +1416,79 @@ class ADRV9009Builder:
 
     def skip_ip_types(self) -> set[str]:
         return {"axi_adrv9009", "axi_adrv9025", "axi_adrv9026"}
+
+
+def _build_zu11eg_hmc7044_channels(pll2_out_freq: int) -> str:
+    """Render Rev.B ZU11EG SoM HMC7044 outputs from the board DTS."""
+    specs = (
+        (0, "DEV_REFCLK_A", 12, 2, True, False, False, False),
+        (1, "DEV_SYSREF_A", 3840, 1, False, True, True, True),
+        (2, "DEV_REFCLK_B", 12, 2, True, False, False, False),
+        (3, "DEV_SYSREF_B", 3840, 1, False, True, True, True),
+        (4, "JESD_REFCLK_TX_OBS_AB", 12, 2, False, False, False, False),
+        (5, "JESD_REFCLK_RX_AB", 12, 2, False, False, False, False),
+        (6, "CORE_CLK_TX_OBS_AB", 24, 0, False, False, False, False),
+        (7, "CORE_CLK_RX_AB", 12, 0, False, False, False, False),
+        (8, "FPGA_SYSREF_TX_OBS_AB", 3840, 1, False, True, True, True),
+        (9, "FPGA_SYSREF_RX_AB", 3840, 1, False, True, True, True),
+    )
+    blocks: list[str] = []
+    for channel, name, divider, mode, coarse, dynamic, impedance, force_mute in specs:
+        lines = [
+            f"\t\t\thmc7044_c{channel}: channel@{channel} {{",
+            f"\t\t\t\treg = <{channel}>;",
+            f'\t\t\t\tadi,extended-name = "{name}";',
+            f"\t\t\t\tadi,divider = <{divider}>; // {fmt_hz(pll2_out_freq // divider)}",
+            f"\t\t\t\tadi,driver-mode = <{mode}>;",
+        ]
+        if coarse:
+            lines.append("\t\t\t\tadi,coarse-digital-delay = <15>;")
+        if dynamic:
+            lines.extend(
+                [
+                    "\t\t\t\tadi,startup-mode-dynamic-enable;",
+                    "\t\t\t\tadi,high-performance-mode-disable;",
+                ]
+            )
+        if impedance:
+            lines.append("\t\t\t\tadi,driver-impedance-mode = <1>;")
+        if force_mute:
+            lines.append("\t\t\t\tadi,force-mute-enable;")
+        lines.append("\t\t\t};")
+        blocks.append("\n".join(lines) + "\n")
+    return "".join(blocks)
+
+
+def _build_zu11eg_carrier_hmc7044_channels() -> str:
+    """Render the ADRV2CRR-FMC Rev.B carrier HMC7044 outputs."""
+    specs = (
+        (0, "REFCLK_OUT0", 96, 2, False, False, None),
+        (2, "REFCLK_OUT2", 96, 1, False, False, None),
+        (5, "SYNC_OUT1", 3840, 3, True, True, 3),
+        (6, "SYNC_OUT2", 3840, 3, True, True, 3),
+        (8, "REFCLK_OUT3", 96, 2, False, False, None),
+        (9, "REFCLK_OUT4", 96, 1, False, False, None),
+        (10, "REFCLK_QSFP", 96, 1, False, False, None),
+        (11, "REFCLK_SFP", 24, 1, False, False, None),
+    )
+    blocks: list[str] = []
+    for channel, name, divider, mode, dynamic, hp_disable, impedance in specs:
+        lines = [
+            f"\t\t\thmc7044_car_c{channel}: channel@{channel} {{",
+            f"\t\t\t\treg = <{channel}>;",
+            f'\t\t\t\tadi,extended-name = "{name}";',
+            f"\t\t\t\tadi,divider = <{divider}>;",
+            f"\t\t\t\tadi,driver-mode = <{mode}>;",
+        ]
+        if dynamic:
+            lines.append("\t\t\t\tadi,startup-mode-dynamic-enable;")
+        if hp_disable:
+            lines.append("\t\t\t\tadi,high-performance-mode-disable;")
+        if impedance is not None:
+            lines.append(f"\t\t\t\tadi,driver-impedance-mode = <{impedance}>;")
+        lines.append("\t\t\t};")
+        blocks.append("\n".join(lines) + "\n")
+    return "".join(blocks)
 
 
 def _build_default_hmc7044_channels(pll2_out_freq: int) -> str:

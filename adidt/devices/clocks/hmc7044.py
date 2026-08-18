@@ -50,6 +50,8 @@ class HMC7044(ClockDevice):
     # ``clkin0_ref`` drives a coupled (clocks, clock-names) pair emitted
     # by :meth:`extra_dt_lines`; it is not a bare DT property.
     clkin0_ref: Annotated[str | None, DtSkip()] = None
+    clkin_name: Annotated[str, DtSkip()] = "clkin0"
+    jesd204_inputs: Annotated[str | None, DtSkip()] = None
 
     # --- PLL1 -----------------------------------------------------------
     pll1_clkin_frequencies: list[int] = Field(
@@ -74,9 +76,10 @@ class HMC7044(ClockDevice):
     sysref_timer_divider: int | None = Field(None, alias="adi,sysref-timer-divider")
     pulse_generator_mode: int | None = Field(None, alias="adi,pulse-generator-mode")
     jesd204_sysref_provider: bool = Field(True, alias="jesd204-sysref-provider")
-    jesd204_max_sysref_hz: int = Field(
+    jesd204_max_sysref_hz: int | None = Field(
         2_000_000, alias="adi,jesd204-max-sysref-frequency-hz"
     )
+    two_level_tree_sync: bool = Field(False, alias="adi,hmc-two-level-tree-sync-en")
 
     # --- Buffer modes ---------------------------------------------------
     clkin0_buffer_mode: int | str | None = Field(None, alias="adi,clkin0-buffer-mode")
@@ -140,7 +143,9 @@ class HMC7044(ClockDevice):
         lines: list[str] = []
         if self.clkin0_ref is not None:
             lines.append(f"clocks = <&{self.clkin0_ref}>;")
-            lines.append('clock-names = "clkin0";')
+            lines.append(f'clock-names = "{self.clkin_name}";')
+        if self.jesd204_inputs is not None:
+            lines.append(f"jesd204-inputs = {self.jesd204_inputs};")
         if self.gpi_controls:
             lines.append(f"adi,gpi-controls = <{_fmt_hex_bytes(self.gpi_controls)}>;")
         if self.gpo_controls:

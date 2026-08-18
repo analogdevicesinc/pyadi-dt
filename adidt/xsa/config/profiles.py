@@ -55,6 +55,7 @@ _ADRV9009_BOARD_ALLOWED_KEYS = {
     "hmc7044_trx1_sysref_fmc_channel",
     "trx2_cs",
     "trx2_reset_gpio",
+    "dual_phy_layout",
     "hmc7044_channel_blocks",
 }
 _AD9084_BOARD_ALLOWED_KEYS = {

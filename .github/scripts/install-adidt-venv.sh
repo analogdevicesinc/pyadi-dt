@@ -18,7 +18,11 @@ if [[ ! -x "$VENV/bin/python" ]]; then
     uv venv --quiet "$VENV"
 fi
 
-uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+# The labgrid plugin is pinned by commit but keeps a static package version.
+# Force its reinstall so a persistent runner cannot silently retain an older
+# commit that lacks a newly pinned strategy or driver.
+uv pip install --quiet --python "$VENV/bin/python" \
+    --reinstall-package labgrid-plugins -e ".[dev]"
 uv pip install --quiet --python "$VENV/bin/python" \
     -r requirements/pyadi-jif-ad9371.txt
 

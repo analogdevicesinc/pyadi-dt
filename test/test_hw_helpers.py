@@ -8,6 +8,7 @@ can be iterated on without needing a bring-up board.
 from __future__ import annotations
 
 import os
+import shutil
 
 import pytest
 
@@ -19,6 +20,7 @@ os.environ.setdefault("LG_ENV", "unit-test-noop")
 import test.hw.hw_helpers as hw_helpers  # noqa: E402
 from test.hw.hw_helpers import (  # noqa: E402
     IlasMismatch,
+    apply_kuiper_dtb_fixups,
     assert_ilas_aligned,
     assert_jesd_links_data,
     attempt_obs_capture,
@@ -174,10 +176,7 @@ def test_parse_ilas_status_mask_without_fields_still_flags():
 def test_parse_ilas_status_zero_mask_is_healthy():
     # A deframerStatus dump with mask 0 should NOT flag — some kernels
     # emit the line unconditionally as diagnostic info.
-    dmesg = (
-        "ad9371 spi1.1: deframerStatus (0x21)\n"
-        "ad9371 spi1.1: ILAS mismatch: 0\n"
-    )
+    dmesg = "ad9371 spi1.1: deframerStatus (0x21)\nad9371 spi1.1: ILAS mismatch: 0\n"
     report = parse_ilas_status(dmesg)
     assert report.mismatch_mask == 0
     assert report.has_mismatch is False
@@ -482,3 +481,40 @@ def test_detect_link_loss_positive_and_negative():
     assert detect_link_loss("Link status: reset") is True
     assert detect_link_loss("Link status: DATA") is False
     assert detect_link_loss("Link status: DATA\nLink status: DATA") is False
+
+
+@pytest.mark.skipif(shutil.which("dtc") is None, reason="dtc is required")
+def test_apply_kuiper_dtb_fixups_removes_generator_bootargs(tmp_path):
+    dts = tmp_path / "input.dts"
+    dtb = tmp_path / "input.dtb"
+    dts.write_text(
+        '/dts-v1/; / { chosen { bootargs = "console=ttyPS0 root=/dev/ram0"; '
+        'stdout-path = "serial0:115200n8"; }; };'
+    )
+    hw_helpers.compile_dts_to_dtb(dts, dtb)
+
+    assert apply_kuiper_dtb_fixups(dtb) is True
+
+    import fdt
+
+    chosen = fdt.parse_dtb(dtb.read_bytes()).get_node("/chosen")
+    assert chosen is not None
+    assert not chosen.exist_property("bootargs")
+    assert chosen.exist_property("stdout-path")
+    assert apply_kuiper_dtb_fixups(dtb) is False
+
+
+@pytest.mark.skipif(shutil.which("dtc") is None, reason="dtc is required")
+def test_apply_kuiper_dtb_fixups_adds_requested_sdhci_constraint(tmp_path):
+    dts = tmp_path / "input.dts"
+    dtb = tmp_path / "input.dtb"
+    dts.write_text('/dts-v1/; / { axi { mmc@ff170000 { status = "okay"; }; }; };')
+    hw_helpers.compile_dts_to_dtb(dts, dtb)
+
+    assert apply_kuiper_dtb_fixups(dtb, add_no_1_8_v=True) is True
+
+    import fdt
+
+    tree = fdt.parse_dtb(dtb.read_bytes())
+    mmc = tree.get_node("/axi/mmc@ff170000")
+    assert mmc is not None and mmc.exist_property("no-1-8-v")
