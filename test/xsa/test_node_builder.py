@@ -1318,6 +1318,9 @@ def test_build_adrv9009_fmcomms8_uses_hmc7044_and_tpl_core_labels(cfg):
     assert 'clock-names = "conv", "div40";' not in zu11eg
     assert "clocks = <&hmc7044 5>, <&hmc7044 9>;" not in zu11eg
     assert "clocks = <&hmc7044 4>, <&hmc7044 8>;" not in zu11eg
+    assert "adi,converter-resolution = <14>;" in zu11eg
+    assert "adi,bits-per-sample = <16>;" in zu11eg
+    assert "adi,control-bits-per-sample = <2>;" in zu11eg
 
 
 def test_build_skips_clkgens_unreferenced_by_jesd_chain(topo, cfg):

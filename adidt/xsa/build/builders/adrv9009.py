@@ -1034,6 +1034,8 @@ class ADRV9009Builder:
             k=rx_k,
             jesd204_inputs=f"{rx_xcvr_label} 0 {rx_link_id}",
         )
+        tx_converter_resolution = 14 if is_zu11eg_dual else 16
+        tx_control_bits_per_sample = 2 if is_zu11eg_dual else 0
         tx_jesd_overlay_ctx = build_jesd204_overlay_ctx(
             label=tx_jesd_label,
             direction="tx",
@@ -1046,10 +1048,10 @@ class ADRV9009Builder:
             f=tx_octets_per_frame,
             k=tx_k,
             jesd204_inputs=f"{tx_xcvr_label} 0 {tx_link_id}",
-            converter_resolution=16,
+            converter_resolution=tx_converter_resolution,
             converters_per_device=tx_m,
             bits_per_sample=16,
-            control_bits_per_sample=0,
+            control_bits_per_sample=tx_control_bits_per_sample,
         )
 
         jesd_links: list[JesdLinkModel] = [
