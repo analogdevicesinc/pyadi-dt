@@ -187,6 +187,29 @@ def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
 _ZU11EG_BOARD_FIXUP = r"""
 
 /* ADRV9009-ZU11EG Rev.B board wiring not represented in the XSA. */
+/ {
+	ad9542_out0_c: ad9542-out0-c {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <125000000>;
+	};
+	ad9542_out1_a: ad9542-out1-a {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <27000000>;
+	};
+	ad9542_out1_b: ad9542-out1-b {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <26000000>;
+	};
+};
+
+&psgtr {
+	clocks = <&ad9542_out0_c>, <&ad9542_out1_a>, <&ad9542_out1_b>;
+	clock-names = "ref1", "ref2", "ref3";
+};
+
 &pinctrl0 {
 	pinctrl_gem3_default: gem3-default {
 		mux {

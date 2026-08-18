@@ -21,6 +21,12 @@ def test_zu11eg_fixup_adds_production_board_wiring(tmp_path: Path):
     assert '&smmu {\n\t\tstatus = "disabled";' in fixed_pcw
     assert "num-cs = <8>;" in fixed_pcw
     assert "is-decoded-cs;" in fixed_pcw
+    assert "ad9542_out0_c: ad9542-out0-c" in fixed
+    assert "clock-frequency = <125000000>;" in fixed
+    assert "clock-frequency = <27000000>;" in fixed
+    assert "clock-frequency = <26000000>;" in fixed
+    assert "clocks = <&ad9542_out0_c>, <&ad9542_out1_a>, <&ad9542_out1_b>;" in fixed
+    assert 'clock-names = "ref1", "ref2", "ref3";' in fixed
     assert "pinctrl_gem3_default: gem3-default" in fixed
     assert 'groups = "ethernet3_0_grp";' in fixed
     assert "phy-handle = <&phy1>;" in fixed
