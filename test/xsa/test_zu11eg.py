@@ -86,8 +86,10 @@ def test_profile_manager_loads_adrv9009_zu11eg_profile():
     assert board["trx_sysref_req_gpio"] == 167
     assert board["hmc7044_vcxo_frequency"] == 122880000
     assert board["hmc7044_pll2_output_frequency"] == 2949120000
-    assert board["hmc7044_rx_channel"] == 9
-    assert board["hmc7044_tx_channel"] == 8
+    # Production routes JESD core clocks from HMC7044 channels 7/6;
+    # channels 9/8 are FPGA SYSREF and cannot drive the lane clocks.
+    assert board["hmc7044_rx_channel"] == 7
+    assert board["hmc7044_tx_channel"] == 6
     assert board["rx_os_octets_per_frame"] == 4
     props = board["trx_profile_props"]
     assert len(props) == 286
@@ -107,8 +109,8 @@ def test_adrv9009_profile_allows_hmc7044_keys():
     _validate_profile_defaults(
         {
             "adrv9009_board": {
-                "hmc7044_rx_channel": 9,
-                "hmc7044_tx_channel": 8,
+                "hmc7044_rx_channel": 7,
+                "hmc7044_tx_channel": 6,
                 "trx2_cs": 1,
                 "trx2_reset_gpio": 156,
                 "dual_phy_layout": "zu11eg",
