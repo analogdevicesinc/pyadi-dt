@@ -1308,6 +1308,17 @@ def test_build_adrv9009_fmcomms8_uses_hmc7044_and_tpl_core_labels(cfg):
         in merged
     )  # trx1: dev=ch2, fmc=ch5, sysref_dev=ch3, sysref_fmc=ch7
 
+    zu11eg_cfg = json.loads(json.dumps(cfg))
+    zu11eg_cfg.setdefault("adrv9009_board", {})["dual_phy_layout"] = "zu11eg"
+    zu11eg = "\n".join(
+        NodeBuilder().build(topo_adrv9009_fmcomms8, zu11eg_cfg)["converters"]
+    )
+    assert "hmc7044: hmc7044@0" in zu11eg
+    assert 'clock-names = "conv";' in zu11eg
+    assert 'clock-names = "conv", "div40";' not in zu11eg
+    assert "clocks = <&hmc7044 5>, <&hmc7044 9>;" not in zu11eg
+    assert "clocks = <&hmc7044 4>, <&hmc7044 8>;" not in zu11eg
+
 
 def test_build_skips_clkgens_unreferenced_by_jesd_chain(topo, cfg):
     """Clkgens that no JESD instance references must not get rendered.

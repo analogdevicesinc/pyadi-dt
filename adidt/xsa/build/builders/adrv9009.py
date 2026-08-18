@@ -449,7 +449,10 @@ class ADRV9009Builder:
         rx_xcvr_conv_clk_ref = rx_xcvr_clkgen_ref
         tx_xcvr_conv_clk_ref = tx_xcvr_clkgen_ref
         rx_os_xcvr_conv_clk_ref = rx_os_xcvr_clkgen_ref
-        if is_fmcomms8:
+        # FMComms8 needs distinct ``conv`` and ``div40`` inputs.  ZU11EG's
+        # production DT supplies only ``conv`` to each ADXCVR; treating its
+        # dual-Talise topology as FMComms8 makes lane-clock enable fail with -EIO.
+        if is_fmcomms8 and not is_zu11eg_dual:
             rx_xcvr_div40_ref: str | None = rx_xcvr_div40_clk_ref
             tx_xcvr_div40_ref: str | None = tx_xcvr_div40_clk_ref
             rx_os_xcvr_div40_ref: str | None = rx_os_xcvr_div40_clk_ref
