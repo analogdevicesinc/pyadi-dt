@@ -125,7 +125,12 @@ def _install_generated_dtb(shell, dtb_path: Path) -> None:
         shell,
         "set -e; "
         f"test -s {_BOOT_DTB}; "
-        f"test -e {_BACKUP_DTB} || cp -p {_BOOT_DTB} {_BACKUP_DTB}; "
+        f"if test ! -e {_BACKUP_DTB}; then "
+        f"prod_sha=$(sha256sum {_BOOT_DTB} | cut -d' ' -f1); "
+        f"cp -p {_BOOT_DTB} {_BACKUP_DTB}.new; sync; "
+        f'test "$(sha256sum {_BACKUP_DTB}.new | cut -d\' \' -f1)" = "$prod_sha"; '
+        f"mv {_BACKUP_DTB}.new {_BACKUP_DTB}; sync; fi; "
+        f"test -s {_BACKUP_DTB}; "
         f"cp {_REMOTE_DTB} {_BOOT_DTB}.new; "
         f"mv {_BOOT_DTB}.new {_BOOT_DTB}; sync; "
         f"sha256sum {_BOOT_DTB} | cut -d' ' -f1",
@@ -135,14 +140,20 @@ def _install_generated_dtb(shell, dtb_path: Path) -> None:
 
 
 def _restore_production_dtb(shell) -> None:
-    """Restore the original DTB and prove the backup is no longer pending."""
+    """Durably restore the original DTB before removing its backup."""
     _mount_boot(shell)
     result = shell_out(
         shell,
         "set -e; "
-        f"test -s {_BACKUP_DTB}; "
-        f"mv {_BACKUP_DTB} {_BOOT_DTB}; sync; "
-        f"test ! -e {_BACKUP_DTB}; echo RESTORE_OK",
+        f"if test -s {_BACKUP_DTB}; then "
+        f"backup_sha=$(sha256sum {_BACKUP_DTB} | cut -d' ' -f1); "
+        f"cp -p {_BACKUP_DTB} {_BOOT_DTB}.restore; sync; "
+        f'test "$(sha256sum {_BOOT_DTB}.restore | cut -d\' \' -f1)" = "$backup_sha"; '
+        f"mv {_BOOT_DTB}.restore {_BOOT_DTB}; sync; "
+        f'test "$(sha256sum {_BOOT_DTB} | cut -d\' \' -f1)" = "$backup_sha"; '
+        f"rm {_BACKUP_DTB}; sync; "
+        f"test ! -e {_BACKUP_DTB}; "
+        f"else test -s {_BOOT_DTB}; fi; echo RESTORE_OK",
     )
     assert "RESTORE_OK" in result, f"failed to restore production DTB: {result}"
     shell_out(shell, f"umount {_BOOT_MOUNT}")
@@ -181,8 +192,7 @@ def test_adrv9009_zu11eg_generated_dtb_boots_via_jtag(board, tmp_path):
     # transferred without an SD mux or a second out-of-band file server.
     board.transition("kuiper_shell")
     shell = board.target.get_driver("ADIShellDriver")
-    _install_generated_dtb(shell, dtb_path)
-
+    transaction_started = False
     generated_boot_reached_shell = False
     uart_log = tmp_path / "generated-boot-uart.log"
     original_read = shell.console._read
@@ -195,6 +205,10 @@ def test_adrv9009_zu11eg_generated_dtb_boots_via_jtag(board, tmp_path):
         return data
 
     try:
+        # Set this before installation: every failure after this point may have
+        # created a backup or replaced system.dtb and must enter recovery.
+        transaction_started = True
+        _install_generated_dtb(shell, dtb_path)
         board.transition("powered_off")
         # The exporter closes the raw TCP connection across a power cycle, but
         # labgrid can otherwise leave SerialDriver marked active around that
@@ -251,8 +265,15 @@ def test_adrv9009_zu11eg_generated_dtb_boots_via_jtag(board, tmp_path):
             context="adrv9009_zu11eg_jtag",
         )
     finally:
-        if generated_boot_reached_shell:
-            _restore_production_dtb(shell)
-            _reboot_to_production_shell(board, shell)
-        else:
-            _recover_and_restore_production_dtb(board)
+        if transaction_started:
+            if generated_boot_reached_shell:
+                try:
+                    _restore_production_dtb(shell)
+                    _reboot_to_production_shell(board, shell)
+                except Exception as direct_restore_error:
+                    # The backup is retained until direct restoration is fully
+                    # verified, so RAM Linux can safely retry the transaction.
+                    _recover_and_restore_production_dtb(board)
+                    raise direct_restore_error
+            else:
+                _recover_and_restore_production_dtb(board)

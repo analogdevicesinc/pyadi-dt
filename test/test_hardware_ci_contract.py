@@ -60,12 +60,23 @@ def test_zu11eg_hardware_ci_uses_fixed_jtag_environment() -> None:
 
 
 def test_zu11eg_hardware_test_keeps_generated_output_private() -> None:
-    test_source = (
-        ROOT / "test/hw/test_adrv9009zu11eg_adrv2crr-fmc_hw.py"
-    ).read_text()
+    test_source = (ROOT / "test/hw/test_adrv9009zu11eg_adrv2crr-fmc_hw.py").read_text()
 
     assert 'out_dir = tmp_path / "output"' in test_source
     assert "DEFAULT_OUT_DIR" not in test_source
+
+
+def test_zu11eg_dtb_transaction_is_recovery_safe() -> None:
+    """Keep partial installs and failed direct restores recoverable."""
+    test_source = (ROOT / "test/hw/test_adrv9009zu11eg_adrv2crr-fmc_hw.py").read_text()
+
+    assert test_source.index("transaction_started = True") < test_source.index(
+        "_install_generated_dtb(shell, dtb_path)"
+    )
+    assert "except Exception as direct_restore_error:" in test_source
+    assert test_source.count("_recover_and_restore_production_dtb(board)") >= 2
+    assert f"cp -p {{_BACKUP_DTB}} {{_BOOT_DTB}}.restore; sync;" in test_source
+    assert f"rm {{_BACKUP_DTB}}; sync;" in test_source
 
 
 def test_missing_hardware_prerequisite_fails_in_coordinator_mode(monkeypatch):
