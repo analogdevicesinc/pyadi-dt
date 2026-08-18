@@ -3,7 +3,7 @@ from pathlib import Path
 from adidt.xsa.build.board_fixups import apply_board_fixups
 
 
-def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
+def test_zu11eg_fixup_adds_production_board_wiring(tmp_path: Path):
     pl_dtsi = tmp_path / "pl.dtsi"
     pcw_dtsi = tmp_path / "pcw.dtsi"
     pl_dtsi.write_text("/ { };\n")
@@ -21,6 +21,15 @@ def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
     assert '&smmu {\n\t\tstatus = "disabled";' in fixed_pcw
     assert "num-cs = <8>;" in fixed_pcw
     assert "is-decoded-cs;" in fixed_pcw
+    assert "pinctrl_gem3_default: gem3-default" in fixed
+    assert 'groups = "ethernet3_0_grp";' in fixed
+    assert "phy-handle = <&phy1>;" in fixed
+    assert "phys = <&psgtr 0 8 0 1>;" in fixed
+    assert "mdiobus-connected = <&gem3>;" in fixed
+    assert "phy0: phy@0" in fixed
+    assert "phy1: phy@1" in fixed
+    assert "reset-gpios = <&gpio 25 1>;" in fixed
+    assert "reset-gpios = <&gpio 31 1>;" in fixed
     assert "pinctrl_sdhci1_default: sdhci1-default" in fixed
     assert 'groups = "sdio1_0_grp";' in fixed
     assert "pinctrl-0 = <&pinctrl_sdhci1_default>;" in fixed

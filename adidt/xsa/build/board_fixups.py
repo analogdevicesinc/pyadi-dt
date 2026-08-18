@@ -188,6 +188,38 @@ _ZU11EG_BOARD_FIXUP = r"""
 
 /* ADRV9009-ZU11EG Rev.B board wiring not represented in the XSA. */
 &pinctrl0 {
+	pinctrl_gem3_default: gem3-default {
+		mux {
+			function = "ethernet3";
+			groups = "ethernet3_0_grp";
+		};
+		conf {
+			groups = "ethernet3_0_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+		};
+		conf-rx {
+			pins = "MIO70", "MIO71", "MIO72", "MIO73", "MIO74", "MIO75";
+			bias-high-impedance;
+			low-power-disable;
+		};
+		conf-tx {
+			pins = "MIO64", "MIO65", "MIO66", "MIO67", "MIO68", "MIO69";
+			bias-disable;
+			low-power-enable;
+		};
+		mux-mdio {
+			function = "mdio3";
+			groups = "mdio3_0_grp";
+		};
+		conf-mdio {
+			groups = "mdio3_0_grp";
+			slew-rate = <1>;
+			io-standard = <1>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_sdhci1_default: sdhci1-default {
 		mux {
 			groups = "sdio1_0_grp";
@@ -231,6 +263,37 @@ _ZU11EG_BOARD_FIXUP = r"""
 	no-1-8-v;
 	disable-wp;
 	xlnx,mio_bank = <1>;
+};
+
+&gem0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	phy-handle = <&phy1>;
+	phy-mode = "sgmii";
+	phys = <&psgtr 0 8 0 1>;
+	mdiobus-connected = <&gem3>;
+};
+
+&gem3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	phy-handle = <&phy0>;
+	phy-mode = "rgmii-id";
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_gem3_default>;
+
+	phy0: phy@0 {
+		device_type = "ethernet-phy";
+		reg = <0>;
+		marvell,reg-init = <3 0x10 0xff00 0x1e 3 0x11 0xfff0 0>;
+		reset-gpios = <&gpio 25 1>;
+	};
+
+	phy1: phy@1 {
+		device_type = "ethernet-phy";
+		reg = <1>;
+		reset-gpios = <&gpio 31 1>;
+	};
 };
 """
 
