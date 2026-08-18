@@ -8,6 +8,8 @@ def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
     pcw_dtsi = tmp_path / "pcw.dtsi"
     pl_dtsi.write_text("/ { };\n")
     pcw_dtsi.write_text(
+        '&smmu {\n\t\tstatus = "okay";\n};\n'
+        "&spi0 {\n\t\tnum-cs = <3>;\n};\n"
         "&sdhci1 {\n\t\txlnx,bus-width = <8>;\n};\n"
         "&gem3 {\n\t\txlnx,bus-width = <2>;\n};\n"
     )
@@ -15,9 +17,10 @@ def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
     apply_board_fixups("adrv9009_zu11eg", tmp_path)
     fixed = pl_dtsi.read_text()
 
-    assert 'status = "disabled";' in fixed
-    assert "num-cs = <8>;" in fixed
-    assert "is-decoded-cs;" in fixed
+    fixed_pcw = pcw_dtsi.read_text()
+    assert '&smmu {\n\t\tstatus = "disabled";' in fixed_pcw
+    assert "num-cs = <8>;" in fixed_pcw
+    assert "is-decoded-cs;" in fixed_pcw
     assert "pinctrl_sdhci1_default: sdhci1-default" in fixed
     assert 'groups = "sdio1_0_grp";' in fixed
     assert "pinctrl-0 = <&pinctrl_sdhci1_default>;" in fixed
@@ -29,6 +32,7 @@ def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
 
     apply_board_fixups("adrv9009_zu11eg", tmp_path)
     assert pl_dtsi.read_text() == fixed
+    assert pcw_dtsi.read_text() == fixed_pcw
 
 
 def test_unrelated_profile_does_not_receive_zu11eg_fixup(tmp_path: Path):

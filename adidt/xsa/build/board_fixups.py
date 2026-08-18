@@ -186,18 +186,7 @@ def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
 
 _ZU11EG_BOARD_FIXUP = r"""
 
-/* ADRV9009-ZU11EG Rev.B board wiring and PS policy not represented in the XSA. */
-&smmu {
-	/* Match production: SD1's stream ID is not routed through the SMMU. */
-	status = "disabled";
-};
-
-&spi0 {
-	/* The decoded board-level chip-select bus exposes CS0 through CS7. */
-	num-cs = <8>;
-	is-decoded-cs;
-};
-
+/* ADRV9009-ZU11EG Rev.B board wiring not represented in the XSA. */
 &pinctrl0 {
 	pinctrl_sdhci1_default: sdhci1-default {
 		mux {
@@ -252,15 +241,38 @@ def _fix_zu11eg_board(content: str, pl_dtsi: Path) -> str:
     pcw_dtsi = pl_dtsi.parent / "pcw.dtsi"
     if pcw_dtsi.exists():
         pcw_content = pcw_dtsi.read_text()
+        original_pcw = pcw_content
+
         bad_bus_width = "\t\txlnx,bus-width = <8>;\n"
         if pcw_content.count(bad_bus_width) == 1:
-            pcw_dtsi.write_text(pcw_content.replace(bad_bus_width, "", 1))
+            pcw_content = pcw_content.replace(bad_bus_width, "", 1)
             logger.info("Removed invalid ZU11EG SD1 8-bit width from %s", pcw_dtsi)
         elif bad_bus_width in pcw_content:
             logger.warning(
                 "ZU11EG SD1 width fix is ambiguous in %s; leaving it unchanged",
                 pcw_dtsi,
             )
+
+        smmu_enabled = '&smmu {\n\t\tstatus = "okay";'
+        smmu_disabled = '&smmu {\n\t\tstatus = "disabled";'
+        if pcw_content.count(smmu_enabled) == 1:
+            pcw_content = pcw_content.replace(smmu_enabled, smmu_disabled, 1)
+            logger.info("Disabled ZU11EG SMMU to match production in %s", pcw_dtsi)
+        elif smmu_disabled not in pcw_content:
+            logger.warning("ZU11EG SMMU fix pattern not found in %s", pcw_dtsi)
+
+        spi_cs3 = "\t\tnum-cs = <3>;\n"
+        spi_cs8 = "\t\tnum-cs = <8>;\n\t\tis-decoded-cs;\n"
+        if pcw_content.count(spi_cs3) == 1:
+            pcw_content = pcw_content.replace(spi_cs3, spi_cs8, 1)
+            logger.info("Applied ZU11EG decoded SPI chip-select fix to %s", pcw_dtsi)
+        elif spi_cs8 not in pcw_content:
+            logger.warning(
+                "ZU11EG SPI chip-select fix pattern not found in %s", pcw_dtsi
+            )
+
+        if pcw_content != original_pcw:
+            pcw_dtsi.write_text(pcw_content)
     if "pinctrl_sdhci1_default: sdhci1-default" in content:
         return content
     logger.info("Applied ZU11EG board fixup to %s", pl_dtsi)
