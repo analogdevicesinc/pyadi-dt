@@ -15,6 +15,9 @@ def test_zu11eg_fixup_adds_production_sd1_pinmux(tmp_path: Path):
     apply_board_fixups("adrv9009_zu11eg", tmp_path)
     fixed = pl_dtsi.read_text()
 
+    assert 'status = "disabled";' in fixed
+    assert "num-cs = <8>;" in fixed
+    assert "is-decoded-cs;" in fixed
     assert "pinctrl_sdhci1_default: sdhci1-default" in fixed
     assert 'groups = "sdio1_0_grp";' in fixed
     assert "pinctrl-0 = <&pinctrl_sdhci1_default>;" in fixed

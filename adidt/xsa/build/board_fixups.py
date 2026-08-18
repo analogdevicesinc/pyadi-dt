@@ -181,12 +181,23 @@ def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
-# ADRV9009-ZU11EG Rev.B SD pinmux fixup
+# ADRV9009-ZU11EG Rev.B board fixup
 # ---------------------------------------------------------------------------
 
-_ZU11EG_SD_FIXUP = r"""
+_ZU11EG_BOARD_FIXUP = r"""
 
-/* ADRV9009-ZU11EG Rev.B board wiring not represented in the XSA. */
+/* ADRV9009-ZU11EG Rev.B board wiring and PS policy not represented in the XSA. */
+&smmu {
+	/* Match production: SD1's stream ID is not routed through the SMMU. */
+	status = "disabled";
+};
+
+&spi0 {
+	/* The decoded board-level chip-select bus exposes CS0 through CS7. */
+	num-cs = <8>;
+	is-decoded-cs;
+};
+
 &pinctrl0 {
 	pinctrl_sdhci1_default: sdhci1-default {
 		mux {
@@ -236,8 +247,8 @@ _ZU11EG_SD_FIXUP = r"""
 
 
 @register_fixup("adrv9009_zu11eg")
-def _fix_zu11eg_sd_pinmux(content: str, pl_dtsi: Path) -> str:
-    """Add the production SD1 pinmux omitted by SDT's XSA-only output."""
+def _fix_zu11eg_board(content: str, pl_dtsi: Path) -> str:
+    """Apply production SMMU, SPI chip-select, and SD1 wiring policy."""
     pcw_dtsi = pl_dtsi.parent / "pcw.dtsi"
     if pcw_dtsi.exists():
         pcw_content = pcw_dtsi.read_text()
@@ -252,5 +263,5 @@ def _fix_zu11eg_sd_pinmux(content: str, pl_dtsi: Path) -> str:
             )
     if "pinctrl_sdhci1_default: sdhci1-default" in content:
         return content
-    logger.info("Applied ZU11EG SD1 pinmux fix to %s", pl_dtsi)
-    return content.rstrip() + "\n" + _ZU11EG_SD_FIXUP
+    logger.info("Applied ZU11EG board fixup to %s", pl_dtsi)
+    return content.rstrip() + "\n" + _ZU11EG_BOARD_FIXUP
