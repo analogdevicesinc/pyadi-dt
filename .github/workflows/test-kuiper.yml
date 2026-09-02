@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     env:
       CONTAINER_BASE_NAME: kuiper-container-basic
-      DOCKER_IMAGE: aandrisa/kuiper_basic_64:latest
+      DOCKER_IMAGE: docker.cloudsmith.io/adi/containers/kuiper_basic_64:latest
       IMAGE_ARCH: linux/arm64
       ARCHITECTURE: arm64
     name: Test on Kuiper64
