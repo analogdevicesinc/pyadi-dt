@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The adidt.jif_contract module provides the validated pyadi-dt projection of the versioned adi.jif-dt interchange format. See pyadi-jif to pyadi-dt interface contract for the ownership rules, validation sequence, compatibility policy, and cross-repository test agreement." name="description" />
+
+    <title>pyadi-jif Interface Contract &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Declarative Devices" href="devices.html" />
+    <link rel="prev" title="Core Module" href="core.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".rst">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">pyadi-jif Interface Contract</a><ul>
+<li><a class="reference internal" href="#module-adidt.jif_contract">Contract model</a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.ContractError"><code class="docutils literal notranslate"><span class="pre">ContractError</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.Producer"><code class="docutils literal notranslate"><span class="pre">Producer</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.Producer.name"><code class="docutils literal notranslate"><span class="pre">Producer.name</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.Producer.version"><code class="docutils literal notranslate"><span class="pre">Producer.version</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.Producer.model_config"><code class="docutils literal notranslate"><span class="pre">Producer.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters"><code class="docutils literal notranslate"><span class="pre">JesdParameters</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.F"><code class="docutils literal notranslate"><span class="pre">JesdParameters.F</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.K"><code class="docutils literal notranslate"><span class="pre">JesdParameters.K</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.L"><code class="docutils literal notranslate"><span class="pre">JesdParameters.L</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.M"><code class="docutils literal notranslate"><span class="pre">JesdParameters.M</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.N"><code class="docutils literal notranslate"><span class="pre">JesdParameters.N</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.Np"><code class="docutils literal notranslate"><span class="pre">JesdParameters.Np</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.S"><code class="docutils literal notranslate"><span class="pre">JesdParameters.S</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.HD"><code class="docutils literal notranslate"><span class="pre">JesdParameters.HD</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.CS"><code class="docutils literal notranslate"><span class="pre">JesdParameters.CS</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.CF"><code class="docutils literal notranslate"><span class="pre">JesdParameters.CF</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.validate_transport_identity"><code class="docutils literal notranslate"><span class="pre">JesdParameters.validate_transport_identity()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdParameters.model_config"><code class="docutils literal notranslate"><span class="pre">JesdParameters.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink"><code class="docutils literal notranslate"><span class="pre">JesdLink</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.id"><code class="docutils literal notranslate"><span class="pre">JesdLink.id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.direction"><code class="docutils literal notranslate"><span class="pre">JesdLink.direction</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.converter"><code class="docutils literal notranslate"><span class="pre">JesdLink.converter</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.fpga"><code class="docutils literal notranslate"><span class="pre">JesdLink.fpga</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.standard"><code class="docutils literal notranslate"><span class="pre">JesdLink.standard</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.sample_rate_hz"><code class="docutils literal notranslate"><span class="pre">JesdLink.sample_rate_hz</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.lane_rate_hz"><code class="docutils literal notranslate"><span class="pre">JesdLink.lane_rate_hz</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.parameters"><code class="docutils literal notranslate"><span class="pre">JesdLink.parameters</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.fpga_config"><code class="docutils literal notranslate"><span class="pre">JesdLink.fpga_config</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.validate_lane_rate"><code class="docutils literal notranslate"><span class="pre">JesdLink.validate_lane_rate()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdLink.model_config"><code class="docutils literal notranslate"><span class="pre">JesdLink.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement"><code class="docutils literal notranslate"><span class="pre">ClockRequirement</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.id"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.role"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.role</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.sink"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.sink</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.rate_hz"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.rate_hz</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.divider"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.divider</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.source"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.source</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockRequirement.model_config"><code class="docutils literal notranslate"><span class="pre">ClockRequirement.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract"><code class="docutils literal notranslate"><span class="pre">JifDtContract</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.schema_name"><code class="docutils literal notranslate"><span class="pre">JifDtContract.schema_name</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.version"><code class="docutils literal notranslate"><span class="pre">JifDtContract.version</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.producer"><code class="docutils literal notranslate"><span class="pre">JifDtContract.producer</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.jesd_links"><code class="docutils literal notranslate"><span class="pre">JifDtContract.jesd_links</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.clock_requirements"><code class="docutils literal notranslate"><span class="pre">JifDtContract.clock_requirements</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.metadata"><code class="docutils literal notranslate"><span class="pre">JifDtContract.metadata</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.validate_unique_ids"><code class="docutils literal notranslate"><span class="pre">JifDtContract.validate_unique_ids()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.from_json_file"><code class="docutils literal notranslate"><span class="pre">JifDtContract.from_json_file()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.to_json_file"><code class="docutils literal notranslate"><span class="pre">JifDtContract.to_json_file()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtContract.model_config"><code class="docutils literal notranslate"><span class="pre">JifDtContract.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockBinding"><code class="docutils literal notranslate"><span class="pre">ClockBinding</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockBinding.requirement_id"><code class="docutils literal notranslate"><span class="pre">ClockBinding.requirement_id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockBinding.dt_label"><code class="docutils literal notranslate"><span class="pre">ClockBinding.dt_label</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockBinding.output_index"><code class="docutils literal notranslate"><span class="pre">ClockBinding.output_index</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.ClockBinding.model_config"><code class="docutils literal notranslate"><span class="pre">ClockBinding.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding"><code class="docutils literal notranslate"><span class="pre">JesdBinding</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding.link_id"><code class="docutils literal notranslate"><span class="pre">JesdBinding.link_id</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding.converter_label"><code class="docutils literal notranslate"><span class="pre">JesdBinding.converter_label</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding.jesd_label"><code class="docutils literal notranslate"><span class="pre">JesdBinding.jesd_label</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding.xcvr_label"><code class="docutils literal notranslate"><span class="pre">JesdBinding.xcvr_label</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JesdBinding.model_config"><code class="docutils literal notranslate"><span class="pre">JesdBinding.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtBindings"><code class="docutils literal notranslate"><span class="pre">JifDtBindings</span></code></a><ul>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtBindings.clocks"><code class="docutils literal notranslate"><span class="pre">JifDtBindings.clocks</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtBindings.jesd_links"><code class="docutils literal notranslate"><span class="pre">JifDtBindings.jesd_links</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtBindings.check"><code class="docutils literal notranslate"><span class="pre">JifDtBindings.check()</span></code></a></li>
+<li><a class="reference internal" href="#adidt.jif_contract.JifDtBindings.model_config"><code class="docutils literal notranslate"><span class="pre">JifDtBindings.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../developer/index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../developer/authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/jif_dt_contract.html">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../developer/release_runbook.html">Release Operator Runbook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3" checked=""/><div class="collapse"><a class="reference internal" href="index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="core.html">Core Module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">API Reference</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="pyadi-jif-interface-contract">
+<h1>pyadi-jif Interface Contract<a class="headerlink" href="#pyadi-jif-interface-contract" title="Link to this heading"></a></h1>
+<p>The <a class="reference internal" href="#module-adidt.jif_contract" title="adidt.jif_contract"><code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.jif_contract</span></code></a> module provides the validated pyadi-dt
+projection of the versioned <code class="docutils literal notranslate"><span class="pre">adi.jif-dt</span></code> interchange format. See
+<a class="reference internal" href="../developer/jif_dt_contract.html"><span class="doc">pyadi-jif to pyadi-dt interface contract</span></a> for the ownership rules, validation
+sequence, compatibility policy, and cross-repository test agreement.</p>
+<section id="module-adidt.jif_contract">
+<span id="contract-model"></span><h2>Contract model<a class="headerlink" href="#module-adidt.jif_contract" title="Link to this heading"></a></h2>
+<p>Versioned interface contract between pyadi-jif and pyadi-dt.</p>
+<p>The contract carries solved electrical intent.  Physical device-tree placement
+(clock channel numbers, labels, SPI chip-selects, and GPIOs) remains owned by
+pyadi-dt and is joined through <a class="reference internal" href="#adidt.jif_contract.JifDtBindings" title="adidt.jif_contract.JifDtBindings"><code class="xref py py-class docutils literal notranslate"><span class="pre">JifDtBindings</span></code></a>.</p>
+<dl class="py exception">
+<dt class="sig sig-object py" id="adidt.jif_contract.ContractError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">ContractError</span></span><a class="headerlink" href="#adidt.jif_contract.ContractError" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></p>
+<p>Raised when a JIF/DT handoff is incompatible or cannot be bound.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.Producer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">Producer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'pyadi-jif'</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'pyadi-jif'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.Producer" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>Identity of the program that generated the handoff.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.Producer.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'pyadi-jif'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.Producer.name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.Producer.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.Producer.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.Producer.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.Producer.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">JesdParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">F</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">K</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">L</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">M</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">N</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Np</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">S</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">HD</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Ge</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">ge</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Le</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">le</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CS</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Ge</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">ge</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">CF</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Ge</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">ge</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.JesdParameters" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>JESD transport parameters shared by converter and FPGA endpoints.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.F">
+<span class="sig-name descname"><span class="pre">F</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.F" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.K">
+<span class="sig-name descname"><span class="pre">K</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.K" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.L">
+<span class="sig-name descname"><span class="pre">L</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.L" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.M">
+<span class="sig-name descname"><span class="pre">M</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.M" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.N">
+<span class="sig-name descname"><span class="pre">N</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.N" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.Np">
+<span class="sig-name descname"><span class="pre">Np</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.Np" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.S">
+<span class="sig-name descname"><span class="pre">S</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.S" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.HD">
+<span class="sig-name descname"><span class="pre">HD</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.HD" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.CS">
+<span class="sig-name descname"><span class="pre">CS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.CS" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.CF">
+<span class="sig-name descname"><span class="pre">CF</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.CF" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.validate_transport_identity">
+<span class="sig-name descname"><span class="pre">validate_transport_identity</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#adidt.jif_contract.JesdParameters" title="adidt.jif_contract.JesdParameters"><span class="pre">JesdParameters</span></a></span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.validate_transport_identity" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdParameters.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.JesdParameters.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">JesdLink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">*,</span> <span class="pre">id:</span> <span class="pre">~typing.Annotated[str,</span> <span class="pre">_PydanticGeneralMetadata(pattern='^[a-z0-9][a-z0-9_.-]*$')],</span> <span class="pre">direction:</span> <span class="pre">~typing.Literal['adc-to-fpga',</span> <span class="pre">'fpga-to-dac'],</span> <span class="pre">converter:</span> <span class="pre">~typing.Annotated[str,</span> <span class="pre">~annotated_types.MinLen(min_length=1)],</span> <span class="pre">fpga:</span> <span class="pre">~typing.Annotated[str,</span> <span class="pre">~annotated_types.MinLen(min_length=1)],</span> <span class="pre">standard:</span> <span class="pre">~typing.Literal['jesd204b',</span> <span class="pre">'jesd204c'],</span> <span class="pre">sample_rate_hz:</span> <span class="pre">~typing.Annotated[int,</span> <span class="pre">~pydantic.types.Strict(strict=True),</span> <span class="pre">~annotated_types.Gt(gt=0)],</span> <span class="pre">lane_rate_hz:</span> <span class="pre">~typing.Annotated[int,</span> <span class="pre">~pydantic.types.Strict(strict=True),</span> <span class="pre">~annotated_types.Gt(gt=0)],</span> <span class="pre">parameters:</span> <span class="pre">~adidt.jif_contract.JesdParameters,</span> <span class="pre">fpga_config:</span> <span class="pre">dict[str,</span> <span class="pre">~pydantic.types.JsonValue]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.JesdLink" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>One solved unidirectional JESD link.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.id">
+<span class="sig-name descname"><span class="pre">id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.direction">
+<span class="sig-name descname"><span class="pre">direction</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'adc-to-fpga'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fpga-to-dac'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.direction" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.converter">
+<span class="sig-name descname"><span class="pre">converter</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.converter" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.fpga">
+<span class="sig-name descname"><span class="pre">fpga</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.fpga" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.standard">
+<span class="sig-name descname"><span class="pre">standard</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'jesd204b'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'jesd204c'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.standard" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.sample_rate_hz">
+<span class="sig-name descname"><span class="pre">sample_rate_hz</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.sample_rate_hz" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.lane_rate_hz">
+<span class="sig-name descname"><span class="pre">lane_rate_hz</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.lane_rate_hz" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.parameters">
+<span class="sig-name descname"><span class="pre">parameters</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#adidt.jif_contract.JesdParameters" title="adidt.jif_contract.JesdParameters"><span class="pre">JesdParameters</span></a></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.parameters" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.fpga_config">
+<span class="sig-name descname"><span class="pre">fpga_config</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.fpga_config" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.validate_lane_rate">
+<span class="sig-name descname"><span class="pre">validate_lane_rate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#adidt.jif_contract.JesdLink" title="adidt.jif_contract.JesdLink"><span class="pre">JesdLink</span></a></span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.validate_lane_rate" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdLink.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.JesdLink.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">ClockRequirement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">_PydanticGeneralMetadata</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">pattern</span></span><span class="o"><span class="pre">=</span></span><span class="s"><span class="pre">'^[a-z0-9][a-z0-9_.-]*$'</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'converter-device'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'converter-sysref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fpga-ref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fpga-link'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'pll-ref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'other'</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sink</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate_hz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">divider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Gt</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">gt</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>A semantic solved clock requirement, not a physical output channel.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.id">
+<span class="sig-name descname"><span class="pre">id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.role">
+<span class="sig-name descname"><span class="pre">role</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'converter-device'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'converter-sysref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fpga-ref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'fpga-link'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'pll-ref'</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="s"><span class="pre">'other'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.role" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.sink">
+<span class="sig-name descname"><span class="pre">sink</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.sink" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.rate_hz">
+<span class="sig-name descname"><span class="pre">rate_hz</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.rate_hz" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.divider">
+<span class="sig-name descname"><span class="pre">divider</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.divider" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.source">
+<span class="sig-name descname"><span class="pre">source</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.source" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockRequirement.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.ClockRequirement.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">JifDtContract</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">*,</span> <span class="pre">schema:</span> <span class="pre">~typing.Literal['adi.jif-dt']</span> <span class="pre">=</span> <span class="pre">'adi.jif-dt',</span> <span class="pre">version:</span> <span class="pre">~typing.Literal['1.0']</span> <span class="pre">=</span> <span class="pre">'1.0',</span> <span class="pre">producer:</span> <span class="pre">~adidt.jif_contract.Producer,</span> <span class="pre">jesd_links:</span> <span class="pre">tuple[~adidt.jif_contract.JesdLink,</span> <span class="pre">...],</span> <span class="pre">clock_requirements:</span> <span class="pre">tuple[~adidt.jif_contract.ClockRequirement,</span> <span class="pre">...],</span> <span class="pre">metadata:</span> <span class="pre">dict[str,</span> <span class="pre">~pydantic.types.JsonValue]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.JifDtContract" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>Portable, versioned result produced by JIF and consumed by DT.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.schema_name">
+<span class="sig-name descname"><span class="pre">schema_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'adi.jif-dt'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.schema_name" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.version">
+<span class="sig-name descname"><span class="pre">version</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Literal</span><span class="p"><span class="pre">[</span></span><span class="s"><span class="pre">'1.0'</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.version" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.producer">
+<span class="sig-name descname"><span class="pre">producer</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#adidt.jif_contract.Producer" title="adidt.jif_contract.Producer"><span class="pre">Producer</span></a></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.producer" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.jesd_links">
+<span class="sig-name descname"><span class="pre">jesd_links</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.JesdLink" title="adidt.jif_contract.JesdLink"><span class="pre">JesdLink</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.jesd_links" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.clock_requirements">
+<span class="sig-name descname"><span class="pre">clock_requirements</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.ClockRequirement" title="adidt.jif_contract.ClockRequirement"><span class="pre">ClockRequirement</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.clock_requirements" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.metadata">
+<span class="sig-name descname"><span class="pre">metadata</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">JsonValue</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.metadata" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.validate_unique_ids">
+<span class="sig-name descname"><span class="pre">validate_unique_ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#adidt.jif_contract.JifDtContract" title="adidt.jif_contract.JifDtContract"><span class="pre">JifDtContract</span></a></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.validate_unique_ids" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.from_json_file">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_json_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#adidt.jif_contract.JifDtContract" title="adidt.jif_contract.JifDtContract"><span class="pre">JifDtContract</span></a></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.from_json_file" title="Link to this definition"></a></dt>
+<dd><p>Load and validate a contract without mutating any DT state.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.to_json_file">
+<span class="sig-name descname"><span class="pre">to_json_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.to_json_file" title="Link to this definition"></a></dt>
+<dd><p>Write deterministic JSON suitable for fixtures and interchange.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtContract.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.JifDtContract.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockBinding">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">ClockBinding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">requirement_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Strict</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">strict</span></span><span class="o"><span class="pre">=</span></span><span class="k"><span class="pre">True</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Ge</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">ge</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">0</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.ClockBinding" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>pyadi-dt-owned placement of one semantic clock onto a DT endpoint.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockBinding.requirement_id">
+<span class="sig-name descname"><span class="pre">requirement_id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.ClockBinding.requirement_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockBinding.dt_label">
+<span class="sig-name descname"><span class="pre">dt_label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.ClockBinding.dt_label" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockBinding.output_index">
+<span class="sig-name descname"><span class="pre">output_index</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#adidt.jif_contract.ClockBinding.output_index" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.ClockBinding.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.ClockBinding.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">JesdBinding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">converter_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jesd_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xcvr_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Annotated</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MinLen</span><span class="p"><span class="pre">(</span></span><span class="n"><span class="pre">min_length</span></span><span class="o"><span class="pre">=</span></span><span class="m"><span class="pre">1</span></span><span class="p"><span class="pre">)</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.JesdBinding" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>pyadi-dt-owned placement of one semantic JESD link onto DT nodes.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding.link_id">
+<span class="sig-name descname"><span class="pre">link_id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdBinding.link_id" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding.converter_label">
+<span class="sig-name descname"><span class="pre">converter_label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdBinding.converter_label" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding.jesd_label">
+<span class="sig-name descname"><span class="pre">jesd_label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdBinding.jesd_label" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding.xcvr_label">
+<span class="sig-name descname"><span class="pre">xcvr_label</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#adidt.jif_contract.JesdBinding.xcvr_label" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JesdBinding.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.JesdBinding.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtBindings">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">adidt.jif_contract.</span></span><span class="sig-name descname"><span class="pre">JifDtBindings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">clocks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.ClockBinding" title="adidt.jif_contract.ClockBinding"><span class="pre">ClockBinding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jesd_links</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.JesdBinding" title="adidt.jif_contract.JesdBinding"><span class="pre">JesdBinding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#adidt.jif_contract.JifDtBindings" title="Link to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_StrictModel</span></code></p>
+<p>Physical pyadi-dt profile bindings for a JIF handoff.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtBindings.clocks">
+<span class="sig-name descname"><span class="pre">clocks</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.ClockBinding" title="adidt.jif_contract.ClockBinding"><span class="pre">ClockBinding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtBindings.clocks" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtBindings.jesd_links">
+<span class="sig-name descname"><span class="pre">jesd_links</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#adidt.jif_contract.JesdBinding" title="adidt.jif_contract.JesdBinding"><span class="pre">JesdBinding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtBindings.jesd_links" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtBindings.check">
+<span class="sig-name descname"><span class="pre">check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">contract</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#adidt.jif_contract.JifDtContract" title="adidt.jif_contract.JifDtContract"><span class="pre">JifDtContract</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#adidt.jif_contract.JifDtBindings.check" title="Link to this definition"></a></dt>
+<dd><p>Require complete, unique bindings before any DT is rendered or edited.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="adidt.jif_contract.JifDtBindings.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'extra':</span> <span class="pre">'forbid',</span> <span class="pre">'frozen':</span> <span class="pre">True}</span></span><a class="headerlink" href="#adidt.jif_contract.JifDtBindings.model_config" title="Link to this definition"></a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="core.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Core Module</a>
+    <a href="devices.html" title="Next document (Alt+Shift+RightArrow)" class="next">Declarative Devices</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

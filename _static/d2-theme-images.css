@@ -1,0 +1,8 @@
+/* Theme-aware display for paired diagram assets and wrappers. */
+.only-light {
+  display: var(--display-light) !important;
+}
+
+.only-dark {
+  display: var(--display-dark) !important;
+}

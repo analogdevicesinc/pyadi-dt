@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This page defines the proposed, versioned agreement between pyadi-jif and pyadi-dt. The executable pyadi-dt reference model is adidt.jif_contract and its focused tests are in test/test_jif_contract.py." name="description" />
+
+    <title>pyadi-jif to pyadi-dt interface contract &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Hardware CI" href="hardware_ci.html" />
+    <link rel="prev" title="Authoring a new device class" href="authoring_devices.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">pyadi-jif to pyadi-dt interface contract</a><ul>
+<li><a class="reference internal" href="#status">Status</a></li>
+<li><a class="reference internal" href="#why-a-contract-is-needed">Why a contract is needed</a></li>
+<li><a class="reference internal" href="#contract-decision">Contract decision</a></li>
+<li><a class="reference internal" href="#ownership-boundary">Ownership boundary</a><ul>
+<li><a class="reference internal" href="#pyadi-jif-owns-solved-electrical-intent">pyadi-jif owns solved electrical intent</a></li>
+<li><a class="reference internal" href="#pyadi-dt-owns-physical-topology">pyadi-dt owns physical topology</a></li>
+<li><a class="reference internal" href="#values-that-must-not-cross-the-boundary">Values that must not cross the boundary</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interchange-example">Interchange example</a></li>
+<li><a class="reference internal" href="#binding-semantic-intent-to-a-board">Binding semantic intent to a board</a></li>
+<li><a class="reference internal" href="#runnable-examples">Runnable examples</a><ul>
+<li><a class="reference internal" href="#consume-a-saved-ad9680-handoff">Consume a saved AD9680 handoff</a></li>
+<li><a class="reference internal" href="#build-a-bidirectional-adrv9009-handoff">Build a bidirectional ADRV9009 handoff</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#required-validation">Required validation</a><ul>
+<li><a class="reference internal" href="#contract-checks">Contract checks</a></li>
+<li><a class="reference internal" href="#binding-and-topology-checks">Binding and topology checks</a></li>
+<li><a class="reference internal" href="#apply-checks">Apply checks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#proposed-producer-api">Proposed producer API</a></li>
+<li><a class="reference internal" href="#proposed-consumer-api">Proposed consumer API</a></li>
+<li><a class="reference internal" href="#errors">Errors</a></li>
+<li><a class="reference internal" href="#test-agreement">Test agreement</a><ul>
+<li><a class="reference internal" href="#pyadi-jif-producer-tests">pyadi-jif producer tests</a></li>
+<li><a class="reference internal" href="#pyadi-dt-consumer-tests">pyadi-dt consumer tests</a></li>
+<li><a class="reference internal" href="#cross-repository-ci">Cross-repository CI</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compatibility-policy">Compatibility policy</a></li>
+<li><a class="reference internal" href="#rollout">Rollout</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_runbook.html">Release Operator Runbook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/jif_contract.html">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="pyadi-jif-to-pyadi-dt-interface-contract">
+<h1>pyadi-jif to pyadi-dt interface contract<a class="headerlink" href="#pyadi-jif-to-pyadi-dt-interface-contract" title="Link to this heading"></a></h1>
+<section id="status">
+<h2>Status<a class="headerlink" href="#status" title="Link to this heading"></a></h2>
+<p>This page defines the proposed, versioned agreement between pyadi-jif and
+pyadi-dt. The executable pyadi-dt reference model is
+<a class="reference internal" href="../api/jif_contract.html#module-adidt.jif_contract" title="adidt.jif_contract"><code class="xref py py-mod docutils literal notranslate"><span class="pre">adidt.jif_contract</span></code></a> and its focused tests are in
+<code class="docutils literal notranslate"><span class="pre">test/test_jif_contract.py</span></code>.</p>
+<p>The first contract version is intentionally introduced alongside the existing
+raw configuration paths. Pipeline and CLI integration can migrate in later,
+reviewable changes without changing the contract’s ownership boundary.</p>
+</section>
+<section id="why-a-contract-is-needed">
+<h2>Why a contract is needed<a class="headerlink" href="#why-a-contract-is-needed" title="Link to this heading"></a></h2>
+<p>pyadi-jif currently returns a solver-oriented dictionary. Keys can be assembled
+from component names, such as <code class="docutils literal notranslate"><span class="pre">jesd_AD9081_RX</span></code>, while clock outputs combine
+semantic names with positions in <code class="docutils literal notranslate"><span class="pre">out_dividers</span></code>. Existing pyadi-dt flows consume
+variants of that result by copying selected JESD keys, indexing divider lists,
+or looking up implementation-specific names.</p>
+<p>Those dictionaries are useful inside pyadi-jif, but they are not a safe public
+interface. In particular, a requested-clock position in pyadi-jif does <strong>not</strong>
+identify a physical HMC7044 or AD952x output. Physical placement is board wiring
+and therefore belongs to pyadi-dt.</p>
+</section>
+<section id="contract-decision">
+<h2>Contract decision<a class="headerlink" href="#contract-decision" title="Link to this heading"></a></h2>
+<p>Use a strict, versioned JSON interchange document with typed projections in
+both projects.</p>
+<ul class="simple">
+<li><p>Contract name: <code class="docutils literal notranslate"><span class="pre">adi.jif-dt</span></code></p></li>
+<li><p>Initial version: <code class="docutils literal notranslate"><span class="pre">1.0</span></code></p></li>
+<li><p>Units: integer hertz, named with an <code class="docutils literal notranslate"><span class="pre">_hz</span></code> suffix</p></li>
+<li><p>IDs: stable lowercase semantic IDs, independent of Python class names and DT
+labels</p></li>
+<li><p>Compatibility: consumers reject unsupported major versions and unknown 1.0
+fields</p></li>
+<li><p>Safety: parse, validate, bind, and check topology before rendering or changing
+a device tree</p></li>
+</ul>
+<p>The JSON shape is the public API. Neither project’s internal class hierarchy is
+part of the agreement. A saved contract can therefore be consumed without
+installing a solver backend.</p>
+</section>
+<section id="ownership-boundary">
+<h2>Ownership boundary<a class="headerlink" href="#ownership-boundary" title="Link to this heading"></a></h2>
+<section id="pyadi-jif-owns-solved-electrical-intent">
+<h3>pyadi-jif owns solved electrical intent<a class="headerlink" href="#pyadi-jif-owns-solved-electrical-intent" title="Link to this heading"></a></h3>
+<p>pyadi-jif produces:</p>
+<ul class="simple">
+<li><p>JESD standard, direction, framing, sample rate, and lane rate;</p></li>
+<li><p>semantic source/sink clock requirements and solved rates/dividers;</p></li>
+<li><p>FPGA transceiver or PLL results needed to implement a link;</p></li>
+<li><p>producer and solver provenance.</p></li>
+</ul>
+</section>
+<section id="pyadi-dt-owns-physical-topology">
+<h3>pyadi-dt owns physical topology<a class="headerlink" href="#pyadi-dt-owns-physical-topology" title="Link to this heading"></a></h3>
+<p>pyadi-dt supplies:</p>
+<ul class="simple">
+<li><p>XSA-discovered instances and direction;</p></li>
+<li><p>DT labels, compatible strings, phandles, and JESD link IDs;</p></li>
+<li><p>physical clock-output channel indices;</p></li>
+<li><p>SPI buses and chip selects, GPIOs, interrupts, and DMA labels;</p></li>
+<li><p>board/profile defaults and final DTS rendering.</p></li>
+</ul>
+</section>
+<section id="values-that-must-not-cross-the-boundary">
+<h3>Values that must not cross the boundary<a class="headerlink" href="#values-that-must-not-cross-the-boundary" title="Link to this heading"></a></h3>
+<p>The contract excludes solver expressions and backend objects, arbitrary DT
+properties, SPI/GPIO placement, implicit units, and positional
+<code class="docutils literal notranslate"><span class="pre">out_dividers</span></code> treated as physical channels.</p>
+</section>
+</section>
+<section id="interchange-example">
+<h2>Interchange example<a class="headerlink" href="#interchange-example" title="Link to this heading"></a></h2>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
+<span class="w">  </span><span class="nt">"schema"</span><span class="p">:</span><span class="w"> </span><span class="s2">"adi.jif-dt"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0"</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">"producer"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"pyadi-jif"</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"0.1.6"</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">"jesd_links"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ad9680.rx"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"direction"</span><span class="p">:</span><span class="w"> </span><span class="s2">"adc-to-fpga"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"converter"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AD9680"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"fpga"</span><span class="p">:</span><span class="w"> </span><span class="s2">"zc706"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"standard"</span><span class="p">:</span><span class="w"> </span><span class="s2">"jesd204b"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"sample_rate_hz"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000000000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"lane_rate_hz"</span><span class="p">:</span><span class="w"> </span><span class="mi">10000000000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"parameters"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"F"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"K"</span><span class="p">:</span><span class="w"> </span><span class="mi">32</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"L"</span><span class="p">:</span><span class="w"> </span><span class="mi">4</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"M"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"N"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"Np"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"S"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"HD"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"CS"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"CF"</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span>
+<span class="w">      </span><span class="p">},</span>
+<span class="w">      </span><span class="nt">"fpga_config"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"qpll"</span><span class="p">,</span>
+<span class="w">        </span><span class="nt">"sys_clk_select"</span><span class="p">:</span><span class="w"> </span><span class="s2">"XCVR_QPLL0"</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"clock_requirements"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ad9680.device-clock"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"converter-device"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"sink"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AD9680"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HMC7044"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"rate_hz"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000000000</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"divider"</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span>
+<span class="w">    </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span>
+<span class="w">      </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"ad9680.sysref"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"converter-sysref"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"sink"</span><span class="p">:</span><span class="w"> </span><span class="s2">"AD9680"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"source"</span><span class="p">:</span><span class="w"> </span><span class="s2">"HMC7044"</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"rate_hz"</span><span class="p">:</span><span class="w"> </span><span class="mi">7812500</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">"divider"</span><span class="p">:</span><span class="w"> </span><span class="mi">384</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w">  </span><span class="p">],</span>
+<span class="w">  </span><span class="nt">"metadata"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">"solver"</span><span class="p">:</span><span class="w"> </span><span class="s2">"CPLEX"</span>
+<span class="w">  </span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">fpga_config</span></code> and <code class="docutils literal notranslate"><span class="pre">metadata</span></code> are isolated extension points. A consumer must not
+require arbitrary keys from either mapping without promoting those keys into a
+later contract version.</p>
+</section>
+<section id="binding-semantic-intent-to-a-board">
+<h2>Binding semantic intent to a board<a class="headerlink" href="#binding-semantic-intent-to-a-board" title="Link to this heading"></a></h2>
+<p><a class="reference internal" href="../api/jif_contract.html#adidt.jif_contract.JifDtContract" title="adidt.jif_contract.JifDtContract"><code class="xref py py-class docutils literal notranslate"><span class="pre">JifDtContract</span></code></a> validates the portable result.
+<a class="reference internal" href="../api/jif_contract.html#adidt.jif_contract.JifDtBindings" title="adidt.jif_contract.JifDtBindings"><code class="xref py py-class docutils literal notranslate"><span class="pre">JifDtBindings</span></code></a> is a separate pyadi-dt-owned object
+that maps semantic IDs to physical endpoints:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">adidt.jif_contract</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClockBinding</span><span class="p">,</span>
+    <span class="n">JesdBinding</span><span class="p">,</span>
+    <span class="n">JifDtBindings</span><span class="p">,</span>
+    <span class="n">JifDtContract</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">contract</span> <span class="o">=</span> <span class="n">JifDtContract</span><span class="o">.</span><span class="n">from_json_file</span><span class="p">(</span><span class="s2">"solved.jif-dt.json"</span><span class="p">)</span>
+
+<span class="n">bindings</span> <span class="o">=</span> <span class="n">JifDtBindings</span><span class="p">(</span>
+    <span class="n">clocks</span><span class="o">=</span><span class="p">(</span>
+        <span class="n">ClockBinding</span><span class="p">(</span>
+            <span class="n">requirement_id</span><span class="o">=</span><span class="s2">"ad9680.device-clock"</span><span class="p">,</span>
+            <span class="n">dt_label</span><span class="o">=</span><span class="s2">"hmc7044"</span><span class="p">,</span>
+            <span class="n">output_index</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">ClockBinding</span><span class="p">(</span>
+            <span class="n">requirement_id</span><span class="o">=</span><span class="s2">"ad9680.sysref"</span><span class="p">,</span>
+            <span class="n">dt_label</span><span class="o">=</span><span class="s2">"hmc7044"</span><span class="p">,</span>
+            <span class="n">output_index</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+    <span class="n">jesd_links</span><span class="o">=</span><span class="p">(</span>
+        <span class="n">JesdBinding</span><span class="p">(</span>
+            <span class="n">link_id</span><span class="o">=</span><span class="s2">"ad9680.rx"</span><span class="p">,</span>
+            <span class="n">converter_label</span><span class="o">=</span><span class="s2">"ad9680"</span><span class="p">,</span>
+            <span class="n">jesd_label</span><span class="o">=</span><span class="s2">"axi_ad9680_jesd204_rx"</span><span class="p">,</span>
+            <span class="n">xcvr_label</span><span class="o">=</span><span class="s2">"axi_ad9680_adxcvr"</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">bindings</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">contract</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The check is required before render or apply. Keeping bindings separate permits
+one electrical solution to be used with multiple carrier/profile placements
+without teaching pyadi-jif about DT labels.</p>
+</section>
+<section id="runnable-examples">
+<h2>Runnable examples<a class="headerlink" href="#runnable-examples" title="Link to this heading"></a></h2>
+<p>The examples under <code class="docutils literal notranslate"><span class="pre">examples/jif_contract/</span></code> are executed by the test suite, so
+the documented API and checked-in JSON cannot drift silently.</p>
+<section id="consume-a-saved-ad9680-handoff">
+<h3>Consume a saved AD9680 handoff<a class="headerlink" href="#consume-a-saved-ad9680-handoff" title="Link to this heading"></a></h3>
+<p>This example loads solver output and board bindings from separate JSON files.
+It validates both documents and their one-to-one semantic join without
+importing pyadi-jif or a solver backend:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/jif_contract/consume_ad9680.py
+</pre></div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id1">
+<div class="code-block-caption"><span class="caption-text">examples/jif_contract/consume_ad9680.py</span><a class="headerlink" href="#id1" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""Load and bind a saved AD9680 pyadi-jif handoff without a solver import."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.jif_contract</span><span class="w"> </span><span class="kn">import</span> <span class="n">JifDtBindings</span><span class="p">,</span> <span class="n">JifDtContract</span>
+
+<span class="n">EXAMPLE_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Validate the portable contract, then bind every semantic endpoint."""</span>
+    <span class="n">contract</span> <span class="o">=</span> <span class="n">JifDtContract</span><span class="o">.</span><span class="n">from_json_file</span><span class="p">(</span><span class="n">EXAMPLE_DIR</span> <span class="o">/</span> <span class="s2">"ad9680.jif-dt.json"</span><span class="p">)</span>
+    <span class="n">bindings</span> <span class="o">=</span> <span class="n">JifDtBindings</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">EXAMPLE_DIR</span> <span class="o">/</span> <span class="s2">"ad9680.bindings.json"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+    <span class="p">)</span>
+    <span class="n">bindings</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">contract</span><span class="p">)</span>
+
+    <span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"schema"</span><span class="p">:</span> <span class="n">contract</span><span class="o">.</span><span class="n">schema_name</span><span class="p">,</span>
+        <span class="s2">"version"</span><span class="p">:</span> <span class="n">contract</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+        <span class="s2">"links"</span><span class="p">:</span> <span class="p">[</span><span class="n">link</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">contract</span><span class="o">.</span><span class="n">jesd_links</span><span class="p">],</span>
+        <span class="s2">"clock_bindings"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="n">binding</span><span class="o">.</span><span class="n">requirement_id</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"dt_label"</span><span class="p">:</span> <span class="n">binding</span><span class="o">.</span><span class="n">dt_label</span><span class="p">,</span>
+                <span class="s2">"output_index"</span><span class="p">:</span> <span class="n">binding</span><span class="o">.</span><span class="n">output_index</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">binding</span> <span class="ow">in</span> <span class="n">bindings</span><span class="o">.</span><span class="n">clocks</span>
+        <span class="p">},</span>
+        <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"validated"</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<p>The portable electrical result in
+<code class="docutils literal notranslate"><span class="pre">examples/jif_contract/ad9680.jif-dt.json</span></code> is generated by pyadi-jif’s
+<code class="docutils literal notranslate"><span class="pre">examples/ad9680_jif_dt_contract.py</span></code>; the independent illustrative ZC706
+placement is <code class="docutils literal notranslate"><span class="pre">examples/jif_contract/ad9680.bindings.json</span></code>. A different carrier
+can reuse the contract with a different bindings document.</p>
+</section>
+<section id="build-a-bidirectional-adrv9009-handoff">
+<h3>Build a bidirectional ADRV9009 handoff<a class="headerlink" href="#build-a-bidirectional-adrv9009-handoff" title="Link to this heading"></a></h3>
+<p>The second example constructs RX and TX links with the typed API, binds their
+AD9528 and FPGA endpoints, and checks the whole handoff before any pipeline or
+device-tree operation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>examples/jif_contract/adrv9009_bidirectional.py
+</pre></div>
+</div>
+<div class="literal-block-wrapper docutils container" id="id2">
+<div class="code-block-caption"><span class="caption-text">examples/jif_contract/adrv9009_bidirectional.py</span><a class="headerlink" href="#id2" title="Link to this code"></a></div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="sd">"""Build and bind a bidirectional ADRV9009 contract in memory."""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">adidt.jif_contract</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClockBinding</span><span class="p">,</span>
+    <span class="n">ClockRequirement</span><span class="p">,</span>
+    <span class="n">JesdBinding</span><span class="p">,</span>
+    <span class="n">JesdLink</span><span class="p">,</span>
+    <span class="n">JesdParameters</span><span class="p">,</span>
+    <span class="n">JifDtBindings</span><span class="p">,</span>
+    <span class="n">JifDtContract</span><span class="p">,</span>
+    <span class="n">Producer</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_contract</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">JifDtContract</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return solved RX/TX electrical intent with no physical DT placement."""</span>
+    <span class="k">return</span> <span class="n">JifDtContract</span><span class="p">(</span>
+        <span class="n">schema</span><span class="o">=</span><span class="s2">"adi.jif-dt"</span><span class="p">,</span>
+        <span class="n">producer</span><span class="o">=</span><span class="n">Producer</span><span class="p">(</span><span class="n">version</span><span class="o">=</span><span class="s2">"0.1.6"</span><span class="p">),</span>
+        <span class="n">jesd_links</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">JesdLink</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="s2">"adrv9009.rx"</span><span class="p">,</span>
+                <span class="n">direction</span><span class="o">=</span><span class="s2">"adc-to-fpga"</span><span class="p">,</span>
+                <span class="n">converter</span><span class="o">=</span><span class="s2">"ADRV9009_RX"</span><span class="p">,</span>
+                <span class="n">fpga</span><span class="o">=</span><span class="s2">"zcu102"</span><span class="p">,</span>
+                <span class="n">standard</span><span class="o">=</span><span class="s2">"jesd204b"</span><span class="p">,</span>
+                <span class="n">sample_rate_hz</span><span class="o">=</span><span class="mi">245_760_000</span><span class="p">,</span>
+                <span class="n">lane_rate_hz</span><span class="o">=</span><span class="mi">9_830_400_000</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="n">JesdParameters</span><span class="p">(</span>
+                    <span class="n">F</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">Np</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">HD</span><span class="o">=</span><span class="mi">0</span>
+                <span class="p">),</span>
+                <span class="n">fpga_config</span><span class="o">=</span><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"qpll"</span><span class="p">},</span>
+            <span class="p">),</span>
+            <span class="n">JesdLink</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="s2">"adrv9009.tx"</span><span class="p">,</span>
+                <span class="n">direction</span><span class="o">=</span><span class="s2">"fpga-to-dac"</span><span class="p">,</span>
+                <span class="n">converter</span><span class="o">=</span><span class="s2">"ADRV9009_TX"</span><span class="p">,</span>
+                <span class="n">fpga</span><span class="o">=</span><span class="s2">"zcu102"</span><span class="p">,</span>
+                <span class="n">standard</span><span class="o">=</span><span class="s2">"jesd204b"</span><span class="p">,</span>
+                <span class="n">sample_rate_hz</span><span class="o">=</span><span class="mi">245_760_000</span><span class="p">,</span>
+                <span class="n">lane_rate_hz</span><span class="o">=</span><span class="mi">4_915_200_000</span><span class="p">,</span>
+                <span class="n">parameters</span><span class="o">=</span><span class="n">JesdParameters</span><span class="p">(</span>
+                    <span class="n">F</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">K</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">L</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">M</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">Np</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">S</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">HD</span><span class="o">=</span><span class="mi">0</span>
+                <span class="p">),</span>
+                <span class="n">fpga_config</span><span class="o">=</span><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"qpll"</span><span class="p">},</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">clock_requirements</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">ClockRequirement</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="s2">"adrv9009.device-clock"</span><span class="p">,</span>
+                <span class="n">role</span><span class="o">=</span><span class="s2">"converter-device"</span><span class="p">,</span>
+                <span class="n">sink</span><span class="o">=</span><span class="s2">"ADRV9009"</span><span class="p">,</span>
+                <span class="n">source</span><span class="o">=</span><span class="s2">"AD9528"</span><span class="p">,</span>
+                <span class="n">rate_hz</span><span class="o">=</span><span class="mi">245_760_000</span><span class="p">,</span>
+                <span class="n">divider</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">ClockRequirement</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="s2">"adrv9009.sysref"</span><span class="p">,</span>
+                <span class="n">role</span><span class="o">=</span><span class="s2">"converter-sysref"</span><span class="p">,</span>
+                <span class="n">sink</span><span class="o">=</span><span class="s2">"ADRV9009"</span><span class="p">,</span>
+                <span class="n">source</span><span class="o">=</span><span class="s2">"AD9528"</span><span class="p">,</span>
+                <span class="n">rate_hz</span><span class="o">=</span><span class="mi">7_680_000</span><span class="p">,</span>
+                <span class="n">divider</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">"example"</span><span class="p">:</span> <span class="s2">"bidirectional ADRV9009 on ZCU102"</span><span class="p">},</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">build_bindings</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">JifDtBindings</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return the independent pyadi-dt board placement for the solved intent."""</span>
+    <span class="k">return</span> <span class="n">JifDtBindings</span><span class="p">(</span>
+        <span class="n">clocks</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">ClockBinding</span><span class="p">(</span>
+                <span class="n">requirement_id</span><span class="o">=</span><span class="s2">"adrv9009.device-clock"</span><span class="p">,</span>
+                <span class="n">dt_label</span><span class="o">=</span><span class="s2">"ad9528"</span><span class="p">,</span>
+                <span class="n">output_index</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">ClockBinding</span><span class="p">(</span>
+                <span class="n">requirement_id</span><span class="o">=</span><span class="s2">"adrv9009.sysref"</span><span class="p">,</span>
+                <span class="n">dt_label</span><span class="o">=</span><span class="s2">"ad9528"</span><span class="p">,</span>
+                <span class="n">output_index</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+        <span class="n">jesd_links</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">JesdBinding</span><span class="p">(</span>
+                <span class="n">link_id</span><span class="o">=</span><span class="s2">"adrv9009.rx"</span><span class="p">,</span>
+                <span class="n">converter_label</span><span class="o">=</span><span class="s2">"adrv9009-phy"</span><span class="p">,</span>
+                <span class="n">jesd_label</span><span class="o">=</span><span class="s2">"axi_adrv9009_rx_jesd"</span><span class="p">,</span>
+                <span class="n">xcvr_label</span><span class="o">=</span><span class="s2">"axi_adrv9009_rx_xcvr"</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">JesdBinding</span><span class="p">(</span>
+                <span class="n">link_id</span><span class="o">=</span><span class="s2">"adrv9009.tx"</span><span class="p">,</span>
+                <span class="n">converter_label</span><span class="o">=</span><span class="s2">"adrv9009-phy"</span><span class="p">,</span>
+                <span class="n">jesd_label</span><span class="o">=</span><span class="s2">"axi_adrv9009_tx_jesd"</span><span class="p">,</span>
+                <span class="n">xcvr_label</span><span class="o">=</span><span class="s2">"axi_adrv9009_tx_xcvr"</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Validate both link directions before any pipeline or DT operation."""</span>
+    <span class="n">contract</span> <span class="o">=</span> <span class="n">build_contract</span><span class="p">()</span>
+    <span class="n">bindings</span> <span class="o">=</span> <span class="n">build_bindings</span><span class="p">()</span>
+    <span class="n">bindings</span><span class="o">.</span><span class="n">check</span><span class="p">(</span><span class="n">contract</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"links"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="n">link</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"direction"</span><span class="p">:</span> <span class="n">link</span><span class="o">.</span><span class="n">direction</span><span class="p">,</span>
+                        <span class="s2">"lane_rate_hz"</span><span class="p">:</span> <span class="n">link</span><span class="o">.</span><span class="n">lane_rate_hz</span><span class="p">,</span>
+                    <span class="p">}</span>
+                    <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">contract</span><span class="o">.</span><span class="n">jesd_links</span>
+                <span class="p">},</span>
+                <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"validated"</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</section>
+</section>
+<section id="required-validation">
+<h2>Required validation<a class="headerlink" href="#required-validation" title="Link to this heading"></a></h2>
+<section id="contract-checks">
+<h3>Contract checks<a class="headerlink" href="#contract-checks" title="Link to this heading"></a></h3>
+<p>The typed reference model performs side-effect-free checks for:</p>
+<ul class="simple">
+<li><p>exact schema and supported version;</p></li>
+<li><p>unknown fields and duplicate semantic IDs;</p></li>
+<li><p>positive integer rates and dividers;</p></li>
+<li><p>JESD transport identity, <code class="docutils literal notranslate"><span class="pre">M</span> <span class="pre">*</span> <span class="pre">S</span> <span class="pre">*</span> <span class="pre">Np</span> <span class="pre">==</span> <span class="pre">8</span> <span class="pre">*</span> <span class="pre">L</span> <span class="pre">*</span> <span class="pre">F</span></code>;</p></li>
+<li><p>lane-rate consistency using 8b/10b for JESD204B or 64b/66b for JESD204C;</p></li>
+<li><p>deterministic JSON serialization and validation on load.</p></li>
+</ul>
+</section>
+<section id="binding-and-topology-checks">
+<h3>Binding and topology checks<a class="headerlink" href="#binding-and-topology-checks" title="Link to this heading"></a></h3>
+<p>Before generating DTS, pyadi-dt must additionally ensure:</p>
+<ul class="simple">
+<li><p>every semantic clock and JESD link is bound exactly once;</p></li>
+<li><p>bindings contain no unknown IDs;</p></li>
+<li><p>independent clocks do not occupy the same physical output;</p></li>
+<li><p>clock channel indices are in range for the selected device;</p></li>
+<li><p>source device and compatible string agree with the board profile;</p></li>
+<li><p>converter, JESD, and transceiver labels exist exactly once in the XSA;</p></li>
+<li><p>direction and clock role agree with the target endpoint;</p></li>
+<li><p>divider/rate and FPGA PLL selections are supported.</p></li>
+</ul>
+</section>
+<section id="apply-checks">
+<h3>Apply checks<a class="headerlink" href="#apply-checks" title="Link to this heading"></a></h3>
+<p>Generation should first target a temporary or in-memory tree. DTS lint and
+<code class="docutils literal notranslate"><span class="pre">dtc</span></code> compilation must pass before an explicit file, SD-card, or live apply.
+Failure must not silently substitute a hard-coded configuration.</p>
+</section>
+</section>
+<section id="proposed-producer-api">
+<h2>Proposed producer API<a class="headerlink" href="#proposed-producer-api" title="Link to this heading"></a></h2>
+<p>pyadi-jif should add an explicit export API without initially changing the
+historical return value of <code class="docutils literal notranslate"><span class="pre">system.solve()</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">solution</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">solve</span><span class="p">()</span>
+<span class="n">handoff</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">export_config</span><span class="p">(</span>
+    <span class="nb">format</span><span class="o">=</span><span class="s2">"adi.jif-dt"</span><span class="p">,</span>
+    <span class="n">solution</span><span class="o">=</span><span class="n">solution</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">handoff</span><span class="o">.</span><span class="n">to_json_file</span><span class="p">(</span><span class="s2">"solved.jif-dt.json"</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The exporter should build links from converter objects rather than parsing
+computed dictionary keys. It should zip semantic clock names, rates, and solved
+dividers without exporting list position as a physical channel. The returned
+handoff should be a detached snapshot with no solver objects reachable through
+JSON.</p>
+</section>
+<section id="proposed-consumer-api">
+<h2>Proposed consumer API<a class="headerlink" href="#proposed-consumer-api" title="Link to this heading"></a></h2>
+<p>A later pyadi-dt integration can accept the typed contract alongside existing
+raw configuration support:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">XsaPipeline</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+    <span class="n">xsa_path</span><span class="o">=</span><span class="s2">"design.xsa"</span><span class="p">,</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="n">contract</span><span class="p">,</span>
+    <span class="n">bindings</span><span class="o">=</span><span class="n">bindings</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">"out"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>The consumer sequence is parse, validate, resolve profile, bind semantic IDs,
+check XSA topology, check capabilities, convert to internal pipeline config,
+then render and lint.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">jif</span> <span class="pre">clock</span></code> command should likewise migrate from positional divider
+application to contract plus profile bindings. Legacy JSON can remain behind an
+explicit compatibility option for one deprecation cycle, but it must not guess
+physical channel placement.</p>
+</section>
+<section id="errors">
+<h2>Errors<a class="headerlink" href="#errors" title="Link to this heading"></a></h2>
+<p>Use narrow errors at each boundary:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">ContractError</span></code> for malformed or incompatible interchange;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">BindingError</span></code> for incomplete, duplicate, or impossible profile placement;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TopologyMismatchError</span></code> when an expected XSA/DT endpoint is absent or has the
+wrong direction;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">CapabilityError</span></code> for unsupported rates, dividers, or link modes;</p></li>
+<li><p>existing rendering, compilation, and application exceptions afterward.</p></li>
+</ul>
+<p>Do not catch <code class="docutils literal notranslate"><span class="pre">Exception</span></code> around solve, export, or binding. A caller may choose a
+named fallback configuration, but it must be reported as a fallback rather than
+as the pyadi-jif solution.</p>
+</section>
+<section id="test-agreement">
+<h2>Test agreement<a class="headerlink" href="#test-agreement" title="Link to this heading"></a></h2>
+<section id="pyadi-jif-producer-tests">
+<h3>pyadi-jif producer tests<a class="headerlink" href="#pyadi-jif-producer-tests" title="Link to this heading"></a></h3>
+<ol class="arabic simple">
+<li><p>Golden exports for AD9680, nested ADRV9009, and one MxFE JESD204C system.</p></li>
+<li><p>Exported values match converter objects and historical solve output.</p></li>
+<li><p>Requested-clock reordering does not alter semantic identity.</p></li>
+<li><p>Exported snapshots have detached ownership and deterministic JSON.</p></li>
+<li><p>Gekko and CPLEX produce contract-equivalent fields for the same constraints.</p></li>
+<li><p>No solver/backend object is JSON reachable.</p></li>
+</ol>
+</section>
+<section id="pyadi-dt-consumer-tests">
+<h3>pyadi-dt consumer tests<a class="headerlink" href="#pyadi-dt-consumer-tests" title="Link to this heading"></a></h3>
+<p>The reference suite covers valid parse/bind, unsupported versions, unknown
+fields, JESD and lane-rate inconsistencies, duplicate IDs, incomplete bindings,
+physical clock collisions, deterministic round trips, and malformed JSON.</p>
+<p>Integration tests should add contract-to-pipeline mapping, profile resolution,
+XSA mismatch without output mutation, DTS golden output plus compilation/lint,
+and CLI dry-run before any write.</p>
+</section>
+<section id="cross-repository-ci">
+<h3>Cross-repository CI<a class="headerlink" href="#cross-repository-ci" title="Link to this heading"></a></h3>
+<p>pyadi-jif should own a small canonical fixture corpus and publish the generated
+JSON Schema as a release artifact. On pyadi-jif changes, generate fixtures and
+run the pyadi-dt consumer. On pyadi-dt changes, consume both canonical fixtures
+and artifacts generated by the minimum supported pyadi-jif release and current
+main. Hardware-backed configurations can run nightly.</p>
+</section>
+</section>
+<section id="compatibility-policy">
+<h2>Compatibility policy<a class="headerlink" href="#compatibility-policy" title="Link to this heading"></a></h2>
+<p>Optional additions may be made within contract 1.x without changing existing
+meaning. Required fields, unit changes, enum semantic changes, and ID-rule
+changes require contract 2.0. Producer and consumer package versions are
+provenance; compatibility is determined by the contract version.</p>
+</section>
+<section id="rollout">
+<h2>Rollout<a class="headerlink" href="#rollout" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Agree on names, ownership, and AD9680/ADRV9009/AD9081 canonical systems.</p></li>
+<li><p>Generate the canonical JSON Schema from the pyadi-jif producer model.</p></li>
+<li><p>Add <code class="docutils literal notranslate"><span class="pre">system.export_config(format=&quot;adi.jif-dt&quot;)</span></code> and producer tests.</p></li>
+<li><p>Add pyadi-dt profile bindings and contract-to-pipeline translation.</p></li>
+<li><p>Convert <code class="docutils literal notranslate"><span class="pre">adidtc</span> <span class="pre">jif</span> <span class="pre">clock</span></code> and require dry-run validation.</p></li>
+<li><p>Convert board helpers and remove broad solver fallback.</p></li>
+<li><p>Enable cross-repository CI, then deprecate positional/raw JSON.</p></li>
+</ol>
+<p>Acceptance requires that saved output works without solver imports, requested
+clock ordering cannot change physical placement, all endpoints bind exactly
+once, and invalid input fails before any tree mutation.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="authoring_devices.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Authoring a new device class</a>
+    <a href="hardware_ci.html" title="Next document (Alt+Shift+RightArrow)" class="next">Hardware CI</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

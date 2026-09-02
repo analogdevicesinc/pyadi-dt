@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This runbook covers validation, publication, verification, and recovery for an adidt release. The Publish Release workflow builds on manual dispatch but publishes only when an annotated v* tag is pushed." name="description" />
+
+    <title>Release Operator Runbook &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA Pipeline — Developer Guide" href="../xsa_developer.html" />
+    <link rel="prev" title="Labgrid exporter systemd service" href="labgrid_exporter.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Release Operator Runbook</a><ul>
+<li><a class="reference internal" href="#one-time-setup">One-time setup</a><ul>
+<li><a class="reference internal" href="#pypi-trusted-publisher">PyPI trusted publisher</a></li>
+<li><a class="reference internal" href="#github-environment">GitHub environment</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#prepare-and-validate">Prepare and validate</a></li>
+<li><a class="reference internal" href="#tag-and-publish">Tag and publish</a></li>
+<li><a class="reference internal" href="#verify-the-published-release">Verify the published release</a></li>
+<li><a class="reference internal" href="#recover-from-partial-failure">Recover from partial failure</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jif_dt_contract.html">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release Operator Runbook</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/jif_contract.html">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="release-operator-runbook">
+<h1>Release Operator Runbook<a class="headerlink" href="#release-operator-runbook" title="Link to this heading"></a></h1>
+<p>This runbook covers validation, publication, verification, and recovery for an
+<code class="docutils literal notranslate"><span class="pre">adidt</span></code> release. The <strong>Publish Release</strong> workflow builds on manual dispatch but
+publishes only when an annotated <code class="docutils literal notranslate"><span class="pre">v*</span></code> tag is pushed.</p>
+<section id="one-time-setup">
+<h2>One-time setup<a class="headerlink" href="#one-time-setup" title="Link to this heading"></a></h2>
+<section id="pypi-trusted-publisher">
+<h3>PyPI trusted publisher<a class="headerlink" href="#pypi-trusted-publisher" title="Link to this heading"></a></h3>
+<p>Before the first release, sign in to PyPI and add a <strong>pending trusted
+publisher</strong> with these exact values:</p>
+<ul class="simple">
+<li><p>PyPI project name: <code class="docutils literal notranslate"><span class="pre">adidt</span></code></p></li>
+<li><p>Owner: <code class="docutils literal notranslate"><span class="pre">analogdevicesinc</span></code></p></li>
+<li><p>Repository: <code class="docutils literal notranslate"><span class="pre">pyadi-dt</span></code></p></li>
+<li><p>Workflow: <code class="docutils literal notranslate"><span class="pre">release.yml</span></code></p></li>
+<li><p>Environment: <code class="docutils literal notranslate"><span class="pre">pypi</span></code></p></li>
+</ul>
+<p>After the first successful upload, verify that the pending publisher became a
+publisher for the newly created project.</p>
+</section>
+<section id="github-environment">
+<h3>GitHub environment<a class="headerlink" href="#github-environment" title="Link to this heading"></a></h3>
+<p>Create a GitHub environment named <code class="docutils literal notranslate"><span class="pre">pypi</span></code>. Require a release reviewer and limit
+deployment refs to tags matching <code class="docutils literal notranslate"><span class="pre">v*</span></code>. The PyPI job requests OIDC only inside
+this environment; no PyPI API token is required.</p>
+</section>
+</section>
+<section id="prepare-and-validate">
+<h2>Prepare and validate<a class="headerlink" href="#prepare-and-validate" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p>Confirm the target version agrees in <code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and
+<code class="docutils literal notranslate"><span class="pre">adidt/__init__.py</span></code> and has a non-empty <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">[X.Y.Z]</span></code> section in
+<code class="docutils literal notranslate"><span class="pre">CHANGELOG.md</span></code>.</p></li>
+<li><p>Run the local contract and package checks from a clean checkout:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>fetch<span class="w"> </span>origin<span class="w"> </span>--tags
+git<span class="w"> </span>switch<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>--ff-only<span class="w"> </span>origin<span class="w"> </span>main
+<span class="nb">test</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>status<span class="w"> </span>--porcelain<span class="k">)</span><span class="s2">"</span>
+python<span class="w"> </span>.github/scripts/release_preflight.py<span class="w"> </span>--tag<span class="w"> </span>vX.Y.Z
+pytest
+rm<span class="w"> </span>-rf<span class="w"> </span>build<span class="w"> </span>dist
+python<span class="w"> </span>-m<span class="w"> </span>build
+twine<span class="w"> </span>check<span class="w"> </span>dist/*
+</pre></div>
+</div>
+</li>
+<li><p>Run the hosted dry run from <code class="docutils literal notranslate"><span class="pre">main</span></code>. The candidate tag does <strong>not</strong> need to
+exist yet:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>workflow<span class="w"> </span>run<span class="w"> </span>release.yml<span class="w"> </span>--ref<span class="w"> </span>main<span class="w"> </span>-f<span class="w"> </span><span class="nv">tag</span><span class="o">=</span>vX.Y.Z
+gh<span class="w"> </span>run<span class="w"> </span>watch<span class="w"> </span>--exit-status
+</pre></div>
+</div>
+<p>Confirm the validation, Python 3.10–3.14, build, wheel-install, and CLI
+smoke-test jobs pass. The GitHub Release and PyPI jobs must be skipped.</p>
+</li>
+<li><p>Confirm all required <code class="docutils literal notranslate"><span class="pre">main</span></code> workflows—including hardware, Kuiper/Ubuntu
+Debian packaging, and native system packaging—are green for the exact commit
+to be tagged. The native workflow builds on Debian 12, Fedora 42, and macOS
+14 rather than cross-packaging those artifacts on Ubuntu.</p></li>
+</ol>
+</section>
+<section id="tag-and-publish">
+<h2>Tag and publish<a class="headerlink" href="#tag-and-publish" title="Link to this heading"></a></h2>
+<p>Record and inspect the exact release commit before tagging:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>switch<span class="w"> </span>main
+git<span class="w"> </span>pull<span class="w"> </span>--ff-only<span class="w"> </span>origin<span class="w"> </span>main
+<span class="nb">test</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>status<span class="w"> </span>--porcelain<span class="k">)</span><span class="s2">"</span>
+<span class="nv">RELEASE_SHA</span><span class="o">=</span><span class="k">$(</span>git<span class="w"> </span>rev-parse<span class="w"> </span>HEAD<span class="k">)</span>
+git<span class="w"> </span>show<span class="w"> </span>--stat<span class="w"> </span><span class="s2">"</span><span class="nv">$RELEASE_SHA</span><span class="s2">"</span>
+git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>vX.Y.Z<span class="w"> </span><span class="s2">"</span><span class="nv">$RELEASE_SHA</span><span class="s2">"</span><span class="w"> </span>-m<span class="w"> </span><span class="s2">"Release vX.Y.Z"</span>
+<span class="nb">test</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>cat-file<span class="w"> </span>-t<span class="w"> </span>refs/tags/vX.Y.Z<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span>tag
+git<span class="w"> </span>push<span class="w"> </span>origin<span class="w"> </span>refs/tags/vX.Y.Z
+</pre></div>
+</div>
+<p>The tag push is the only event that permits the workflow’s GitHub Release and
+PyPI jobs to run. Approve the <code class="docutils literal notranslate"><span class="pre">pypi</span></code> environment deployment only after checking
+that the run’s tag, commit SHA, version, changelog, tests, and built artifacts
+are correct.</p>
+</section>
+<section id="verify-the-published-release">
+<h2>Verify the published release<a class="headerlink" href="#verify-the-published-release" title="Link to this heading"></a></h2>
+<ol class="arabic">
+<li><p>Confirm <strong>Publish Release</strong> completed successfully for the tagged SHA.</p></li>
+<li><p>Confirm both packaging workflows completed for the same tag. The release
+must contain Kuiper/Ubuntu <code class="docutils literal notranslate"><span class="pre">.deb</span></code> files plus the Debian 12 <code class="docutils literal notranslate"><span class="pre">.deb</span></code>, Fedora 42
+<code class="docutils literal notranslate"><span class="pre">.rpm</span></code>, and macOS 14 <code class="docutils literal notranslate"><span class="pre">.pkg</span></code> artifacts. Each job installs and smoke-tests its
+package before upload.</p></li>
+<li><p>Verify the GitHub Release contains the wheel, source distribution, release
+notes, all native system packages, and the <code class="docutils literal notranslate"><span class="pre">SHA256SUMS</span></code> manifest file.</p></li>
+<li><p>Verify checksum manifest integrity:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>release<span class="w"> </span>download<span class="w"> </span>vX.Y.Z<span class="w"> </span>-D<span class="w"> </span>/tmp/adidt-verify-assets
+<span class="nb">cd</span><span class="w"> </span>/tmp/adidt-verify-assets
+sha256sum<span class="w"> </span>-c<span class="w"> </span>SHA256SUMS
+python<span class="w"> </span>.github/scripts/release_manifest.py<span class="w"> </span>verify<span class="w"> </span>--manifest<span class="w"> </span>SHA256SUMS<span class="w"> </span>--dir<span class="w"> </span>.
+</pre></div>
+</div>
+</li>
+<li><p>Verify PyPI and smoke-test the immutable published package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>/tmp/adidt-release-verify
+/tmp/adidt-release-verify/bin/python<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>--no-cache-dir<span class="w"> </span>pyadi-dt<span class="o">==</span>X.Y.Z
+/tmp/adidt-release-verify/bin/python<span class="w"> </span>-c<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span><span class="s1">'import adidt, importlib.metadata as m; assert adidt.__version__ == m.version("pyadi-dt") == "X.Y.Z"'</span>
+/tmp/adidt-release-verify/bin/adidtc<span class="w"> </span>--help
+</pre></div>
+</div>
+</li>
+<li><p>Verify the public documentation still serves successfully.</p></li>
+</ol>
+</section>
+<section id="recover-from-partial-failure">
+<h2>Recover from partial failure<a class="headerlink" href="#recover-from-partial-failure" title="Link to this heading"></a></h2>
+<p>Release files on PyPI are immutable. Never move or reuse a version after any
+artifact for it has been accepted by PyPI.</p>
+<ul>
+<li><p><strong>Validation/build failed before publication:</strong> fix <code class="docutils literal notranslate"><span class="pre">main</span></code>, delete the failed
+remote tag only if neither PyPI nor a release artifact was published, rerun
+the dry run, and create a new annotated tag on the corrected commit.</p></li>
+<li><p><strong>PyPI upload partially succeeded:</strong> rerun the failed jobs. Publishing uses
+<code class="docutils literal notranslate"><span class="pre">skip-existing</span></code>, so accepted files are retained and missing files can resume.
+Do not rebuild different bytes for the same version.</p></li>
+<li><p><strong>GitHub Release failed after PyPI succeeded:</strong> rerun the failed job. The
+workflow creates a missing release or uploads artifacts to an existing one
+with <code class="docutils literal notranslate"><span class="pre">--clobber</span></code> and updates <code class="docutils literal notranslate"><span class="pre">SHA256SUMS</span></code>.</p></li>
+<li><p><strong>System-package attachment failed:</strong> rerun the failed Debian or native-system
+package workflow for the original tag; do not retag.</p></li>
+<li><p><strong>Checksum manifest out of sync:</strong> re-sync the release manifest using the
+helper script:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>.github/scripts/release_manifest.py<span class="w"> </span>upsert-release<span class="w"> </span>--tag<span class="w"> </span>vX.Y.Z
+</pre></div>
+</div>
+</li>
+<li><p><strong>A bad package was fully published:</strong> keep the tag and release as an audit
+record, document the problem, bump to a new version, and publish a corrective
+release. PyPI versions cannot be replaced safely.</p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="labgrid_exporter.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Labgrid exporter systemd service</a>
+    <a href="../xsa_developer.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Pipeline — Developer Guide</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
