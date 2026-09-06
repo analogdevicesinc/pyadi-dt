@@ -329,8 +329,9 @@ candidate. See the [2026-09-05 release audit](../../doc/source/developer/release
 
 Generated-DTB tests normally require a strategy that consumes staged `KuiperDLDriver`
 files. The ZU11EG test uses `BootZynqMPJTAG` to load its generated DTB into RAM
-through the PSU target at the production U-Boot prompt, then boot the stock SD
-kernel/rootfs. It verifies the same unique marker in U-Boot and Linux. Recovery strategies that boot the existing SD tree, and TFTP strategies
+using U-Boot's serial S-record loader, then boot the stock SD kernel/rootfs.
+It checks the full RAM payload CRC and the same unique marker in U-Boot and
+Linux. A second JTAG connection is avoided because it can strand a secondary CPU. Recovery strategies that boot the existing SD tree, and TFTP strategies
 with `sd_autoboot` enabled, do not validate a generated DTB. The test helper
 rejects these configurations. Inspect the generated environment as well as the
 coordinator place tags; they can disagree.

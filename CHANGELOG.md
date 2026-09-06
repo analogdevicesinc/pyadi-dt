@@ -12,7 +12,10 @@ All notable changes to pyadi-dt are documented here. The project follows
 - Correct ZU11EG SoM/carrier HMC7044 wiring, unique output names, the dual-radio
   JESD graph and 245.76 MSPS reference profile, SPI chip selects, transport
   bindings, IIO names, Ethernet references and SD DMA configuration. Add a
-  generated-DTB RAM boot test using the pinned production JTAG strategy.
+  generated-DTB RAM boot test using production JTAG bootstrap and a checksummed
+  serial transfer, preserving all four CPUs.
+- Select ADRV9009-family DMA engines deterministically so an unrelated audio
+  DMA cannot be wired to the radio in mixed-peripheral XSAs.
 - Exercise configurable overlay reload cycles with JESD and DMA checks on
   every cycle; pace BootFabric serial writes to prevent command truncation.
 - Allow non-publishing release dry runs from committed candidate branches.

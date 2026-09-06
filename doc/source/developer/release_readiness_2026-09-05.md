@@ -141,7 +141,7 @@ runtime image. These apply only to overlay tests, allowing ordinary boot tests
 in the same invocation. Resource paths are restored at teardown.
 `ADIDT_XSA_DIR` optionally selects external XSAs; missing configured files fail.
 
-## Remaining release gates
+## Release scope and retained limitations
 
 1. Preserve the matching patched runtime kernels/modules and per-board runner
    configuration on `bq`, `nemo`, and `nuc`. The original built-in kernels do
@@ -150,8 +150,6 @@ in the same invocation. Resource paths are restored at teardown.
    allocations that may leak on removal.
 2. AD9081 generated-tree hardware validation remains outside this follow-up's
    scope and is not claimed for the current release candidate.
-3. Finish the ZU11EG four-CPU cold-boot check and hosted validation of the final
-   committed candidate. Radio/JESD/DMA generated-tree validation has passed.
 
 ## Retained evidence
 
@@ -246,7 +244,11 @@ ZU11EG now uses the pinned labgrid plugin's `BootZynqMPJTAG` strategy. The test
 regenerates the complete device tree, compiles it, uploads only the DTB to RAM,
 and verifies a unique marker in U-Boot and Linux before checking both PHYs,
 two RX/observation JESD links, one TX link, and RX DMA. The stock SD kernel and
-root filesystem are retained. The generated-tree radio/JESD/DMA test passed.
+root filesystem are retained. The final integrated test passed after a fresh
+pipeline run: complete RAM CRC and boot marker verification, all four A53 CPUs
+online, both PHYs initialized, all three JESD links in DATA, and a 4,096-sample
+capture across eight RX channels. It passed **1 test** in 396.89 seconds and
+powered off/released the board.
 
 Live testing exposed and fixed deletion of DDR during CPU deduplication,
 truncation of 64-bit DDR registers, FMComms8 wiring used for the SoM, duplicate
@@ -254,22 +256,39 @@ HMC7044 output names, incorrect dual-radio JESD dependencies/profile, and missin
 carrier Ethernet/SD configuration. The 245.76 MSPS profile records the exact
 ADI Linux source revision and license in its JSON metadata. Distinct IIO names
 prevent selecting the inactive observation frontend as primary RX. Early boots
-also lost CPU1 after a second JTAG CPU halt; the final test requires all four
-A53 CPUs online and uploads through the physical PSU without halting CPUs.
+also lost CPU1 after a second JTAG connection, including a boot of the ADI
+reference DTB and a PSU-only upload without an explicit CPU halt. A serial
+S-record transfer of the same generated tree restored all four CPUs. The final
+helper uses serial transfer with a complete RAM CRC check and retains the stock
+`cpuidle.off=1` boot argument.
 
-The complete local software suite passed 930 tests (14 skipped, one network
-test excluded), followed by a passing upload-failure regression test. Ruff and
-whitespace checks passed. The final hosted runs will verify the committed source
-and packaged distributions independently.
+The next capture failure exposed nondeterministic selection of the audio DMA
+engines from the XSA's unordered labels. DMA selection now filters radio names
+and sorts candidates; the real-XSA test checks all three radio DMA labels and
+passes with multiple Python hash seeds. ADRV9009-ZC706 then passed all six
+hardware tests again with the updated builder and was powered off/released.
+
+The complete local software suite passed **933 tests**, with 14 skips, one
+network test excluded, and no expected failures. Independent S-record decoding,
+CRC rejection, incremental serial-field parsing, and multi-hash-seed DMA checks
+also passed. Ruff and whitespace checks passed.
 
 Candidate `11e0bb24ff186302d74017d88d05e0783e8d0d10` passed the
 [release dry run](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000952089)
 (Python 3.10–3.14 and distribution checks) and
 [native packaging](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000953667)
 (macOS 14 package/install, Debian 12, Fedora 42). These initial runs precede the
-final SoM fixes; final-candidate evidence is recorded separately. No tag,
+final SoM fixes. Updated candidate `8471d70d2ceda5ad10085c08e365d2b656214b3d`
+also passed [release validation](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34002650654)
+and [native packaging](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34002652062).
+The final serial-transfer/DMA fixes are validated on the final committed candidate
+as recorded in the evidence summary. No tag,
 release, PyPI publication, or native release attachment was created.
 
-Current evidence: `/tmp/pyadi-dt-release-final-20260905/`. The reviewed archive
-excludes private labgrid environments and includes failed attempts, passing
-JUnit/serial logs, booted DTBs, source provenance and SHA256 checksums.
+Evidence is archived under
+`~/.cache/adidt/release-validation/2026-09-05/non-ad9081-evidence/`, including
+failed attempts, passing JUnit/serial logs, booted DTBs, source provenance and
+SHA256 checksums. `validation-summary.json` records the final candidate SHA and
+hosted workflow URLs; `candidate-source.tar.gz` preserves that committed source.
+Private labgrid environments are excluded. Working logs remain under
+`/tmp/pyadi-dt-release-final-20260905/`.

@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import uuid
+import re
+import zlib
 from pathlib import Path
 
 from test.hw.hw_helpers import mark_dtb_for_boot, shell_out
 
 _DTB_ADDRESS = "0x20000000"
-
-
-def _tcl_word(value: str) -> str:
-    if any(c in value for c in "{}\\\r\n"):
-        raise ValueError("Unsupported character in JTAG argument")
-    return "{" + value + "}"
+_SREC_SIZE_PATTERN = r"Total Size\s*=\s*0x([0-9a-fA-F]+)\s*="
 
 
 def _uboot_command(board, command: str) -> str:
@@ -29,12 +26,54 @@ def _uboot_command(board, command: str) -> str:
     return output
 
 
+def _srecords(data: bytes, address: int) -> bytes:
+    """Encode bounded RAM data as checksummed S3 records with an S7 terminator."""
+    if not data or len(data) > 2 * 1024 * 1024 or address + len(data) > 2**32:
+        raise ValueError("Invalid DTB size/address for the serial RAM handoff")
+    records = []
+    for offset in range(0, len(data), 32):
+        block = data[offset : offset + 32]
+        body = bytes([len(block) + 5]) + (address + offset).to_bytes(4, "big") + block
+        records.append("S3" + body.hex().upper() + f"{(~sum(body)) & 255:02X}")
+    body = b"\x05" + address.to_bytes(4, "big")
+    records.append("S7" + body.hex().upper() + f"{(~sum(body)) & 255:02X}")
+    return ("\r\n".join(records) + "\r\n").encode()
+
+
+def _upload_dtb_serial(board, dtb: Path) -> None:
+    """Use U-Boot's S-record loader and verify the complete RAM payload CRC."""
+    data = dtb.read_bytes()
+    payload = _srecords(data, int(_DTB_ADDRESS, 16))
+    _uboot_command(board, "setenv loads_echo 0")
+    console = board.shell.console
+    console.sendline("loads 0")
+    console.expect("Ready for S-Record download", timeout=15)
+    original = (console.txdelay, console.txchunk)
+    # 16-byte chunks at 4 kB/s stay below the 115200-baud receive rate.
+    console.txdelay, console.txchunk = 0.004, 16
+    try:
+        console.write(payload)
+    finally:
+        console.txdelay, console.txchunk = original
+    _, _, match, _ = console.expect(_SREC_SIZE_PATTERN, timeout=120)
+    transferred = int(match.group(1), 16)
+    assert transferred == len(data), (
+        f"Serial DTB size: {transferred}, expected {len(data)}"
+    )
+    console.expect(board.production_uboot_prompt, timeout=30)
+    result = _uboot_command(board, f"crc32 {_DTB_ADDRESS} {len(data):x}")
+    checksum = re.search(r"==>\s*([0-9a-fA-F]{8})", result)
+    assert checksum and int(checksum.group(1), 16) == zlib.crc32(data), result
+
+
 def boot_generated_zynqmp_dtb(board, dtb: Path):
-    """Load the generated DTB through JTAG; retain the stock SD kernel/rootfs.
+    """Load the generated DTB through serial; retain the stock SD kernel/rootfs.
 
     The fixed RAM address is reserved for this ZU11EG test handoff. U-Boot
     validates the unique marker before boot and Linux must expose it afterward.
-    No SD file or persistent U-Boot environment is written. The caller's board
+    A second JTAG connection can strand CPU1, so only the initial production
+    bootstrap uses JTAG. No SD file or persistent U-Boot environment is written.
+    The caller's board
     fixture owns power-off on every exit, including failed Linux boots.
     """
     if type(board).__name__ != "BootZynqMPJTAG":
@@ -42,24 +81,15 @@ def boot_generated_zynqmp_dtb(board, dtb: Path):
     marker = mark_dtb_for_boot(dtb)
     board.transition("powered_off")
     board.transition("production_uboot_prompt")
+    # Retain the production SoM boot policy;
+    # cpuidle.off=1 is also present in the stock SD boot arguments.
     _uboot_command(
         board,
-        "setenv partid 1 && mmc dev $sdbootdev && mmcinfo && "
+        "setenv bootargs console=ttyPS0,115200 earlycon clk_ignore_unused "
+        "cpuidle.off=1 && setenv partid 1 && mmc dev $sdbootdev && mmcinfo && "
         "run sdroot$sdbootdev && load mmc $sdbootdev:$partid $kernel_addr Image",
     )
-    remote = board.jtag._stage_file(str(dtb.resolve()))
-    # Physical PSU writes target unused RAM while U-Boot waits at its prompt.
-    # Avoid attaching/halting A53s: debug state can persist into CPU_ON.
-    script = "\n".join(
-        [
-            "connect -url " + _tcl_word(board.jtag_url),
-            'targets -set -nocase -filter {name =~ "PSU"}',
-            f"dow -force -data {_tcl_word(remote)} {_DTB_ADDRESS}",
-            "disconnect",
-        ]
-    )
-    out, err, rc = board.jtag._run_xsdb(script, timeout=120)
-    assert rc == 0, f"Generated DTB JTAG upload failed: {err or out}"
+    _upload_dtb_serial(board, dtb)
     output = _uboot_command(
         board, f"fdt addr {_DTB_ADDRESS} && fdt print / adidt,validation-id"
     )

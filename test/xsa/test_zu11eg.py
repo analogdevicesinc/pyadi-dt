@@ -247,6 +247,11 @@ def test_real_som_wiring_uses_carrier_clock_and_single_jesd_top_device():
     cfg["jesd"] = _ZU11EG_CFG["jesd"]
     builder = ADRV9009Builder()
     model = builder.build_model(topology, cfg, "zynqmp_clk", 71, "gpio")
+    assert [link.dma_label for link in model.jesd_links] == [
+        "axi_adrv9009_som_rx_dma",
+        "axi_adrv9009_som_obs_dma",
+        "axi_adrv9009_som_tx_dma",
+    ]
     phy = model.get_component("transceiver").rendered
     assert "adrv9009-phy@0" in phy
     assert "adrv9009-phy-b@1" in phy

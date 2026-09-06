@@ -393,21 +393,24 @@ class ADRV9009Builder:
             trx2_reset_gpio = None
             trx1_clocks = trx_clocks
 
+        # Audio DMA engines can coexist with the radio in the same XSA.
+        # Never choose an arbitrary *_rx_dma from the topology's unordered set.
+        radio_dma_labels = sorted(lbl for lbl in labels if _is_adrv90xx_name(lbl))
         # --- DMA labels ---
         rx_dma_label = next(
             (
                 lbl
-                for lbl in labels
+                for lbl in radio_dma_labels
                 if "_rx_dma" in lbl and "_obs_" not in lbl and "_os_" not in lbl
             ),
             "axi_adrv9009_rx_dma",
         )
         tx_dma_label = next(
-            (lbl for lbl in labels if "_tx_dma" in lbl),
+            (lbl for lbl in radio_dma_labels if "_tx_dma" in lbl),
             "axi_adrv9009_tx_dma",
         )
         rx_os_dma_label = next(
-            (lbl for lbl in labels if "_obs_dma" in lbl or "_rx_os_dma" in lbl),
+            (lbl for lbl in radio_dma_labels if "_obs_dma" in lbl or "_rx_os_dma" in lbl),
             "axi_adrv9009_rx_os_dma",
         )
 
