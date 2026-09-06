@@ -190,3 +190,67 @@ def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
         )
 
     return content
+
+
+@register_fixup("adrv9009_zu11eg")
+def _fix_zu11eg_board_io(content: str, pl_dtsi: Path) -> str:
+    """Supply Rev.B carrier PHY/reference clocks and the stock SD DMA policy.
+
+    XSA describes PS configuration but not the external PHYs/oscillators.
+    The ADI reference board leaves the SMMU disabled; enabling translated SD
+    DMA with this production handoff produces invalid ADMA addresses.
+    """
+    for old, new in (
+        ("ad_ip_jesd204_tpl_adc@84a00000", "axi-adrv9009-rx-hpc@84a00000"),
+        ("ad_ip_jesd204_tpl_adc@84a08000", "axi-adrv9009-rx-obs-hpc@84a08000"),
+        ("ad_ip_jesd204_tpl_dac@84a04000", "axi-adrv9009-tx-hpc@84a04000"),
+    ):
+        content = content.replace(old, new)
+    pcw = pl_dtsi.parent / "pcw.dtsi"
+    marker = "/* pyadi-dt ZU11EG Rev.B carrier IO */"
+    text = pcw.read_text()
+    if marker not in text:
+        text += r'''
+/* pyadi-dt ZU11EG Rev.B carrier IO */
+&smmu { status = "disabled"; };
+&gic_r5 { status = "disabled"; };
+&sdhci1 { bus-width = <4>; disable-wp; no-1-8-v; };
+/ {
+    aliases { mmc0 = &sdhci1; };
+    adidt_gtr_ref1: adidt-gtr-ref1 {
+        compatible = "fixed-clock"; #clock-cells = <0>;
+        clock-frequency = <125000000>;
+    };
+    adidt_gtr_ref2: adidt-gtr-ref2 {
+        compatible = "fixed-clock"; #clock-cells = <0>;
+        clock-frequency = <27000000>;
+    };
+    adidt_gtr_ref3: adidt-gtr-ref3 {
+        compatible = "fixed-clock"; #clock-cells = <0>;
+        clock-frequency = <26000000>;
+    };
+};
+&psgtr {
+    clocks = <&adidt_gtr_ref1>, <&adidt_gtr_ref2>, <&adidt_gtr_ref3>;
+    clock-names = "ref1", "ref2", "ref3";
+};
+&gem3 {
+    phy-handle = <&adidt_phy0>;
+    adidt_phy0: ethernet-phy@0 {
+        reg = <0>;
+        marvell,reg-init = <3 16 0xff00 0x1e 3 17 0xfff0 0>;
+        reset-gpios = <&gpio 25 1>;
+    };
+    adidt_phy1: ethernet-phy@1 {
+        reg = <1>;
+        reset-gpios = <&gpio 31 1>;
+    };
+};
+&gem0 {
+    phy-handle = <&adidt_phy1>;
+    phys = <&psgtr 0 8 0 1>;
+    mdiobus-connected = <&gem3>;
+};
+'''
+        pcw.write_text(text)
+    return content

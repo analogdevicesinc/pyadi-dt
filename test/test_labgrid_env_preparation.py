@@ -48,15 +48,15 @@ def test_tftp_uses_live_tags_and_disables_sd_autoboot():
 
 
 @pytest.mark.parametrize(
-    "strategy", ["BootFabric", "BootFPGASoC", "BootZynq7000JTAGRecovery", "unknown"]
+    "boot_mode", ["BootFabric", "BootFPGASoC", "BootZynq7000JTAGRecovery", "unknown"]
 )
-def test_other_boot_modes_preserve_supplied_environment(strategy):
+def test_other_boot_modes_preserve_supplied_environment(boot_mode):
     original = environment()
     renderer = Mock()
     assert (
         module.deployment_config(
             original,
-            {"name": "bench", "tags": {"boot-strategy": strategy}},
+            {"name": "bench", "tags": {"boot-strategy": boot_mode}},
             tftp_root="",
             render=renderer,
         )

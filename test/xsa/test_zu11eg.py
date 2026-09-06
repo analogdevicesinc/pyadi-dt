@@ -76,11 +76,11 @@ def test_profile_manager_loads_adrv9009_zu11eg_profile():
     assert profile["name"] == "adrv9009_zu11eg"
     board = profile["defaults"]["adrv9009_board"]
     # Dual-transceiver (adrv9009-x2) chip-selects + HMC7044 clock.
-    assert board["trx_cs"] == 1
-    assert board["trx2_cs"] == 2
+    assert board["trx_cs"] == 0
+    assert board["trx2_cs"] == 1
     assert board["hmc7044_vcxo_frequency"] == 122880000
-    assert board["hmc7044_rx_channel"] == 9
-    assert board["hmc7044_tx_channel"] == 8
+    assert board["hmc7044_rx_channel"] == 7
+    assert board["hmc7044_tx_channel"] == 6
 
 
 def test_adrv9009_profile_allows_hmc7044_keys():
@@ -235,3 +235,54 @@ def test_builder_zu11eg_model_platform_and_links():
     # ORX path present (rx + rx_os + tx = 3 JESD links).
     assert len(model.jesd_links) == 3
     assert [j.direction for j in model.jesd_links] == ["rx", "rx", "tx"]
+
+
+def test_real_som_wiring_uses_carrier_clock_and_single_jesd_top_device():
+    from adidt.xsa.build.builders.adrv9009 import ADRV9009Builder
+    from adidt.xsa.parse.topology import XsaParser
+
+    xsa = Path(__file__).parents[1] / "hw/xsa/ref_data/system_top_adrv9009_zu11eg.xsa"
+    topology = XsaParser().parse(xsa)
+    cfg = ProfileManager().load("adrv9009_zu11eg")["defaults"]
+    cfg["jesd"] = _ZU11EG_CFG["jesd"]
+    builder = ADRV9009Builder()
+    model = builder.build_model(topology, cfg, "zynqmp_clk", 71, "gpio")
+    phy = model.get_component("transceiver").rendered
+    assert "adrv9009-phy@0" in phy
+    assert "adrv9009-phy-b@1" in phy
+    assert phy.count("jesd204-top-device") == 1
+    assert "<&trx1_adrv9009 0 1>" in phy
+    assert "<&gpio 156 0>" in phy
+    assert '"jesd_rx_clk"' in phy
+    transport = "\n".join(model.metadata["extra_nodes_before"])
+    assert 'compatible = "adi,axi-adrv9009-x2-tx-1.0";' in transport
+    assert "plddrbypass-gpios = <&gpio 168 0>;" in transport
+    assert transport.count("adi,axi-pl-fifo-enable;") == 2
+    assert "adi,axi-decimation-core-available;" not in transport
+    clocks = "\n".join(c.rendered for c in model.components if c.role == "clock")
+    assert "hmc7044@2" in clocks and "hmc7044@3" in clocks
+    assert "clocks = <&hmc7044_car 2>" in clocks
+    assert clocks.count("jesd204-sysref-provider;") == 1
+    assert clocks.count("adi,hmc-two-level-tree-sync-en;") == 2
+    assert "channel@7 { reg = <7>; adi,divider = <12>; adi,driver-mode = <0>;" in clocks
+
+
+def test_som_clock_names_are_unique_and_reference_profile_is_245msps():
+    import re
+    from adidt.xsa.build.builders._zu11eg import clock_components
+
+    components = clock_components("spi0", 2, 2949120000, (1, 2, 0))
+    names = [
+        re.findall(
+            r'"([^"]+)"',
+            re.search(r"clock-output-names\s*=\s*([^;]+);", c.rendered).group(1),
+        )
+        for c in components
+    ]
+    assert len(names[0]) == len(names[1]) == 14
+    assert not set(names[0]) & set(names[1])
+    props = ProfileManager().load("adrv9009_zu11eg")["defaults"]["adrv9009_board"][
+        "trx_profile_props"
+    ]
+    assert "adi,rx-profile-rx-output-rate_khz = <245760>;" in props
+    assert "adi,jesd204-framer-a-lmfc-offset = <15>;" in props

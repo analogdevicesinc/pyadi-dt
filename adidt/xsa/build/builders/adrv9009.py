@@ -146,6 +146,10 @@ class ADRV9009Builder:
 
         nodes: list[str] = []
         nodes.extend(model.metadata.get("extra_nodes_before", []))
+        if model.platform == "zu11eg":
+            nodes.append(
+                f"&{model.metadata['spi_bus']} {{ num-cs = <8>; is-decoded-cs = <1>; }};"
+            )
         nodes.extend(rendered["converters"])
         nodes.extend(rendered["jesd204_rx"])
         nodes.extend(rendered["jesd204_tx"])
@@ -168,7 +172,8 @@ class ADRV9009Builder:
         platform = topology.inferred_platform()
 
         labels = _topology_instance_names(topology)
-        is_fmcomms8 = _is_fmcomms8_layout(labels)
+        is_som = topology.inferred_platform() == "zu11eg"
+        is_fmcomms8 = is_som or _is_fmcomms8_layout(labels)
 
         if not any(_is_adrv90xx_name(lbl) for lbl in labels):
             return None
@@ -426,7 +431,7 @@ class ADRV9009Builder:
         rx_xcvr_conv_clk_ref = rx_xcvr_clkgen_ref
         tx_xcvr_conv_clk_ref = tx_xcvr_clkgen_ref
         rx_os_xcvr_conv_clk_ref = rx_os_xcvr_clkgen_ref
-        if is_fmcomms8:
+        if is_fmcomms8 and not is_som:
             rx_xcvr_div40_ref: str | None = rx_xcvr_div40_clk_ref
             tx_xcvr_div40_ref: str | None = tx_xcvr_div40_clk_ref
             rx_os_xcvr_div40_ref: str | None = rx_os_xcvr_div40_clk_ref
@@ -452,7 +457,7 @@ class ADRV9009Builder:
         # → phy).  Without the TX TPL DAC in the topology the
         # framework can't call clk_set_rate on the TX clkgen for the
         # per-link rate (61.44 MHz vs 122.88 MHz for RX).
-        if not is_fmcomms8 and rx_jesd_label and tx_jesd_label:
+        if (not is_fmcomms8 or is_som) and rx_jesd_label and tx_jesd_label:
             trx_jesd_inputs = [
                 f"<&{rx_jesd_label} 0 {rx_link_id}>",
                 f"<&{tx_core_label} 0 {tx_link_id}>",
@@ -486,7 +491,7 @@ class ADRV9009Builder:
         # jesd204_fsm_start on a link in opt_post_running and crashes
         # with a NULL deref in jesd204_validate_lnk_state.  Matches the
         # Kuiper production zynq-zc706-adv7511-adrv9009 DT.
-        if not is_fmcomms8 and rx_jesd_label and tx_jesd_label:
+        if (not is_fmcomms8 or is_som) and rx_jesd_label and tx_jesd_label:
             jesd_clock_refs = [f"<&{rx_jesd_label}>", f"<&{tx_jesd_label}>"]
             jesd_clock_names = ['"jesd_rx_clk"', '"jesd_tx_clk"']
             if rx_os_jesd_label:
@@ -496,6 +501,10 @@ class ADRV9009Builder:
             trx1_clocks = jesd_clock_refs + trx1_clocks
             trx_clock_names = jesd_clock_names + trx_clock_names
 
+        if is_som:
+            trx_clocks.append(f"<&{clock_chip_label} {hmc7044_tx_xcvr_channel}>")
+            trx1_clocks.append(f"<&{clock_chip_label} {hmc7044_tx_xcvr_channel}>")
+            trx_clock_names.append('"fmc2_clk"')
         trx_clocks_value = ", ".join(trx_clocks)
         trx1_clocks_value = ", ".join(trx1_clocks) if is_fmcomms8 else trx_clocks_value
         trx_clock_names_value = ", ".join(trx_clock_names)
@@ -836,6 +845,10 @@ class ADRV9009Builder:
             reset_gpio=trx_reset_gpio,
             sysref_req_gpio=trx_sysref_req_gpio,
         )
+        if is_som:
+            shared_ctx["jesd204_inputs"] = ", ".join(
+                f"<&trx1_{phy_family} 0 {link}>" for link in trx_link_ids
+            )
         phy_rendered = phy_dev.render_dt(cs=trx_cs, context=shared_ctx)
 
         if is_fmcomms8:
@@ -845,9 +858,12 @@ class ADRV9009Builder:
             # narrow the type here so downstream callers of ``render_dt``
             # see a concrete ``int``.
             assert trx2_cs is not None
-            phy2_dev = ADRV9009(
+            from ._zu11eg import SecondaryPhy
+
+            phy2_cls = SecondaryPhy if is_som else ADRV9009
+            phy2_dev = phy2_cls(
                 label=f"trx1_{phy_family}",
-                node_name_base=f"{phy_family}-phy",
+                node_name_base=f"{phy_family}-phy-b" if is_som else f"{phy_family}-phy",
                 compatible_strings=[phy_family],
                 spi_max_hz=trx_spi_max_frequency,
                 reset_gpio=trx2_reset_gpio,
@@ -855,6 +871,9 @@ class ADRV9009Builder:
             )
             phy2_ctx = dict(shared_ctx)
             phy2_ctx["clocks_value"] = trx1_clocks_value
+            if is_som:
+                phy2_ctx["jesd204_inputs"] = trx_inputs_value
+
             phy_rendered = (
                 phy_rendered + "\n" + phy2_dev.render_dt(cs=trx2_cs, context=phy2_ctx)
             )
@@ -869,7 +888,18 @@ class ADRV9009Builder:
 
         # --- Build component list ---
         components: list[ComponentModel] = []
-        if clock_component is not None:
+        if is_som:
+            from ._zu11eg import clock_components
+
+            components.extend(
+                clock_components(
+                    spi_bus,
+                    clk_cs,
+                    hmc7044_pll2_out_freq,
+                    (rx_link_id, rx_os_link_id, tx_link_id),
+                )
+            )
+        elif clock_component is not None:
             components.append(clock_component)
         components.append(phy_component)
 
@@ -1012,10 +1042,22 @@ class ADRV9009Builder:
         # TPL core first pass (compatible + dma, no spibus-connected).
         # The final PHY sample clocks are emitted only in the second pass.
         # Repeating clocks across fragments is rejected by runtime OF overlays.
+        rx_feature = (
+            "adi,axi-pl-fifo-enable" if is_som else "adi,axi-decimation-core-available"
+        )
+        tx_compatible = (
+            "adi,axi-adrv9009-x2-tx-1.0" if is_som else "adi,axi-adrv9009-tx-1.0"
+        )
+        tx_features = (
+            "\t\tadi,axi-pl-fifo-enable;\n"
+            f"\t\tplddrbypass-gpios = <&{gpio_label} 168 0>;\n"
+            if is_som
+            else "\t\tadi,axi-interpolation-core-available;\n"
+        )
         rx_core_first = (
             f"\t&{rx_core_label} {{\n"
             '\t\tcompatible = "adi,axi-adrv9009-rx-1.0";\n'
-            "\t\tadi,axi-decimation-core-available;\n"
+            f"\t\t{rx_feature};\n"
             f"\t\tdmas = <&{rx_dma_label} 0>;\n"
             '\t\tdma-names = "rx";\n'
             "\t};"
@@ -1037,8 +1079,8 @@ class ADRV9009Builder:
         # ``adi,axi-pl-fifo-enable`` for the PL DDR FIFO bypass mode.
         tx_core_first = (
             f"\t&{tx_core_label} {{\n"
-            '\t\tcompatible = "adi,axi-adrv9009-tx-1.0";\n'
-            "\t\tadi,axi-interpolation-core-available;\n"
+            f'\t\tcompatible = "{tx_compatible}";\n'
+            f"{tx_features}"
             f"\t\tdmas = <&{tx_dma_label} 0>;\n"
             '\t\tdma-names = "tx";\n'
             "\t\tjesd204-device;\n"

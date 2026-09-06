@@ -327,8 +327,10 @@ that family was tested. Record the commit, board, boot path, and captured
 evidence for each release; unavailable boards remain unverified for that
 candidate. See the [2026-09-05 release audit](../../doc/source/developer/release_readiness_2026-09-05.md).
 
-Generated-DTB tests require a strategy that consumes staged `KuiperDLDriver`
-files. Recovery strategies that boot the existing SD tree, and TFTP strategies
+Generated-DTB tests normally require a strategy that consumes staged `KuiperDLDriver`
+files. The ZU11EG test uses `BootZynqMPJTAG` to load its generated DTB into RAM
+through the PSU target at the production U-Boot prompt, then boot the stock SD
+kernel/rootfs. It verifies the same unique marker in U-Boot and Linux. Recovery strategies that boot the existing SD tree, and TFTP strategies
 with `sd_autoboot` enabled, do not validate a generated DTB. The test helper
 rejects these configurations. Inspect the generated environment as well as the
 coordinator place tags; they can disagree.
@@ -339,9 +341,16 @@ coordinator place tags; they can disagree.
 | AD9084 | VCU118, VPK180 | Pending | Future work: Add VCU118 and VPK180 labgrid test profiles |
 | ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10 | ZCU102, ZC706 Validated | `test_adrv9009_zcu102_hw.py`, `test_adrv9009_zc706_hw.py`, `test_adrv9009_zc706_petalinux_hw.py`, `test_cli_live_adrv9009_zc706_hw.py`, `test_cli_dts_gen_adrv9009_zc706_hw.py`. Future: Arria10; see the separate ZU11EG row |
 | AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 Validated | `test_adrv9371_zc706_hw.py`, `test_adrv9371_zc706_petalinux_hw.py`. Future: ZCU102 |
-| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | XSA generation and DTB compilation only; live boot/IIO/JESD/capture unverified | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
+| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | Generated DTB boots; dual PHY, JESD DATA and RX DMA validated (2026-09-05) | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | Pending | Future work: Add test fixtures for AD9361/AD9364 SDR carrier flows |
 | ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | Pending | Future work: Add SOM carrier test fixtures |
 | FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 Validated | Future work: Add dedicated ZC706 and Arria10 hardware test suites |
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706, VCU118 | ZCU102, VCU118 Validated | `test_fmcdaq3_vcu118_hw.py`. Future: ZC706 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi | Pending | Future work: Add hardware test fixtures for SPI/I2C sensor overlays (ADIS16495, ADXL345, AD7124) |
+
+For ZU11EG, environment preparation imports the pinned production JTAG strategy
+and accepts either Ethernet port. If a runner's exporter SSH alias resolves to
+the wrong host, `ADIDT_JTAG_HOST=exporter.local` overrides managed JTAG resource
+hosts for that test process and restores them on teardown. The test writes no
+SD files or persistent U-Boot settings. Its output directory retains the booted
+DTB, boot log, and kernel diagnostics.

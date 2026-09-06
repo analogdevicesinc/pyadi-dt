@@ -25,7 +25,7 @@ def remote_place_name(config: dict) -> str | None:
 def deployment_config(
     config: dict, place: dict, *, tftp_root: str, render, uboot_image: str | None = None
 ) -> dict:
-    """Render the advertised TFTP strategy, forcing staged-file deployment.
+    """Render advertised TFTP or production ZynqMP deployment strategies.
 
     Other strategies retain the supplied configuration. In particular this
     does not invent a deployment path for an unknown or recovery-only place.

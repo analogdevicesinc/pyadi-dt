@@ -93,3 +93,30 @@ def test_overlay_kernel_override_avoids_ordinary_build(monkeypatch, tmp_path, fa
     monkeypatch.delenv(variable)
     assert _runtime_kernel_image(request, spec) == request.getfixturevalue.return_value
     request.getfixturevalue.assert_called_once_with(spec.kernel_fixture_name)
+
+
+@pytest.mark.parametrize("with_host", [False, True])
+def test_jtag_host_override_restores_proxied_resources_on_failure(
+    monkeypatch, with_host
+):
+    monkeypatch.setenv("ADIDT_JTAG_HOST", "exporter.local")
+    monkeypatch.setattr(conftest, "require_hw_prereqs", Mock())
+    resources = [SimpleNamespace(), SimpleNamespace()]
+    if with_host:
+        for resource in resources:
+            resource.host = "original"
+    board = SimpleNamespace(
+        jtag=SimpleNamespace(xilinxdevicejtag=resources[0], xilinxvivado=resources[1]),
+        transition=Mock(),
+        target=SimpleNamespace(activate=Mock()),
+    )
+    fixture = conftest.board.__wrapped__(board, _request("test_board_hw.py"))
+    next(fixture)
+    assert all(resource.host == "exporter.local" for resource in resources)
+    with pytest.raises(RuntimeError, match="boot failed"):
+        fixture.throw(RuntimeError("boot failed"))
+    for resource in resources:
+        assert hasattr(resource, "host") == with_host
+        if with_host:
+            assert resource.host == "original"
+    assert board.transition.call_count == 2

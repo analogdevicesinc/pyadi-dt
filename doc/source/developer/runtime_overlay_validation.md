@@ -91,8 +91,19 @@ the board's complete six-test overlay module. Retain its JUnit and serial/kernel
 logs. A configfs `applied` status alone is not proof of an applied overlay.
 
 The pinned kernel warns that changes to properties of boot-time nodes may leak
-memory when an overlay is removed. These tests validate a bounded lifecycle on a
-fresh boot; they do not qualify unlimited overlay cycling for production use.
+memory when an overlay is removed. Set `ADIDT_OVERLAY_RELOAD_CYCLES=20` to
+qualify 20 consecutive remove/apply cycles on a fresh boot. Every cycle checks
+JESD DATA, a 4,096-sample DMA capture, and kernel faults; final removal must leave
+no configfs entry. The harness accepts 1–1,000 cycles and defaults to one.
+
+AD9371-ZC706 (`bq`), ADRV9009-ZC706 (`nemo`), and FMCDAQ3-VCU118 (`nuc`)
+each passed all six tests with 20 reload cycles on 2026-09-05. FMCDAQ3 required
+2 ms per-byte console transmission to prevent UART Lite command truncation;
+the BootFabric fixture applies that pacing before powering the board.
+
+This evidence covers the tested sequence and does not establish a general
+memory-leak bound. Reboot after the qualified 20-cycle sequence; unlimited
+production cycling remains unsupported.
 
 
 ## Provisioned release runners

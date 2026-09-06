@@ -38,6 +38,7 @@ from test.hw.hw_helpers import (
     assert_jesd_links_data,
     assert_rx_capture_valid,
     open_iio_context,
+    shell_out,
 )
 from test.hw._zynqmp_boot import boot_generated_zynqmp_dtb
 from test.hw.xsa._overlay_spec import local_xsa_or_skip
@@ -143,4 +144,7 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
     ctx, _ = open_iio_context(shell)
     names = {device.name for device in ctx.devices}
     assert {"adrv9009-phy", "adrv9009-phy-b"} <= names, names
+    assert ctx.find_device("axi-adrv9009-rx-hpc") is not None, names
     assert_rx_capture_valid(ctx, "axi-adrv9009-rx-hpc")
+    online = shell_out(shell, "cat /sys/devices/system/cpu/online").strip()
+    assert online == "0-3", f"Expected all four A53 CPUs online, got {online!r}"

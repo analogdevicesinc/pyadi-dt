@@ -59,6 +59,11 @@ def board(strategy, request):
         transitioned to the ``powered_off`` state.
     """
     require_hw_prereqs()
+    if type(strategy).__name__ == "BootFabric":
+        # AXI UARTLite has a small receive FIFO. Bursting prompt probes while
+        # MicroBlaze handles converter interrupts can drop the final newline.
+        console = strategy.shell.console
+        console.txdelay = max(console.txdelay, 0.002)
     strategy.transition("powered_off")
     kernel_resource = None
     original_kernel = None
@@ -73,7 +78,13 @@ def board(strategy, request):
             strategy.target.activate(jtag)
             for name in ("xilinxdevicejtag", "xilinxvivado"):
                 resource = getattr(jtag, name)
-                jtag_hosts.append((resource, resource.host))
+                jtag_hosts.append(
+                    (
+                        resource,
+                        hasattr(resource, "host"),
+                        getattr(resource, "host", None),
+                    )
+                )
                 resource.host = host
         kernel_variable = "ADIDT_FABRIC_KERNEL_IMAGE"
         if request.node.path.name.endswith("_overlay.py") and os.environ.get(
@@ -99,8 +110,11 @@ def board(strategy, request):
         _teardown_power_off(strategy)
         if kernel_overridden:
             kernel_resource.kernel_path = original_kernel
-        for resource, host in jtag_hosts:
-            resource.host = host
+        for resource, had_host, host in jtag_hosts:
+            if had_host:
+                resource.host = host
+            else:
+                del resource.host
 
 
 def _teardown_power_off(strategy) -> None:

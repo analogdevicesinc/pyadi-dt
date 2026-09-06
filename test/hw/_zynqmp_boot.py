@@ -48,16 +48,13 @@ def boot_generated_zynqmp_dtb(board, dtb: Path):
         "run sdroot$sdbootdev && load mmc $sdbootdev:$partid $kernel_addr Image",
     )
     remote = board.jtag._stage_file(str(dtb.resolve()))
-    target = _tcl_word('name =~ "' + board.a53_target_name + '"')
+    # Physical PSU writes target unused RAM while U-Boot waits at its prompt.
+    # Avoid attaching/halting A53s: debug state can persist into CPU_ON.
     script = "\n".join(
         [
             "connect -url " + _tcl_word(board.jtag_url),
-            "targets -set -nocase -filter " + target,
-            "stop",
             'targets -set -nocase -filter {name =~ "PSU"}',
             f"dow -force -data {_tcl_word(remote)} {_DTB_ADDRESS}",
-            "targets -set -nocase -filter " + target,
-            "con",
             "disconnect",
         ]
     )
@@ -75,7 +72,8 @@ def boot_generated_zynqmp_dtb(board, dtb: Path):
         )
     except Exception as exc:
         # Keep the boot failure actionable even when Linux never reaches a shell.
-        dtb.with_suffix(".boot-failed.log").write_text(str(exc))
+        partial = getattr(getattr(board.shell.console, "_expect", None), "before", b"")
+        dtb.with_suffix(".boot-failed.log").write_bytes(partial or str(exc).encode())
         raise
     dtb.with_suffix(".boot.log").write_bytes(boot_log)
     shell = board.shell

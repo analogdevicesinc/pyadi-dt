@@ -7,6 +7,16 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ### Fixed
 
+- Preserve ZynqMP DDR banks when removing duplicate SDT CPU metadata, including
+  64-bit memory ranges and R5 aliases.
+- Correct ZU11EG SoM/carrier HMC7044 wiring, unique output names, the dual-radio
+  JESD graph and 245.76 MSPS reference profile, SPI chip selects, transport
+  bindings, IIO names, Ethernet references and SD DMA configuration. Add a
+  generated-DTB RAM boot test using the pinned production JTAG strategy.
+- Exercise configurable overlay reload cycles with JESD and DMA checks on
+  every cycle; pace BootFabric serial writes to prevent command truncation.
+- Allow non-publishing release dry runs from committed candidate branches.
+
 - Complete AD9371/ZC706 System-API reference wiring and replace four unconditional
   expected failures with executable parity checks; add a real generated-DTB boot test.
 - Provision runtime artifacts through per-board runner configuration and serve
@@ -47,7 +57,7 @@ All notable changes to pyadi-dt are documented here. The project follows
   carrier GPIOs, SYSREF topology/settings, and ADC optimization registers.
   Honor AD9528 channel driver-mode settings in emitted bindings.
 - Correct the PyPI publisher project name and distinguish historical hardware
-  coverage from current release evidence, including compile-only ZU11EG checks.
+  coverage from current release evidence.
 
 ## [0.0.1] - 2026-07-23
 

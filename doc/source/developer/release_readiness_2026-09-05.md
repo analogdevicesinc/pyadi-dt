@@ -143,16 +143,15 @@ in the same invocation. Resource paths are restored at teardown.
 
 ## Remaining release gates
 
-1. Patched runtime kernels/modules and per-board configurations are now
-   provisioned on the `bq`, `nemo`, and `nuc` runners. Preserve their matching
-   artifacts and the documented configuration when rebuilding runners. The
-   original built-in kernels remain unsupported for this lifecycle.
-2. Retain AD9081-unavailable and ZU11EG-compile-only limitations until matching
-   generated-tree hardware validation is available. ZU11EG stock-image boot now
-   works after reconnecting JTAG; the System-API reference-profile gaps are closed.
-3. Run the hosted release dry-run and macOS packaging checks for the final
-   committed candidate. Local Linux packaging passed; no hosted workflow for
-   these uncommitted changes or macOS installer was run.
+1. Preserve the matching patched runtime kernels/modules and per-board runner
+   configuration on `bq`, `nemo`, and `nuc`. The original built-in kernels do
+   not support this overlay lifecycle. Reboot after the qualified 20-cycle
+   sequence; unlimited cycling remains unqualified because OF reports property
+   allocations that may leak on removal.
+2. AD9081 generated-tree hardware validation remains outside this follow-up's
+   scope and is not claimed for the current release candidate.
+3. Finish the ZU11EG four-CPU cold-boot check and hosted validation of the final
+   committed candidate. Radio/JESD/DMA generated-tree validation has passed.
 
 ## Retained evidence
 
@@ -209,8 +208,8 @@ IPv4 check therefore fails despite a working Linux boot. The private serial
 probe checks the devices and JESD links directly.
 
 No shared plugin checkout, coordinator tags, or SD contents were changed.
-These are stock-image results, not validation of pyadi-dt's generated DTB.
-Supported-plugin integration and generated-DTB deployment remain outstanding.
+These were stock-image results. The subsequent generated-tree qualification
+below supersedes the earlier plugin/deployment gap.
 
 Follow-up logs: `/tmp/pyadi-dt-hardware-gaps-20260905/`; hardware run logs are also
 under `/tmp/pyadi-dt-followup-20260905/` on their respective runners.
@@ -230,3 +229,47 @@ and `nuc` **6 passed on each of two consecutive cold boots** with TX-first
 initialization. All boards were powered off and released. The complete software
 suite passed 917 tests, skipped 14, and excluded one network test; no expected
 failures remain. Unlimited overlay cycling is still not qualified.
+
+
+## Non-AD9081 completion follow-up
+
+All three provisioned overlay places passed the complete six-test module with
+`ADIDT_OVERLAY_RELOAD_CYCLES=20`: AD9371-ZC706 (`bq`, 6 passed),
+ADRV9009-ZC706 (`nemo`, 6 passed), and FMCDAQ3-VCU118 (`nuc`, 6 passed).
+Every cycle checked JESD DATA and a 4,096-sample DMA capture; final removal left
+no configfs overlay entry. FMCDAQ3 first failed because UART Lite dropped the
+last bytes of a command. With 2 ms per-byte transmission pacing, it completed
+all 20 cycles. Earlier failed attempts are retained alongside passing logs.
+All three boards were powered off and released.
+
+ZU11EG now uses the pinned labgrid plugin's `BootZynqMPJTAG` strategy. The test
+regenerates the complete device tree, compiles it, uploads only the DTB to RAM,
+and verifies a unique marker in U-Boot and Linux before checking both PHYs,
+two RX/observation JESD links, one TX link, and RX DMA. The stock SD kernel and
+root filesystem are retained. The generated-tree radio/JESD/DMA test passed.
+
+Live testing exposed and fixed deletion of DDR during CPU deduplication,
+truncation of 64-bit DDR registers, FMComms8 wiring used for the SoM, duplicate
+HMC7044 output names, incorrect dual-radio JESD dependencies/profile, and missing
+carrier Ethernet/SD configuration. The 245.76 MSPS profile records the exact
+ADI Linux source revision and license in its JSON metadata. Distinct IIO names
+prevent selecting the inactive observation frontend as primary RX. Early boots
+also lost CPU1 after a second JTAG CPU halt; the final test requires all four
+A53 CPUs online and uploads through the physical PSU without halting CPUs.
+
+The complete local software suite passed 930 tests (14 skipped, one network
+test excluded), followed by a passing upload-failure regression test. Ruff and
+whitespace checks passed. The final hosted runs will verify the committed source
+and packaged distributions independently.
+
+Candidate `11e0bb24ff186302d74017d88d05e0783e8d0d10` passed the
+[release dry run](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000952089)
+(Python 3.10–3.14 and distribution checks) and
+[native packaging](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000953667)
+(macOS 14 package/install, Debian 12, Fedora 42). These initial runs precede the
+final SoM fixes; final-candidate evidence is recorded separately. No tag,
+release, PyPI publication, or native release attachment was created.
+
+Current evidence: `/tmp/pyadi-dt-release-final-20260905/`. The reviewed archive
+excludes private labgrid environments and includes failed attempts, passing
+JUnit/serial logs, booted DTBs, source provenance and SHA256 checksums.
