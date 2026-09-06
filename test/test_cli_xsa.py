@@ -75,8 +75,8 @@ def test_xsa_profile_show_prints_profile_defaults():
 def test_xsa_profile_show_handles_unknown_profile():
     runner = CliRunner()
     result = runner.invoke(cli, ["xsa-profile-show", "does_not_exist"])
-    assert result.exit_code == 0, result.output
-    assert "Error: profile not found: does_not_exist" in result.output
+    assert result.exit_code == 1, result.output
+    assert "Error: profile not found: does_not_exist" in result.stderr
 
 
 def test_xsa2dt_passes_reference_dts_to_pipeline(tmp_path):

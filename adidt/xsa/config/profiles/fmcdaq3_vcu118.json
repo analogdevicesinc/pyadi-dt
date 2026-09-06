@@ -1,6 +1,8 @@
 {
   "name": "fmcdaq3_vcu118",
   "defaults": {
+    "fpga_adc": {"out_clk_select": "XCVR_REFCLK"},
+    "fpga_dac": {"out_clk_select": "XCVR_REFCLK"},
     "fmcdaq3_board": {
       "spi_bus": "axi_spi",
       "clock_cs": 0,
@@ -11,6 +13,11 @@
       "adc_spi_max_frequency": 10000000,
       "dac_spi_max_frequency": 10000000,
       "gpio_controller": "axi_gpio",
+      "clk_status0_gpio": 32,
+      "clk_status1_gpio": 33,
+      "dac_txen_gpio": 37,
+      "dac_irq_gpio": 34,
+      "adc_powerdown_gpio": 38,
       "adc_dma_label": "axi_ad9680_dma",
       "dac_dma_label": "axi_ad9152_dma",
       "adc_core_label": "axi_ad9680_tpl_core_adc_tpl_core",

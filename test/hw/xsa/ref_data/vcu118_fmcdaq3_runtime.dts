@@ -1,0 +1,30 @@
+// SPDX-License-Identifier: GPL-2.0
+/* Include from ADI Linux arch/microblaze/boot/dts; compile with DTC_FLAGS=-@.
+ * Keep JESD and IIO drivers unloaded until the generated overlay is applied.
+ */
+#include "vcu118_fmcdaq3.dts"
+
+/ {
+    __symbols__ {
+        axi_ad9680_dma = "/amba_pl/rx-dmac@7c400000";
+        axi_ad9152_dma = "/amba_pl/tx-dmac@7c420000";
+        axi_ad9680_tpl_core_adc_tpl_core = "/amba_pl/axi-ad9680-hpc@44a10000";
+        axi_ad9152_tpl_core_dac_tpl_core = "/amba_pl/axi-ad9152-hpc@44a04000";
+        axi_ad9680_xcvr = "/amba_pl/axi-ad9680-adxcvr@44a50000";
+        axi_ad9152_xcvr = "/amba_pl/axi-ad9152-adxcvr@44a60000";
+        axi_ad9680_jesd_rx_axi = "/amba_pl/axi-jesd204-rx@44aa0000";
+        axi_ad9152_jesd_tx_axi = "/amba_pl/axi-jesd204-tx@44a90000";
+    };
+};
+
+/* The overlay creates these devices, with their complete carrier bindings. */
+&axi_ad9680_core { /delete-property/ spibus-connected; };
+&axi_ad9152_core { /delete-property/ spibus-connected; };
+&axi_ad9680_adxcvr { /delete-property/ clocks; };
+&axi_ad9152_adxcvr {
+    /delete-property/ clocks;
+    /delete-property/ jesd204-inputs;
+};
+/delete-node/ &clk0_ad9528;
+/delete-node/ &adc0_ad9680;
+/delete-node/ &dac0_ad9152;

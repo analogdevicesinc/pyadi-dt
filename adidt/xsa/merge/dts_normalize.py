@@ -1,93 +1,42 @@
-"""DTS post-processing helpers shared between the merger and test harness.
-
-These functions operate on a preprocessed DTS file on disk and rewrite
-it in place to work around known sdtgen output quirks.  Both the
-merger's optional ``dtc`` smoke test and the hardware test harness's
-``compile_dts_to_dtb`` need the same fix-ups, so they live here.
-"""
+"""Normalize duplicate CPU metadata in sdtgen's preprocessed ZynqMP trees."""
 
 from __future__ import annotations
 
 import re
 from pathlib import Path
 
-
-_ROOT_BLOCK_OPEN_RE = re.compile(r"^/ \{", re.M)
+_CPU_NODE = re.compile(r"(?m)^[ \t]*(cpus_\w+)\s*:\s*[\w@-]+\s*\{")
 
 
 def dedup_zynqmp_root_nodes(pp_dts: Path) -> None:
-    """Rewrite *pp_dts* to remove the duplicate sdtgen ZynqMP root block.
+    """Remove repeated CPU cluster declarations while retaining board data.
 
-    sdtgen for ZynqMP generates ``system-top.dts`` that ``#include``s
-    ``zynqmp.dtsi``, ``zynqmp-clk-ccf.dtsi``, and ``pl.dtsi``.  After
-    ``cpp`` preprocessing, the file has 4 ``/ { ... };`` blocks:
-
-    * Block 0: ``zynqmp.dtsi`` (canonical A53 CPU, peripherals, clocks)
-    * Block 1: ``zynqmp-clk-ccf.dtsi`` (PS reference clock)
-    * Block 2: ``pl.dtsi`` (FPGA PL bus with all AXI IPs)
-    * Block 3: ``system-top.dts`` (sdtgen re-declaration of cpus,
-      amba_pl, etc.)
-
-    Block 3 duplicates everything already defined in Blocks 0-2 and
-    causes ``dtc`` ``duplicate_node_names`` errors.  Remove it
-    entirely — the content after Block 3 (overlay ``&label { ... }``
-    references appended by the merger) is preserved.
-
-    The ``chosen`` and ``aliases`` sub-nodes from Block 3 are required
-    for console output and device aliasing, so they're spliced into a
-    new minimal root block before the trailing overlay references.
-
-    Also renames the MicroBlaze PMU CPU node label collision
-    (``cpus_microblaze_0: cpus`` clashes with ``cpus_a53: cpus`` from
-    ``zynqmp.dtsi``).  The MicroBlaze PMU CPU node only carries
-    address-map metadata so the rename is a no-op for the running OS.
-
-    No-op when the file does not match the ZynqMP sdtgen pattern (fewer
-    than 4 root blocks).
+    System device-tree output repeats CPU cluster labels from zynqmp.dtsi.
+    Only the later declarations are metadata duplicates. Their containing root
+    block also defines DDR, aliases, chosen and board properties, all of which
+    must survive compilation. Root-block count is not a reliable discriminator.
     """
     text = pp_dts.read_text()
-
-    root_blocks: list[tuple[int, int]] = []
-    for m in _ROOT_BLOCK_OPEN_RE.finditer(text):
-        start = m.start()
-        depth = 0
-        for i in range(m.end() - 1, len(text)):
-            if text[i] == "{":
+    seen: set[str] = set()
+    removals: list[tuple[int, int]] = []
+    for match in _CPU_NODE.finditer(text):
+        label = match.group(1)
+        if label not in seen:
+            seen.add(label)
+            continue
+        depth = 1
+        for pos in range(match.end(), len(text)):
+            if text[pos] == "{":
                 depth += 1
-            elif text[i] == "}":
+            elif text[pos] == "}":
                 depth -= 1
                 if depth == 0:
-                    end = i + 1
-                    if end < len(text) and text[end] == ";":
+                    end = pos + 1
+                    if text[end : end + 1] == ";":
                         end += 1
-                    if end < len(text) and text[end] == "\n":
-                        end += 1
-                    root_blocks.append((start, end))
+                    removals.append((match.start(), end))
                     break
-
-    if len(root_blocks) >= 4:
-        last_start, last_end = root_blocks[-1]
-        last_block = text[last_start:last_end]
-
-        preserved: list[str] = []
-        for node_name in ("chosen", "aliases"):
-            node_re = re.compile(
-                rf"^ {node_name}\b[^\{{]*\{{.*?^ \}};",
-                re.M | re.S,
-            )
-            m = node_re.search(last_block)
-            if m:
-                preserved.append(m.group())
-
-        text = text[:last_start] + text[last_end:]
-
-        if preserved:
-            preserved_block = "/ {\n" + "\n".join(preserved) + "\n};\n"
-            text = text.rstrip() + "\n\n" + preserved_block + "\n"
-
-    text = text.replace(
-        "cpus_microblaze_0: cpus {",
-        "cpus_microblaze_0: cpus-pmu {",
-    )
-
+    for start, end in reversed(removals):
+        text = text[:start] + text[end:]
+    text = text.replace("cpus_microblaze_0: cpus {", "cpus_microblaze_0: cpus-pmu {")
     pp_dts.write_text(text)

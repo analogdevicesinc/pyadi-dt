@@ -148,6 +148,18 @@ def _fix_vcu118_ethernet(content: str, pl_dtsi: Path) -> str:
 # ---------------------------------------------------------------------------
 
 
+@register_fixup("adrv937x_zc706")
+def _fix_adrv9371_iio_names(content: str, pl_dtsi: Path) -> str:
+    """Keep primary RX and observation IIO devices distinguishable."""
+    for old, new in (
+        ("ad_ip_jesd204_tpl_adc@44a00000", "axi-ad9371-rx-hpc@44a00000"),
+        ("ad_ip_jesd204_tpl_adc@44a08000", "axi-ad9371-rx-obs-hpc@44a08000"),
+        ("ad_ip_jesd204_tpl_dac@44a04000", "axi-ad9371-tx-hpc@44a04000"),
+    ):
+        content = content.replace(old, new)
+    return content
+
+
 @register_fixup("ad9084_vcu118")
 def _fix_vcu118_iio_names(content: str, pl_dtsi: Path) -> str:
     """Rename sdtgen TPL node names to match ADI reference naming.

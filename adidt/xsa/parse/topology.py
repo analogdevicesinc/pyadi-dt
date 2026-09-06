@@ -441,7 +441,7 @@ class XsaParser:
         return addr_map
 
     def _extract_hwh(self, xsa_path: Path) -> str:
-        """Read and return the first ``.hwh`` file text from the XSA zip archive."""
+        """Read and return the top-level ``.hwh`` file text from the XSA zip archive."""
         try:
             with zipfile.ZipFile(xsa_path) as zf:
                 hwh_names = [n for n in zf.namelist() if n.endswith(".hwh")]
@@ -449,11 +449,35 @@ class XsaParser:
                     raise XsaParseError(
                         f"no hardware handoff (.hwh) file found in {xsa_path.name}"
                     )
-                raw_bytes = zf.read(hwh_names[0])
+                selected = hwh_names[0]
+                if len(hwh_names) > 1:
+                    defaults = []
+                    if "hwdef.xml" in zf.namelist():
+                        try:
+                            manifest = ET.fromstring(zf.read("hwdef.xml"))
+                        except ET.ParseError as exc:
+                            raise XsaParseError(f"invalid hwdef.xml: {exc}") from exc
+                        defaults = [
+                            entry.get("Name")
+                            for entry in manifest.findall(".//File")
+                            if entry.get("Type") == "HW_HANDOFF"
+                            and entry.get("BD_TYPE") == "DEFAULT_BD"
+                        ]
+                    if not defaults:
+                        defaults = [
+                            n for n in hwh_names if Path(n).name == "system.hwh"
+                        ]
+                    if len(defaults) != 1 or defaults[0] not in hwh_names:
+                        raise XsaParseError(
+                            "cannot identify the top-level hardware handoff in "
+                            f"{xsa_path.name}; multiple .hwh files are present"
+                        )
+                    selected = defaults[0]
+                raw_bytes = zf.read(selected)
                 try:
                     return raw_bytes.decode("utf-8")
                 except UnicodeDecodeError as e:
-                    raise XsaParseError(f"cannot decode {hwh_names[0]} as UTF-8: {e}")
+                    raise XsaParseError(f"cannot decode {selected} as UTF-8: {e}")
         except zipfile.BadZipFile as e:
             raise XsaParseError(f"cannot open {xsa_path.name} as a zip archive: {e}")
 

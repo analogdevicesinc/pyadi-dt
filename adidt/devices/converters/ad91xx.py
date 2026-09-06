@@ -105,3 +105,4 @@ class AD9152(_AD91xxBase):
 
     label: str = "dac0_ad9152"
     jesd_link_mode: int = Field(4, alias="adi,jesd-link-mode")
+    sysref_mode: int = Field(1, alias="adi,sysref-mode")

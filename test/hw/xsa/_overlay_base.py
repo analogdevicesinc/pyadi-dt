@@ -17,11 +17,14 @@ collection sites are the per-board files that import these names.
 from __future__ import annotations
 
 import os
+from contextlib import nullcontext
 import shutil as _shutil
 import time
 from pathlib import Path
 
 import pytest
+
+from test.hw.xsa._overlay_module_server import serve_overlay_modules
 
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.parse.topology import XsaParser
@@ -44,14 +47,19 @@ from test.hw.hw_helpers import (
     unload_overlay,
 )
 from test.hw.xsa._overlay_fft import fft_loopback_check, prepare_pyadi_device
+from test.hw.xsa._overlay_modules import (
+    stage_overlay_modules,
+    start_overlay_modules,
+    stop_overlay_modules,
+)
+from test.hw.xsa._overlay_tree import prepare_overlay_base
 
 
 _HAS_LG = bool(os.environ.get("LG_COORDINATOR") or os.environ.get("LG_ENV"))
 requires_lg = pytest.mark.skipif(
     not _HAS_LG,
     reason=(
-        "set LG_COORDINATOR or LG_ENV for overlay hardware tests "
-        "(see .env.example)"
+        "set LG_COORDINATOR or LG_ENV for overlay hardware tests (see .env.example)"
     ),
 )
 
@@ -105,6 +113,25 @@ def overlay_dtbo(overlay_spec, pipeline_result, tmp_path_factory) -> Path:
     return dtbo
 
 
+def _runtime_kernel_image(request, spec):
+    """Select an overlay-only override before evaluating the ordinary kernel fixture."""
+    variable = {
+        "built_kernel_image_zynq": "ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ",
+        "built_kernel_image_zynqmp": "ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQMP",
+    }.get(spec.kernel_fixture_name)
+    override = os.environ.get(variable) if variable else None
+    if override:
+        image = Path(override)
+        if not image.is_file():
+            pytest.fail(f"{variable} is not a runner-local file: {image}")
+        return image
+    return (
+        request.getfixturevalue(spec.kernel_fixture_name)
+        if spec.kernel_fixture_name
+        else None
+    )
+
+
 @pytest.fixture(scope="module")
 def booted_board(
     request,
@@ -118,14 +145,14 @@ def booted_board(
 
     Dispatches on ``overlay_spec.boot_mode``:
 
-    * ``"tftp"`` — compile merged DTS, stage as ``devicetree.dtb``,
+    * ``"tftp"`` — compile merged DTS, remove overlay-owned children for
+      modular profiles, stage as ``devicetree.dtb``,
       ``deploy_and_boot`` with the kernel image fixture named in
       ``kernel_fixture_name``.
     * ``"sd"`` — same but stage as ``system.dtb`` for Kuiper's ZynqMP
       U-Boot.
-    * ``"fabric_jtag"`` — no DTB rebuild, no kernel fixture; transition
-      directly to ``shell`` and ``pytest.skip`` if the kernel lacks
-      configfs overlay support (the simpleImage path on VCU118).
+    * ``"fabric_jtag"`` — use the runtime base embedded in the supplied
+      simpleImage; transition to ``shell`` and require configfs support.
 
     All three paths then transfer the DTBO via the serial shell and
     ensure the configfs overlay slot is empty before yielding.
@@ -135,25 +162,15 @@ def booted_board(
     if spec.boot_mode == "fabric_jtag":
         board.transition("shell")
         shell = board.target.get_driver("ADIShellDriver")
-        res = shell_out(
-            shell,
-            f"test -d {CONFIGFS_OVERLAYS} && echo OK || echo MISSING",
-        )
-        if "OK" not in res:
-            pytest.skip(
-                "kernel lacks CONFIG_OF_OVERLAY / CONFIG_OF_CONFIGFS "
-                "(simpleImage was not built with overlay support)"
-            )
+        assert_configfs_overlay_support(shell)
     elif spec.boot_mode in ("tftp", "sd"):
-        kernel_image = (
-            request.getfixturevalue(spec.kernel_fixture_name)
-            if spec.kernel_fixture_name
-            else None
-        )
+        kernel_image = _runtime_kernel_image(request, spec)
         out_dir = tmp_path_factory.mktemp("merged_boot")
         merged_dts = pipeline_result["merged"]
         dtb_raw = out_dir / f"{spec.overlay_name}.dtb"
         compile_dts_to_dtb(merged_dts, dtb_raw)
+        if spec.runtime_modules:
+            prepare_overlay_base(dtb_raw, overlay_dtbo)
 
         if spec.boot_mode == "tftp":
             staged = stage_dtb_as_devicetree(dtb_raw, out_dir / "tftp_staging")
@@ -167,10 +184,12 @@ def booted_board(
     else:
         raise ValueError(f"unknown boot_mode: {spec.boot_mode!r}")
 
-    deploy_dtbo_via_shell(shell, overlay_dtbo, _dtbo_remote_path(spec))
-    if overlay_is_loaded(shell, spec.overlay_name):
-        unload_overlay(shell, spec.overlay_name)
-    return board
+    with serve_overlay_modules() if spec.runtime_modules else nullcontext():
+        if spec.runtime_modules:
+            stage_overlay_modules(shell)
+        deploy_dtbo_via_shell(shell, overlay_dtbo, _dtbo_remote_path(spec))
+        _ensure_unloaded(shell, spec)
+        yield board
 
 
 # ---------------------------------------------------------------------------
@@ -186,15 +205,29 @@ def _shell(booted):
     return booted.target.get_driver("ADIShellDriver")
 
 
-def _ensure_unloaded(shell, name: str) -> None:
-    if overlay_is_loaded(shell, name):
-        unload_overlay(shell, name)
+def _ensure_unloaded(shell, spec) -> None:
+    if overlay_is_loaded(shell, spec.overlay_name):
+        result = _remove_overlay(shell, spec)
+        assert "RC=0" in result, f"overlay removal failed: {result}"
         time.sleep(_OVERLAY_TEARDOWN_SETTLE_S)
+        assert not overlay_is_loaded(shell, spec.overlay_name), (
+            "overlay configfs entry remains after removal"
+        )
+
+
+def _remove_overlay(shell, spec) -> str:
+    if spec.runtime_modules:
+        stop_overlay_modules(shell, spec.runtime_modules)
+    return unload_overlay(shell, spec.overlay_name)
 
 
 def _apply_and_wait(shell, spec) -> None:
+    if spec.runtime_modules:
+        stop_overlay_modules(shell, spec.runtime_modules)
     res = load_overlay(shell, spec.overlay_name, _dtbo_remote_path(spec))
     assert "RC=0" in res, f"overlay load failed: {res}"
+    if spec.runtime_modules:
+        start_overlay_modules(shell, spec.runtime_modules)
     time.sleep(spec.settle_after_apply_s)
 
 
@@ -229,8 +262,7 @@ def test_overlay_generation_unit(overlay_spec, pipeline_result, overlay_dtbo):
     src_lower = src.lower()
     for needle in overlay_spec.dtso_must_contain_all:
         assert needle.lower() in src_lower, (
-            f"Pipeline overlay does not contain expected substring "
-            f"{needle!r}: {dtso}"
+            f"Pipeline overlay does not contain expected substring {needle!r}: {dtso}"
         )
     if overlay_spec.dtso_must_contain_any:
         assert any(
@@ -247,7 +279,7 @@ def test_configfs_overlay_support(overlay_spec, board, request):
     """Target kernel must support runtime overlays via configfs.
 
     For ``fabric_jtag`` boards this bypasses ``booted_board`` (which
-    would skip rather than fail on missing configfs) so a configfs-less
+    also verifies configfs before transfer) so a configfs-less
     kernel surfaces here as an explicit failure.  For other boards, the
     fixture path is the normal one.
     """
@@ -265,17 +297,17 @@ def test_load_overlay(overlay_spec, booted_board, tmp_path):
     """Apply the overlay; verify clean probe, IIO discovery, and JESD DATA."""
     spec = overlay_spec
     shell = _shell(booted_board)
-    _ensure_unloaded(shell, spec.overlay_name)
+    _ensure_unloaded(shell, spec)
 
     # dmesg before overlay-apply is the boot log — filter it out so we
     # only flag errors caused by the overlay itself.
-    dmesg_baseline = int(shell_out(shell, "dmesg | wc -l").strip() or "0")
+    dmesg_before = shell_out(shell, "dmesg")
 
     _apply_and_wait(shell, spec)
 
     dmesg_full = shell_out(shell, "dmesg")
     (tmp_path / "dmesg_after_load.log").write_text(dmesg_full)
-    dmesg_new = "\n".join(dmesg_full.splitlines()[dmesg_baseline:])
+    dmesg_new = _dmesg_since(dmesg_before, dmesg_full)
     (tmp_path / "dmesg_overlay_only.log").write_text(dmesg_new)
     assert_no_kernel_faults(dmesg_new)
     assert_no_probe_errors(spec.dmesg_filter(dmesg_new))
@@ -379,7 +411,7 @@ def test_unload_overlay(overlay_spec, booted_board):
         # rather than skipping so the unload path is always exercised.
         _apply_and_wait(shell, spec)
 
-    res = unload_overlay(shell, spec.overlay_name)
+    res = _remove_overlay(shell, spec)
     assert "RC=0" in res, f"overlay unload failed: {res}"
     time.sleep(_OVERLAY_TEARDOWN_SETTLE_S)
 
@@ -392,18 +424,44 @@ def test_unload_overlay(overlay_spec, booted_board):
 
 
 @requires_lg
-def test_reload_overlay(overlay_spec, booted_board):
-    """Load → unload → load cycle; re-verify devices + JESD link."""
+def test_reload_overlay(overlay_spec, booted_board, tmp_path):
+    """Repeat reload and data-path checks for the requested bounded soak."""
     spec = overlay_spec
     shell = _shell(booted_board)
-    _ensure_unloaded(shell, spec.overlay_name)
+    cycles = int(os.environ.get("ADIDT_OVERLAY_RELOAD_CYCLES", "1"))
+    assert 1 <= cycles <= 1000, "ADIDT_OVERLAY_RELOAD_CYCLES must be 1..1000"
+    for cycle in range(1, cycles + 1):
+        _ensure_unloaded(shell, spec)
+        _apply_and_wait(shell, spec)
+        if spec.pre_capture_hook is not None:
+            spec.pre_capture_hook(shell, tmp_path)
+        ctx, _ = open_iio_context(shell)
+        context = f"overlay reload {cycle}/{cycles}"
+        _assert_iio_devices_present(spec, ctx, context=context)
+        assert_jesd_links_data(
+            shell,
+            context=context,
+            expected_rx_links=spec.expected_rx_jesd_links,
+            expected_tx_links=spec.expected_tx_jesd_links,
+        )
+        targets = (
+            tuple(spec.capture_targets_resolver(ctx))
+            if spec.capture_targets_resolver is not None
+            else spec.capture_target_names
+        )
+        assert_rx_capture_valid(ctx, targets, n_samples=2**12, context=context)
+        del ctx
+        assert_no_kernel_faults(shell_out(shell, "dmesg"))
+        print(f"OVERLAY_RELOAD_PASS cycle={cycle}/{cycles}", flush=True)
+    # Include the final removal in the bounded lifecycle, with no overlay left.
+    _ensure_unloaded(shell, spec)
+    assert_no_kernel_faults(shell_out(shell, "dmesg"))
 
-    _apply_and_wait(shell, spec)
-    ctx, _ = open_iio_context(shell)
-    _assert_iio_devices_present(spec, ctx, context="after overlay reload")
-    assert_jesd_links_data(
-        shell,
-        context="after overlay reload",
-        expected_rx_links=spec.expected_rx_jesd_links,
-        expected_tx_links=spec.expected_tx_jesd_links,
-    )
+
+def _dmesg_since(before: str, after: str) -> str:
+    """Do not lose fault checks when overlay messages wrap the kernel ring buffer."""
+    before_lines = before.splitlines()
+    after_lines = after.splitlines()
+    if after_lines[: len(before_lines)] == before_lines:
+        return "\n".join(after_lines[len(before_lines) :])
+    return after

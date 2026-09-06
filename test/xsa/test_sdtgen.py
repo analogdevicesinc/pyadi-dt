@@ -401,6 +401,8 @@ def test_run_sanitizes_non_ddr_memory_nodes(tmp_path):
         runner.run(xsa, out_dir)
 
     pcw = (out_dir / "pcw.dtsi").read_text()
+    assert "reg = <0x0 0x0 0x0 0x7FF00000>;" in pcw
+    assert "reg = <0x00000008 0x00000000 0x0 0x80000000>;" in pcw
     assert "psu_ddr_0_memory: memory@0" in pcw
     assert "psu_ddr_1_memory: memory@800000000" in pcw
     assert "psu_ocm_ram_0_memory: memory@FFFC0000" in pcw

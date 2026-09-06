@@ -316,7 +316,7 @@
 			reset-gpios = <&gpio0 106 0>;
 			sysref-req-gpios = <&gpio0 112 0>;
 			jesd204-link-ids = <0 1 2>;
-			jesd204-inputs = <&axi_ad9371_rx_jesd_rx_axi 0 1>, <&axi_ad9371_rx_os_jesd_rx_axi 0 2>, <&axi_ad9371_tx_jesd_tx_axi 0 0>;
+			jesd204-inputs = <&axi_ad9371_rx_jesd_rx_axi 0 1>, <&axi_ad9371_rx_os_jesd_rx_axi 0 2>, <&tx_ad9371_tpl_core_dac_tpl_core 0 0>;
 			compatible = "adi,ad9371";
 			spi-max-frequency = <25000000>;
 			adi,clocks-clk-pll-vco-freq_khz = <0x960000>;

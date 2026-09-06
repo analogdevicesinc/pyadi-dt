@@ -1,8 +1,12 @@
 # Release Operator Runbook
 
-This runbook covers validation, publication, verification, and recovery for an
-`adidt` release. The **Publish Release** workflow builds on manual dispatch but
+This runbook covers validation, publication, verification, and recovery for a
+`pyadi-dt` release. The **Publish Release** workflow builds on manual dispatch but
 publishes only when an annotated `v*` tag is pushed.
+
+The [2026-09-05 readiness audit](release_readiness_2026-09-05.md) records
+candidate checks and unresolved hardware coverage; refresh that evidence for
+the final release commit.
 
 ## One-time setup
 
@@ -11,7 +15,7 @@ publishes only when an annotated `v*` tag is pushed.
 Before the first release, sign in to PyPI and add a **pending trusted
 publisher** with these exact values:
 
-- PyPI project name: `adidt`
+- PyPI project name: `pyadi-dt`
 - Owner: `analogdevicesinc`
 - Repository: `pyadi-dt`
 - Workflow: `release.yml`
@@ -45,11 +49,16 @@ this environment; no PyPI API token is required.
    twine check dist/*
    ```
 
-3. Run the hosted dry run from `main`. The candidate tag does **not** need to
+   The hosted build stages only `.whl` and `.tar.gz` files into `pypi-dist/`
+   using `.github/scripts/stage-pypi-artifacts.sh`, and validates that directory
+   on both dry runs and tag builds. `SHA256SUMS` stays with the GitHub release
+   assets; it must not enter the PyPI action's upload directory.
+
+3. Run the hosted dry run from the candidate branch (or `main` after merge). The candidate tag does **not** need to
    exist yet:
 
    ```bash
-   gh workflow run release.yml --ref main -f tag=vX.Y.Z
+   gh workflow run release.yml --ref YOUR_CANDIDATE_BRANCH -f tag=vX.Y.Z
    gh run watch --exit-status
    ```
 
@@ -59,6 +68,12 @@ this environment; no PyPI API token is required.
    Debian packaging, and native system packaging—are green for the exact commit
    to be tagged. The native workflow builds on Debian 12, Fedora 42, and macOS
    14 rather than cross-packaging those artifacts on Ubuntu.
+
+   Hardware jobs must select tests and produce at least one passing testcase;
+   skip-only jobs are failures. This minimum gate does not certify every test
+   path: review individual skips and record unavailable boards separately.
+   Generated-DTB evidence requires a boot strategy that actually deploys the
+   staged DTB, rather than booting the existing SD tree.
 
 ## Tag and publish
 

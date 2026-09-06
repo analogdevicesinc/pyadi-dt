@@ -5,22 +5,15 @@ directly on an ``xczu11eg`` MPSoC (rather than an FMC eval card on a
 ZCU102 carrier).  It is a dual-die design that the kernel binds as a
 single ``adrv9009-x2`` device, clocked by an on-SoM HMC7044.
 
-Unlike the ZCU102/ZC706 ADRV9009 tests, the ZU11EG lab place boots over
-**JTAG** (Xilinx "mini" U-Boot SPL — see ``BootZynqMPJTAG`` in
-adi-labgrid-plugins); it does not yet have a Kuiper Linux SD/TFTP boot
-path.  So this test validates the piece pyadi-dt owns end-to-end against
-the *real* board's HDL artifact: parse the committed ZU11EG XSA, run the
-full ``XsaPipeline`` (sdtgen → build → merge), assert the generated
-device tree carries the correct ADRV9009-ZU11EG topology
-(``adrv9009-x2`` PHY, HMC7044 clock, RX/OBS/TX JESD links), and compile
-it to a DTB with ``dtc``.
+The ZU11EG lab place uses JTAG to reach production U-Boot. This test
+runs the full XSA pipeline, compiles its generated tree, uploads that DTB
+to RAM, and boots the stock SD kernel/rootfs with it. A unique marker must
+match in U-Boot and Linux before PHY, JESD, and DMA checks run. No SD file
+or persistent U-Boot environment is written.
 
-It is gated by ``@pytest.mark.lg_feature(("adrv9009zu11eg", "adrv2crr-fmc"))``
-so the dynamic hardware-CI matrix runs it against the coordinator place
-tagged for the ZU11EG (``daughter-board=adrv9009zu11eg``,
-``carrier=adrv2crr-fmc``).  When Kuiper Linux boot lands on the ZU11EG,
-extend this with the standard ``run_xsa_boot_and_verify`` flow
-(boot_mode="sd").
+The coordinator must advertise BootZynqMPJTAG and have the production
+handoff artifacts. The shared environment preparation registers the pinned
+plugin's strategy and accepts either connected Ethernet port.
 
 Requires ``sdtgen`` (Vitis/Vivado) and ``dtc`` on PATH; skips cleanly if
 either is missing.
@@ -37,7 +30,16 @@ import pytest
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.parse.topology import XsaParser
 from test.hw._system_base import requires_lg
-from test.hw.hw_helpers import DEFAULT_OUT_DIR, compile_dts_to_dtb
+from test.hw.hw_helpers import (
+    DEFAULT_OUT_DIR,
+    compile_dts_to_dtb,
+    collect_dmesg,
+    assert_no_kernel_faults,
+    assert_jesd_links_data,
+    assert_rx_capture_valid,
+    open_iio_context,
+)
+from test.hw._zynqmp_boot import boot_generated_zynqmp_dtb
 from test.hw.xsa._overlay_spec import local_xsa_or_skip
 
 
@@ -74,7 +76,7 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
     ``board`` is requested so the labgrid ``lg_feature`` gate binds this
     test to the ZU11EG place (and the dynamic HW matrix schedules it on
     the right runner); the device-tree generation itself is driven by the
-    board's committed HDL XSA rather than a live network boot.
+    board's committed HDL XSA before the generated-DTB RAM handoff.
     """
     if shutil.which("sdtgen") is None:
         pytest.skip("sdtgen not on PATH (install Vitis/Vivado device-tree generator)")
@@ -97,7 +99,7 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
     )
 
     # --- Run the full pipeline (auto-detects the adrv9009_zu11eg profile) ---
-    out_dir = DEFAULT_OUT_DIR
+    out_dir = DEFAULT_OUT_DIR / "adrv9009_zu11eg"
     out_dir.mkdir(parents=True, exist_ok=True)
     result = XsaPipeline().run(
         xsa_path=xsa_path,
@@ -133,3 +135,12 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
         f"dtc produced empty/missing DTB: {dtb_path}"
     )
     print(f"Compiled ZU11EG DTB: {dtb_path} ({dtb_path.stat().st_size} bytes)")
+
+    shell = boot_generated_zynqmp_dtb(board, dtb_path)
+    dmesg = collect_dmesg(shell, out_dir, "adrv9009_zu11eg")
+    assert_no_kernel_faults(dmesg)
+    assert_jesd_links_data(shell, expected_rx_links=2, expected_tx_links=1)
+    ctx, _ = open_iio_context(shell)
+    names = {device.name for device in ctx.devices}
+    assert {"adrv9009-phy", "adrv9009-phy-b"} <= names, names
+    assert_rx_capture_valid(ctx, "axi-adrv9009-rx-hpc")

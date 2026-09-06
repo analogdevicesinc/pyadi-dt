@@ -36,7 +36,7 @@ def _hw_mode() -> str | None:
 
 
 @pytest.fixture(scope="module")
-def board(strategy):
+def board(strategy, request):
     """Verify tool prerequisites then transition the board to *powered_off*.
 
     Works identically in coordinator and direct modes — the ``strategy``
@@ -60,10 +60,47 @@ def board(strategy):
     """
     require_hw_prereqs()
     strategy.transition("powered_off")
+    kernel_resource = None
+    original_kernel = None
+    kernel_overridden = False
+    jtag_hosts = []
     try:
+        host = os.environ.get("ADIDT_JTAG_HOST")
+        if host:
+            jtag = getattr(strategy, "jtag", None)
+            if jtag is None:
+                pytest.fail("ADIDT_JTAG_HOST requires a JTAG strategy")
+            strategy.target.activate(jtag)
+            for name in ("xilinxdevicejtag", "xilinxvivado"):
+                resource = getattr(jtag, name)
+                jtag_hosts.append((resource, resource.host))
+                resource.host = host
+        kernel_variable = "ADIDT_FABRIC_KERNEL_IMAGE"
+        if request.node.path.name.endswith("_overlay.py") and os.environ.get(
+            "ADIDT_OVERLAY_FABRIC_KERNEL_IMAGE"
+        ):
+            kernel_variable = "ADIDT_OVERLAY_FABRIC_KERNEL_IMAGE"
+        kernel = os.environ.get(kernel_variable)
+        if kernel:
+            jtag = getattr(strategy, "jtag", None)
+            if jtag is not None:
+                # Populate remote resource parameters before overriding them.
+                strategy.target.activate(jtag)
+            kernel_resource = getattr(jtag, "xilinxdevicejtag", None)
+            if kernel_resource is None or not hasattr(kernel_resource, "kernel_path"):
+                pytest.fail(f"{kernel_variable} requires a fabric JTAG resource")
+            if not Path(kernel).is_absolute():
+                pytest.fail(f"{kernel_variable} must be an absolute exporter path")
+            original_kernel = kernel_resource.kernel_path
+            kernel_resource.kernel_path = kernel
+            kernel_overridden = True
         yield strategy
     finally:
         _teardown_power_off(strategy)
+        if kernel_overridden:
+            kernel_resource.kernel_path = original_kernel
+        for resource, host in jtag_hosts:
+            resource.host = host
 
 
 def _teardown_power_off(strategy) -> None:

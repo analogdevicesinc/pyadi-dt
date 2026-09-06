@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Candidate v-prefixed tag to validate and dry-run from main
+        description: Candidate v-prefixed tag to validate without publishing
         required: true
         type: string
   push:
@@ -42,18 +42,19 @@ jobs:
         run: |
           python .github/scripts/release_preflight.py --tag "$RELEASE_TAG" --github-output "$GITHUB_OUTPUT"
 
-      - name: Verify release source belongs to main
+      - name: Verify release source policy
         env:
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
           git fetch origin main --tags
           if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            [[ "$GITHUB_REF" == "refs/heads/main" ]] || {
-              echo "Manual release dry runs must be dispatched from main" >&2
+            [[ "$GITHUB_REF" == refs/heads/* ]] || {
+              echo "Manual release dry runs must select a branch" >&2
               exit 1
             }
-            git merge-base --is-ancestor "$GITHUB_SHA" origin/main
+            # Validate the exact dispatched commit. Publication remains tag-only.
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           else
             [[ "$(git cat-file -t "refs/tags/$RELEASE_TAG")" == "tag" ]] || {
               echo "Release tags must be annotated tags" >&2
@@ -99,6 +100,10 @@ jobs:
         run: |
           python .github/scripts/release_manifest.py generate --dir dist --output dist/SHA256SUMS
           python .github/scripts/release_manifest.py verify --manifest dist/SHA256SUMS --dir dist
+      - name: Stage and validate PyPI upload contents
+        run: |
+          bash .github/scripts/stage-pypi-artifacts.sh dist pypi-dist
+          twine check pypi-dist/*
       - name: Verify wheel in a clean environment
         run: |
           python -m venv /tmp/adidt-release-smoke
@@ -111,6 +116,11 @@ jobs:
         with:
           name: python-distributions
           path: dist/
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        with:
+          name: pypi-distributions
+          path: pypi-dist/
           if-no-files-found: error
 
   github-release:
@@ -160,8 +170,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          name: python-distributions
-          path: dist
+          name: pypi-distributions
+          path: pypi-dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: pypi-dist/
           skip-existing: true

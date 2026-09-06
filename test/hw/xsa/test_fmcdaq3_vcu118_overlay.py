@@ -10,27 +10,25 @@ Differences encoded in :data:`SPEC`:
   the boot through :class:`BootFabric` + :class:`XilinxDeviceJTAG` on
   the ``nuc`` exporter, which loads the bitstream and a
   ``simpleImage.vcu118_fmcdaq3.strip`` (kernel + embedded DTB) over
-  JTAG.  The overlay is layered on top of the embedded DTB at runtime
-  via configfs — no DTB rebuild and no kernel-image fixture are
-  required (``boot_mode="fabric_jtag"``, ``kernel_fixture_name=None``).
+  JTAG. The image must embed the supplied runtime base without the SPI
+  children created by the overlay, plus matching modular JESD/IIO drivers.
+  See ``doc/source/developer/runtime_overlay_validation.md``.
 
-* **Configfs gate** — Kuiper's MicroBlaze simpleImage is the most
-  likely place we will find ``CONFIG_OF_OVERLAY``/``CONFIG_OF_CONFIGFS``
-  missing.  The shared ``booted_board`` fixture probes for the
-  configfs overlay directory in ``fabric_jtag`` mode and skips the
-  lifecycle/DMA tests cleanly when absent;
-  :func:`test_configfs_overlay_support` retains its strict-assert
-  behavior so a configfs-less kernel is still an explicit failure of
-  *that* test (it uses the ``board`` fixture directly, bypassing
-  ``booted_board``).
+* **Configfs gate** — the kernel must enable ``CONFIG_OF_OVERLAY`` and
+  ``CONFIG_OF_CONFIGFS``. Tests mount configfs when needed and require
+  its overlay interface. Binary writes must reach ``status=applied`` and
+  update the unique live-tree marker.
 
 * **XSA prerequisite** — the standard Kuiper boot-partition release
   does not include a ``vcu118_fmcdaq3`` project (it only ships Zynq
   family projects), so :func:`acquire_xsa` cannot download one.  The
   FMCDAQ3+VCU118 ``system_top.xsa`` from the local HDL/PetaLinux build
-  must be committed to ``test/hw/xsa/system_top_fmcdaq3_vcu118.xsa``
-  before the test can run; ``local_xsa_or_skip`` ``pytest.skip``s with
-  a clear message until that file is present.
+  must be supplied as ``system_top_fmcdaq3_vcu118.xsa`` under
+  ``ADIDT_XSA_DIR`` or ``test/hw/xsa/`` before the test can run.
+  An explicitly configured missing fixture fails. Set
+  ``ADIDT_FABRIC_KERNEL_IMAGE`` to an absolute path on the exporter
+  to test an overlay-enabled simpleImage; the shared resource's
+  original path is restored after the test module.
 
 LG_ENV: fetch the coordinator-generated env for place ``nuc`` (e.g.
 ``curl http://10.0.0.41:8000/api/places/nuc/env-yaml?tier=boot``).
@@ -95,7 +93,7 @@ def _topology_assert(topology) -> None:
 
 SPEC = BoardOverlayProfile(
     overlay_name="fmcdaq3_vcu118_xsa",
-    lg_features=("fmcdaq3", "vcu118"),
+    lg_features=("daq3", "vcu118"),
     skip_reason_label="fmcdaq3 vcu118",
     cfg_builder=_fmcdaq3_vcu118_cfg,
     xsa_resolver=local_xsa_or_skip("system_top_fmcdaq3_vcu118.xsa"),
@@ -103,6 +101,19 @@ SPEC = BoardOverlayProfile(
     topology_assert=_topology_assert,
     dtso_must_contain_any=("ad9680", "ad9152", "axi-jesd204"),
     boot_mode="fabric_jtag",
+    runtime_modules=(
+        "jesd204",
+        "ad9528",
+        "axi_adxcvr_drv",
+        "axi_jesd204_rx",
+        "axi_jesd204_tx",
+        "cf_axi_adc",
+        # TX owns the shared AD9528 clock callbacks. Complete it before
+        # the ADC configures its PLL/link against those clocks.
+        "ad9144",
+        "cf_axi_dds_drv",
+        "ad9208_drv",
+    ),
     iio_required_all=("ad9528",),
     iio_required_any=(
         "axi-ad9680-hpc",

@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NoReturn
@@ -105,7 +106,19 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
         dedup_zynqmp_root_nodes(compile_input)
 
     res = subprocess.run(
-        ["dtc", "-I", "dts", "-O", "dtb", "-o", str(dtb_path), str(compile_input)],
+        [
+            "dtc",
+            "-@",
+            "-i",
+            str(dts_path.parent),
+            "-I",
+            "dts",
+            "-O",
+            "dtb",
+            "-o",
+            str(dtb_path),
+            str(compile_input),
+        ],
         capture_output=True,
         text=True,
         check=False,
@@ -120,6 +133,7 @@ def compile_dts_to_dtb(dts_path: Path, dtb_path: Path) -> None:
             res = subprocess.run(
                 [
                     "dtc",
+                    "-@",
                     "-I",
                     "dts",
                     "-O",
@@ -163,8 +177,13 @@ def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
     Raises:
         RuntimeError: if ``dtc`` exits with a non-zero return code.
     """
-    compile_input = dtso_path
     text = dtso_path.read_text()
+    marker = uuid.uuid4().hex
+    marked_source = dtbo_path.parent / f"{dtbo_path.stem}.validation.dtso"
+    marked_source.write_text(
+        text + f'\n&{{/}} {{ adidt,overlay-validation-id = "{marker}"; }};\n'
+    )
+    compile_input = marked_source
 
     if "#include" in text:
         if shutil.which("cpp") is None:
@@ -177,7 +196,7 @@ def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
         for inc in include_dirs:
             if inc.exists():
                 cmd.extend(["-I", str(inc)])
-        cmd.extend([str(dtso_path), str(preprocessed)])
+        cmd.extend([str(marked_source), str(preprocessed)])
         res = subprocess.run(cmd, capture_output=True, text=True, check=False)
         if res.returncode != 0:
             raise RuntimeError(f"cpp failed:\n{res.stderr}")
@@ -193,6 +212,8 @@ def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
             "dtb",
             "-o",
             str(dtbo_path),
+            "-i",
+            str(dtso_path.parent),
             str(compile_input),
         ],
         capture_output=True,
@@ -201,6 +222,7 @@ def compile_dtso_to_dtbo(dtso_path: Path, dtbo_path: Path) -> None:
     )
     if res.returncode != 0:
         raise RuntimeError(f"dtc overlay compilation failed:\n{res.stderr}")
+    dtbo_path.with_suffix(".validation-id").write_text(marker)
 
 
 CONFIGFS_OVERLAYS = "/sys/kernel/config/device-tree/overlays"
@@ -214,6 +236,11 @@ def assert_configfs_overlay_support(shell) -> None:
     ``CONFIG_OF_OVERLAY=y``) and ``configfs`` is mounted.  Without it
     there is no way to apply a ``.dtbo`` at runtime.
     """
+    shell_out(
+        shell,
+        "grep -qs ' /sys/kernel/config configfs ' /proc/mounts || "
+        "mount -t configfs configfs /sys/kernel/config",
+    )
     res = shell_out(
         shell,
         f"test -d {CONFIGFS_OVERLAYS} && echo OK || echo MISSING",
@@ -243,6 +270,8 @@ def deploy_dtbo_via_shell(shell, dtbo_path: Path, remote_path: str) -> None:
     import base64
 
     data = dtbo_path.read_bytes()
+    marker = dtbo_path.with_suffix(".validation-id").read_text().strip()
+    assert _re.fullmatch(r"[0-9a-f]{32}", marker), "Invalid overlay validation ID"
     b64 = base64.b64encode(data).decode("ascii")
     b64_path = f"{remote_path}.b64"
 
@@ -254,45 +283,65 @@ def deploy_dtbo_via_shell(shell, dtbo_path: Path, remote_path: str) -> None:
     shell_out(shell, f"base64 -d {b64_path} > {remote_path}")
     shell_out(shell, f"rm -f {b64_path}")
 
-    remote_size = shell_out(
-        shell, f"stat -c %s {remote_path} 2>/dev/null; true"
-    ).strip()
+    remote_size = shell_out(shell, f"wc -c < {remote_path}").strip()
     assert remote_size == str(len(data)), (
         f"dtbo transfer size mismatch: local={len(data)}, remote={remote_size!r}"
     )
+    shell_out(shell, f"printf '%s' '{marker}' > {remote_path}.validation-id")
 
 
 def overlay_is_loaded(shell, name: str) -> bool:
-    """Return True if ``/sys/kernel/config/device-tree/overlays/<name>`` exists."""
+    """Return True only when configfs reports the overlay as applied."""
     res = shell_out(
         shell,
-        f"test -d {CONFIGFS_OVERLAYS}/{name} && echo YES || echo NO",
+        f"cat {CONFIGFS_OVERLAYS}/{name}/status 2>/dev/null",
     )
-    return "YES" in res
+    return res.strip() == "applied"
 
 
 def load_overlay(shell, name: str, dtbo_remote_path: str) -> str:
     """Apply a ``.dtbo`` at runtime via configfs.
 
-    Creates ``{CONFIGFS_OVERLAYS}/<name>/`` and writes *dtbo_remote_path*
-    to its ``path`` attribute, which the kernel resolves via the firmware
-    loader and applies to the live tree.  The returned string ends in
-    ``RC=<n>`` so callers can assert ``"RC=0"``.
+    Writes the bytes to the binary ``dtbo`` attribute. The older ``path``
+    interface can report success even when firmware loading fails.
+    Require configfs's ``applied`` status as well as a successful write.
     """
     shell_out(shell, f"mkdir -p {CONFIGFS_OVERLAYS}/{name}")
-    return shell_out(
+    result = shell_out(
         shell,
-        f"echo -n {dtbo_remote_path} > {CONFIGFS_OVERLAYS}/{name}/path 2>&1; "
-        "echo RC=$?",
+        f"cat {dtbo_remote_path} > {CONFIGFS_OVERLAYS}/{name}/dtbo 2>&1; echo RC=$?",
     )
+    assert "RC=0" in result and overlay_is_loaded(shell, name), (
+        f"Overlay {name} did not reach applied status: {result}"
+    )
+    expected = shell_out(shell, f"cat {dtbo_remote_path}.validation-id").strip()
+    actual = shell_out(
+        shell,
+        "cat /proc/device-tree/adidt,overlay-validation-id 2>/dev/null | tr -d '\\000'",
+    ).strip()
+    if actual != expected:
+        print(shell_out(shell, "dmesg | tail -40"))
+        print(shell_out(shell, "ls -ld /proc/device-tree /sys/firmware/devicetree/base"))
+    assert _re.fullmatch(r"[0-9a-f]{32}", expected) and actual == expected, (
+        f"Overlay {name} did not update the live tree: "
+        f"expected validation ID {expected!r}, got {actual!r}"
+    )
+    return result
 
 
 def unload_overlay(shell, name: str) -> str:
     """Remove an applied overlay via ``rmdir`` on its configfs entry."""
-    return shell_out(
+    result = shell_out(
         shell,
         f"rmdir {CONFIGFS_OVERLAYS}/{name} 2>&1; echo RC=$?",
     )
+    if "RC=0" in result:
+        actual = shell_out(
+            shell,
+            "cat /proc/device-tree/adidt,overlay-validation-id 2>/dev/null | tr -d '\\000'",
+        ).strip()
+        assert not actual, f"Overlay {name} validation property survived removal"
+    return result
 
 
 def hardware_prereq_unavailable(message: str) -> NoReturn:
@@ -639,18 +688,71 @@ def acquire_xsa(
     )
 
 
+def mark_dtb_for_boot(dtb: Path) -> str:
+    """Stamp the staged DTB so Linux can prove which tree it received."""
+    marker = uuid.uuid4().hex
+    subprocess.run(
+        ["fdtput", "-t", "s", str(dtb), "/", "adidt,validation-id", marker],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return marker
+
+
 def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
     """Push DTB (+ optional kernel) via ``KuiperDLDriver`` and transition to shell.
 
     Returns the ``ADIShellDriver`` handle.
     """
     kuiper = board.target.get_driver("KuiperDLDriver")
+    if getattr(board, "kuiper", None) is not kuiper or getattr(
+        board, "sd_autoboot", False
+    ):
+        pytest.fail(
+            "Generated-DTB validation requires a boot strategy that consumes "
+            "the staged Kuiper files. The configured strategy boots existing "
+            "SD contents or does not bind KuiperDLDriver; select a deployment "
+            "strategy before claiming generated-DTB hardware coverage."
+        )
+    # Module-scoped strategies can already be at "shell" from a prior test.
+    # Staging new files alone does not make transition("shell") reboot.
+    board.transition("powered_off")
+    marker = mark_dtb_for_boot(dtb)
     kuiper.get_boot_files_from_release()
     if kernel_image is not None:
-        kuiper.add_files_to_target(kernel_image)
+        # The TFTP strategy requests a fixed basename. Staging an override
+        # named e.g. uImage-test must replace uImage, not leave stock booting.
+        kernel_name = getattr(board, "kernel_image_name", kernel_image.name)
+        assert Path(kernel_name).name == kernel_name, "Invalid kernel image basename"
+        if kernel_image.name == kernel_name:
+            kuiper.add_files_to_target(kernel_image)
+        else:
+            # Kuiper records paths; the strategy copies them during boot.
+            # Keep the override beside the test DTB for the fixture lifetime.
+            directory = dtb.parent / "kernel-override"
+            directory.mkdir(exist_ok=True)
+            staged_kernel = directory / kernel_name
+            shutil.copyfile(kernel_image, staged_kernel)
+            kuiper.add_files_to_target(staged_kernel)
     kuiper.add_files_to_target(dtb)
+    # Opening a remote serial connection can take several seconds. Do it
+    # before power/JTAG boot so the strategy can catch a short U-Boot
+    # countdown rather than connecting after the board has booted from SD.
+    console = getattr(getattr(board, "shell", None), "console", None)
+    if console is not None:
+        board.target.activate(console)
     board.transition("shell")
-    return board.target.get_driver("ADIShellDriver")
+    shell = board.target.get_driver("ADIShellDriver")
+    actual = shell_out(
+        shell, "cat /proc/device-tree/adidt,validation-id 2>/dev/null | tr -d '\\000'"
+    ).strip()
+    assert actual == marker, (
+        "Booted device tree does not match the staged generated DTB "
+        f"(expected validation ID {marker}, got {actual!r}). "
+        "Check the TFTP server/port and SD boot configuration."
+    )
+    return shell
 
 
 def collect_dmesg(
@@ -1039,6 +1141,7 @@ def find_tx_dds_device(ctx):
     tone generators).  A device qualifies only when it has at least one
     output channel — that distinguishes the DAC frontend from RX cores.
     """
+
     def _has_output(d):
         return any(c.output for c in d.channels)
 
@@ -1069,9 +1172,7 @@ def drive_tx_dds_tone(tx_dev, *, scale: float = 0.5, freq_hz: int = 1_000_000) -
         return {"status": "error", "channels": [], "detail": "tx device is None"}
 
     dds_channels = [
-        c
-        for c in tx_dev.channels
-        if c.output and (c.id or "").startswith("altvoltage")
+        c for c in tx_dev.channels if c.output and (c.id or "").startswith("altvoltage")
     ]
     if not dds_channels:
         return {
@@ -1175,7 +1276,9 @@ def build_kernel_image(platform_arch: str) -> Path | None:
         path = Path(override)
         if not path.is_file():
             pytest.skip(f"{override_var}={override!s} does not exist")
-        print(f"Using pre-built {platform_arch} kernel image from {override_var}: {path}")
+        print(
+            f"Using pre-built {platform_arch} kernel image from {override_var}: {path}"
+        )
         return path
 
     if not DEFAULT_BUILD_KERNEL:

@@ -576,10 +576,5 @@ def test_adrv9371_zc706_profile_sweep_hw(profile_name, board, tmp_path, request)
 # System API test
 # ---------------------------------------------------------------------------
 #
-# The declarative :class:`adidt.System` path does not yet emit the
-# topology-aware XCVR / TPL-core / clkgen overlays that the ZC706 + AD9371
-# design needs to bind; ``apply_xsa_topology`` only overrides the JESD204
-# framing labels, leaving default ``axi_adrv9009_*`` xcvr/core labels that
-# do not exist in the ZC706 base DTS.  A structural smoke test lives at
-# ``test/devices/test_system_adrv937x_zc706.py``; the end-to-end hardware
-# path is covered by :func:`test_adrv9371_zc706_xsa_hw` above.
+# The declarative System path shares the complete reference clock/JESD model
+# and is boot-tested separately in test_adrv9371_zc706_system_hw.py.

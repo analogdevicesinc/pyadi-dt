@@ -123,8 +123,8 @@ def test_manual_dispatch_cannot_publish():
         "startsWith(github.ref, 'refs/tags/v')"
     )
     assert workflow.count(publish_guard) == 2
-    assert "Candidate v-prefixed tag to validate and dry-run from main" in workflow
-    assert "Manual release dry runs must be dispatched from main" in workflow
+    assert "Candidate v-prefixed tag to validate without publishing" in workflow
+    assert "Manual release dry runs must select a branch" in workflow
     assert "github.event_name == 'workflow_dispatch' && github.sha" in workflow
 
 

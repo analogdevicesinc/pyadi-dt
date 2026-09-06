@@ -11,6 +11,26 @@ For the runtime device-tree overlay test pattern (6 tests per board, configfs li
 - A profile JSON in `adidt/xsa/config/profiles/<profile>.json` if the board's SPI / clock / JESD topology is not already supported by an existing builder.
 - A working `LG_COORDINATOR` (or `LG_ENV`) — see `.env.example`.
 
+For coordinator runs, source `.github/scripts/prepare-hardware-env.sh` with
+`VENV_DIR`, `LG_ENV`, and `LG_COORDINATOR` set. It renders the advertised TFTP
+strategy and disables SD autoboot for generated-tree validation. The target's
+U-Boot must honor `tftpdstport` when using the managed server on port 3069.
+`ADIDT_ZYNQ_UBOOT_IMAGE` selects a compatible JTAG-loaded U-Boot ELF by absolute
+exporter path. Older ADI U-Boot builds may lack configurable TFTP ports or use
+the older `tftpdstp` variable. See the release audit for the tested build.
+
+Generated-DTB tests require `fdtput` alongside `dtc`. Each deployment powers
+off the board, stamps a unique `adidt,validation-id` property into the staged
+tree, and verifies that property in Linux before checking IIO or captures.
+Booting an earlier tree or a stock TFTP image fails this check.
+
+For fabric overlays, `ADIDT_XSA_DIR` selects an external directory containing
+the named XSA fixture. A missing explicitly configured fixture fails.
+`ADIDT_FABRIC_KERNEL_IMAGE` selects an absolute exporter-side simpleImage path;
+the fixture restores the resource's original path after powering down.
+The overlay tests mount configfs when needed and require its device-tree
+overlay interface.
+
 ## Steps
 
 ### 1. Create the test file
@@ -200,11 +220,12 @@ The `out_label` rename keeps the PetaLinux-variant `dmesg_<label>.log` files dis
 
 | Board | Place | Run from |
 |---|---|---|
-| AD9081 / ZCU102 | `mini2` | any host (USBSDMux) |
+| AD9081 / ZCU102 | Discover a matching place; currently unavailable | host with USBSDMux access |
 | ADRV9009 / ZC706 | `nemo`  | `nemo` (local TFTP) |
 | ADRV9371 / ZC706 | `bq`    | `bq` (local TFTP) |
 
-Fetch each place's env from the coordinator first (`<place>` = `mini2` / `nemo` / `bq`):
+Fetch each matching place's env from the coordinator first. As of 2026-09-05,
+`mini2` hosts ADRV9002 and must not be selected for AD9081 tests:
 
 ```sh
 curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp/lg-<place>.yaml
@@ -213,7 +234,7 @@ curl -fsSL "http://10.0.0.41:8000/api/places/<place>/env-yaml?tier=boot" -o /tmp
 ```sh
 # AD9081 / ZCU102 — any host
 LG_COORDINATOR=10.0.0.41:20408 \
-LG_ENV=/tmp/lg-mini2.yaml \
+LG_ENV=/tmp/lg-ad9081-place.yaml \
 PETALINUX_INSTALL=/opt/Xilinx/PetaLinux/2023.2 \
 uv run pytest test/hw/test_ad9081_zcu102_petalinux_hw.py -v -s
 
@@ -300,18 +321,27 @@ The TFTP-boot boards (`nemo`, `bq`) don't need ssh access to the exporter host (
 
 ## Target Hardware Matrix & Validation Status
 
-The table below tracks target hardware platforms, current hardware test validation coverage, and remaining/future test work.
+The table below records historical coverage and remaining test work, not a
+release certification. A family name does not imply every part or carrier in
+that family was tested. Record the commit, board, boot path, and captured
+evidence for each release; unavailable boards remain unverified for that
+candidate. See the [2026-09-05 release audit](../../doc/source/developer/release_readiness_2026-09-05.md).
+
+Generated-DTB tests require a strategy that consumes staged `KuiperDLDriver`
+files. Recovery strategies that boot the existing SD tree, and TFTP strategies
+with `sd_autoboot` enabled, do not validate a generated DTB. The test helper
+rejects these configurations. Inspect the generated environment as well as the
+coordinator place tags; they can disagree.
 
 | Converter Family | Platforms | HW Validation Status | Existing Hardware Tests / Future Work |
 |---|---|---|---|
 | AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 | ZCU102 Validated | `test_ad9081_zcu102_system_hw.py`, `test_ad9081_zcu102_xsa_hw.py`, `test_ad9081_zcu102_petalinux_hw.py`, `test_cli_live_ad9081_zcu102_hw.py`, `test_cli_dts_gen_ad9081_zcu102_hw.py`, `test_cli_mcp_ad9081_zcu102_hw.py`. Future: ZC706, VPK180 |
 | AD9084 | VCU118, VPK180 | Pending | Future work: Add VCU118 and VPK180 labgrid test profiles |
-| ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG | ZCU102, ZC706 Validated | `test_adrv9009_zcu102_hw.py`, `test_adrv9009_zc706_hw.py`, `test_adrv9009_zc706_petalinux_hw.py`, `test_cli_live_adrv9009_zc706_hw.py`, `test_cli_dts_gen_adrv9009_zc706_hw.py`. Future: Arria10, ZU11EG |
+| ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10 | ZCU102, ZC706 Validated | `test_adrv9009_zcu102_hw.py`, `test_adrv9009_zc706_hw.py`, `test_adrv9009_zc706_petalinux_hw.py`, `test_cli_live_adrv9009_zc706_hw.py`, `test_cli_dts_gen_adrv9009_zc706_hw.py`. Future: Arria10; see the separate ZU11EG row |
 | AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 Validated | `test_adrv9371_zc706_hw.py`, `test_adrv9371_zc706_petalinux_hw.py`. Future: ZCU102 |
-| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | Validated | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
+| ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | XSA generation and DTB compilation only; live boot/IIO/JESD/capture unverified | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | Pending | Future work: Add test fixtures for AD9361/AD9364 SDR carrier flows |
 | ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | Pending | Future work: Add SOM carrier test fixtures |
 | FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 Validated | Future work: Add dedicated ZC706 and Arria10 hardware test suites |
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706, VCU118 | ZCU102, VCU118 Validated | `test_fmcdaq3_vcu118_hw.py`. Future: ZC706 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi | Pending | Future work: Add hardware test fixtures for SPI/I2C sensor overlays (ADIS16495, ADXL345, AD7124) |
-

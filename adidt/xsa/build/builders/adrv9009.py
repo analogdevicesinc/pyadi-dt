@@ -1010,21 +1010,14 @@ class ADRV9009Builder:
         )
 
         # TPL core first pass (compatible + dma, no spibus-connected).
-        # ``sampl_clk`` is required: cf_axi_adc reads its rate from this
-        # clock to size the DMA buffer and tag IIO timestamps.  Without
-        # it the driver still binds, but ``iio_buffer_refill`` never
-        # triggers and capture hangs.  We start it pointing at the PS
-        # reference (``clkc``) here; the second pass below redirects it
-        # at the ADRV9009 chip's RX clock output (``trx0_adrv9009 0``)
-        # once that label is resolvable.  Same shape OBS and TX use.
+        # The final PHY sample clocks are emitted only in the second pass.
+        # Repeating clocks across fragments is rejected by runtime OF overlays.
         rx_core_first = (
             f"\t&{rx_core_label} {{\n"
             '\t\tcompatible = "adi,axi-adrv9009-rx-1.0";\n'
             "\t\tadi,axi-decimation-core-available;\n"
             f"\t\tdmas = <&{rx_dma_label} 0>;\n"
             '\t\tdma-names = "rx";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
-            '\t\tclock-names = "sampl_clk";\n'
             "\t};"
         )
         rx_os_core_first = ""
@@ -1034,8 +1027,6 @@ class ADRV9009Builder:
                 '\t\tcompatible = "adi,axi-adrv9009-obs-1.0";\n'
                 f"\t\tdmas = <&{rx_os_dma_label} 0>;\n"
                 '\t\tdma-names = "rx";\n'
-                f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
-                '\t\tclock-names = "sampl_clk";\n'
                 "\t};"
             )
         # TX TPL DAC needs to participate in the JESD framework graph
@@ -1050,8 +1041,6 @@ class ADRV9009Builder:
             "\t\tadi,axi-interpolation-core-available;\n"
             f"\t\tdmas = <&{tx_dma_label} 0>;\n"
             '\t\tdma-names = "tx";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
-            '\t\tclock-names = "sampl_clk";\n'
             "\t\tjesd204-device;\n"
             "\t\t#jesd204-cells = <2>;\n"
             f"\t\tjesd204-inputs = <&{tx_jesd_label} 0 {tx_link_id}>;\n"
@@ -1189,27 +1178,11 @@ class ADRV9009Builder:
             else {}
         )
 
-        def _dma_node(label: str) -> str:
-            irq_block = ""
-            if label in zc706_dma_irq:
-                irq_block = (
-                    "\t\t/delete-property/ interrupts;\n"
-                    f"\t\tinterrupts = <0 {zc706_dma_irq[label]} 4>;\n"
-                )
-            return (
-                f"\t&{label} {{\n"
-                "\t\t/delete-property/ compatible;\n"
-                '\t\tcompatible = "adi,axi-dmac-1.00.a";\n'
-                "\t\t#dma-cells = <1>;\n"
-                "\t\t#clock-cells = <0>;\n"
-                f"{irq_block}"
-                "\t};"
-            )
-
-        extra_before.append(_dma_node(rx_dma_label))
-        extra_before.append(_dma_node(tx_dma_label))
-        if has_rx_os:
-            extra_before.append(_dma_node(rx_os_dma_label))
+        # Emit each DMA once through the link renderer. Separate raw DMA
+        # fragments would update the same properties twice at runtime.
+        for link in jesd_links:
+            if link.dma_label in zc706_dma_irq:
+                link.dma_interrupts_str = f"<0 {zc706_dma_irq[link.dma_label]} 4>"
         extra_before.append(rx_xcvr_node)
         if has_rx_os:
             extra_before.append(rx_os_xcvr_node)

@@ -52,7 +52,6 @@ class AD9528Channel(BaseModel):
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
 
     dt_header: ClassVar[dict[str, Any]] = {
-        "adi,driver-mode": 3,
         "adi,divider-phase": 0,
     }
 
@@ -62,16 +61,16 @@ class AD9528Channel(BaseModel):
     signal_source: int | None = Field(None, alias="adi,signal-source")
     is_sysref: bool = Field(False, alias="adi,jesd204-sysref-chan")
     freq_str: Annotated[str | None, DtSkip()] = None
-    driver_mode: Annotated[int, DtSkip()] = 3
+    driver_mode: int = Field(3, alias="adi,driver-mode")
 
 
 class AD9528_1Channel(AD9528Channel):
     """AD9528-1 variant: ``adi,driver-mode = <0>``."""
 
     dt_header: ClassVar[dict[str, Any]] = {
-        "adi,driver-mode": 0,
         "adi,divider-phase": 0,
     }
+    driver_mode: int = Field(0, alias="adi,driver-mode")
 
 
 class _AD952xBase(ClockDevice):
@@ -189,8 +188,16 @@ class AD9528(_AD952xBase):
         "#jesd204-cells": 2,
         "adi,pll2-m1-frequency": 1_233_333_333,
         "adi,pll2-charge-pump-current-nA": 35000,
+        "adi,sysref-src": 2,
+        "adi,sysref-pattern-mode": 1,
+        "adi,sysref-k-div": 64,
+        "adi,rpole2": 0,
+        "adi,rzero": 7,
+        "adi,cpole1": 2,
     }
     dt_flags: ClassVar[tuple[str, ...]] = (
+        "spi-cpol",
+        "spi-cpha",
         "adi,spi-3wire-enable",
         "adi,pll1-bypass-enable",
         "adi,osc-in-diff-enable",

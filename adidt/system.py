@@ -63,6 +63,8 @@ class System:
     name: str
     components: list[EvalBoard | FpgaBoard] = field(default_factory=list)
 
+    _xsa_topology: Any = field(default=None, init=False, repr=False)
+
     _spi: list[_SpiConnection] = field(default_factory=list, init=False, repr=False)
     _links: list[_JesdLink] = field(default_factory=list, init=False, repr=False)
     _jesd_label_overrides: dict[str, str] = field(
@@ -146,6 +148,7 @@ class System:
         back to the first instance on each side.  Missing sides are
         left as-is (the default naming applies).
         """
+        self._xsa_topology = topology
         rx_override = self._pick_jesd_label(getattr(topology, "jesd204_rx", ()))
         tx_override = self._pick_jesd_label(getattr(topology, "jesd204_tx", ()))
         if rx_override:
@@ -211,6 +214,13 @@ class System:
     def to_board_model(self) -> BoardModel:
         """Build a :class:`BoardModel` from devices + connection records."""
         fpga = self._fpga()
+        from .eval.adrv937x_fmc import adrv937x_fmc
+
+        boards = [c for c in self.components if isinstance(c, adrv937x_fmc)]
+        if boards:
+            from ._system_adrv937x import compose_adrv937x
+
+            return compose_adrv937x(self, boards, fpga)
         fpga_config = FpgaConfig(
             platform=fpga.PLATFORM,
             addr_cells=fpga.ADDR_CELLS,

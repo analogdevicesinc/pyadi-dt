@@ -1,6 +1,8 @@
 """Unit tests for ADRV937xBuilder."""
 
 from adidt.xsa.build.builders.adrv937x import ADRV937xBuilder
+from adidt.xsa.parse.topology import Jesd204Instance, SignalConnection
+from adidt.model.renderer import BoardModelRenderer
 
 
 ADRV937X_CFG = {
@@ -12,6 +14,26 @@ ADRV937X_CFG = {
 
 
 class TestARDV937xBuilder:
+    def test_observation_dma_has_binding_and_reference_irq(self, topo_adrv937x):
+        topo_adrv937x.jesd204_rx.append(
+            Jesd204Instance("axi_ad9371_rx_os_jesd_rx_axi", 0x44AA0000, 2, 0, "", "rx")
+        )
+        topo_adrv937x.signal_connections.append(
+            SignalConnection("obs", consumers=["axi_ad9371_rx_os_dma"])
+        )
+        model = ADRV937xBuilder().build_model(
+            topo_adrv937x, ADRV937X_CFG, "clkc", 15, "gpio"
+        )
+        obs = next(
+            link
+            for link in model.jesd_links
+            if link.dma_label == "axi_ad9371_rx_os_dma"
+        )
+        rendered = BoardModelRenderer()._render_dma_overlay(obs)
+        assert "#dma-cells = <1>;" in rendered
+        assert 'compatible = "adi,axi-dmac-1.00.a";' in rendered
+        assert "interrupts = <0 55 4>;" in rendered
+
     def test_matches_adrv937x_topology(self, topo_adrv937x):
         assert ADRV937xBuilder().matches(topo_adrv937x, ADRV937X_CFG)
 

@@ -63,6 +63,11 @@ class FMCDAQ3Builder:
         This is the unified entry point -- both the XSA pipeline and the
         manual board-class workflow can produce the same model.
         """
+        ps_clock_ref = (
+            f"<&{ps_clk_label} {ps_clk_index}>"
+            if ps_clk_index is not None
+            else f"<&{ps_clk_label}>"
+        )
         board_cfg = cfg.get("fmcdaq3_board", {})
         platform = topology.inferred_platform()
 
@@ -127,8 +132,10 @@ class FMCDAQ3Builder:
             "XCVR_QPLL0": 3,
         }
         out_clk_map = {
-            "XCVR_REFCLK": 4,
-            "XCVR_PROGDIV_CLK": 8,
+            "XCVR_OUTCLK_PCS": 1,
+            "XCVR_OUTCLK_PMA": 2,
+            "XCVR_REFCLK": 3,
+            "XCVR_PROGDIV_CLK": 5,
             "XCVR_REFCLK_DIV2": 4,
         }
         fpga_adc = cfg.get("fpga_adc", {})
@@ -141,12 +148,12 @@ class FMCDAQ3Builder:
         )
         adc_out_clk_select = int(
             out_clk_map.get(
-                str(fpga_adc.get("out_clk_select", "XCVR_PROGDIV_CLK")).upper(), 8
+                str(fpga_adc.get("out_clk_select", "XCVR_PROGDIV_CLK")).upper(), 5
             )
         )
         dac_out_clk_select = int(
             out_clk_map.get(
-                str(fpga_dac.get("out_clk_select", "XCVR_PROGDIV_CLK")).upper(), 8
+                str(fpga_dac.get("out_clk_select", "XCVR_PROGDIV_CLK")).upper(), 5
             )
         )
 
@@ -198,42 +205,42 @@ class FMCDAQ3Builder:
             {
                 "id": 4,
                 "name": "DAC_CLK_FMC",
-                "divider": 2,
+                "divider": 4,
                 "signal_source": 0,
                 "is_sysref": False,
             },
             {
                 "id": 5,
                 "name": "DAC_SYSREF",
-                "divider": 1,
+                "divider": 4,
                 "signal_source": 2,
                 "is_sysref": True,
             },
             {
                 "id": 6,
                 "name": "CLKD_DAC_SYSREF",
-                "divider": 2,
+                "divider": 4,
                 "signal_source": 2,
                 "is_sysref": True,
             },
             {
                 "id": 7,
                 "name": "CLKD_ADC_SYSREF",
-                "divider": 2,
+                "divider": 4,
                 "signal_source": 2,
                 "is_sysref": True,
             },
             {
                 "id": 8,
                 "name": "ADC_SYSREF",
-                "divider": 1,
+                "divider": 4,
                 "signal_source": 2,
                 "is_sysref": True,
             },
             {
                 "id": 9,
                 "name": "ADC_CLK_FMC",
-                "divider": 2,
+                "divider": 4,
                 "signal_source": 0,
                 "is_sysref": False,
             },
@@ -249,7 +256,7 @@ class FMCDAQ3Builder:
             label="clk0_ad9528",
             spi_max_hz=clock_spi_max,
             vcxo_hz=clock_vcxo_hz,
-            channels={s["id"]: AD9528Channel(**s) for s in ad9528_specs},
+            channels={s["id"]: AD9528Channel(**s, driver_mode=0) for s in ad9528_specs},
         )
         clock_rendered = ad9528.render_dt(cs=clock_cs)
 
@@ -277,6 +284,7 @@ class FMCDAQ3Builder:
             clks_str=adc_clks_str,
             clk_names_str='"adc_clk"',
             use_spi_3wire=True,
+            sfdr_optimization_config=[0xE, 0xA0, 0x50, 0x09, 0x18, 0x00, 0x1F, 0x04],
         )
         adc_rendered = ad9680.render_dt(
             cs=adc_cs,
@@ -347,16 +355,16 @@ class FMCDAQ3Builder:
             jesd_l=None,
             jesd_m=None,
             jesd_s=None,
-            jesd204_inputs="clk0_ad9528 0 0",
+            # The shared clock chip belongs to the TX topology, matching
+            # adi-daq3.dtsi, so only TX traverses its initialization callbacks.
+            jesd204_inputs=None,
             is_rx=True,
         )
         rx_jesd_overlay_ctx = build_jesd204_overlay_ctx(
             label=adc_jesd_label,
             direction="rx",
             clocks_str=(
-                f"<&{ps_clk_label} {ps_clk_index}>, "
-                f"<&{adc_xcvr_label} 1>, "
-                f"<&{adc_xcvr_label} 0>"
+                f"{ps_clock_ref}, <&{adc_xcvr_label} 1>, <&{adc_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
             clock_output_name="jesd_adc_lane_clk",
@@ -411,16 +419,14 @@ class FMCDAQ3Builder:
             jesd_l=None,
             jesd_m=None,
             jesd_s=None,
-            jesd204_inputs=None,
+            jesd204_inputs=f"clk0_ad9528 1 {dac_jesd_link_id}",
             is_rx=False,
         )
         tx_jesd_overlay_ctx = build_jesd204_overlay_ctx(
             label=dac_jesd_label,
             direction="tx",
             clocks_str=(
-                f"<&{ps_clk_label} {ps_clk_index}>, "
-                f"<&{dac_xcvr_label} 1>, "
-                f"<&{dac_xcvr_label} 0>"
+                f"{ps_clock_ref}, <&{dac_xcvr_label} 1>, <&{dac_xcvr_label} 0>"
             ),
             clock_names_str='"s_axi_aclk", "device_clk", "lane_clk"',
             clock_output_name="jesd_dac_lane_clk",

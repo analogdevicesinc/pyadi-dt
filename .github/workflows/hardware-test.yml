@@ -47,9 +47,10 @@ jobs:
         TESTS=$( { find test/hw -maxdepth 1 -type f -name "*${BOARD}*${CARRIER}*_hw.py";
         find test/hw/xsa -maxdepth 1 -type f -name "test_*${BOARD}*${CARRIER}*_overlay.py"; }
         | grep -v petalinux | sort -u | tr '\n' ' ');
-        if [ -z "$TESTS" ]; then echo "::warning::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 0; fi;
+        if [ -z "$TESTS" ]; then echo "::error::no pyadi-dt HW tests for board=$BOARD carrier=$CARRIER"; exit 1; fi;
         echo "Selected: $TESTS" >&2;
-        "$VENV_DIR/bin/pytest" -p no:genalyzer -v -s $TESTS --junitxml="$JUNIT"
+        "$VENV_DIR/bin/pytest" -p no:genalyzer -v -s $TESTS --junitxml="$JUNIT";
+        "$VENV_DIR/bin/python" .github/scripts/check_hardware_results.py "$JUNIT"
       artifact_glob: |
         test/hw/output/**/*.dts
         test/hw/output/**/*.pp.dts
