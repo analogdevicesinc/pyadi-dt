@@ -13,6 +13,20 @@ VENV="$HOME/.cache/adidt-ci/adidt-venv"
 
 export PATH="$HOME/.local/bin:$PATH"
 
+# The reusable hardware workflow may inject a PAT through a temporary git
+# ``insteadOf`` rule.  Do not let an expired token hide credentials already
+# configured on the runner: fall back to those credentials when validation
+# fails.  This keeps a stale repository secret from taking every hardware leg
+# down at dependency installation time.
+if [[ -n "${PYADI_BUILD_TOKEN:-}" && -n "${GIT_CONFIG_COUNT:-}" ]]; then
+    if ! env -u GIT_CONFIG_COUNT -u GIT_CONFIG_KEY_0 -u GIT_CONFIG_VALUE_0 \
+        git ls-remote "https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/tfcollins/pyadi-build.git" HEAD \
+        >/dev/null 2>&1; then
+        echo "PYADI_BUILD_TOKEN cannot access pyadi-build; using runner git credentials" >&2
+        unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
+    fi
+fi
+
 if [[ ! -x "$VENV/bin/python" ]]; then
     echo "Creating adidt venv at $VENV" >&2
     uv venv --quiet "$VENV"

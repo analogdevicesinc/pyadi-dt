@@ -17,6 +17,8 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
 
     assert '"pyadi-dt[test,xsa]"' in pyproject
     assert '"$VENV/bin/sdtgen" -help' in installer
+    assert "git ls-remote \"https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/tfcollins/pyadi-build.git\" HEAD" in installer
+    assert "unset GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0" in installer
     assert "requirements/pyadi-jif-ad9371.txt" in installer
     assert "hasattr(adijif, 'ad9371')" in installer
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
