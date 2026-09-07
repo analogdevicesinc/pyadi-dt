@@ -17,7 +17,8 @@ export PATH="$HOME/.local/bin:$PATH"
 # ``insteadOf`` rule.  Do not let an expired token hide credentials already
 # configured on the runner: fall back to those credentials when validation
 # fails.  This keeps a stale repository secret from taking every hardware leg
-# down at dependency installation time.
+# down at dependency installation time.  A valid token remains in the
+# inherited rewrite so uv can authenticate both private dependencies.
 if [[ -n "${PYADI_BUILD_TOKEN:-}" && -n "${GIT_CONFIG_COUNT:-}" ]]; then
     if ! env -u GIT_CONFIG_COUNT -u GIT_CONFIG_KEY_0 -u GIT_CONFIG_VALUE_0 \
         git ls-remote "https://x-access-token:${PYADI_BUILD_TOKEN}@github.com/tfcollins/pyadi-build.git" HEAD \
