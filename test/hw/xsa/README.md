@@ -78,7 +78,13 @@ Keep the `test_*` import block in the canonical sequence (`unit, configfs, load,
 | `"sd"` | ZynqMP boards using `BootFPGASoC` + Kuiper SD card (DTB renamed to `system.dtb`) | `kernel_fixture_name="built_kernel_image_zynqmp"` |
 | `"fabric_jtag"` | MicroBlaze / soft-CPU boards using `BootFabric` + JTAG simpleImage (no DTB rebuild) | `kernel_fixture_name=None` |
 
-`fabric_jtag` skips lifecycle tests cleanly when the kernel lacks `CONFIG_OF_OVERLAY`. `test_configfs_overlay_support` always asserts strictly regardless of mode.
+All boot modes mount configfs when needed and require its device-tree overlay interface. Overlay application writes the binary `dtbo` attribute, verifies `status=applied`, and checks a unique live-tree marker. Neither a successful write nor configfs status alone proves application.
+
+The ZC706 and FMCDAQ3 profiles require modular JESD/IIO drivers and a base without
+overlay-owned SPI children. See [runtime overlay validation](../../../doc/source/developer/runtime_overlay_validation.md)
+for the kernel lifetime patch, reproducible build script, and module staging.
+The harness stops iiod, unbinds AXI IIO consumers, and unloads clients before each
+tree change; after applying it reloads the topology and restarts iiod.
 
 ### 3. Pick an FFT mode
 
@@ -156,6 +162,7 @@ A clean run reports `6 passed`. Two partial-pass shapes are expected and documen
 | `dtso_must_contain_any` | `()` | Substrings the unit test asserts at least one is present. |
 | `kernel_fixture_name` | `None` | Name of a kernel-image fixture. `None` for `fabric_jtag`. |
 | `settle_after_apply_s` | 5.0 | Seconds to sleep after overlay apply. Bump to 8.0 for Mykonos / Talise re-init. |
+| `runtime_modules` | `()` | Load-order module list, with `jesd204` first; unload in reverse after unbinding IIO consumers. |
 | `iio_required_all` | `()` | IIO device names that must all be present after overlay apply. |
 | `iio_required_any` | `()` | IIO device names of which at least one must be present. |
 | `iio_frontend_label` | `"RX frontend"` | Used in failure messages when `iio_required_any` mismatches. |

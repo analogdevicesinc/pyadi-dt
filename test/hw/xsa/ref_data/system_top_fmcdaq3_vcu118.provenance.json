@@ -1,0 +1,25 @@
+{
+  "file": "system_top_fmcdaq3_vcu118.xsa",
+  "sha256": "f3befa5592824a84274c2611dbf56ab4567a1e02b59d55caf50f7d47d6f8c4dd",
+  "hdl_repository": "https://github.com/analogdevicesinc/hdl",
+  "hdl_revision": "d146370c10fdd55156de2bafdd9b24292c01b6e1",
+  "hdl_tag": "2023_R2_p1",
+  "project": "projects/daq3/vcu118",
+  "tool": "Vivado 2025.1",
+  "source_expected_tool": "Vivado 2023.2",
+  "version_override": "ADI_IGNORE_VERSION_CHECK=1",
+  "handoff": "Pre-synthesis, no bitstream; ADI_SKIP_SYNTHESIS=1; write_hw_platform -fixed -force",
+  "framing": {
+    "rx": {
+      "M": 2,
+      "L": 4,
+      "S": 1
+    },
+    "tx": {
+      "M": 2,
+      "L": 4,
+      "S": 1
+    }
+  },
+  "validation": "Parsed JESD RX at 0x44aa0000 and TX at 0x44a90000, matching the reference kernel. Overlay generation and compilation pass. This fixture does not establish runtime overlay lifecycle support."
+}

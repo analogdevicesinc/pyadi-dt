@@ -113,6 +113,17 @@ SPEC = BoardOverlayProfile(
     topology_assert=_topology_assert,
     dtso_must_contain_any=("axi-jesd204", "adrv9009"),
     boot_mode="tftp",
+    runtime_modules=(
+        "jesd204",
+        "ad9528",
+        "clk_axi_clkgen",
+        "axi_adxcvr_drv",
+        "axi_jesd204_rx",
+        "axi_jesd204_tx",
+        "cf_axi_adc",
+        "adrv9009_drv",
+        "cf_axi_dds_drv",
+    ),
     kernel_fixture_name="built_kernel_image_zynq",
     settle_after_apply_s=8.0,  # Talise re-init is slower than AD9081.
     iio_required_all=("adrv9009-phy",),

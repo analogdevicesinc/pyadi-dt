@@ -49,8 +49,11 @@ SYS_CLK_SELECT_MAP: dict[str, int] = {
 }
 
 OUT_CLK_SELECT_MAP: dict[str, int] = {
-    "XCVR_REFCLK": 4,
+    "XCVR_OUTCLK_PCS": 1,
+    "XCVR_OUTCLK_PMA": 2,
+    "XCVR_REFCLK": 3,
     "XCVR_REFCLK_DIV2": 4,
+    "XCVR_PROGDIV_CLK": 5,
 }
 
 

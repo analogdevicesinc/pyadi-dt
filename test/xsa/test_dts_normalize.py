@@ -13,8 +13,8 @@ def _write(tmp_path, body: str):
     return p
 
 
-def test_dedup_zynqmp_root_nodes_drops_fourth_block(tmp_path):
-    """A 4-root-block input loses the last (sdtgen system-top) block."""
+def test_dedup_zynqmp_root_nodes_preserves_unrelated_fourth_block(tmp_path):
+    """Root block count alone must never discard board properties."""
     p = _write(
         tmp_path,
         """
@@ -38,7 +38,7 @@ def test_dedup_zynqmp_root_nodes_drops_fourth_block(tmp_path):
     assert "block0_marker" in text
     assert "block1_marker" in text
     assert "block2_marker" in text
-    assert "block3_marker" not in text
+    assert "block3_marker" in text
 
 
 def test_dedup_zynqmp_root_nodes_preserves_chosen_and_aliases(tmp_path):
@@ -72,7 +72,7 @@ def test_dedup_zynqmp_root_nodes_preserves_chosen_and_aliases(tmp_path):
     )
     dedup_zynqmp_root_nodes(p)
     text = p.read_text()
-    assert "dropped_other" not in text
+    assert "dropped_other" in text
     assert "stdout-path" in text
     assert 'serial0 = "/amba/serial@e0001000"' in text
     assert "post_marker" in text  # trailing &label refs preserved
@@ -122,3 +122,31 @@ def test_dedup_zynqmp_root_nodes_no_op_when_fewer_than_four_blocks(tmp_path):
     p.write_text(body)
     dedup_zynqmp_root_nodes(p)
     assert p.read_text() == body
+
+
+def test_duplicate_cpu_cleanup_preserves_ddr_and_later_overlay_roots(tmp_path):
+    p = _write(
+        tmp_path,
+        """
+        /dts-v1/;
+        / {
+         #address-cells = <2>;
+         #size-cells = <2>;
+         cpus_a53: cpus { #address-cells = <1>; #size-cells = <0>; };
+        };
+        / {
+         memory@0 { device_type = "memory"; reg = <0 0 0 0x80000000>; };
+         cpus_a53: cpus { address-map = <0>; };
+         chosen { stdout-path = "serial0:115200n8"; };
+        };
+        / { validation-marker = "keep"; };
+    """,
+    )
+    dedup_zynqmp_root_nodes(p)
+    first = p.read_text()
+    assert first.count("cpus_a53:") == 1
+    assert "memory@0" in first
+    assert "reg = <0 0 0 0x80000000>" in first
+    assert 'validation-marker = "keep"' in first
+    dedup_zynqmp_root_nodes(p)
+    assert p.read_text() == first

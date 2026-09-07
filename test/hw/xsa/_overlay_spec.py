@@ -15,6 +15,7 @@ canonical names (``test_load_overlay``, ``test_dma_loopback``, etc.).
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Literal, Optional, Sequence
@@ -86,6 +87,8 @@ class BoardOverlayProfile:
 
     kernel_fixture_name: Optional[str] = None
     settle_after_apply_s: float = 5.0
+    # Core first, providers before consumers; unload in reverse order.
+    runtime_modules: tuple[str, ...] = ()
 
     iio_required_all: tuple[str, ...] = ()
     iio_required_any: tuple[str, ...] = ()
@@ -121,20 +124,25 @@ def local_xsa_or_skip(*candidate_filenames: str) -> XsaResolver:
     candidate basename in order; calls :func:`pytest.skip` if none are
     present.  Used by FMCDAQ3+VCU118 (no Kuiper download exists for the
     MicroBlaze build) and as a fallback for AD9081+ZCU102.
+
+    ``ADIDT_XSA_DIR`` selects an external fixture directory exclusively.
+    A missing explicitly configured fixture fails instead of skipping.
     """
     here = Path(__file__).parent
 
     def _resolver(_tmp_path: Path) -> Path:
+        external = os.environ.get("ADIDT_XSA_DIR")
+        parents = (Path(external),) if external else (here, here / "ref_data")
         for name in candidate_filenames:
-            for parent in (here, here / "ref_data"):
+            for parent in parents:
                 candidate = parent / name
-                if candidate.exists():
+                if candidate.is_file():
                     return candidate
         searched = ", ".join(
-            str(parent / name)
-            for name in candidate_filenames
-            for parent in (here, here / "ref_data")
+            str(parent / name) for name in candidate_filenames for parent in parents
         )
+        if external:
+            pytest.fail(f"Configured XSA fixture missing — looked at: {searched}")
         pytest.skip(f"XSA fixture missing — looked at: {searched}")
         raise AssertionError("pytest.skip returned unexpectedly")  # pragma: no cover
 

@@ -321,15 +321,15 @@ class SdtgenRunner:
 
         For DDR nodes (``xlnx,psu-ddr-*`` and ``xlnx,ddr4-*``):
         - Ensure ``device_type = "memory"`` is present (Linux requires it).
-        - Collapse 4-cell ``reg`` to 2-cell when the high 32 bits are zero
-          (sdtgen sometimes emits 64-bit addresses for 32-bit platforms).
+        - Preserve ZynqMP DDR address/size cells; collapse the redundant high
+          cells only for the 32-bit fabric DDR case.
 
-        For all other memory nodes (LMB BRAM, OCM, etc.):
+        For all other memory nodes (R5 mappings, LMB BRAM, OCM, etc.):
         - Strip ``device_type = "memory"`` to avoid confusing Linux's memory
           detection.
         """
         node = match.group(1)
-        if self._DDR_COMPAT_RE.search(node):
+        if self._DDR_COMPAT_RE.search(node) and "psu_r5_ddr" not in node:
             # Ensure device_type = "memory" is present
             if 'device_type = "memory"' not in node:
                 node = re.sub(
@@ -339,7 +339,8 @@ class SdtgenRunner:
                     count=1,
                 )
             # Collapse 4-cell reg to 2-cell (strip leading zero cells)
-            node = self._MEM_REG_4CELL_RE.sub(r"\1\2 \3\4", node)
+            if "xlnx,psu-ddr" not in node:
+                node = self._MEM_REG_4CELL_RE.sub(r"\1\2 \3\4", node)
             return node
         return re.sub(
             r"^\s*device_type\s*=\s*\"memory\";\n?", "", node, flags=re.MULTILINE

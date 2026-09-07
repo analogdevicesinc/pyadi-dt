@@ -143,10 +143,29 @@ class ADRV937xBuilder:
 
         Returns None if no ADRV937x instances are found in the topology.
         """
-        board_cfg = cfg.get("adrv9009_board", {})
-        platform = topology.inferred_platform()
+        return self._build_from_names(
+            _topology_instance_names(topology),
+            topology.inferred_platform(),
+            cfg,
+            ps_clk_label,
+            ps_clk_index,
+            gpio_label,
+        )
 
-        labels = _topology_instance_names(topology)
+    def _build_from_names(
+        self,
+        labels: set[str],
+        platform: str | None,
+        cfg: dict[str, Any],
+        ps_clk_label: str,
+        ps_clk_index: int | None,
+        gpio_label: str,
+        *,
+        clock_device=None,
+        transceiver_device=None,
+    ) -> BoardModel | None:
+        """Share the complete board wiring with the declarative System API."""
+        board_cfg = cfg.get("adrv9009_board", {})
 
         if not any(_is_adrv937x_name(lbl) for lbl in labels):
             return None
@@ -280,35 +299,37 @@ class ADRV937xBuilder:
         tx_k = int(jesd_cfg.get("tx", {}).get("K", 32))
         tx_m = int(jesd_cfg.get("tx", {}).get("M", 4))
         rx_os_f = int(
-            jesd_cfg.get("obs", {}).get(
-                "F", board_cfg.get("rx_os_octets_per_frame", 2)
-            )
+            jesd_cfg.get("obs", {}).get("F", board_cfg.get("rx_os_octets_per_frame", 2))
         )
         rx_os_k = int(jesd_cfg.get("obs", {}).get("K", 32))
 
         # --- Clock chip (AD9528_1, single-chip path only) ---
         clock_chip_label = "clk0_ad9528"
-        ad9528_dev = AD9528_1_ADRV9371(
-            label=clock_chip_label,
-            spi_max_hz=10_000_000,
-            vcxo_hz=ad9528_vcxo_freq,
-            channels=_default_ad9528_channels(),
-            gpio_lines=[
-                _GpioLine(
-                    prop="reset-gpios",
-                    controller=gpio_label,
-                    index=ad9528_reset_gpio,
+        ad9528_dev = (
+            clock_device
+            if clock_device is not None
+            else AD9528_1_ADRV9371(
+                label=clock_chip_label,
+                spi_max_hz=10_000_000,
+                vcxo_hz=ad9528_vcxo_freq,
+                channels=_default_ad9528_channels(),
+                gpio_lines=[
+                    _GpioLine(
+                        prop="reset-gpios",
+                        controller=gpio_label,
+                        index=ad9528_reset_gpio,
+                    ),
+                ],
+                # Mark AD9528 as the JESD204 topology's SYSREF provider.
+                # Without this the AD9371 driver's
+                # ``opt_post_running_stage`` callback can't find a sysref
+                # source in the jesd204 graph and rolls back with -EFAULT.
+                # Matches the Kuiper zc706-adrv9371 reference DT.
+                jesd204_sysref_provider=True,
+                jesd204_max_sysref_hz=int(
+                    board_cfg.get("ad9528_jesd204_max_sysref_hz", 78125)
                 ),
-            ],
-            # Mark AD9528 as the JESD204 topology's SYSREF provider.
-            # Without this the AD9371 driver's
-            # ``opt_post_running_stage`` callback can't find a sysref
-            # source in the jesd204 graph and rolls back with -EFAULT.
-            # Matches the Kuiper zc706-adrv9371 reference DT.
-            jesd204_sysref_provider=True,
-            jesd204_max_sysref_hz=int(
-                board_cfg.get("ad9528_jesd204_max_sysref_hz", 78125)
-            ),
+            )
         )
         clock_component = ComponentModel(
             role="clock",
@@ -321,13 +342,17 @@ class ADRV937xBuilder:
         # --- PHY component (ADRV9009 device rendered as ADRV9371) ---
         from ....devices.transceivers import ADRV9009
 
-        phy_dev = ADRV9009(
-            label="trx0_ad9371",
-            node_name_base="ad9371-phy",
-            compatible_strings=phy_compatible_list,
-            spi_max_hz=trx_spi_max_frequency,
-            reset_gpio=trx_reset_gpio,
-            sysref_req_gpio=trx_sysref_req_gpio,
+        phy_dev = (
+            transceiver_device
+            if transceiver_device is not None
+            else ADRV9009(
+                label="trx0_ad9371",
+                node_name_base="ad9371-phy",
+                compatible_strings=phy_compatible_list,
+                spi_max_hz=trx_spi_max_frequency,
+                reset_gpio=trx_reset_gpio,
+                sysref_req_gpio=trx_sysref_req_gpio,
+            )
         )
         # JESD lane-clock references — needed so the Mykonos deframer
         # checks its profile-derived expected framing against the actual
@@ -507,9 +532,7 @@ class ADRV937xBuilder:
         # SPI 57/56 = GIC IRQ 89/88. ``4`` = ``IRQ_TYPE_LEVEL_HIGH``
         # written as a literal so the overlay DTSO doesn't need the
         # ``<dt-bindings/interrupt-controller/irq.h>`` include.
-        # (rx_obs DMA is SPI 55 / GIC IRQ 87 if/when that path is
-        # wired up — currently OBS is gated by a separate
-        # missing-#dma-cells issue at the OBS TPL ADC node.)
+        # RX observation DMA is SPI 55 / GIC IRQ 87.
         rx_dma_interrupts = "<0 57 4>"
         tx_dma_interrupts = "<0 56 4>"
 
@@ -535,6 +558,18 @@ class ADRV937xBuilder:
                 jesd_overlay_rendered=tx_jesd_overlay,
             ),
         ]
+        if rx_os_dma_label and rx_os_jesd_label and rx_os_xcvr_label:
+            jesd_links.append(
+                JesdLinkModel(
+                    direction="rx",
+                    jesd_label=rx_os_jesd_label,
+                    xcvr_label=rx_os_xcvr_label,
+                    dma_label=rx_os_dma_label,
+                    core_label=rx_os_core_label,
+                    link_params={"F": rx_os_f, "K": rx_os_k},
+                    dma_interrupts_str="<0 55 4>",
+                )
+            )
 
         # --- Raw XCVR overlay nodes ---
         # Kuiper's working reference wires all three xcvrs directly to
@@ -609,8 +644,6 @@ class ADRV937xBuilder:
             "\t\tadi,axi-interpolation-core-available;\n"
             f"\t\tdmas = <&{tx_dma_label} 0>;\n"
             '\t\tdma-names = "tx";\n'
-            f"\t\tclocks = <&{ps_clk_label} {ps_clk_index}>;\n"
-            '\t\tclock-names = "sampl_clk";\n'
             "\t};"
         )
 

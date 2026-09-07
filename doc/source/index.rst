@@ -72,6 +72,9 @@ Supported hardware (declarative device layer)
 XSA pipeline support covers the same families plus FMCDAQ2/FMCDAQ3
 composites (see :doc:`xsa`).
 
+For the tested release candidate, board images, and qualification limits, see
+:doc:`developer/hardware_validation`.
+
 Where to start
 --------------
 

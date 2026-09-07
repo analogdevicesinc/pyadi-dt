@@ -11,5 +11,8 @@ board builders.
    authoring_devices
    jif_dt_contract
    hardware_ci
+   hardware_validation
    labgrid_exporter
    release_runbook
+   runtime_overlay_validation
+   release_readiness_2026-09-05
