@@ -832,6 +832,15 @@ the parser implementation.
 - ``ad9528_channel_blocks`` – optional replacement list for AD9528 channel
   subnodes (raw DTS snippet blocks)
 
+``adrv9003_board`` keys:
+
+- ``label`` / ``spi_cs`` / ``spi_max_frequency`` / ``reset_gpio``
+- ``rx_link_id`` / ``tx_link_id``
+- ``trx_profile_props`` – required TES-generated ADRV9003 PHY profile
+  properties (raw DTS property lines).  The built-in ADRV9003 board profiles
+  intentionally provide no default profile because these properties are
+  hardware and configuration specific.
+
 ``fmcdaq2_board`` keys:
 
 - ``spi_bus`` / ``clock_cs`` / ``adc_cs`` / ``dac_cs`` – SPI bus and chip-select
@@ -887,7 +896,8 @@ Profile validation
 
 Built-in and custom JSON profiles are validated when loaded:
 
-- Unknown keys under ``ad9081_board`` / ``adrv9009_board`` raise
+- Unknown keys under ``ad9081_board`` / ``adrv9009_board`` /
+  ``adrv9003_board`` raise
   ``ProfileError`` (prevents silent typos).
 - Structured snippet fields such as ``hmc7044_channel_blocks``,
   ``ad9528_channel_blocks``, and ``trx_profile_props`` must be JSON lists.
