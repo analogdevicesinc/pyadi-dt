@@ -1,0 +1,55 @@
+From: pyadi-dt release validation
+Subject: [PATCH] jesd204: skip callbacks for unregistered devices
+
+Device unregister leaves a topology node in the graph but clears fsm_inited.
+A later client's stop traverses the entire graph for state and completion callbacks, even
+nodes whose driver was already unloaded. Their dev_data can point into freed
+module memory. This was reproduced while removing AD9371 and ADRV9009 after
+unbinding their AXI IIO consumers.
+
+Core exit also visits nodes that clients already unregistered; skip their
+already-destroyed sysfs/device state.
+
+Only invoke driver callbacks on registered clients, as the normal probe
+path already requires. Do not change the overlay notifier's safety checks.
+
+Base: ADI Linux 2e8908932dfd9faf40ec9220a508aa1ce02699a8 (6.1.70).
+
+diff --git a/drivers/jesd204/jesd204-fsm.c b/drivers/jesd204/jesd204-fsm.c
+--- a/drivers/jesd204/jesd204-fsm.c
++++ b/drivers/jesd204/jesd204-fsm.c
+@@ -1151,6 +1151,11 @@
+ 	enum jesd204_state_op_reason reason;
+ 	struct jesd204_link_opaque *ol;
+ 
++	/* Keep rollback traversable after another client unregisters. */
++	if (!jdev->fsm_inited)
++		return fsm_data->rollback ? JESD204_STATE_CHANGE_DONE :
++			JESD204_STATE_CHANGE_DEFER;
++
+ 	jesd204_fsm_handle_stop_state(jdev, link_idx, fsm_data);
+ 
+ 	state_op = &jdev->dev_data->state_ops[it->table[0].op];
+@@ -1332,6 +1337,10 @@
+ {
+ 	const struct jesd204_link * const *links = fsm_data->cb_data;
+ 
++	/* Unregistered clients may belong to an already unloaded module. */
++	if (!jdev->fsm_inited)
++		return JESD204_STATE_CHANGE_DONE;
++
+ 	if (!jdev->dev_data->fsm_finished_cb)
+ 		return JESD204_STATE_CHANGE_DONE;
+ 
+diff --git a/drivers/jesd204/jesd204-core.c b/drivers/jesd204/jesd204-core.c
+--- a/drivers/jesd204/jesd204-core.c
++++ b/drivers/jesd204/jesd204-core.c
+@@ -1189,7 +1189,7 @@
+  */
+ static void jesd204_dev_unregister(struct jesd204_dev *jdev)
+ {
+-	if (IS_ERR_OR_NULL(jdev))
++	if (IS_ERR_OR_NULL(jdev) || !jdev->dev.parent)
+ 		return;
+ 
+ 	jesd204_dev_destroy_sysfs(jdev);

@@ -120,9 +120,7 @@ def test_deps_max_depth_truncates_tree():
     # The full render walks deeper into the include graph than --max-depth 1.
     # The line count is a good proxy for depth-limited rendering.
     full_tree_lines = sum(1 for ln in full.output.splitlines() if "──" in ln)
-    truncated_tree_lines = sum(
-        1 for ln in truncated.output.splitlines() if "──" in ln
-    )
+    truncated_tree_lines = sum(1 for ln in truncated.output.splitlines() if "──" in ln)
     assert truncated_tree_lines < full_tree_lines
 
 
@@ -143,6 +141,13 @@ def test_deps_errors_on_missing_input_file():
     runner = CliRunner()
     result = runner.invoke(cli, ["deps", "/tmp/does_not_exist.dts"])
 
-    # The handler reports the error via click.echo and returns; treat any
-    # non-fatal exit (0 with error message printed) as the documented contract.
-    assert "Error" in result.output
+    assert result.exit_code != 0
+    assert "Error" in result.stderr
+
+
+def test_deps_errors_on_parse_failure(tmp_path):
+    malformed = tmp_path / "invalid-utf8.dts"
+    malformed.write_bytes(b"\xff")
+    result = CliRunner().invoke(cli, ["deps", str(malformed)])
+    assert result.exit_code != 0
+    assert "Error parsing file" in result.stderr

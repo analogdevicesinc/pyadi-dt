@@ -252,6 +252,10 @@ Show one profile and its defaults:
 Built-in profiles
 ~~~~~~~~~~~~~~~~~
 
+Profile availability and hardware qualification are separate. See
+:doc:`developer/hardware_validation` for the tested candidate, including
+ZU11EG generated-DTB boot and bounded runtime overlay validation.
+
 .. list-table::
    :widths: 25 20 20 15 20
    :header-rows: 1
@@ -304,6 +308,11 @@ Built-in profiles
    * - ``adrv9009_zc706``
      - ADRV9009
      - ZC706
+     - No (supply via cfg)
+     - ``adrv9009_board``
+   * - ``adrv9009_zu11eg``
+     - Dual ADRV9009 SoM
+     - ZU11EG / ADRV2CRR-FMC
      - No (supply via cfg)
      - ``adrv9009_board``
    * - ``adrv9025_zcu102``

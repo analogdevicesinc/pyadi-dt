@@ -2,20 +2,9 @@
 
 Mirrors :mod:`test_system_ad9081_dts_parity` for the ZC706 board.
 
-Scope
------
-
-The XSA-pipeline flow for ADRV9371+ZC706 probes successfully on real
-hardware; the declarative System-API flow is still catching up to
-it.  Where the two paths *already agree*, we pin the exact values so
-future refactors can't silently drift — 31 kernel-relevant
-properties in total across the AD9371 and AD9528 nodes.
-
-Where the System API doesn't yet emit a key the XSA path does (e.g.
-the AD9371's ``clocks = <&clk0_ad9528 ...>`` pair, the
-``axi-clkgen`` node outputs), the test records it as ``xfail`` with
-the reason — flipping each xfail off turns the test into a
-regression guard once the System-API gap closes.
+The declarative path shares the complete AD9371 clock/JESD board wiring
+with the XSA builder, including the observation link and TX TPL dependency.
+All pinned properties are executable regression checks.
 
 Regenerate the reference fixture from a passing ``hw-direct (bq)``
 artifact::
@@ -35,15 +24,17 @@ import adidt
 from adidt.tools.dts_inspect import extract_props
 
 
-REFERENCE = (
-    Path(__file__).parent / "fixtures" / "adrv9371_zc706_xsa_reference.dts"
-)
+REFERENCE = Path(__file__).parent / "fixtures" / "adrv9371_zc706_xsa_reference.dts"
 
 
 # Properties that *both* the XSA pipeline and the System-API path
 # already emit identically.  Any divergence here is a regression.
 COMMON_KEYS: tuple[str, ...] = (
     # AD9371 top-level SPI device.
+    "ad9371:clocks",
+    "ad9371:clock-names",
+    "ad9371:jesd204-inputs",
+    "ad9371:jesd204-link-ids",
     "ad9371:#clock-cells",
     "ad9371:#jesd204-cells",
     "ad9371:clock-output-names",
@@ -76,34 +67,6 @@ COMMON_KEYS: tuple[str, ...] = (
     "ad9528:compatible",
     "ad9528:reg",
     "ad9528:spi-max-frequency",
-)
-
-
-# Keys the XSA path emits but the System API does not yet.  Each
-# entry is ``(key, reason)``; the test expects these to xfail today.
-# When a gap closes, delete the entry — the property moves into
-# ``COMMON_KEYS`` as a regression guard.
-XFAIL_KEYS: tuple[tuple[str, str], ...] = (
-    (
-        "ad9371:clocks",
-        "System-API path doesn't yet emit the AD9371 dev_clk/fmc_clk "
-        "references to ad9528 channels.  Targets the System-API "
-        "XCVR/TPL-core/clkgen overlay gap noted in "
-        "``test/hw/test_adrv9371_zc706_hw.py``.",
-    ),
-    (
-        "ad9371:clock-names",
-        "Paired with ``ad9371:clocks`` above.",
-    ),
-    (
-        "ad9371:jesd204-inputs",
-        "System-API flow doesn't attach the AD9371 node to the AXI "
-        "JESD204 RX/TX xcvr nodes yet.",
-    ),
-    (
-        "ad9371:jesd204-link-ids",
-        "Paired with ``ad9371:jesd204-inputs`` above.",
-    ),
 )
 
 
@@ -151,16 +114,3 @@ def test_adrv9371_system_property_matches_xsa_reference(key: str) -> None:
         f"  reference : {ref[key]}\n"
         f"  candidate : {cand.get(key)!r}"
     )
-
-
-@pytest.mark.parametrize("key,reason", XFAIL_KEYS)
-def test_adrv9371_system_known_gaps(key: str, reason: str) -> None:
-    """Keys the System-API path is known to miss vs the XSA path.
-
-    Each case is marked ``xfail`` until the System-API emission gap
-    is closed; the test then starts passing and the guard kicks in.
-    """
-    pytest.xfail(reason)
-    ref = _reference_props()
-    cand = extract_props(_build_system().generate_dts())
-    assert cand.get(key) == ref.get(key)

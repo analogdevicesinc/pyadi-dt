@@ -117,7 +117,7 @@ class FMCDAQ2Builder:
 
         # FPGA PLL select
         sys_clk_map = {"XCVR_CPLL": 0, "XCVR_QPLL1": 2, "XCVR_QPLL": 3, "XCVR_QPLL0": 3}
-        out_clk_map = {"XCVR_REFCLK": 4, "XCVR_REFCLK_DIV2": 4}
+        out_clk_map = {"XCVR_REFCLK": 3, "XCVR_REFCLK_DIV2": 4}
         fpga_adc = cfg.get("fpga_adc", {})
         fpga_dac = cfg.get("fpga_dac", {})
         adc_sys_clk_select = int(

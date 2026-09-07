@@ -8,16 +8,17 @@ schematic.  The channel-id map mirrors the adrv937x_zc706 XSA profile.
 from __future__ import annotations
 
 from ..devices.base import ClockOutput
+from ..devices.clocks.ad952x import _GpioLine
 from ..devices.clocks import AD9528_1_ADRV9371, AD9528_1Channel
 from ..devices.transceivers import ADRV9009
 from .base import EvalBoard
 
 
 _CLOCK_CHANNEL_MAP: dict[int, dict] = {
-    1: {"name": "XCVR_REFCLK", "divider": 1, "is_sysref": False},
-    3: {"name": "SYSREF_FMC", "divider": 1, "is_sysref": True},
-    12: {"name": "SYSREF_DEV", "divider": 1, "is_sysref": True},
-    13: {"name": "DEV_CLK", "divider": 1, "is_sysref": False},
+    1: {"name": "XCVR_REFCLK", "divider": 10, "is_sysref": False},
+    3: {"name": "SYSREF_FMC", "divider": 10, "is_sysref": True, "signal_source": 2},
+    12: {"name": "SYSREF_DEV", "divider": 10, "is_sysref": True, "signal_source": 2},
+    13: {"name": "DEV_CLK", "divider": 10, "is_sysref": False},
 }
 
 
@@ -36,6 +37,9 @@ class adrv937x_fmc(EvalBoard):
             spi_max_hz=10_000_000,
             vcxo_hz=reference_frequency,
             channels=channels,
+            gpio_lines=[_GpioLine(prop="reset-gpios", controller="gpio0", index=113)],
+            jesd204_sysref_provider=True,
+            jesd204_max_sysref_hz=78125,
         )
 
         self.converter = ADRV9009(

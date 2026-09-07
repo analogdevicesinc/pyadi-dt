@@ -22,7 +22,7 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
     assert "source .github/scripts/prepare-hardware-env.sh" in workflow
     assert (
-        'test/hw/xsa -maxdepth 1 -type f -name '
+        "test/hw/xsa -maxdepth 1 -type f -name "
         '"test_*${BOARD}*${CARRIER}*_overlay.py"' in workflow
     )
     assert '[[ "$entry" == "$HOME/.local/bin" ]] && continue' in environment
@@ -35,8 +35,7 @@ def test_labgrid_plugins_dependency_is_immutable() -> None:
 
     assert (
         "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
-        "labgrid-plugins.git@20283e751c11085b99bccfe5a9f2d77cfed8e1eb"
-        in pyproject
+        "labgrid-plugins.git@00c508aef6612b7de8dd8f263f5c4b1411a81a04" in pyproject
     )
 
 
@@ -54,3 +53,53 @@ def test_missing_hardware_prerequisite_skips_outside_coordinator(monkeypatch):
 
     with pytest.raises(pytest.skip.Exception, match="missing tool"):
         hardware_prereq_unavailable("missing tool")
+
+
+def test_fmcdaq3_overlay_uses_coordinator_feature_names():
+    """The overlay suite must run on the same place as the DAQ3 boot test."""
+    from test.hw.xsa.test_fmcdaq3_vcu118_overlay import SPEC
+
+    assert SPEC.lg_features == ("daq3", "vcu118")
+
+
+def test_preparation_loads_only_the_selected_board_configuration(tmp_path):
+    import os
+    import subprocess
+
+    tool_dir = tmp_path / "venv/bin"
+    tool_dir.mkdir(parents=True)
+    for name in ("labgrid-client", "pytest", "sdtgen"):
+        tool = tool_dir / name
+        tool.write_text("#!/bin/sh\nexit 0\n")
+        tool.chmod(0o755)
+    config = tmp_path / "config"
+    config.mkdir()
+    (config / "adrv9371-zc706.env").write_text(
+        "export ADIDT_OVERLAY_MODULES_ARCHIVE=/private/ad9371.tar.gz\n"
+    )
+    (config / "daq3-vcu118.env").write_text(
+        "export ADIDT_OVERLAY_MODULES_ARCHIVE=/wrong/board.tar.gz\n"
+    )
+    env = dict(
+        os.environ,
+        BOARD="adrv9371",
+        CARRIER="zc706",
+        VENV_DIR=str(tool_dir.parent),
+        ADIDT_HARDWARE_CONFIG_DIR=str(config),
+    )
+    env.pop("LG_ENV", None)
+    env.pop("LG_COORDINATOR", None)
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            'source "$1"; printf "%s" "$ADIDT_OVERLAY_MODULES_ARCHIVE"',
+            "bash",
+            str(ROOT / ".github/scripts/prepare-hardware-env.sh"),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout == "/private/ad9371.tar.gz"

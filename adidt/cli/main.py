@@ -638,11 +638,9 @@ def deps(ctx, dt_file, format, max_depth, show_missing, output):
     try:
         parser.parse(dt_file)
     except FileNotFoundError as e:
-        click.echo(click.style(f"Error: {e}", fg="red"))
-        return
+        raise click.ClickException(str(e)) from e
     except Exception as e:
-        click.echo(click.style(f"Error parsing file: {e}", fg="red"))
-        return
+        raise click.ClickException(f"Error parsing file: {e}") from e
 
     # Check for circular dependencies
     cycles = parser.detect_circular_dependencies()
@@ -1174,8 +1172,7 @@ def xsa_profile_show(name):
     try:
         profile = ProfileManager().load(name)
     except ProfileError as ex:
-        click.echo(click.style(f"Error: {ex}", fg="red"))
-        return
+        raise click.ClickException(str(ex)) from ex
 
     click.echo(json.dumps(profile, indent=2))
 

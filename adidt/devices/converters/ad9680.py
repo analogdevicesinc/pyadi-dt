@@ -45,9 +45,11 @@ class AD9680(ConverterDevice):
 
     # Optional SPI-3-wire flag flips a bundle of properties.
     use_spi_3wire: Annotated[bool, DtSkip()] = False
+    sfdr_optimization_config: list[int] | None = Field(
+        None, alias="adi,sfdr-optimization-config", min_length=8, max_length=8
+    )
 
-    # SYSREF defaults emitted only when not in 3-wire mode.
-    # These are fixed when emitted; surface via extra_dt_lines.
+    # Clock bindings and JESD SYSREF configuration are independent of SPI mode.
     clks_str: Annotated[str | None, DtSkip()] = None
     clk_names_str: Annotated[str | None, DtSkip()] = None
 
@@ -71,12 +73,11 @@ class AD9680(ConverterDevice):
             lines.append("spi-cpol;")
             lines.append("spi-cpha;")
             lines.append("adi,spi-3wire-enable;")
-        else:
-            lines.append("adi,sysref-lmfc-offset = <0>;")
-            lines.append("adi,sysref-pos-window-skew = <0>;")
-            lines.append("adi,sysref-neg-window-skew = <0>;")
-            lines.append("adi,sysref-mode = <1>;")
-            lines.append("adi,sysref-nshot-ignore-count = <0>;")
+        lines.append("adi,sysref-lmfc-offset = <0>;")
+        lines.append("adi,sysref-pos-window-skew = <0>;")
+        lines.append("adi,sysref-neg-window-skew = <0>;")
+        lines.append("adi,sysref-mode = <1>;")
+        lines.append("adi,sysref-nshot-ignore-count = <0>;")
 
         for gl in ctx.get("gpio_lines") or []:
             lines.append(f"{gl['prop']} = <&{gl['controller']} {int(gl['index'])} 0>;")
