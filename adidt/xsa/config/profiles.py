@@ -225,6 +225,23 @@ _AD9084_BOARD_INT_KEYS = {
     "hsci_speed_mhz",
 }
 _ADRV9009_BOARD_STR_KEYS = {"spi_bus", "ad9371_profile_path"}
+_ADRV9003_BOARD_ALLOWED_KEYS = {
+    "label",
+    "spi_cs",
+    "spi_max_frequency",
+    "reset_gpio",
+    "rx_link_id",
+    "tx_link_id",
+    "trx_profile_props",
+}
+_ADRV9003_BOARD_INT_KEYS = {
+    "spi_cs",
+    "spi_max_frequency",
+    "reset_gpio",
+    "rx_link_id",
+    "tx_link_id",
+}
+_ADRV9003_BOARD_STR_KEYS = {"label"}
 _AD9084_BOARD_STR_KEYS = {
     "converter_spi",
     "clock_spi",
@@ -359,6 +376,22 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
             adrv9009_board,
             _ADRV9009_BOARD_INT_KEYS,
             _ADRV9009_BOARD_STR_KEYS,
+        )
+
+    adrv9003_board = defaults.get("adrv9003_board")
+    if adrv9003_board is not None:
+        if not isinstance(adrv9003_board, dict):
+            raise ProfileError(
+                "invalid profile defaults.adrv9003_board: expected object"
+            )
+        _validate_board_defaults(
+            "adrv9003_board", adrv9003_board, _ADRV9003_BOARD_ALLOWED_KEYS
+        )
+        _validate_typed_keys(
+            "adrv9003_board",
+            adrv9003_board,
+            _ADRV9003_BOARD_INT_KEYS,
+            _ADRV9003_BOARD_STR_KEYS,
         )
 
     ad9084_board = defaults.get("ad9084_board")
