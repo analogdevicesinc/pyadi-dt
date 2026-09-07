@@ -345,6 +345,16 @@ ZU11EG generated-DTB boot and bounded runtime overlay validation.
      - ZC706
      - No (supply via cfg)
      - —
+   * - ``adrv9003_zcu102``
+     - ADRV9003 (Navassa)
+     - ZCU102
+     - No (supply via cfg)
+     - ``adrv9003_board``
+   * - ``adrv9003_zc706``
+     - ADRV9003 (Navassa)
+     - ZC706
+     - No (supply via cfg)
+     - ``adrv9003_board``
    * - ``fmcdaq2_zcu102``
      - FMCDAQ2
      - ZCU102
@@ -653,6 +663,8 @@ ADRV family profile variants include:
 - ``adrv9008_zcu102``
 - ``adrv9008_zc706``
 - ``adrv9002_zc706``
+- ``adrv9003_zcu102``
+- ``adrv9003_zc706``
 - ``adrv9009_zc706``
 - ``adrv9009_zcu102``
 - ``adrv937x_zc706``

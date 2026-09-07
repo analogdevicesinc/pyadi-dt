@@ -101,6 +101,7 @@ class XsaTopology:
                 "ad9084",
                 "adrv9025",
                 "adrv9026",
+                "adrv9003",
                 "adrv9009",
                 "adrv9001",
                 "ad9371",
@@ -124,6 +125,10 @@ class XsaTopology:
         jesd_names = self._jesd_name_blob()
         if "adrv9026" in jesd_names or "adrv9025" in jesd_names:
             return "adrv9025"
+        if "adrv9003" in jesd_names:
+            return "adrv9003"
+        if "adrv9001" in jesd_names or "adrv9002" in jesd_names:
+            return "adrv9002"
         if "ad9084" in jesd_names:
             return "ad9084"
         if "mxfe" in jesd_names or "ad9081" in jesd_names:
@@ -160,6 +165,8 @@ _ADI_CONVERTER_TYPES = {
     "axi_ad9144",
     "axi_ad9152",
     "axi_adrv9001",
+    "axi_adrv9002",
+    "axi_adrv9003",
     "axi_adrv9009",
     "axi_adrv9025",
     "axi_adrv9026",

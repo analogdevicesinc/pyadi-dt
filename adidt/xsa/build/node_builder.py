@@ -10,6 +10,7 @@ from .builders.ad9084 import AD9084Builder
 from .builders.ad9172 import AD9172Builder
 from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
+from .builders.adrv9003 import ADRV9003Builder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
 from ..config.pipeline_config import PipelineConfig
@@ -20,6 +21,7 @@ class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
     _DEFAULT_BUILDERS: list[BoardBuilder] = [
+        ADRV9003Builder(),
         ADRV9009Builder(),
         ADRV937xBuilder(),
         AD9081Builder(),

@@ -15,6 +15,8 @@ def test_profile_manager_lists_builtin_profiles():
     assert "adrv9008_zc706" in names
     assert "adrv9008_zcu102" in names
     assert "adrv9002_zc706" in names
+    assert "adrv9003_zcu102" in names
+    assert "adrv9003_zc706" in names
     assert "adrv9009_zcu102" in names
     assert "adrv9009_zc706" in names
     assert "adrv9009_zu11eg" in names
@@ -126,6 +128,11 @@ def test_profile_manager_loads_adrv9008_zc706_profile():
 def test_profile_manager_loads_adrv9002_zc706_profile():
     profile = ProfileManager().load("adrv9002_zc706")
     assert profile["name"] == "adrv9002_zc706"
+
+
+@pytest.mark.parametrize("name", ["adrv9003_zcu102", "adrv9003_zc706"])
+def test_profile_manager_loads_adrv9003_profiles(name):
+    assert ProfileManager().load(name)["name"] == name
 
 
 def test_profile_manager_loads_adrv9025_profile():

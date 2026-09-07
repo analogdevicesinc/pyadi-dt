@@ -82,6 +82,7 @@ Converters / MxFE transceivers:
 
 RF transceivers:
 
+- :class:`adidt.devices.transceivers.ADRV9003` — Navassa ADRV9003 (two RX, one TX)
 - :class:`adidt.devices.transceivers.ADRV9009` — reused for ADRV9025/9026/9029
   (Talise silicon) and for AD9371/ADRV9371 (Mykonos silicon).  The kernel
   binding differs per chip: set ``compatible_strings=["adi,ad9371"]`` plus
