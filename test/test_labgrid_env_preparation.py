@@ -47,6 +47,56 @@ def test_tftp_uses_live_tags_and_disables_sd_autoboot():
     assert "drivers" not in original["targets"]["main"]
 
 
+def test_sd_autoboot_board_keeps_the_place_configuration(monkeypatch):
+    """ADRV9361-Z7035 cannot TFTP a kernel, so its SD autoboot must survive.
+
+    ADI's Zynq-7000 U-Boot has no CONFIG_TFTP_PORT and only TFTPs from
+    privileged port 69, which TFTPServerDriver's 3069 can never satisfy.
+    """
+    monkeypatch.delenv("BOARD", raising=False)
+    monkeypatch.delenv("CARRIER", raising=False)
+    original = environment()
+    rendered = environment()
+    rendered["targets"]["main"]["drivers"] = {
+        "BootFPGASoCTFTP": {"sd_autoboot": "true"},
+        "KuiperDLDriver": {},
+    }
+    renderer = Mock(return_value=rendered)
+    place = {
+        "name": "bench",
+        "tags": {
+            "boot-strategy": "BootFPGASoCTFTP",
+            "sd-autoboot": "true",
+            "daughter-board": "adrv9361z7035",
+            "carrier": "adrv1crr-fmc",
+        },
+    }
+    prepared = module.deployment_config(
+        original, place, tftp_root="/tmp/private-tftp", render=renderer
+    )
+    renderer.assert_called_once_with(place, {})
+    drivers = prepared["targets"]["main"]["drivers"]
+    assert drivers["BootFPGASoCTFTP"]["sd_autoboot"] == "true"
+    assert "tftp_root_folder" not in drivers["BootFPGASoCTFTP"]
+    # Activating KuiperDLDriver downloads a multi-GB image this path never uses.
+    assert "KuiperDLDriver" not in drivers
+
+
+def test_sd_autoboot_opt_out_prefers_ci_board_environment(monkeypatch):
+    """prepare-hardware-env.sh exports BOARD/CARRIER; they win over the tags."""
+    monkeypatch.setenv("BOARD", "adrv9009")
+    monkeypatch.setenv("CARRIER", "zc706")
+    place = {
+        "name": "bench",
+        "tags": {
+            "boot-strategy": "BootFPGASoCTFTP",
+            "daughter-board": "adrv9361z7035",
+            "carrier": "adrv1crr-fmc",
+        },
+    }
+    assert module.keeps_sd_autoboot(place) is False
+
+
 @pytest.mark.parametrize(
     "boot_mode", ["BootFabric", "BootFPGASoC", "BootZynq7000JTAGRecovery", "unknown"]
 )

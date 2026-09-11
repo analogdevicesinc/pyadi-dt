@@ -132,7 +132,7 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 | AD9371 / ADRV937x | ZC706, ZCU102 |
 | ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 |
-| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers — *listed in the Kuiper board manifest only; no device model, profile, or builder yet (`kuiper_boards.json` marks these `unsupported`)* |
 | FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 |
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi |
