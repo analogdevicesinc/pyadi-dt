@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Runtime overlay tests need a different boot environment from ordinary generated-DTB tests. The ADI JESD framework builds its topology when it loads and rejects an overlay change while that topology is registered. A fully configured merged DTB also conflicts with the SPI children and phandles created by the overlay." name="description" />
+
+    <title>Runtime JESD overlay validation &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Release readiness audit — 2026-09-05" href="release_readiness_2026-09-05.html" />
+    <link rel="prev" title="Release Operator Runbook" href="release_runbook.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Runtime JESD overlay validation</a><ul>
+<li><a class="reference internal" href="#build-private-test-kernels">Build private test kernels</a></li>
+<li><a class="reference internal" href="#select-artifacts-for-labgrid">Select artifacts for labgrid</a></li>
+<li><a class="reference internal" href="#provisioned-release-runners">Provisioned release runners</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jif_dt_contract.html">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_validation.html">Release hardware validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_runbook.html">Release Operator Runbook</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Runtime JESD overlay validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_readiness_2026-09-05.html">Release readiness audit — 2026-09-05</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/jif_contract.html">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="runtime-jesd-overlay-validation">
+<h1>Runtime JESD overlay validation<a class="headerlink" href="#runtime-jesd-overlay-validation" title="Link to this heading"></a></h1>
+<p>Runtime overlay tests need a different boot environment from ordinary generated-DTB
+tests. The ADI JESD framework builds its topology when it loads and rejects an
+overlay change while that topology is registered. A fully configured merged DTB
+also conflicts with the SPI children and phandles created by the overlay.</p>
+<p>The ZC706 and FMCDAQ3 test profiles therefore use this sequence:</p>
+<ol class="arabic simple">
+<li><p>Boot a base with the PL targets and symbols, without overlay-owned SPI children.</p></li>
+<li><p>Stop iiod and unbind the AXI IIO consumers, releasing their converter references.</p></li>
+<li><p>Unload all topology clients and the JESD core. Require its module and bus absent.</p></li>
+<li><p>Apply the generated DTBO through configfs and verify its unique live-tree marker.</p></li>
+<li><p>Load JESD, clocks, and converters; restart iiod. Require IIO, JESD DATA, and DMA.
+On FMCDAQ3, initialize TX before RX because TX owns the shared AD9528
+synchronization callbacks.</p></li>
+<li><p>Quiesce/unload again before removing the overlay. Require the marker absent,
+then reload the overlay and verify devices and links again.</p></li>
+</ol>
+<p>Busy modules, kernel faults, missing markers, and failed captures remain failures.
+The harness never uses forced module removal or disables the JESD overlay guards.</p>
+<section id="build-private-test-kernels">
+<h2>Build private test kernels<a class="headerlink" href="#build-private-test-kernels" title="Link to this heading"></a></h2>
+<p>Use a disposable checkout of ADI Linux revision
+<code class="docutils literal notranslate"><span class="pre">2e8908932dfd9faf40ec9220a508aa1ce02699a8</span></code> (6.1.70). The build script applies
+<code class="docutils literal notranslate"><span class="pre">.github/patches/jesd204-skip-unregistered-callbacks.patch</span></code> to that checkout.
+That kernel needs lifetime fixes for callbacks to already unregistered clients
+and repeated device cleanup during JESD module exit. Keep this patch with the
+kernel artifacts; installing the Python package does not patch a board’s kernel.</p>
+<p>Put the matching cross compiler, make, DTC, patch, depmod, and cpio on PATH:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># ARM Linux cross compiler on PATH; source/output are private directories.</span>
+bash<span class="w"> </span>.github/scripts/build-runtime-overlay-kernel.sh<span class="w"> </span><span class="s2">"</span><span class="nv">$linux_src</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$overlay_build</span><span class="s2">"</span><span class="w"> </span>zynq
+
+<span class="c1"># Little-endian MicroBlaze Linux cross compiler on PATH.</span>
+bash<span class="w"> </span>.github/scripts/build-runtime-overlay-kernel.sh<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span><span class="s2">"</span><span class="nv">$linux_src</span><span class="s2">"</span><span class="w"> </span><span class="s2">"</span><span class="nv">$overlay_build</span><span class="s2">"</span><span class="w"> </span>microblaze<span class="w"> </span><span class="s2">"</span><span class="nv">$stock_initramfs</span><span class="s2">"</span>
+</pre></div>
+</div>
+<p>The script enables configfs overlays and module unloading, makes IIO/JESD clients
+modules, and retains the resolved <code class="docutils literal notranslate"><span class="pre">kernel.config</span></code>. Three unrelated drivers in the
+pinned ARM defconfig are disabled because they do not build with modular IIO:
+ADAR1000, AD7944, and MathWorks IP core.</p>
+<p>For MicroBlaze, the input is the matching reference <code class="docutils literal notranslate"><span class="pre">cpio.gz</span></code> initramfs. The script
+appends the new modules to the original archive, preserving its device nodes and
+ownership without root access. It builds the supplied
+<code class="docutils literal notranslate"><span class="pre">test/hw/xsa/ref_data/vcu118_fmcdaq3_runtime.dts</span></code> wrapper, which retains the reference
+carrier, exposes XSA-name aliases, and removes the SPI children owned by the overlay.
+Use the matching reference FPGA bitstream.</p>
+</section>
+<section id="select-artifacts-for-labgrid">
+<h2>Select artifacts for labgrid<a class="headerlink" href="#select-artifacts-for-labgrid" title="Link to this heading"></a></h2>
+<p>ZC706 test boots prepare their private runtime base automatically from the merged
+tree and DTBO. The kernel override is a runner-local file. The harness stages it
+under the basename requested by U-Boot, even if the override has a custom filename.</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ</span><span class="o">=</span><span class="s2">"</span><span class="nv">$overlay_build</span><span class="s2">/uImage"</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ADIDT_OVERLAY_MODULES_ARCHIVE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$overlay_build</span><span class="s2">/modules.tar.gz"</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ADIDT_OVERLAY_MODULES_HOST</span><span class="o">=</span>RUNNER_LAB_IPV4
+</pre></div>
+</div>
+<p>The harness serves only this archive on a temporary HTTP port, computes its SHA256,
+and shuts down the server at fixture teardown (including after a failed test).
+The board must be able to reach the runner’s chosen interface and port. For an
+existing artifact server, use <code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_MODULES_URL</span></code> together with
+<code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_MODULES_SHA256</span></code> instead of the local archive option.</p>
+<p>The board verifies the checksum and extracts the bundle under
+<code class="docutils literal notranslate"><span class="pre">/tmp/adidt-overlay-modules</span></code>; <code class="docutils literal notranslate"><span class="pre">modprobe</span> <span class="pre">-d</span></code> uses it without replacing SD-card modules.
+The archive must contain <code class="docutils literal notranslate"><span class="pre">lib/modules/&lt;running-kernel-release&gt;/</span></code> and depmod indexes.
+For a preinstalled or embedded matching module tree, leave the archive and both
+URL variables unset.</p>
+<p>MicroBlaze’s kernel and module tree are one JTAG image. Copy the output to the
+exporter and set its absolute exporter-side path:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">ADIDT_OVERLAY_FABRIC_KERNEL_IMAGE</span><span class="o">=</span>/private/simpleImage.vcu118_fmcdaq3_runtime.strip
+</pre></div>
+</div>
+<p>These overlay-specific overrides leave ordinary boot tests on their normal kernels,
+so both test modules can run in one pytest invocation.</p>
+<p>Acquire the appropriate place through the coordinator, prepare <code class="docutils literal notranslate"><span class="pre">LG_ENV</span></code>, and run
+the board’s complete six-test overlay module. Retain its JUnit and serial/kernel
+logs. A configfs <code class="docutils literal notranslate"><span class="pre">applied</span></code> status alone is not proof of an applied overlay.</p>
+<p>The pinned kernel warns that changes to properties of boot-time nodes may leak
+memory when an overlay is removed. Set <code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_RELOAD_CYCLES=20</span></code> to
+qualify 20 consecutive remove/apply cycles on a fresh boot. Every cycle checks
+JESD DATA, a 4,096-sample DMA capture, and kernel faults; final removal must leave
+no configfs entry. The harness accepts 1–1,000 cycles and defaults to one.</p>
+<p>AD9371-ZC706 (<code class="docutils literal notranslate"><span class="pre">bq</span></code>), ADRV9009-ZC706 (<code class="docutils literal notranslate"><span class="pre">nemo</span></code>), and FMCDAQ3-VCU118 (<code class="docutils literal notranslate"><span class="pre">nuc</span></code>)
+each passed all six tests with 20 reload cycles on 2026-09-05. FMCDAQ3 required
+2 ms per-byte console transmission to prevent UART Lite command truncation;
+the BootFabric fixture applies that pacing before powering the board.</p>
+<p>This evidence covers the tested sequence and does not establish a general
+memory-leak bound. Reboot after the qualified 20-cycle sequence; unlimited
+production cycling remains unsupported.</p>
+</section>
+<section id="provisioned-release-runners">
+<h2>Provisioned release runners<a class="headerlink" href="#provisioned-release-runners" title="Link to this heading"></a></h2>
+<p>The 2026-09-05 validated kernels/modules are installed under
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/runtime/2026-09-05/</span></code> on <code class="docutils literal notranslate"><span class="pre">bq</span></code>, <code class="docutils literal notranslate"><span class="pre">nemo</span></code>, and <code class="docutils literal notranslate"><span class="pre">nuc</span></code>.
+<code class="docutils literal notranslate"><span class="pre">prepare-hardware-env.sh</span></code> loads the selected board’s runner-local configuration
+from <code class="docutils literal notranslate"><span class="pre">~/.config/pyadi-dt/hardware/$BOARD-$CARRIER.env</span></code> (override the directory
+with <code class="docutils literal notranslate"><span class="pre">ADIDT_HARDWARE_CONFIG_DIR</span></code>). Installed configurations are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">bq</span></code>: <code class="docutils literal notranslate"><span class="pre">adrv9371-zc706.env</span></code>, including the private TFTP-capable U-Boot.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nemo</span></code>: <code class="docutils literal notranslate"><span class="pre">adrv9009-zc706.env</span></code>, including the private TFTP-capable U-Boot.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nuc</span></code>: <code class="docutils literal notranslate"><span class="pre">daq3-vcu118.env</span></code>, selecting the complete MicroBlaze runtime image.</p></li>
+</ul>
+<p>These files use shell default expansions so explicit artifact overrides remain
+possible. Shared stock boot images and coordinator tags are preserved. Kernel
+rebuilds require updating the matching module bundle as a unit.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="release_runbook.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Release Operator Runbook</a>
+    <a href="release_readiness_2026-09-05.html" title="Next document (Alt+Shift+RightArrow)" class="next">Release readiness audit — 2026-09-05</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

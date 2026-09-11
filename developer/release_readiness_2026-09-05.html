@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="Final validated candidate: c4e9a605f540dcf6d0f7882627a82765b4207e94 (version 0.0.1, baseline ee5d7b9). See the validation summary for final hardware and hosted results. Earlier stages are retained below as history. No version bump, tag, upload, or publication was performed." name="description" />
+
+    <title>Release readiness audit — 2026-09-05 &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="XSA Pipeline — Developer Guide" href="../xsa_developer.html" />
+    <link rel="prev" title="Runtime JESD overlay validation" href="runtime_overlay_validation.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Release readiness audit — 2026-09-05</a><ul>
+<li><a class="reference internal" href="#confirmed-defects-addressed">Confirmed defects addressed</a></li>
+<li><a class="reference internal" href="#software-verification">Software verification</a></li>
+<li><a class="reference internal" href="#initial-hardware-evidence-superseded-by-final-qualification">Initial hardware evidence (superseded by final qualification)</a></li>
+<li><a class="reference internal" href="#reproducible-test-artifacts">Reproducible test artifacts</a></li>
+<li><a class="reference internal" href="#release-scope-and-retained-limitations">Release scope and retained limitations</a></li>
+<li><a class="reference internal" href="#retained-evidence">Retained evidence</a></li>
+<li><a class="reference internal" href="#applicable-hardware-follow-up">Applicable-hardware follow-up</a></li>
+<li><a class="reference internal" href="#non-ad9081-completion-follow-up">Non-AD9081 completion follow-up</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jif_dt_contract.html">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_validation.html">Release hardware validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_runbook.html">Release Operator Runbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_overlay_validation.html">Runtime JESD overlay validation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release readiness audit — 2026-09-05</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/jif_contract.html">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="release-readiness-audit-2026-09-05">
+<h1>Release readiness audit — 2026-09-05<a class="headerlink" href="#release-readiness-audit-2026-09-05" title="Link to this heading"></a></h1>
+<p>Final validated candidate: <code class="docutils literal notranslate"><span class="pre">c4e9a605f540dcf6d0f7882627a82765b4207e94</span></code> (version
+<code class="docutils literal notranslate"><span class="pre">0.0.1</span></code>, baseline <code class="docutils literal notranslate"><span class="pre">ee5d7b9</span></code>). See the <a class="reference internal" href="hardware_validation.html"><span class="std std-doc">validation summary</span></a>
+for final hardware and hosted results. Earlier stages are retained below as history.
+No version bump, tag, upload, or publication was performed.</p>
+<p><strong>Software checks, ZC706 generated-DTB boots, and runtime overlay lifecycles
+on AD9371/ZC706, ADRV9009/ZC706, and FMCDAQ3/VCU118 pass.</strong> Runtime validation
+requires the private modular kernels and JESD lifetime patch documented in
+<a class="reference internal" href="runtime_overlay_validation.html"><span class="std std-doc">runtime overlay validation</span></a>. Installing this
+Python package alone does not update the board kernel.</p>
+<p>Earlier overlay runs that appeared to pass were invalidated by stronger checks:
+neither configfs write success nor its <code class="docutils literal notranslate"><span class="pre">applied</span></code> status proves that the live tree
+changed. The final runs below require exact live-tree markers and their removal.</p>
+<section id="confirmed-defects-addressed">
+<h2>Confirmed defects addressed<a class="headerlink" href="#confirmed-defects-addressed" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Finding</p></th>
+<th class="head"><p>Fix</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>PyPI staging included <code class="docutils literal notranslate"><span class="pre">SHA256SUMS</span></code>, which Twine rejects as an unknown distribution.</p></td>
+<td><p>Stage and publish only wheels/source distributions; retain checksums with GitHub assets.</p></td>
+</tr>
+<tr class="row-odd"><td><p>CLI dependency-parser exceptions and unknown profile names returned success.</p></td>
+<td><p>Raise Click errors with nonzero exit codes and stderr diagnostics.</p></td>
+</tr>
+<tr class="row-even"><td><p>Empty hardware selections and all-skipped pytest runs passed CI.</p></td>
+<td><p>Reject empty selections and require passing JUnit evidence with no failures/errors.</p></td>
+</tr>
+<tr class="row-odd"><td><p>FMCDAQ3 overlay markers requested <code class="docutils literal notranslate"><span class="pre">fmcdaq3</span></code>; the coordinator advertises <code class="docutils literal notranslate"><span class="pre">daq3</span></code>.</p></td>
+<td><p>Correct the feature and pin it with a regression check.</p></td>
+</tr>
+<tr class="row-even"><td><p>The coordinator’s old environment renderer inferred recovery strategies despite TFTP place tags.</p></td>
+<td><p>Render the installed plugin’s canonical TFTP template from live tags; disable SD autoboot for generated-tree tests.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Serial connected after U-Boot’s countdown; repeated deployments reused a running board.</p></td>
+<td><p>Open serial before bootstrap and power off before every deployment.</p></td>
+</tr>
+<tr class="row-even"><td><p>Stock U-Boot ignored the managed TFTP port, sometimes reaching an unrelated stock service.</p></td>
+<td><p>Add a reproducible private ZC706 U-Boot build with <code class="docutils literal notranslate"><span class="pre">tftpdstport</span></code> support and an explicit exporter-side image override.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Staging files did not prove that Linux booted them.</p></td>
+<td><p>Stamp each DTB with a unique property and require that exact property in Linux.</p></td>
+</tr>
+<tr class="row-even"><td><p>XSA parsing selected the first HWH, which can describe a scoped interconnect instead of the complete design.</p></td>
+<td><p>Select the manifest’s <code class="docutils literal notranslate"><span class="pre">DEFAULT_BD</span></code> handoff; reject ambiguous archives.</p></td>
+</tr>
+<tr class="row-odd"><td><p>FMCDAQ3 MicroBlaze clocks rendered <code class="docutils literal notranslate"><span class="pre">&lt;&amp;clk_bus_0</span> <span class="pre">None&gt;</span></code>.</p></td>
+<td><p>Omit the specifier for zero-cell clocks.</p></td>
+</tr>
+<tr class="row-even"><td><p>AD9371 observation DMA lacked its ADI binding and interrupt override; generic IIO names confused primary RX and observation.</p></td>
+<td><p>Emit the observation DMA binding and reference IRQ; assign distinct reference IIO node names.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Overlay tests treated an existing configfs directory or successful <code class="docutils literal notranslate"><span class="pre">path</span></code> write as application evidence.</p></td>
+<td><p>Use binary <code class="docutils literal notranslate"><span class="pre">dtbo</span></code> writes, require <code class="docutils literal notranslate"><span class="pre">applied</span></code> status, and verify a unique property in the live tree. Verify its removal on unload. Preserve base DTB symbols.</p></td>
+</tr>
+<tr class="row-even"><td><p>Minimal MicroBlaze userspace lacks <code class="docutils literal notranslate"><span class="pre">stat</span></code>, and configfs was not mounted.</p></td>
+<td><p>Use <code class="docutils literal notranslate"><span class="pre">wc</span> <span class="pre">-c</span></code> for transfers and mount configfs before probing support.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Missing FMCDAQ3 handoff prevented generation coverage.</p></td>
+<td><p>Supply the pre-synthesis XSA under <code class="docutils literal notranslate"><span class="pre">test/hw/xsa/ref_data/</span></code>, with source/tool/framing provenance.</p></td>
+</tr>
+<tr class="row-even"><td><p>Documentation used the wrong PyPI name and stale hardware claims.</p></td>
+<td><p>Correct <code class="docutils literal notranslate"><span class="pre">pyadi-dt</span></code>, the AD9081 inventory, ZU11EG compile-only coverage, and the audit toctree entry.</p></td>
+</tr>
+<tr class="row-odd"><td><p>JESD module teardown called unloaded client callbacks and repeated sysfs cleanup.</p></td>
+<td><p>Supply a pinned kernel lifetime patch and reproducible ARM/MicroBlaze modular kernel builds. Preserve the notifier guards.</p></td>
+</tr>
+<tr class="row-even"><td><p>Runtime bases already contained overlay SPI children, and repeated fragments updated the same properties.</p></td>
+<td><p>Remove overlay-owned children from private boot DTBs; emit AD9371/ADRV9009 clock and DMA properties once.</p></td>
+</tr>
+<tr class="row-odd"><td><p>FMCDAQ3 clock selector constants, dividers, and JESD clock ownership differed from the reference board.</p></td>
+<td><p>Correct binding values and the VCU118 clock/SYSREF/converter configuration; verify the full live lifecycle.</p></td>
+</tr>
+<tr class="row-even"><td><p>Kernel overrides could deploy under the wrong basename or disappear before deferred staging.</p></td>
+<td><p>Keep the override at the bootloader’s expected name for the fixture lifetime. Separate ordinary and overlay kernel selection.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="software-verification">
+<h2>Software verification<a class="headerlink" href="#software-verification" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Initial full Python 3.12 suite: <strong>917 passed, 14 skipped, no expected failures</strong>;
+one network test excluded. Focused harness checks were repeated after the
+overlay-specific kernel selection changes.</p></li>
+<li><p>Affected parser, board-builder, and hardware-harness tests: <strong>74 passed</strong>
+on each of Python 3.10, 3.11, 3.13, and 3.14. The final overlay marker
+checks were also verified on Python 3.12. After the runtime fixes, the
+affected clock, builder, and deployment set passed <strong>44 tests</strong> on each
+of Python 3.10, 3.11, 3.13, and 3.14.</p></li>
+<li><p>After the System-API and provisioning changes, the affected set passed
+<strong>75 tests</strong> on each of Python 3.10, 3.11, 3.13, and 3.14.</p></li>
+<li><p>Initial clean wheel installs with <code class="docutils literal notranslate"><span class="pre">test,xsa,mcp</span></code> extras passed the full
+suite on Python 3.10–3.14; minimal wheel and source installs passed CLI,
+metadata, profile, and board-manifest smoke checks outside the checkout.</p></li>
+<li><p>The online Kuiper XSA test passed with <code class="docutils literal notranslate"><span class="pre">ADI_XSA_KUIPER_ONLINE=1</span></code>.</p></li>
+<li><p>Earlier audit <strong>Debian 12 DEB</strong> and <strong>Fedora 42 RPM</strong> packages built, installed,
+and passed the native-package smoke checks. After the runtime fixes, the
+wheel/source distributions were rebuilt and passed Twine checks; the final
+installed wheel passed model, packaged-profile, and CLI smoke checks.</p></li>
+<li><p>Sphinx HTML documentation built with warnings treated as errors. Build,
+Twine staging, checksum, release-preflight, Ruff, and shell checks passed.</p></li>
+</ul>
+<p>The 14 skips comprise 12 AD9081 parity properties absent from the reference
+DTS and two tests requiring live IP inputs. The four former AD9371 System-API
+expected failures are now ordinary passing
+assertions. A new System-API hardware test passed on <code class="docutils literal notranslate"><span class="pre">bq</span></code>, verifying a live
+generated-DTB marker, IIO enumeration, both RX links plus TX in JESD DATA,
+and RX DMA capture. It uses the reference ZC706 profile; asymmetric custom
+framing remains the responsibility of the XSA/profile pipeline.</p>
+</section>
+<section id="initial-hardware-evidence-superseded-by-final-qualification">
+<h2>Initial hardware evidence (superseded by final qualification)<a class="headerlink" href="#initial-hardware-evidence-superseded-by-final-qualification" title="Link to this heading"></a></h2>
+<p>The table below records the earlier investigation stage. In particular, its
+ZU11EG deployment gap was closed by the final generated-tree test documented in
+<a class="reference internal" href="hardware_validation.html"><span class="std std-doc">the validation summary</span></a>.</p>
+<p>Coordinator: <code class="docutils literal notranslate"><span class="pre">10.0.0.41:20408</span></code>. Tests used matching places, isolated checkout
+copies, exclusive acquisition, power-down teardown, and place release.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Place</p></th>
+<th class="head"><p>Verified result</p></th>
+<th class="head"><p>Boundary</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nemo</span></code> / ADRV9009 + ZC706</p></td>
+<td><p>Generated-DTB boot/RX and two CLI tests passed. Final modular runtime overlay suite: <strong>6 passed</strong>, including live application, JESD DATA, DMA, removal, and reload.</p></td>
+<td><p>Requires the patched modular kernel and matching module bundle.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">bq</span></code> / AD9371 + ZC706</p></td>
+<td><p>Ordinary suite: <strong>2 passed, 5 skipped, 1 expected failure</strong>. Final modular runtime overlay suite: <strong>6 passed</strong>. Primary RX/TX pass; observation enumerates, reaches DATA, and completes DMA.</p></td>
+<td><p>Optional sweeps disabled; observation’s zero samples retain the no-stimulus expected failure. Runtime requires the patched kernel/modules.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">nuc</span></code> / FMCDAQ3 + VCU118</p></td>
+<td><p>Stock RX passed (4,096 samples, two nonzero channels). Final generated runtime overlay suite: <strong>6 passed</strong>, including DMA, removal, and reload.</p></td>
+<td><p>Uses the matching reference bitstream and patched MicroBlaze image with embedded modules and runtime base.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">tron</span></code> / ADRV9009-ZU11EG</p></td>
+<td><p>XSA pipeline and DTB compilation passed. After reconnecting JTAG, the stock SD image boots through production U-Boot: both PHYs initialize, all three JESD links report DATA, and local DMA captures 65,536 bytes.</p></td>
+<td><p>This earlier stage predates the final generated-DTB qualification; see the validation summary for the completed serial-DTB transfer and CRC checks.</p></td>
+</tr>
+<tr class="row-even"><td><p>AD9081</p></td>
+<td><p>No matching available place.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">mini2</span></code> is currently ADRV9002.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The first apparent <code class="docutils literal notranslate"><span class="pre">bq</span></code> TFTP passes used its stock port-69 service and are
+<strong>not generated-DTB evidence</strong>. Likewise, earlier six-test overlay passes on
+all three boards are <strong>not runtime-overlay evidence</strong>. Unique live-tree
+markers supersede those results.</p>
+<p>The original kernels rejected overlay application with <code class="docutils literal notranslate"><span class="pre">-95</span></code>: the JESD notifier
+requires its topology unregistered before the live tree changes. The harness now
+stops IIO users, unbinds consumers, unloads clients and the JESD core, and checks
+that its bus is absent before changing the tree. This exposed kernel callbacks
+into unloaded client modules and repeated cleanup during core exit. The supplied
+patch fixes those lifetime defects without bypassing the notifier.</p>
+<p>A combined AD9371 ordinary-boot and runtime-overlay invocation also passed:
+<strong>8 passed, 5 skipped, 1 expected failure</strong> (<code class="docutils literal notranslate"><span class="pre">bq-combined-final.log</span></code>). This
+verifies that overlay kernel overrides coexist with ordinary kernel selection.</p>
+<p>Final passing runtime logs are <code class="docutils literal notranslate"><span class="pre">bq-modular-lifetime.log</span></code>,
+<code class="docutils literal notranslate"><span class="pre">nemo-modular-lifetime.log</span></code>, and <code class="docutils literal notranslate"><span class="pre">nuc-runtime-topology.log</span></code>. The checks remain
+strict; no failing path was converted to a passing skip. The pinned kernel still
+warns about memory leaks when properties on boot-time nodes are removed: these
+runs qualify the tested bounded lifecycle, not unlimited production cycling.</p>
+</section>
+<section id="reproducible-test-artifacts">
+<h2>Reproducible test artifacts<a class="headerlink" href="#reproducible-test-artifacts" title="Link to this heading"></a></h2>
+<p>ZC706 tests used a private U-Boot built from ADI revision
+<code class="docutils literal notranslate"><span class="pre">f06dec3cab5b3ba295a3d171527b7b45fe692469</span></code>, enabling <code class="docutils literal notranslate"><span class="pre">CONFIG_TFTP_PORT</span></code> and
+using the managed driver’s <code class="docutils literal notranslate"><span class="pre">tftpdstport</span></code> variable. Build it on the exporter:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span><span class="c1"># Put an ARM Linux cross compiler on PATH first.</span>
+bash<span class="w"> </span>.github/scripts/build-zc706-test-uboot.sh<span class="w"> </span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.cache/adidt/zc706-tftp"</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">ADIDT_ZYNQ_UBOOT_IMAGE</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.cache/adidt/zc706-tftp/u-boot.elf"</span>
+<span class="nb">source</span><span class="w"> </span>.github/scripts/prepare-hardware-env.sh
+</pre></div>
+</div>
+<p>Set <code class="docutils literal notranslate"><span class="pre">VENV_DIR</span></code>, <code class="docutils literal notranslate"><span class="pre">LG_ENV</span></code>, and <code class="docutils literal notranslate"><span class="pre">LG_COORDINATOR</span></code> before preparing the environment.
+The U-Boot override is an absolute <strong>exporter-side</strong> path. Shared recovery
+images and coordinator tags were not changed.</p>
+<p>FMCDAQ3 XSA provenance is next to the fixture:
+<code class="docutils literal notranslate"><span class="pre">test/hw/xsa/ref_data/system_top_fmcdaq3_vcu118.provenance.json</span></code>.
+It was exported from HDL <code class="docutils literal notranslate"><span class="pre">2023_R2_p1</span></code>, <code class="docutils literal notranslate"><span class="pre">projects/daq3/vcu118</span></code>, default RX/TX
+M=2/L=4/S=1, using Vivado 2025.1 with the source’s version check overridden.
+This is a pre-synthesis handoff, <strong>not</strong> a newly implemented bitstream. Its
+RX/TX JESD addresses match the stock reference kernel. The tool mismatch is
+recorded rather than hidden.</p>
+<p>The private kernels use ADI Linux revision
+<code class="docutils literal notranslate"><span class="pre">2e8908932dfd9faf40ec9220a508aa1ce02699a8</span></code>, the supplied JESD lifetime patch,
+and modular IIO/JESD clients. Both architecture builds were executed successfully.
+The MicroBlaze image preserves the stock initramfs and appends matching modules;
+its wrapper retains the PL nodes and supplies eight XSA aliases while removing
+overlay-owned SPI children. See the <a class="reference internal" href="runtime_overlay_validation.html"><span class="std std-doc">build and deployment procedure</span></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ</span></code> selects a runner-local ZC706 runtime image;
+<code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_FABRIC_KERNEL_IMAGE</span></code> selects an absolute exporter-side MicroBlaze
+runtime image. These apply only to overlay tests, allowing ordinary boot tests
+in the same invocation. Resource paths are restored at teardown.
+<code class="docutils literal notranslate"><span class="pre">ADIDT_XSA_DIR</span></code> optionally selects external XSAs; missing configured files fail.</p>
+</section>
+<section id="release-scope-and-retained-limitations">
+<h2>Release scope and retained limitations<a class="headerlink" href="#release-scope-and-retained-limitations" title="Link to this heading"></a></h2>
+<ol class="arabic simple">
+<li><p>Preserve the matching patched runtime kernels/modules and per-board runner
+configuration on <code class="docutils literal notranslate"><span class="pre">bq</span></code>, <code class="docutils literal notranslate"><span class="pre">nemo</span></code>, and <code class="docutils literal notranslate"><span class="pre">nuc</span></code>. The original built-in kernels do
+not support this overlay lifecycle. Reboot after the qualified 20-cycle
+sequence; unlimited cycling remains unqualified because OF reports property
+allocations that may leak on removal.</p></li>
+<li><p>AD9081 generated-tree hardware validation remains outside this follow-up’s
+scope and is not claimed for the current release candidate.</p></li>
+</ol>
+</section>
+<section id="retained-evidence">
+<h2>Retained evidence<a class="headerlink" href="#retained-evidence" title="Link to this heading"></a></h2>
+<p>Initial audit: <code class="docutils literal notranslate"><span class="pre">/tmp/pyadi-dt-release-20260905/</span></code>.
+Follow-up: <code class="docutils literal notranslate"><span class="pre">/tmp/pyadi-dt-followup-20260905/</span></code>, including software/native-package
+logs, JUnit, generated trees, and per-run hardware logs. Hardware artifacts
+are also copied under <code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/release-validation/2026-09-05/</span></code> with
+checksums. Archive reviewed evidence with the final release candidate.
+Coordinator YAML contains operational configuration and is excluded from
+reviewed evidence bundles.</p>
+<p>Useful software checks:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-o<span class="w"> </span><span class="nv">addopts</span><span class="o">=</span><span class="s1">''</span><span class="w"> </span>-m<span class="w"> </span><span class="s1">'not network'</span><span class="w"> </span>-ra
+<span class="nv">ADI_XSA_KUIPER_ONLINE</span><span class="o">=</span><span class="m">1</span><span class="w"> </span>python<span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-q<span class="w"> </span>-o<span class="w"> </span><span class="nv">addopts</span><span class="o">=</span><span class="s1">''</span><span class="w"> </span>-m<span class="w"> </span>network<span class="w"> </span>-ra
+python<span class="w"> </span>.github/scripts/release_preflight.py<span class="w"> </span>--tag<span class="w"> </span>v0.0.1
+bash<span class="w"> </span>.github/scripts/stage-pypi-artifacts.sh<span class="w"> </span>dist<span class="w"> </span>pypi-dist
+twine<span class="w"> </span>check<span class="w"> </span>pypi-dist/*
+python<span class="w"> </span>.github/scripts/check_hardware_results.py<span class="w"> </span>path/to/junit.xml
+</pre></div>
+</div>
+<p>The staging destination must be empty. Preserve failed hardware JUnit reports
+as well as passing evidence. Local twiki context was checked during planning;
+repository inspection and live inventory superseded its older notes.</p>
+</section>
+<section id="applicable-hardware-follow-up">
+<h2>Applicable-hardware follow-up<a class="headerlink" href="#applicable-hardware-follow-up" title="Link to this heading"></a></h2>
+<p>The AD9371 System path now shares the complete board wiring with the XSA builder,
+preserving the composed clock and converter devices. It supplies clock generators,
+observation wiring, the Mykonos profile, and the TX TPL dependency. The reference
+composition requires one FMC on ZC706, canonical device labels, a 122.88 MHz VCXO,
+and the reference clock/SPI wiring. Unsupported or ambiguous connections fail
+explicitly instead of producing a partial boot tree. Use <code class="docutils literal notranslate"><span class="pre">apply_xsa_topology</span></code>
+when merging with a specific HDL design.</p>
+<p>The labgrid environment used for ZU11EG initially selected an obsolete strategy.
+A private environment using the newer local <code class="docutils literal notranslate"><span class="pre">BootZynqMPJTAG</span></code> implementation was
+created for investigation. Runner SSH alias <code class="docutils literal notranslate"><span class="pre">tron</span></code> points at another host;
+<code class="docutils literal notranslate"><span class="pre">tron.local</span></code> reaches the exporter. After correcting that destination in the test
+process, initial scans returned an all-zero chain with no PSU/Cortex-A53 targets.
+The user reconnected the board, after which production U-Boot and the stock SD
+Linux image booted successfully. The stock image exposes both
+<code class="docutils literal notranslate"><span class="pre">adrv9009-phy</span></code> and <code class="docutils literal notranslate"><span class="pre">adrv9009-phy-b</span></code>; both initialize via the JESD FSM. Two RX
+(including observation) and one TX link report DATA. Local <code class="docutils literal notranslate"><span class="pre">iio_readdev</span></code> captures
+4,096 frames (65,536 bytes). A 256-frame excerpt transferred over UART has
+varying samples on all eight I/Q channels (standard deviations 10.43–19.08
+LSBs). The final probe passed and powered off/released the board. An earlier
+full-buffer UART transfer exceeded the console timeout after successful DMA;
+the shorter excerpt avoids that transport limit. Ethernet is connected through <code class="docutils literal notranslate"><span class="pre">eth1</span></code>, which obtained
+<code class="docutils literal notranslate"><span class="pre">10.0.0.59</span></code> on one boot; <code class="docutils literal notranslate"><span class="pre">eth0</span></code> has no carrier. The plugin’s default eth0-only
+IPv4 check therefore fails despite a working Linux boot. The private serial
+probe checks the devices and JESD links directly.</p>
+<p>No shared plugin checkout, coordinator tags, or SD contents were changed.
+These were stock-image results. The subsequent generated-tree qualification
+below supersedes the earlier plugin/deployment gap.</p>
+<p>Follow-up logs: <code class="docutils literal notranslate"><span class="pre">/tmp/pyadi-dt-hardware-gaps-20260905/</span></code>; hardware run logs are also
+under <code class="docutils literal notranslate"><span class="pre">/tmp/pyadi-dt-followup-20260905/</span></code> on their respective runners.</p>
+<p>The provisioned ZC706 setups each passed all six runtime tests using the temporary
+module server. FMCDAQ3 initially reproduced RX stuck in CGS. Its TX topology runs
+the shared AD9528 output synchronization callbacks; starting RX first can disturb
+an already initialized RX link. Loading the TX converter/TPL before the ADC fixed
+the observed failure, and the complete lifecycle passed again. Kernel log wrap
+also exposed an empty post-overlay diagnostic slice; the harness now retains all
+available messages when the earlier prefix has rolled out of the ring buffer.</p>
+<p>Final provisioned hardware results: <code class="docutils literal notranslate"><span class="pre">bq</span></code> <strong>6 passed</strong>, <code class="docutils literal notranslate"><span class="pre">nemo</span></code> <strong>6 passed</strong>,
+and <code class="docutils literal notranslate"><span class="pre">nuc</span></code> <strong>6 passed on each of two consecutive cold boots</strong> with TX-first
+initialization. All boards were powered off and released. The complete software
+suite passed 917 tests, skipped 14, and excluded one network test; no expected
+failures remain. Unlimited overlay cycling is still not qualified.</p>
+</section>
+<section id="non-ad9081-completion-follow-up">
+<h2>Non-AD9081 completion follow-up<a class="headerlink" href="#non-ad9081-completion-follow-up" title="Link to this heading"></a></h2>
+<p>All three provisioned overlay places passed the complete six-test module with
+<code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_RELOAD_CYCLES=20</span></code>: AD9371-ZC706 (<code class="docutils literal notranslate"><span class="pre">bq</span></code>, 6 passed),
+ADRV9009-ZC706 (<code class="docutils literal notranslate"><span class="pre">nemo</span></code>, 6 passed), and FMCDAQ3-VCU118 (<code class="docutils literal notranslate"><span class="pre">nuc</span></code>, 6 passed).
+Every cycle checked JESD DATA and a 4,096-sample DMA capture; final removal left
+no configfs overlay entry. FMCDAQ3 first failed because UART Lite dropped the
+last bytes of a command. With 2 ms per-byte transmission pacing, it completed
+all 20 cycles. Earlier failed attempts are retained alongside passing logs.
+All three boards were powered off and released.</p>
+<p>ZU11EG now uses the pinned labgrid plugin’s <code class="docutils literal notranslate"><span class="pre">BootZynqMPJTAG</span></code> strategy. The test
+regenerates the complete device tree, compiles it, uploads only the DTB to RAM,
+and verifies a unique marker in U-Boot and Linux before checking both PHYs,
+two RX/observation JESD links, one TX link, and RX DMA. The stock SD kernel and
+root filesystem are retained. The final integrated test passed after a fresh
+pipeline run: complete RAM CRC and boot marker verification, all four A53 CPUs
+online, both PHYs initialized, all three JESD links in DATA, and a 4,096-sample
+capture across eight RX channels. It passed <strong>1 test</strong> in 396.89 seconds and
+powered off/released the board.</p>
+<p>Live testing exposed and fixed deletion of DDR during CPU deduplication,
+truncation of 64-bit DDR registers, FMComms8 wiring used for the SoM, duplicate
+HMC7044 output names, incorrect dual-radio JESD dependencies/profile, and missing
+carrier Ethernet/SD configuration. The 245.76 MSPS profile records the exact
+ADI Linux source revision and license in its JSON metadata. Distinct IIO names
+prevent selecting the inactive observation frontend as primary RX. Early boots
+also lost CPU1 after a second JTAG connection, including a boot of the ADI
+reference DTB and a PSU-only upload without an explicit CPU halt. A serial
+S-record transfer of the same generated tree restored all four CPUs. The final
+helper uses serial transfer with a complete RAM CRC check and retains the stock
+<code class="docutils literal notranslate"><span class="pre">cpuidle.off=1</span></code> boot argument.</p>
+<p>The next capture failure exposed nondeterministic selection of the audio DMA
+engines from the XSA’s unordered labels. DMA selection now filters radio names
+and sorts candidates; the real-XSA test checks all three radio DMA labels and
+passes with multiple Python hash seeds. ADRV9009-ZC706 then passed all six
+hardware tests again with the updated builder and was powered off/released.</p>
+<p>The complete local software suite passed <strong>933 tests</strong>, with 14 skips, one
+network test excluded, and no expected failures. Independent S-record decoding,
+CRC rejection, incremental serial-field parsing, and multi-hash-seed DMA checks
+also passed. Ruff and whitespace checks passed.</p>
+<p>Candidate <code class="docutils literal notranslate"><span class="pre">11e0bb24ff186302d74017d88d05e0783e8d0d10</span></code> passed the
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000952089" target="_blank">release dry run</a>
+(Python 3.10–3.14 and distribution checks) and
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34000953667" target="_blank">native packaging</a>
+(macOS 14 package/install, Debian 12, Fedora 42). These initial runs precede the
+final SoM fixes. Updated candidate <code class="docutils literal notranslate"><span class="pre">8471d70d2ceda5ad10085c08e365d2b656214b3d</span></code>
+also passed <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34002650654" target="_blank">release validation</a>
+and <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34002652062" target="_blank">native packaging</a>.
+The final serial-transfer/DMA fixes are validated on the final committed candidate
+as recorded in the evidence summary. No tag,
+release, PyPI publication, or native release attachment was created.</p>
+<p>Evidence is archived under
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/release-validation/2026-09-05/non-ad9081-evidence/</span></code>, including
+failed attempts, passing JUnit/serial logs, booted DTBs, source provenance and
+SHA256 checksums. <code class="docutils literal notranslate"><span class="pre">validation-summary.json</span></code> records the final candidate SHA and
+hosted workflow URLs; <code class="docutils literal notranslate"><span class="pre">candidate-source.tar.gz</span></code> preserves that committed source.
+Private labgrid environments are excluded. Working logs remain under
+<code class="docutils literal notranslate"><span class="pre">/tmp/pyadi-dt-release-final-20260905/</span></code>.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="runtime_overlay_validation.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Runtime JESD overlay validation</a>
+    <a href="../xsa_developer.html" title="Next document (Alt+Shift+RightArrow)" class="next">XSA Pipeline — Developer Guide</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The completed 2026-09-05 qualification applies to candidate c4e9a605f540dcf6d0f7882627a82765b4207e94 on release/readiness-20260905. These results describe that candidate and the specified board images; rerun affected checks when the code or boot artifacts change." name="description" />
+
+    <title>Release hardware validation &#8212; pyadi-dt 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="icon" href="../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Labgrid exporter systemd service" href="labgrid_exporter.html" />
+    <link rel="prev" title="Hardware CI" href="hardware_ci.html" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.0.1">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../index.html">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Release hardware validation</a><ul>
+<li><a class="reference internal" href="#verified-scope">Verified scope</a></li>
+<li><a class="reference internal" href="#zu11eg-generated-tree-test">ZU11EG generated-tree test</a></li>
+<li><a class="reference internal" href="#software-and-packaging-evidence">Software and packaging evidence</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../index.html">
+      <img class="only-light" src="../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa.html">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../petalinux.html">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../visualization.html">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../examples.html">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_tutorial.html">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_adijif_tutorial.html">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/xsa_ad9081_zcu102.html">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../examples/board_model_usage.html">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../access.html">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="index.html">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="authoring_devices.html">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="jif_dt_contract.html">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hardware_ci.html">Hardware CI</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release hardware validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="labgrid_exporter.html">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_runbook.html">Release Operator Runbook</a></li>
+<li class="toctree-l2"><a class="reference internal" href="runtime_overlay_validation.html">Runtime JESD overlay validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="release_readiness_2026-09-05.html">Release readiness audit — 2026-09-05</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../xsa_developer.html">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ai_skill.html">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../mcp_server.html">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../api/index.html">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/core.html">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/jif_contract.html">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/devices.html">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/model.html">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/xsa.html">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="index.html">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="release-hardware-validation">
+<h1>Release hardware validation<a class="headerlink" href="#release-hardware-validation" title="Link to this heading"></a></h1>
+<p>The completed 2026-09-05 qualification applies to candidate
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/commit/c4e9a605f540dcf6d0f7882627a82765b4207e94" target="_blank"><code class="docutils literal notranslate"><span class="pre">c4e9a605f540dcf6d0f7882627a82765b4207e94</span></code></a>
+on <code class="docutils literal notranslate"><span class="pre">release/readiness-20260905</span></code>. These results describe that candidate and the
+specified board images; rerun affected checks when the code or boot artifacts change.</p>
+<section id="verified-scope">
+<h2>Verified scope<a class="headerlink" href="#verified-scope" title="Link to this heading"></a></h2>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Board</p></th>
+<th class="head"><p>Completed checks</p></th>
+<th class="head"><p>Required environment</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>AD9371 / ZC706</p></td>
+<td><p>Six overlay tests; 20 reload cycles with JESD DATA and DMA on each cycle, followed by removal</p></td>
+<td><p>Patched modular kernel and matching modules</p></td>
+</tr>
+<tr class="row-odd"><td><p>ADRV9009 / ZC706</p></td>
+<td><p>Six overlay tests; 20 reload cycles, plus a six-test rerun after the radio DMA-selection fix</p></td>
+<td><p>Patched modular kernel and matching modules</p></td>
+</tr>
+<tr class="row-even"><td><p>FMCDAQ3 / VCU118</p></td>
+<td><p>Six overlay tests; 20 reload cycles with JESD DATA and DMA on each cycle, followed by removal</p></td>
+<td><p>Matching MicroBlaze runtime image and embedded modules; TX-first initialization</p></td>
+</tr>
+<tr class="row-odd"><td><p>ADRV9009-ZU11EG / ADRV2CRR-FMC</p></td>
+<td><p>Full XSA pipeline and generated-DTB boot; RAM CRC and boot markers; four CPUs; two PHYs; two RX/observation and one TX JESD links in DATA; 4,096 samples on eight RX channels</p></td>
+<td><p>Production JTAG boot artifacts, stock SD kernel/rootfs, serial console and a connected Ethernet port</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All four places were powered off and released. See
+<a class="reference internal" href="runtime_overlay_validation.html"><span class="std std-doc">runtime overlay validation</span></a> for reproducible
+kernel builds, artifact overrides, and <code class="docutils literal notranslate"><span class="pre">ADIDT_OVERLAY_RELOAD_CYCLES=20</span></code>.</p>
+<p>Overlay qualification covers the tested 20-cycle sequence. The pinned kernel
+reports possible property leaks on removal, so reboot after that sequence;
+unlimited cycling remains unqualified. AD9081 was excluded from this follow-up
+and has no generated-tree hardware qualification in this evidence set. Other
+profiles’ presence in the package does not extend this hardware coverage.</p>
+</section>
+<section id="zu11eg-generated-tree-test">
+<h2>ZU11EG generated-tree test<a class="headerlink" href="#zu11eg-generated-tree-test" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">adrv9009_zu11eg</span></code> profile describes the dual-radio SoM and its carrier
+HMC7044 clock tree, including the 245.76 MSPS reference profile. Its JSON records
+the ADI Linux source revision and license. The builder preserves 64-bit DDR
+ranges and selects radio DMA engines deterministically, excluding audio DMA
+engines that coexist in the XSA.</p>
+<p><code class="docutils literal notranslate"><span class="pre">test/hw/test_adrv9009zu11eg_adrv2crr-fmc_hw.py</span></code> generates and compiles a device
+tree from the committed XSA. <code class="docutils literal notranslate"><span class="pre">BootZynqMPJTAG</span></code> reaches production U-Boot; the helper transfers
+the DTB to RAM with the serial S-record loader and verifies its complete CRC.
+A second JTAG transfer was observed to strand CPU1 even with the reference DTB,
+so the DTB transfer uses serial. The helper retains the stock <code class="docutils literal notranslate"><span class="pre">cpuidle.off=1</span></code>
+boot argument and writes no SD files or persistent U-Boot settings.</p>
+<p>From a Bash shell at the repository root, set <code class="docutils literal notranslate"><span class="pre">LG_ENV</span></code> to an existing private
+configuration for the ZU11EG place, then run:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">VENV_DIR</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.cache/adidt-ci/adidt-venv"</span>
+<span class="nb">export</span><span class="w"> </span><span class="nv">LG_COORDINATOR</span><span class="o">=</span><span class="m">10</span>.0.0.41:20408
+<span class="nb">export</span><span class="w"> </span><span class="nv">BOARD</span><span class="o">=</span>adrv9009zu11eg<span class="w"> </span><span class="nv">CARRIER</span><span class="o">=</span>adrv2crr-fmc
+<span class="nb">export</span><span class="w"> </span><span class="nv">ADI_XSA_BUILD_KERNEL</span><span class="o">=</span><span class="m">0</span>
+<span class="nb">source</span><span class="w"> </span>.github/scripts/prepare-hardware-env.sh
+<span class="s2">"</span><span class="nv">$VENV_DIR</span><span class="s2">/bin/labgrid-client"</span><span class="w"> </span>-p<span class="w"> </span>tron<span class="w"> </span>acquire
+<span class="nb">trap</span><span class="w"> </span><span class="s1">'"$VENV_DIR/bin/labgrid-client" -p tron release'</span><span class="w"> </span>EXIT
+<span class="s2">"</span><span class="nv">$VENV_DIR</span><span class="s2">/bin/python"</span><span class="w"> </span>-m<span class="w"> </span>pytest<span class="w"> </span>-p<span class="w"> </span>no:genalyzer<span class="w"> </span>-v<span class="w"> </span>-s<span class="w"> </span>-o<span class="w"> </span><span class="nv">addopts</span><span class="o">=</span><span class="s1">''</span><span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>test/hw/test_adrv9009zu11eg_adrv2crr-fmc_hw.py<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>--junitxml<span class="o">=</span>/tmp/zu11eg.xml
+<span class="s2">"</span><span class="nv">$VENV_DIR</span><span class="s2">/bin/python"</span><span class="w"> </span>.github/scripts/check_hardware_results.py<span class="w"> </span>/tmp/zu11eg.xml
+</pre></div>
+</div>
+<p>The runner needs <code class="docutils literal notranslate"><span class="pre">sdtgen</span></code>, <code class="docutils literal notranslate"><span class="pre">dtc</span></code>, the pinned labgrid plugin, and the production
+boot artifacts advertised by the place. Either Ethernet port can provide IIO.
+If an exporter alias resolves incorrectly, set <code class="docutils literal notranslate"><span class="pre">ADIDT_JTAG_HOST</span></code> to its verified
+hostname before running the test. This override is local to the test process.
+The final qualified test took about seven minutes.</p>
+</section>
+<section id="software-and-packaging-evidence">
+<h2>Software and packaging evidence<a class="headerlink" href="#software-and-packaging-evidence" title="Link to this heading"></a></h2>
+<p>The local Python 3.12 suite passed <strong>933 tests</strong>, with 14 skips, one network test
+excluded, and no expected failures. For the same candidate:</p>
+<ul class="simple">
+<li><p><a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34004002437" target="_blank">Release dry run</a>: Python 3.10–3.14, wheel/source builds, metadata, checksums, and distribution validation passed.</p></li>
+<li><p><a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/34004003767" target="_blank">Native packages</a>: macOS 14 installer, Debian 12 DEB, and Fedora 42 RPM build/install checks passed.</p></li>
+</ul>
+<p>These were validation runs; no release tag or package publication was performed.
+The <a class="reference internal" href="release_runbook.html"><span class="std std-doc">release runbook</span></a> describes publication separately.</p>
+<p>The lab evidence archive is at
+<code class="docutils literal notranslate"><span class="pre">~/.cache/adidt/release-validation/2026-09-05/non-ad9081-evidence/</span></code>.
+It contains <code class="docutils literal notranslate"><span class="pre">validation-summary.json</span></code>, the committed candidate source, tested
+source hashes, passing and failed logs, JUnit reports, booted DTBs, hosted
+artifacts, and <code class="docutils literal notranslate"><span class="pre">SHA256SUMS</span></code>. Private labgrid configurations are excluded.
+The <a class="reference internal" href="release_readiness_2026-09-05.html"><span class="std std-doc">readiness audit</span></a> retains the investigation
+history and individual fixes.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="hardware_ci.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Hardware CI</a>
+    <a href="labgrid_exporter.html" title="Next document (Alt+Shift+RightArrow)" class="next">Labgrid exporter systemd service</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
