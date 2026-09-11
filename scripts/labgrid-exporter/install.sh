@@ -17,6 +17,11 @@
 # Options:
 #   --name NAME           Exporter instance name registered with the
 #                         coordinator (default: `hostname -s`).
+#   --hostname HOSTNAME   Hostname (or IP) published on the resources this
+#                         exporter exports, i.e. what clients connect to for
+#                         ser2net/rfc2217. Defaults to the system hostname,
+#                         which is wrong whenever the bare name does not
+#                         resolve from the runners (use e.g. `lablp.local`).
 #   --coordinator ADDR    host:port of the coordinator (default: 10.0.0.41:20408).
 #   --user USER           Service runs as this user (default: $SUDO_USER).
 #   --bin PATH            Path to labgrid-exporter (default: auto-detect on
@@ -52,6 +57,7 @@ SRC_YAML="$1"
 shift
 
 NAME="$(hostname -s)"
+PUBLISHED_HOSTNAME=""
 COORDINATOR="10.0.0.41:20408"
 SERVICE_USER="${SUDO_USER:-$USER}"
 EXPORTER_BIN=""
@@ -63,6 +69,7 @@ STOP_MANUAL=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --name)          NAME="$2"; shift 2 ;;
+        --hostname)      PUBLISHED_HOSTNAME="$2"; shift 2 ;;
         --coordinator)   COORDINATOR="$2"; shift 2 ;;
         --user)          SERVICE_USER="$2"; shift 2 ;;
         --bin)           EXPORTER_BIN="$2"; shift 2 ;;
@@ -186,6 +193,7 @@ cat > "$ENV_DST" <<EOF
 LG_COORDINATOR=$COORDINATOR
 LG_EXPORTER_NAME=$NAME
 LG_EXPORTER_YAML=$CONF_YAML
+LG_EXPORTER_EXTRA_ARGS=${PUBLISHED_HOSTNAME:+--hostname $PUBLISHED_HOSTNAME}
 PATH=$SERVICE_PATH
 EOF
 chmod 644 "$ENV_DST"
