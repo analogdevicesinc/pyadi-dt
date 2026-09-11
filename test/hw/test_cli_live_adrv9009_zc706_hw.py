@@ -206,14 +206,17 @@ def test_sd_move_dry_run(booted):
 def test_sd_remote_copy_with_reboot(booted, board, tmp_path: Path):
     """``sd-remote-copy --reboot`` lands the file and the board returns to SSH."""
     # A board whose boot-mode strap is set to JTAG (e.g. the nemo ZC706,
-    # booted via BootZynq7000JTAGRecovery) cannot recover from an OS reboot
-    # on its own: the boot ROM re-reads the JTAG strap and waits for a JTAG
-    # load that this test never performs, so SSH never returns. Autonomous
-    # reboot recovery is only meaningful on SD/QSPI-strapped boards.
-    if "JTAG" in type(board).__name__:
+    # booted via BootZynq7000JTAGRecovery, or BootFPGASoCTFTP with
+    # ``sd_autoboot`` disabled, which JTAG-bootstraps U-Boot) cannot recover
+    # from an OS reboot on its own: the boot ROM re-reads the JTAG strap and
+    # waits for a JTAG load that this test never performs, so SSH never
+    # returns. Autonomous reboot recovery is only meaningful on SD/QSPI-
+    # strapped boards.
+    if "JTAG" in type(board).__name__ or not getattr(board, "sd_autoboot", True):
         pytest.skip(
             "board boots via JTAG bootstrap; OS reboot does not self-recover"
-            f" ({type(board).__name__})"
+            f" ({type(board).__name__}, sd_autoboot="
+            f"{getattr(board, 'sd_autoboot', None)})"
         )
     _shell, ip = booted
     marker = tmp_path / "adidt_cli_marker.txt"
