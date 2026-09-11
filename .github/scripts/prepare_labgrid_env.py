@@ -22,6 +22,26 @@ def remote_place_name(config: dict) -> str | None:
     return None
 
 
+# (daughter-board, carrier) pairs that must keep the place's own SD autoboot.
+# ADRV9361-Z7035 cannot take the TFTP-kernel path at all: ADI's Zynq-7000
+# U-Boot is built without CONFIG_TFTP_PORT, so it only ever TFTPs from
+# privileged port 69, while TFTPServerDriver binds an unprivileged 3069. Its
+# SD carries a bootable Kuiper, so JTAG-less sd-autoboot is the working path.
+SD_AUTOBOOT_BOARDS = {("adrv9361z7035", "adrv1crr-fmc")}
+
+
+def keeps_sd_autoboot(place: dict) -> bool:
+    """Whether this place's board opts out of the forced-TFTP-kernel path.
+
+    Prefers the ``BOARD``/``CARRIER`` exported by prepare-hardware-env.sh and
+    falls back to the live place tags, so local runs behave like CI.
+    """
+    tags = place.get("tags", {})
+    board = os.environ.get("BOARD") or tags.get("daughter-board")
+    carrier = os.environ.get("CARRIER") or tags.get("carrier")
+    return (board, carrier) in SD_AUTOBOOT_BOARDS
+
+
 def deployment_config(
     config: dict, place: dict, *, tftp_root: str, render, uboot_image: str | None = None
 ) -> dict:
@@ -53,6 +73,14 @@ def deployment_config(
         return prepared
     if place.get("tags", {}).get("boot-strategy") != "BootFPGASoCTFTP":
         return config
+    if keeps_sd_autoboot(place):
+        # Render straight from the tags so the place's own sd-autoboot stands.
+        prepared = render(place, {})
+        # sd-autoboot never fetches TFTP boot files, and activating
+        # KuiperDLDriver downloads a multi-GB image. The strategy's `kuiper`
+        # binding is optional -- update_boot_files just logs its absence.
+        prepared["targets"]["main"]["drivers"].pop("KuiperDLDriver", None)
+        return prepared
     prepared = render(place, {"sd_autoboot": "false", "tftp_root": tftp_root})
     strategy = prepared["targets"]["main"]["drivers"]["BootFPGASoCTFTP"]
     strategy["sd_autoboot"] = False

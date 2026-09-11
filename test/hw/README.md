@@ -344,10 +344,19 @@ coordinator place tags; they can disagree.
 | AD9371 / ADRV937x | ZC706, ZCU102 | ZC706 Validated | `test_adrv9371_zc706_hw.py`, `test_adrv9371_zc706_petalinux_hw.py`. Future: ZCU102 |
 | ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier | Generated DTB boots; dual PHY, JESD DATA and RX DMA validated (2026-09-05) | `test_adrv9009zu11eg_adrv2crr-fmc_hw.py` |
 | AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 | Pending | Future work: Add test fixtures for AD9361/AD9364 SDR carrier flows |
-| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers | Pending | Future work: Add SOM carrier test fixtures |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | ADRV1CRR-FMC, BOB carriers | **ADRV1CRR-FMC Validated** (2026-09-10): boots stock Kuiper from SD, AD9361 PHY + capture device verified | `test_adrv9361z7035_adrv1crr-fmc_hw.py`. Non-JESD, so it bypasses `BoardSystemProfile`. Future: generated-DTB validation (needs an AD9361 device model), ADRV9364-Z7020 / BOB variants |
 | FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 | ZCU102 Validated | Future work: Add dedicated ZC706 and Arria10 hardware test suites |
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706, VCU118 | ZCU102, VCU118 Validated | `test_fmcdaq3_vcu118_hw.py`. Future: ZC706 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi | Pending | Future work: Add hardware test fixtures for SPI/I2C sensor overlays (ADIS16495, ADXL345, AD7124) |
+
+The ADRV9361-Z7035 row is the only non-JESD entry. `BoardSystemProfile`
+cannot express it: `boot_and_verify_from_dtb` calls `assert_jesd_links_data`
+unconditionally with `expected_rx_links=1` / `expected_tx_links=1`, and the
+AD9361 is a parallel LVDS/CMOS part with no JESD cores. Such boards take the
+documented direct-against-`hw_helpers` route instead (see "Boards that boot from
+an embedded simpleImage" above). Its place also needs six explicit Zynq-7000
+U-Boot override tags, because `carrier=adrv1crr-fmc` is not in labgrid-plugins'
+`_ZYNQ7000_CARRIERS` set and `render_env` would otherwise emit ZynqMP defaults.
 
 For ZU11EG, environment preparation imports the pinned production JTAG strategy
 and accepts either Ethernet port. If a runner's exporter SSH alias resolves to
