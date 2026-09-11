@@ -35,7 +35,7 @@ def test_labgrid_plugins_dependency_is_immutable() -> None:
 
     assert (
         "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
-        "labgrid-plugins.git@00c508aef6612b7de8dd8f263f5c4b1411a81a04" in pyproject
+        "labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e" in pyproject
     )
 
 

@@ -205,12 +205,21 @@ def test_sd_move_dry_run(booted):
 @pytest.mark.lg_feature(list(SPEC.lg_features))
 def test_sd_remote_copy_with_reboot(booted, board, tmp_path: Path):
     """``sd-remote-copy --reboot`` lands the file and the board returns to SSH."""
-    # A board whose boot-mode strap is set to JTAG (e.g. the nemo ZC706,
-    # booted via BootZynq7000JTAGRecovery) cannot recover from an OS reboot
-    # on its own: the boot ROM re-reads the JTAG strap and waits for a JTAG
-    # load that this test never performs, so SSH never returns. Autonomous
-    # reboot recovery is only meaningful on SD/QSPI-strapped boards.
-    if "JTAG" in type(board).__name__:
+    # A board whose boot-mode strap is set to JTAG cannot recover from an OS
+    # reboot on its own: the boot ROM re-reads the JTAG strap and waits for a
+    # JTAG load that this test never performs, so SSH never returns.
+    # Autonomous reboot recovery is only meaningful on SD/QSPI-strapped boards.
+    #
+    # Detect that by what the strategy is *configured to do*, not by its class
+    # name. ``BootFPGASoCTFTP`` also JTAG-bootstraps when the place sets
+    # ps7-init-tcl + uboot-elf (nemo's ZC706 does exactly this, alongside
+    # sd-autoboot), and a name-only check silently missed it — the board
+    # rebooted into its JTAG strap and the test failed on a dead SSH port.
+    # Mirrors BootFPGASoCTFTP._jtag_bootstrap_enabled().
+    jtag_bootstrapped = bool(getattr(board, "ps7_init_tcl", "")) and bool(
+        getattr(board, "uboot_elf", "")
+    )
+    if "JTAG" in type(board).__name__ or jtag_bootstrapped:
         pytest.skip(
             "board boots via JTAG bootstrap; OS reboot does not self-recover"
             f" ({type(board).__name__})"
