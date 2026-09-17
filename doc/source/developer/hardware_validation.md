@@ -1,11 +1,46 @@
 # Release hardware validation
 
+## 0.1.0 candidate (2026-09-17)
+
+The 0.1.0 candidate is `main` at
+[`b142933`](https://github.com/analogdevicesinc/pyadi-dt/commit/b142933dbebd4cc108cdbb589780d2723f002250)
+plus the version and changelog commit. It differs from the qualified
+2026-09-05 candidate below by the merged readiness documentation (#108),
+ADRV9003 Navassa profiles (#109), the ADRV9361-Z7035 / ADRV1CRR-FMC hardware
+leg (#112), the labgrid-plugins pin bump to `4ddb45a` with the nemo reboot-skip
+fix (#113), the exporter `--hostname` option (#114), and `actions/setup-python`
+v7 (#105). The pin bump is the change that warranted re-running hardware.
+
+Evidence for this candidate:
+
+- [Scheduled hardware run 35199198597](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/35199198597)
+  on `b142933`: all five dynamic legs passed (ADRV9371/ZC706, ADRV9009/ZC706,
+  FMCDAQ3/VCU118, ADRV9009-ZU11EG/ADRV2CRR-FMC, ADRV9361-Z7035/ADRV1CRR-FMC).
+  The preceding scheduled runs were not uniformly green: 09-12 and 09-13 failed
+  on the new Z7035 leg (and once on ZU11EG), and 09-16 failed on ADRV9371 only
+  at the artifact-upload step after its tests passed. 09-14, 09-15 and 09-17
+  passed on every leg. Treat the Z7035 leg as newly stabilised rather than
+  long-qualified.
+- Clean Python 3.12 environment (`.[test,xsa]` plus
+  `requirements/pyadi-jif-ad9371.txt`) on the release branch: **923 passed,
+  16 skipped**, including the release metadata and preflight contracts.
+- [Release dry run 35227766718](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/35227766718)
+  dispatched from `release/v0.1.0` with tag `v0.1.0`.
+
+The Z7035 leg boots the board's stock Kuiper device tree and checks SPI/IIO
+device presence and kernel messages; pyadi-dt has no AD9361 model, so it is not
+a generated-tree qualification. ADRV9003 has profile and unit coverage only and
+no hardware evidence in this release. The AD9081 exclusion and the 20-cycle
+overlay limit recorded below still apply.
+
+## 2026-09-05 qualification
+
 The completed 2026-09-05 qualification applies to candidate
 [`c4e9a605f540dcf6d0f7882627a82765b4207e94`](https://github.com/analogdevicesinc/pyadi-dt/commit/c4e9a605f540dcf6d0f7882627a82765b4207e94)
 on `release/readiness-20260905`. These results describe that candidate and the
 specified board images; rerun affected checks when the code or boot artifacts change.
 
-## Verified scope
+### Verified scope
 
 | Board | Completed checks | Required environment |
 |---|---|---|
@@ -13,6 +48,7 @@ specified board images; rerun affected checks when the code or boot artifacts ch
 | ADRV9009 / ZC706 | Six overlay tests; 20 reload cycles, plus a six-test rerun after the radio DMA-selection fix | Patched modular kernel and matching modules |
 | FMCDAQ3 / VCU118 | Six overlay tests; 20 reload cycles with JESD DATA and DMA on each cycle, followed by removal | Matching MicroBlaze runtime image and embedded modules; TX-first initialization |
 | ADRV9009-ZU11EG / ADRV2CRR-FMC | Full XSA pipeline and generated-DTB boot; RAM CRC and boot markers; four CPUs; two PHYs; two RX/observation and one TX JESD links in DATA; 4,096 samples on eight RX channels | Production JTAG boot artifacts, stock SD kernel/rootfs, serial console and a connected Ethernet port |
+| ADRV9361-Z7035 / ADRV1CRR-FMC (added 2026-09-11, #112) | Stock-tree boot to shell, `ad9361-phy` / `cf-ad9361-lpc` / `cf-ad9361-dds-core-lpc` IIO presence, SPI device listing, kernel error scan | SD-autoboot Kuiper image on the `lablp` rig; TFTP kernel path unavailable on this U-Boot |
 
 All four places were powered off and released. See
 [runtime overlay validation](runtime_overlay_validation.md) for reproducible
@@ -24,7 +60,7 @@ unlimited cycling remains unqualified. AD9081 was excluded from this follow-up
 and has no generated-tree hardware qualification in this evidence set. Other
 profiles' presence in the package does not extend this hardware coverage.
 
-## ZU11EG generated-tree test
+### ZU11EG generated-tree test
 
 The `adrv9009_zu11eg` profile describes the dual-radio SoM and its carrier
 HMC7044 clock tree, including the 245.76 MSPS reference profile. Its JSON records
@@ -62,7 +98,7 @@ If an exporter alias resolves incorrectly, set `ADIDT_JTAG_HOST` to its verified
 hostname before running the test. This override is local to the test process.
 The final qualified test took about seven minutes.
 
-## Software and packaging evidence
+### Software and packaging evidence
 
 The local Python 3.12 suite passed **933 tests**, with 14 skips, one network test
 excluded, and no expected failures. For the same candidate:

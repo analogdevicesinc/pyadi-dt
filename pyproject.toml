@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyadi-dt"
-version = "0.0.1"
+version = "0.1.0"
 description = "Device tree management tools for ADI hardware"
 readme = "README.md"
 license = "EPL-2.0"
