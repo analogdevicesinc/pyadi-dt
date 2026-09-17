@@ -3,29 +3,38 @@
 ## 0.1.0 candidate (2026-09-17)
 
 The 0.1.0 candidate is `main` at
-[`b142933`](https://github.com/analogdevicesinc/pyadi-dt/commit/b142933dbebd4cc108cdbb589780d2723f002250)
-plus the version and changelog commit. It differs from the qualified
-2026-09-05 candidate below by the merged readiness documentation (#108),
-ADRV9003 Navassa profiles (#109), the ADRV9361-Z7035 / ADRV1CRR-FMC hardware
-leg (#112), the labgrid-plugins pin bump to `4ddb45a` with the nemo reboot-skip
-fix (#113), the exporter `--hostname` option (#114), and `actions/setup-python`
-v7 (#105). The pin bump is the change that warranted re-running hardware.
+[`2bcd45c`](https://github.com/analogdevicesinc/pyadi-dt/commit/2bcd45c).
+It differs from the qualified 2026-09-05 candidate below by the merged
+readiness documentation (#108), ADRV9003 Navassa profiles (#109), the
+ADRV9361-Z7035 / ADRV1CRR-FMC hardware leg (#112), the labgrid-plugins pin bump
+to `4ddb45a` with the nemo reboot-skip fix (#113), the exporter `--hostname`
+option (#114), `actions/setup-python` v7 (#105), the 0.1.0 version and
+changelog (#115), and the multi-default-route board IP discovery fix (#116).
+The pin bump and the IP discovery change are what warranted re-running
+hardware.
 
 Evidence for this candidate:
 
-- [Scheduled hardware run 35199198597](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/35199198597)
-  on `b142933`: all five dynamic legs passed (ADRV9371/ZC706, ADRV9009/ZC706,
-  FMCDAQ3/VCU118, ADRV9009-ZU11EG/ADRV2CRR-FMC, ADRV9361-Z7035/ADRV1CRR-FMC).
-  The preceding scheduled runs were not uniformly green: 09-12 and 09-13 failed
-  on the new Z7035 leg (and once on ZU11EG), and 09-16 failed on ADRV9371 only
-  at the artifact-upload step after its tests passed. 09-14, 09-15 and 09-17
-  passed on every leg. Treat the Z7035 leg as newly stabilised rather than
-  long-qualified.
+- [Push hardware run 35235744205](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/35235744205)
+  on `2bcd45c`: all five dynamic legs passed (ADRV9371/ZC706, ADRV9009/ZC706,
+  FMCDAQ3/VCU118, ADRV9009-ZU11EG/ADRV2CRR-FMC, ADRV9361-Z7035/ADRV1CRR-FMC),
+  as did every other push workflow on that commit.
+- The Z7035 leg had been intermittent: 09-12, 09-13 and the #115 merge commit
+  failed with `Multiple IPv4 default routes found` because the SoM `eth0` and
+  carrier `eth1` both held DHCP leases, while 09-14, 09-15 and 09-17 passed.
+  #116 makes IP discovery walk every default route; both hardware runs on that
+  PR and the post-merge run above hit the two-route condition and passed.
+  09-16 failed on ADRV9371 only at the artifact-upload step after its tests
+  passed.
 - Clean Python 3.12 environment (`.[test,xsa]` plus
   `requirements/pyadi-jif-ad9371.txt`) on the release branch: **923 passed,
   16 skipped**, including the release metadata and preflight contracts.
 - [Release dry run 35227766718](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/35227766718)
-  dispatched from `release/v0.1.0` with tag `v0.1.0`.
+  dispatched from `release/v0.1.0` with tag `v0.1.0`: validation, Python
+  3.10–3.14 tests, and distribution build passed; the GitHub Release and PyPI
+  jobs were skipped as required. The tree under test differs from `2bcd45c`
+  only by #116, which touches `test/hw/` and the changelog; rerun the dry run
+  from `main` before tagging if any packaging input changes.
 
 The Z7035 leg boots the board's stock Kuiper device tree and checks SPI/IIO
 device presence and kernel messages; pyadi-dt has no AD9361 model, so it is not
