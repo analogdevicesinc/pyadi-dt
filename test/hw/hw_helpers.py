@@ -783,17 +783,71 @@ def collect_dmesg(
     return dmesg_txt
 
 
+_DEFAULT_ROUTE_DEVICE = _re.compile(r"default\s+via\s+\S+\s+dev\s+([\w.-]+)")
+
+
+def board_ipv4_candidates(shell) -> list[str]:
+    """Return the board's global IPv4 addresses, default-route interfaces first.
+
+    ``ADIShellDriver.get_ip_addresses()`` with no device argument resolves the
+    default route's interface and raises ``ExecutionError("Multiple IPv4
+    default routes found")`` when the board has more than one. Boards with two
+    wired NICs hit this whenever both get a DHCP lease before the test asks:
+    the ADRV9361-Z7035 has a Cadence GEM on the SoM (``eth0``) and another on
+    the ADRV1CRR-FMC carrier (``eth1``), and the stock Kuiper image installs a
+    default route for each. That made the Z7035 hardware leg fail on some runs
+    and pass on others depending on which link came up first.
+
+    Walk every default-route interface in the order ``ip route`` lists them
+    (lowest metric first) and collect each one's global addresses so the
+    caller can try them in turn. When there is no default route at all, fall
+    through to the plugin call so its own diagnostic is what surfaces.
+    """
+    routes = shell_out(shell, "ip -4 route list default")
+    devices: list[str] = []
+    for device in _DEFAULT_ROUTE_DEVICE.findall(routes):
+        if device not in devices:
+            devices.append(device)
+
+    if devices:
+        addresses = [
+            address for device in devices for address in shell.get_ip_addresses(device)
+        ]
+    else:
+        addresses = shell.get_ip_addresses()
+
+    candidates: list[str] = []
+    for address in addresses:
+        ip_address = str(address.ip).split("/")[0]
+        if ip_address not in candidates:
+            candidates.append(ip_address)
+    assert candidates, "ADIShellDriver could not report a board IP address"
+    return candidates
+
+
 def open_iio_context(shell):
-    """Return ``(iio.Context, ip_address)`` for the booted target."""
+    """Return ``(iio.Context, ip_address)`` for the booted target.
+
+    Tries each address from :func:`board_ipv4_candidates` and returns the
+    first one libiio can connect to, so a second NIC with a lease on an
+    unreachable network does not mask the one the runner can reach.
+    """
     import iio
 
-    ip_addresses = shell.get_ip_addresses()
-    assert ip_addresses, "ADIShellDriver could not report a board IP address"
-    ip_address = str(ip_addresses[0].ip).split("/")[0]
-    print(f"Using IP address for IIO context: {ip_address}")
-    ctx = iio.Context(f"ip:{ip_address}")
-    assert ctx is not None, "Failed to create IIO context"
-    return ctx, ip_address
+    failures: list[str] = []
+    for ip_address in board_ipv4_candidates(shell):
+        print(f"Using IP address for IIO context: {ip_address}")
+        try:
+            ctx = iio.Context(f"ip:{ip_address}")
+        except OSError as exc:
+            failures.append(f"{ip_address}: {exc}")
+            print(f"IIO context on {ip_address} failed: {exc}")
+            continue
+        assert ctx is not None, "Failed to create IIO context"
+        return ctx, ip_address
+    raise AssertionError(
+        "Failed to create IIO context on any board address: " + "; ".join(failures)
+    )
 
 
 def read_jesd_status(

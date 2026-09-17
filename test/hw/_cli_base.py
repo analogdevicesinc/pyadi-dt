@@ -88,17 +88,29 @@ def run_adidtc_jif(
     )
 
 
-def discover_board_ipv4(shell) -> str:
-    """Return the first usable IPv4 reported by *shell*.
+def discover_board_ipv4(shell, *, port: int = 22, probe_timeout: float = 3.0) -> str:
+    """Return the first IPv4 of *shell*'s board that answers on *port*.
 
-    Wraps :meth:`ADIShellDriver.get_ip_addresses` (already used by
-    :func:`test.hw.hw_helpers.open_iio_context`).  The CLI's ``--ip``
-    option needs a bare address; this strips any trailing ``/<prefix>``
-    that labgrid hands back from ``ip addr show``.
+    Uses :func:`test.hw.hw_helpers.board_ipv4_candidates` (shared with
+    :func:`test.hw.hw_helpers.open_iio_context`) so a board with two
+    default routes does not abort discovery, then prefers the first
+    candidate the runner can actually open a TCP connection to.  Falls
+    back to the first candidate when none answers so the subsequent
+    SSH error names a concrete address.  The CLI's ``--ip`` option needs
+    a bare address, so any ``/<prefix>`` is already stripped.
     """
-    addresses = shell.get_ip_addresses()
-    assert addresses, "ADIShellDriver could not report a board IP address"
-    return str(addresses[0].ip).split("/")[0]
+    import socket
+
+    from test.hw.hw_helpers import board_ipv4_candidates
+
+    candidates = board_ipv4_candidates(shell)
+    for ip in candidates:
+        try:
+            with socket.create_connection((ip, port), timeout=probe_timeout):
+                return ip
+        except OSError:
+            continue
+    return candidates[0]
 
 
 def wait_for_ssh(
