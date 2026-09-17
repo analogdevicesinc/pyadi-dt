@@ -108,10 +108,16 @@ def test_cli_main(tmp_path):
 
 
 def test_repository_release_contract():
-    tag, version, notes = run_preflight("v0.0.1", repo_root)
+    # The tag under test tracks the package version so this contract keeps
+    # guarding "CHANGELOG.md has a non-empty section for the current version"
+    # across releases instead of pinning one historical number.
+    import adidt
 
-    assert tag == "v0.0.1"
-    assert version == "0.0.1"
+    expected = adidt.__version__
+    tag, version, notes = run_preflight(f"v{expected}", repo_root)
+
+    assert tag == f"v{expected}"
+    assert version == expected
     assert notes.strip()
 
 

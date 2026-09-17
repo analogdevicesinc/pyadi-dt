@@ -1,6 +1,6 @@
 """adidt — device-centric device-tree composition for ADI hardware."""
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 from adidt.dt import dt as dt
 from adidt.model.board_model import BoardModel as BoardModel
