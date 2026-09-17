@@ -88,6 +88,9 @@ content is folded into this entry.
   TFTP kernel path (ADRV9361-Z7035), and skip the OS-reboot recovery test on
   any board the strategy JTAG-bootstraps rather than only on JTAG-named
   strategies.
+- Discover the board IP address by walking every IPv4 default route and
+  trying each address, instead of aborting when a board with two wired NICs
+  (ADRV9361-Z7035 SoM plus ADRV1CRR-FMC carrier) holds two DHCP leases.
 - Allow external XSA fixtures and private exporter-side fabric kernel images
   for hardware validation without replacing the shared stock boot image.
 - Select the top-level HWH using the XSA manifest when scoped block-design

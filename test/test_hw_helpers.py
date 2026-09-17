@@ -289,6 +289,175 @@ def test_read_jesd_status_does_not_truncate_multi_link_output():
     assert all('echo "=== $f ==="' in command for command in shell.commands)
 
 
+class _FakeIface:
+    def __init__(self, ip):
+        self.ip = ip
+
+
+class _RoutedShell:
+    """Fake ADIShellDriver exposing default routes and per-device addresses."""
+
+    def __init__(self, routes, addresses):
+        self._routes = routes
+        self._addresses = addresses
+        self.queried = []
+
+    def run(self, command):
+        assert command == "ip -4 route list default"
+        return (self._routes, [], 0)
+
+    def get_ip_addresses(self, device=None):
+        self.queried.append(device)
+        if device is None:
+            if len(self._addresses) > 1:
+                raise RuntimeError("Multiple IPv4 default routes found")
+            (device,) = self._addresses
+        return [_FakeIface(ip) for ip in self._addresses.get(device, [])]
+
+
+def test_board_ipv4_candidates_walks_every_default_route():
+    # Two GEMs both leased (ADRV9361-Z7035 SoM eth0 + carrier eth1): the plugin
+    # refuses to pick, so the helper must enumerate route devices itself.
+    shell = _RoutedShell(
+        [
+            "default via 10.0.0.1 dev eth0 proto dhcp src 10.0.0.201 metric 100",
+            "default via 192.168.7.1 dev eth1 proto dhcp src 192.168.7.5 metric 101",
+        ],
+        {"eth0": ["10.0.0.201/24"], "eth1": ["192.168.7.5/24"]},
+    )
+
+    assert hw_helpers.board_ipv4_candidates(shell) == ["10.0.0.201", "192.168.7.5"]
+    assert shell.queried == ["eth0", "eth1"]
+
+
+def test_board_ipv4_candidates_single_route_matches_previous_behaviour():
+    shell = _RoutedShell(
+        ["default via 10.0.0.1 dev eth0 proto dhcp src 10.0.0.201 metric 100"],
+        {"eth0": ["10.0.0.201/24"]},
+    )
+
+    assert hw_helpers.board_ipv4_candidates(shell) == ["10.0.0.201"]
+
+
+def test_board_ipv4_candidates_dedups_routes_and_addresses():
+    shell = _RoutedShell(
+        [
+            "default via 10.0.0.1 dev eth0 metric 100",
+            "default via 10.0.0.254 dev eth0 metric 200",
+        ],
+        {"eth0": ["10.0.0.201/24", "10.0.0.201/24"]},
+    )
+
+    assert hw_helpers.board_ipv4_candidates(shell) == ["10.0.0.201"]
+    assert shell.queried == ["eth0"]
+
+
+def test_board_ipv4_candidates_without_default_route_defers_to_plugin():
+    shell = _RoutedShell([], {"eth0": ["10.0.0.201/24"]})
+
+    assert hw_helpers.board_ipv4_candidates(shell) == ["10.0.0.201"]
+    assert shell.queried == [None]
+
+
+def test_board_ipv4_candidates_requires_an_address():
+    shell = _RoutedShell(["default via 10.0.0.1 dev eth0"], {"eth0": []})
+
+    with pytest.raises(AssertionError, match="could not report a board IP"):
+        hw_helpers.board_ipv4_candidates(shell)
+
+
+def test_open_iio_context_falls_through_unreachable_addresses(monkeypatch):
+    import types
+
+    attempts = []
+
+    class _Ctx:
+        def __init__(self, uri):
+            attempts.append(uri)
+            if uri == "ip:192.168.7.5":
+                raise OSError(110, "Connection timed out")
+
+    monkeypatch.setitem(
+        __import__("sys").modules, "iio", types.SimpleNamespace(Context=_Ctx)
+    )
+    shell = _RoutedShell(
+        [
+            "default via 192.168.7.1 dev eth1 metric 100",
+            "default via 10.0.0.1 dev eth0 metric 101",
+        ],
+        {"eth0": ["10.0.0.201/24"], "eth1": ["192.168.7.5/24"]},
+    )
+
+    ctx, ip = hw_helpers.open_iio_context(shell)
+
+    assert isinstance(ctx, _Ctx)
+    assert ip == "10.0.0.201"
+    assert attempts == ["ip:192.168.7.5", "ip:10.0.0.201"]
+
+
+def test_open_iio_context_reports_every_failed_address(monkeypatch):
+    import types
+
+    class _Ctx:
+        def __init__(self, uri):
+            raise OSError(111, f"refused {uri}")
+
+    monkeypatch.setitem(
+        __import__("sys").modules, "iio", types.SimpleNamespace(Context=_Ctx)
+    )
+    shell = _RoutedShell(["default via 10.0.0.1 dev eth0"], {"eth0": ["10.0.0.201/24"]})
+
+    with pytest.raises(AssertionError, match="10.0.0.201: .*refused"):
+        hw_helpers.open_iio_context(shell)
+
+
+def test_discover_board_ipv4_prefers_address_that_answers_on_ssh(monkeypatch):
+    import socket
+
+    from test.hw._cli_base import discover_board_ipv4
+
+    probed = []
+
+    class _Conn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    def fake_create_connection(address, timeout=None):
+        probed.append(address)
+        if address[0] == "192.168.7.5":
+            raise OSError(113, "No route to host")
+        return _Conn()
+
+    monkeypatch.setattr(socket, "create_connection", fake_create_connection)
+    shell = _RoutedShell(
+        [
+            "default via 192.168.7.1 dev eth1 metric 100",
+            "default via 10.0.0.1 dev eth0 metric 101",
+        ],
+        {"eth0": ["10.0.0.201/24"], "eth1": ["192.168.7.5/24"]},
+    )
+
+    assert discover_board_ipv4(shell) == "10.0.0.201"
+    assert probed == [("192.168.7.5", 22), ("10.0.0.201", 22)]
+
+
+def test_discover_board_ipv4_falls_back_to_first_candidate(monkeypatch):
+    import socket
+
+    from test.hw._cli_base import discover_board_ipv4
+
+    def refuse(address, timeout=None):
+        raise OSError(111, "Connection refused")
+
+    monkeypatch.setattr(socket, "create_connection", refuse)
+    shell = _RoutedShell(["default via 10.0.0.1 dev eth0"], {"eth0": ["10.0.0.201/24"]})
+
+    assert discover_board_ipv4(shell) == "10.0.0.201"
+
+
 def test_find_obs_capture_device_prefers_named_obs():
     ctx = _FakeCtx(
         [
