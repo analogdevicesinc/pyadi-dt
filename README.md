@@ -175,6 +175,11 @@ version. Start a new agent session after installation.
 # Install with dev dependencies
 pip install -e ".[dev]"
 
+# Or, for tooling that consumes requirements files:
+#   requirements.txt      runtime dependencies ([project].dependencies)
+#   requirements_dev.txt  runtime + test + xsa + hardware-CI tools (the `dev` extra)
+pip install -r requirements_dev.txt -e .
+
 # Run tests
 pytest -vs
 

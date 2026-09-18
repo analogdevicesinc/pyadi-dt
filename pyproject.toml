@@ -46,6 +46,8 @@ test = [
     "hashable_list",
     "ordered_set",
     "requests",
+    # test_requirements_files.py parses pyproject.toml; tomllib is 3.11+.
+    'tomli; python_version < "3.11"',
 ]
 dev = [
     "pyadi-dt[test,xsa]",

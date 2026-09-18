@@ -5,6 +5,12 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ## [Unreleased]
 
+### Added
+
+- `requirements.txt` and `requirements_dev.txt` mirroring the runtime
+  dependencies and the `dev` extra in `pyproject.toml`, with a contract test
+  that fails when they drift.
+
 ## [0.1.0] - 2026-09-17
 
 First public release. The `0.0.1` version number was used internally while

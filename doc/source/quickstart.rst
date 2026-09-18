@@ -22,6 +22,13 @@ For development with all test dependencies:
 
    pip install -e ".[dev]"
 
+``requirements.txt`` (runtime) and ``requirements_dev.txt`` (the ``dev``
+extra) mirror ``pyproject.toml`` for tooling that consumes requirements files:
+
+.. code-block:: bash
+
+   pip install -r requirements_dev.txt -e .
+
 Generate a device tree from an XSA file
 ----------------------------------------
 

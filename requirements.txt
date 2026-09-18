@@ -1,0 +1,14 @@
+# Runtime dependencies of pyadi-dt.
+#
+# Mirrors [project].dependencies in pyproject.toml; test/test_requirements_files.py
+# fails if the two drift. Prefer `pip install pyadi-dt` for normal installs; use
+# this file for environments that must be provisioned from a requirements list.
+Click
+fdt
+fabric
+bcrypt==5.0.0
+rich
+numpy
+xmltodict
+# MCP 1.x currently fails to import with Pydantic 2.13.
+pydantic>=2,<2.14
