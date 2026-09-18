@@ -1,0 +1,29 @@
+# Development dependencies of pyadi-dt: runtime + test + xsa + hardware-CI tools.
+#
+# Mirrors the `dev` extra in pyproject.toml (which pulls in the `test` and `xsa`
+# extras); test/test_requirements_files.py fails if the two drift.
+# Equivalent to `pip install -e ".[dev]"` followed by `pip install -e .`.
+-r requirements.txt
+
+# [project.optional-dependencies].test
+pytest
+pytest-asyncio
+pytest-dotenv
+pyadi-iio
+pyadi-jif[cplex,draw]
+hashable_list
+ordered_set
+requests
+tomli; python_version < "3.11"
+
+# [project.optional-dependencies].xsa
+lopper
+
+# [project.optional-dependencies].dev
+labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e
+pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git
+usbsdmux
+
+# The AD9371 profile model needs a reviewed pyadi-jif revision until it ships in
+# a release; CI and the hardware venv install it on top of the above:
+#   pip install -r requirements/pyadi-jif-ad9371.txt
