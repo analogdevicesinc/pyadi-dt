@@ -9,7 +9,8 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 - `requirements.txt` and `requirements_dev.txt` mirroring the runtime
   dependencies and the `dev` extra in `pyproject.toml`, with a contract test
-  that fails when they drift.
+  that fails when they drift. The private `pyadi-build` dependency is left out
+  of `requirements_dev.txt` so the file installs outside the hardware runners.
 
 ## [0.1.0] - 2026-09-17
 
