@@ -9,6 +9,7 @@
 pytest
 pytest-asyncio
 pytest-dotenv
+PyYAML
 pyadi-iio
 pyadi-jif[cplex,draw]
 hashable_list
