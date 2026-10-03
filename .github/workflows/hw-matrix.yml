@@ -573,7 +573,7 @@ jobs:
           LG_PLACE: ${{ matrix.node.place }}
           LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
           WAIT_MIN: ${{ inputs.place_wait_minutes }}
-          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index }}.json
         run: '"$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py acquire'
 
       - name: Pre-pytest hook
@@ -604,7 +604,7 @@ jobs:
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
           LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
-          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index }}.json
         run: |
           if [[ -f "$LEASE_STATE" ]]; then
             "$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py cleanup
@@ -720,7 +720,7 @@ jobs:
           LG_PLACE: ${{ matrix.node.place }}
           LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
           WAIT_MIN: ${{ inputs.place_wait_minutes }}
-          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index }}.json
         run: '"$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py acquire'
 
       - name: Pre-pytest hook
@@ -753,7 +753,7 @@ jobs:
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
           LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
-          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}-${{ strategy.job-index }}.json
         run: |
           if [[ -f "$LEASE_STATE" ]]; then
             "$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py cleanup
