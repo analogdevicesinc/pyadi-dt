@@ -8,7 +8,8 @@ from pydantic import Field
 
 from .._dt_render import render_node
 from .._fields import DtSkip
-from .base import ConverterDevice, ConverterSide, Jesd204Settings
+from .base import Jesd204Settings
+from .mxfe import MxFEAdc, MxFEDac, MxFEDevice, MxFEFeatures
 
 
 # --- JESD204 mode → framing-parameter tables --------------------------------
@@ -99,7 +100,7 @@ def ad9081_converter_select(direction: str, m: int, link_mode: int) -> str:
 # --- AD9081 side sub-models ------------------------------------------------
 
 
-class AD9081Adc(ConverterSide):
+class AD9081Adc(MxFEAdc):
     """AD9081 RX (ADC) configuration."""
 
     MODE_TABLE: ClassVar[dict] = _AD9081_RX_MODE_TABLE
@@ -112,7 +113,7 @@ class AD9081Adc(ConverterSide):
     converter_clock: int | None = None
 
 
-class AD9081Dac(ConverterSide):
+class AD9081Dac(MxFEDac):
     """AD9081 TX (DAC) configuration."""
 
     MODE_TABLE: ClassVar[dict] = _AD9081_TX_MODE_TABLE
@@ -261,9 +262,18 @@ def _jesd_link_block(
 # --- Top-level AD9081 device ----------------------------------------------
 
 
-class AD9081(ConverterDevice):
+class AD9081(MxFEDevice):
     """AD9081 MxFE (quad-ADC / quad-DAC) device."""
 
+    FEATURES: ClassVar[MxFEFeatures] = MxFEFeatures(
+        part="ad9081",
+        compatible="adi,ad9081",
+        default_label="trx0_ad9081",
+        gpio_properties=(
+            "reset-gpios", "sysref-req-gpios", "rx2-enable-gpios",
+            "rx1-enable-gpios", "tx2-enable-gpios", "tx1-enable-gpios",
+        ),
+    )
     part: ClassVar[str] = "ad9081"
     template: ClassVar[str] = ""
 
@@ -327,41 +337,16 @@ class AD9081(ConverterDevice):
     # ---- Rendering --------------------------------------------------
 
     def extra_dt_lines(self, context: dict | None = None) -> list[str]:
-        ctx = context or {}
-        lines: list[str] = []
-        gpio_label = ctx.get("gpio_label", "gpio")
-
-        gpio_props = [
-            ("reset-gpios", self.reset_gpio),
-            ("sysref-req-gpios", self.sysref_req_gpio),
-            ("rx2-enable-gpios", self.rx2_enable_gpio),
-            ("rx1-enable-gpios", self.rx1_enable_gpio),
-            ("tx2-enable-gpios", self.tx2_enable_gpio),
-            ("tx1-enable-gpios", self.tx1_enable_gpio),
-        ]
-        for name, value in gpio_props:
-            if value is None:
-                continue
-            lines.append(f"{name} = <&{gpio_label} {int(value)} 0>;")
-
-        dev_clk_ref = ctx.get("dev_clk_ref")
-        if dev_clk_ref:
-            lines.append(f"clocks = <&{dev_clk_ref}>;")
-            lines.append('clock-names = "dev_clk";')
-
-        rx_link_id = int(self.adc.jesd204_settings.link_id)
-        tx_link_id = int(self.dac.jesd204_settings.link_id)
-        lines.append(f"jesd204-link-ids = <{rx_link_id} {tx_link_id}>;")
-
-        rx_core = ctx.get("rx_core_label")
-        tx_core = ctx.get("tx_core_label")
-        if rx_core and tx_core:
-            lines.append(
-                f"jesd204-inputs = <&{rx_core} 0 {rx_link_id}>, "
-                f"<&{tx_core} 0 {tx_link_id}>;"
-            )
-
-        return lines
+        """Render the AD9081 GPIO capability values through the generic core."""
+        self.gpio_values = {
+            "reset-gpios": self.reset_gpio,
+            "sysref-req-gpios": self.sysref_req_gpio,
+            "rx2-enable-gpios": self.rx2_enable_gpio,
+            "rx1-enable-gpios": self.rx1_enable_gpio,
+            "tx2-enable-gpios": self.tx2_enable_gpio,
+            "tx1-enable-gpios": self.tx1_enable_gpio,
+        }
+        return self.common_extra_dt_lines(context)
 
     def trailing_blocks(self, context: dict | None = None) -> list[str]:
         rx = self.adc.jesd204_settings

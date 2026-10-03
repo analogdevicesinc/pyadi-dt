@@ -6,6 +6,7 @@ from .ad9172 import AD9172
 from .ad91xx import AD9144, AD9152
 from .ad9680 import AD9680
 from .base import ConverterDevice, Jesd204Settings
+from .mxfe import MxFEAdc, MxFEDac, MxFEDevice, MxFEFeatures
 
 __all__ = [
     "AD9081",
@@ -20,4 +21,8 @@ __all__ = [
     "AD9680",
     "ConverterDevice",
     "Jesd204Settings",
+    "MxFEAdc",
+    "MxFEDac",
+    "MxFEDevice",
+    "MxFEFeatures",
 ]
