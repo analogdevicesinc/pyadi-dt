@@ -8,7 +8,7 @@ from pydantic import Field
 
 from .._dt_render import render_node
 from .._fields import DtSkip
-from .base import ConverterDevice, ConverterSide
+from .mxfe import MxFEAdc, MxFEDac, MxFEDevice, MxFEFeatures
 
 
 _AD9084_RX_MODE_TABLE: dict[tuple[int, str] | int, dict[str, int]] = {
@@ -22,7 +22,7 @@ _AD9084_TX_MODE_TABLE: dict[tuple[int, str] | int, dict[str, int]] = {
 }
 
 
-class AD9084Adc(ConverterSide):
+class AD9084Adc(MxFEAdc):
     """AD9084 RX (ADC) configuration."""
 
     MODE_TABLE: ClassVar[dict] = _AD9084_RX_MODE_TABLE
@@ -31,7 +31,7 @@ class AD9084Adc(ConverterSide):
     fddc_decimation: int = 1
 
 
-class AD9084Dac(ConverterSide):
+class AD9084Dac(MxFEDac):
     """AD9084 TX (DAC) configuration."""
 
     MODE_TABLE: ClassVar[dict] = _AD9084_TX_MODE_TABLE
@@ -40,9 +40,15 @@ class AD9084Dac(ConverterSide):
     fduc_interpolation: int = 1
 
 
-class AD9084(ConverterDevice):
+class AD9084(MxFEDevice):
     """AD9084 wideband RF MxFE."""
 
+    FEATURES: ClassVar[MxFEFeatures] = MxFEFeatures(
+        part="ad9084",
+        compatible="adi,ad9084",
+        default_label="ad9084",
+        dt_flags=("jesd204-device", "jesd204-ignore-errors"),
+    )
     part: ClassVar[str] = "ad9084"
     template: ClassVar[str] = ""
 
