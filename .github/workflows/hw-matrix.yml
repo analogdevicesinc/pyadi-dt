@@ -568,12 +568,13 @@ jobs:
             ${{ inputs.venv_install_cmd }}
 
       - name: Acquire coordinator place
-        uses: tfcollins/labgrid-plugins/.github/actions/acquire-place@3f6cd9321f2d54edf2110f1d91a3af582ea368d7
-        with:
-          coordinator: ${{ env.COORDINATOR }}
-          place: ${{ matrix.node.place }}
-          labgrid_client: ${{ inputs.venv_dir }}/bin/labgrid-client
-          wait_minutes: ${{ inputs.place_wait_minutes }}
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LG_PLACE: ${{ matrix.node.place }}
+          LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
+          WAIT_MIN: ${{ inputs.place_wait_minutes }}
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+        run: '"$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py acquire'
 
       - name: Pre-pytest hook
         if: inputs.pre_pytest_cmd != ''
@@ -602,12 +603,11 @@ jobs:
         if: always()
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
         run: |
-          set -euo pipefail
-          LGCLIENT="$VENV_DIR/bin/labgrid-client"
-          if [[ -x "$LGCLIENT" ]]; then
-            "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
-            "$LGCLIENT" -x "$LG_COORDINATOR" cancel-reservation --all 2>/dev/null || true
+          if [[ -f "$LEASE_STATE" ]]; then
+            "$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py cleanup
           fi
 
       - name: Upload to Prism
@@ -715,12 +715,13 @@ jobs:
         run: bash .github/scripts/prepare-hardware-kernels.sh
 
       - name: Acquire coordinator place
-        uses: tfcollins/labgrid-plugins/.github/actions/acquire-place@3f6cd9321f2d54edf2110f1d91a3af582ea368d7
-        with:
-          coordinator: ${{ env.COORDINATOR }}
-          place: ${{ matrix.node.place }}
-          labgrid_client: ${{ inputs.venv_dir }}/bin/labgrid-client
-          wait_minutes: ${{ inputs.place_wait_minutes }}
+        env:
+          LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LG_PLACE: ${{ matrix.node.place }}
+          LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
+          WAIT_MIN: ${{ inputs.place_wait_minutes }}
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
+        run: '"$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py acquire'
 
       - name: Pre-pytest hook
         if: inputs.pre_pytest_cmd != ''
@@ -751,12 +752,11 @@ jobs:
         if: always()
         env:
           LG_COORDINATOR: ${{ env.COORDINATOR }}
+          LGCLIENT: ${{ inputs.venv_dir }}/bin/labgrid-client
+          LEASE_STATE: ${{ runner.temp }}/lease-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}.json
         run: |
-          set -euo pipefail
-          LGCLIENT="$VENV_DIR/bin/labgrid-client"
-          if [[ -x "$LGCLIENT" ]]; then
-            "$LGCLIENT" -x "$LG_COORDINATOR" -p "${{ matrix.node.place }}" release || true
-            "$LGCLIENT" -x "$LG_COORDINATOR" cancel-reservation --all 2>/dev/null || true
+          if [[ -f "$LEASE_STATE" ]]; then
+            "$VENV_DIR/bin/python" .github/scripts/coordinator-lease.py cleanup
           fi
 
       - name: Upload to Prism
