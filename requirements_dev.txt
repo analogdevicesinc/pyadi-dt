@@ -20,11 +20,6 @@ tomli; python_version < "3.11"
 lopper
 
 # [project.optional-dependencies].dev
-#
-# pyadi-build is deliberately omitted: it is a private repository that only
-# the hardware-CI runners can clone, so listing it here would make this file
-# uninstallable everywhere else. The `dev` extra still carries it; the
-# hardware venv installs `.[dev]` and gets it that way.
 labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e
 usbsdmux
 
