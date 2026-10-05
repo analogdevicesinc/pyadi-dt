@@ -11,13 +11,11 @@ from pathlib import Path
 DEFAULT_CIM_RELEASE = "2023_R2"
 CIM_RELEASES = {
     "2023_R2": {
-        "target": "adi-linux-2023-r2",
         "builder_release": "2023_R2",
         "ref": "2023_R2",
         "commit": "86d61468a7856e952c7ca237f798d86d6abd2e27",
     },
     "2026-R1": {
-        "target": "adi-linux-2026-r1",
         "builder_release": "2026_R1",
         "ref": "xlnx_2026.1.0",
         "commit": "b47bbbe8ca7bc582c96251fa30d86e55de363f68",
@@ -124,7 +122,8 @@ def resolve_kernel_image(platform: str, *, enabled: bool | None = None) -> Path 
     if not manifest:
         raise RuntimeError(
             f"No {platform} kernel prepared. Before acquiring hardware, build the "
-            f"CIM {CIM_RELEASES[release]['target']}-{platform} target and set {artifact_var} to its "
+            f"CIM adi-linux target with KERNEL_RELEASE={CIM_RELEASES[release]['builder_release']} "
+            f"KERNEL_PLATFORM={platform} and set {artifact_var} to its "
             f"artifacts.json, or set {override_var} to a prebuilt boot-ready image. "
             "Set ADI_XSA_BUILD_KERNEL=0 to retain the board's existing kernel."
         )

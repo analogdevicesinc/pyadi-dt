@@ -41,7 +41,7 @@ trap 'rm -f "$exports"' EXIT
 "$VENV_DIR/bin/python" .github/scripts/prepare_cim_kernel.py \
     --release "$ADIDT_CIM_RELEASE" --platform "$platform" --cim "${ADIDT_CIM_EXECUTABLE:-cim}" \
     --source "${CIM_MANIFEST_SOURCE:-https://github.com/tfcollins/cim.git}" \
-    --version "${CIM_MANIFEST_COMMIT:-29d715ff8de7f35aae66463864ce1631887e2198}" \
+    --version "${CIM_MANIFEST_COMMIT:-24d638ca8be24762a436af114f16f8bef84cdfc0}" \
     --workspace "${RUNNER_TEMP:-/tmp}/adidt-cim-${ADIDT_CIM_RELEASE}-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$BOARD-$CARRIER" \
     > "$exports"
 source "$exports"

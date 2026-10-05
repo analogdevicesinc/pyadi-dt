@@ -49,6 +49,16 @@ def test_missing_or_wrong_source_rejected(tmp_path, provenance):
         read_kernel_artifacts(str(path), "zynq", release="2026-R1")
 
 
+@pytest.mark.parametrize("release", ["2023_R2", "2026-R1"])
+@pytest.mark.parametrize("platform", ["zynq", "zynqmp"])
+def test_wrong_release_field_rejected_with_correct_source(tmp_path, release, platform):
+    path, _, data = manifest(tmp_path, platform, release)
+    data["provenance"]["release"] = "2026_R1" if release == "2023_R2" else "2023_R2"
+    path.write_text(json.dumps(data))
+    with pytest.raises(RuntimeError, match="expected release"):
+        read_kernel_artifacts(str(path), platform, release=release)
+
+
 @pytest.mark.parametrize("release", ["2026_R1", "2026-r1", "", "../2026-R1"])
 def test_invalid_release_fails_before_subprocess(tmp_path, monkeypatch, release):
     run = Mock(side_effect=AssertionError("must not build"))

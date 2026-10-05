@@ -55,7 +55,7 @@ def prepare(args):
             f"Refusing to overwrite existing workspace: {workspace}; reuse its artifacts.json instead"
         )
     spec = CIM_RELEASES[release]
-    target = f"{spec['target']}-{platform}"
+    target = "adi-linux"
     output = workspace / "artifacts"
     if release != "2023_R2":
         output /= spec["builder_release"]
@@ -78,7 +78,17 @@ def prepare(args):
             None,
         ),
         ([args.cim, "makefile"], workspace),
-        (["make", "sdk-build", f"KERNEL_JOBS={args.jobs}"], workspace),
+        (
+            [
+                "make",
+                "sdk-build",
+                f"KERNEL_RELEASE={spec['builder_release']}",
+                f"KERNEL_PLATFORM={platform}",
+                f"KERNEL_OUTPUT={output}",
+                f"KERNEL_JOBS={args.jobs}",
+            ],
+            workspace,
+        ),
     ]
     for command, cwd in commands:
         print("+ " + shlex.join(command), file=sys.stderr)

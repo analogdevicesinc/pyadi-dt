@@ -87,7 +87,7 @@ target's ``os-dependencies.yml`` separately. For example, for ZC706:
 .. code-block:: bash
 
    # Set these to the reviewed manifest repository and full commit containing
-   # adi-linux-2023-r2-zynq (or adi-linux-2023-r2-zynqmp for ZynqMP).
+   # the self-contained adi-linux target (both releases and platforms).
    : "${CIM_MANIFEST_SOURCE:?set the reviewed CIM manifest repository}"
    : "${CIM_MANIFEST_COMMIT:?set its full reviewed Git commit SHA}"
    python .github/scripts/prepare_cim_kernel.py \
@@ -101,9 +101,18 @@ target's ``os-dependencies.yml`` separately. For example, for ZC706:
 The default release remains **2023_R2**. Opt in to **2026-R1** with
 ``ADIDT_CIM_RELEASE=2026-R1`` in the runner environment or per-board file,
 or pass ``--release 2026-R1`` to the Python helper (CLI takes precedence).
-Only these exact two spellings are accepted. The selected targets are
-``adi-linux-2023-r2-zynq`` / ``adi-linux-2023-r2-zynqmp`` or
-``adi-linux-2026-r1-zynq`` / ``adi-linux-2026-r1-zynqmp``.
+Only these exact two spellings are accepted. All combinations initialize the
+single self-contained ``adi-linux`` target. The helper explicitly passes
+``KERNEL_RELEASE``, ``KERNEL_PLATFORM``, ``KERNEL_OUTPUT``, and ``KERNEL_JOBS``
+to ``make sdk-build``; it does not depend on CIM's default release or platform.
+For direct CIM use, ``KERNEL_RELEASE`` defaults to ``2023_R2`` and
+``KERNEL_PLATFORM`` defaults to ``zynq``. For example, in an initialized
+CIM workspace:
+
+.. code-block:: bash
+
+   make sdk-build KERNEL_RELEASE=2026_R1 KERNEL_PLATFORM=zynqmp KERNEL_JOBS=4
+
 2026-R1 here means the ``analogdevicesinc/linux`` **tag**
 ``xlnx_2026.1.0`` at commit
 ``b47bbbe8ca7bc582c96251fa30d86e55de363f68``; it is not a mutable branch.
@@ -114,8 +123,10 @@ For a manual 2026-R1 build, use the command above with ``--release 2026-R1``
 and a separate workspace such as
 ``$HOME/cim-kernels/2026-R1/$CIM_MANIFEST_COMMIT-zynq``.
 The public label ``2026-R1`` maps to CIM's internal helper/provenance key
-``2026_R1`` and output ``artifacts/2026_R1/<platform>/artifacts.json``.
-Legacy output remains ``artifacts/<platform>/artifacts.json``.
+``2026_R1``. The preparation helper explicitly sets ``KERNEL_OUTPUT`` to preserve
+its output ``artifacts/2026_R1/<platform>/artifacts.json`` for 2026-R1 and
+``artifacts/<platform>/artifacts.json`` for 2023_R2. Existing manifests at
+other paths can still be selected explicitly.
 Source both emitted exports: the image manifest and ``ADIDT_CIM_RELEASE``.
 CI workspaces include the release in their names, and the release is propagated
 through ``GITHUB_ENV`` to pytest. CIM owns its release-aware build cache;
@@ -140,7 +151,7 @@ validates explicit ordinary images/manifests. Without them it builds using
 ``CIM_MANIFEST_SOURCE``, ``CIM_MANIFEST_COMMIT`` (a full immutable SHA), and
 ``ADIDT_CIM_EXECUTABLE`` (an installed absolute executable path recommended).
 The default manifest source is ``https://github.com/tfcollins/cim.git`` at
-``29d715ff8de7f35aae66463864ce1631887e2198``. Override settings through the
+``24d638ca8be24762a436af114f16f8bef84cdfc0``. Override settings through the
 runner environment or per-board file; CIM itself must be installed separately.
 No packages are installed and no mutable branch is silently selected. Missing
 settings fail before acquisition. New workspaces are release- and run-scoped under
@@ -151,7 +162,7 @@ CIM artifacts built on another host and update their absolute image paths and
 checksums, or explicitly select a boot-ready external image.
 
 Runtime-overlay tests still require their separately qualified modular kernels
-and matching modules; the ordinary CIM targets do not qualify overlays. The
+and matching modules; the ordinary CIM target does not qualify overlays. The
 pre-acquisition step refuses an enabled overlay leg without an explicit
 overlay image (or a qualified generic image override). Existing
 ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ`` and module settings are not rewritten.
