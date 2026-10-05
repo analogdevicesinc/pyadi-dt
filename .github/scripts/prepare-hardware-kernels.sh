@@ -13,6 +13,12 @@ case "$CARRIER" in
     zcu102) platform=zynqmp ;;
     *) exit 0 ;; # Fabric and standalone production-JTAG flows own their kernels.
 esac
+# Validate before constructing paths; never normalize a misspelled release.
+export ADIDT_CIM_RELEASE="${ADIDT_CIM_RELEASE-2023_R2}"
+case "$ADIDT_CIM_RELEASE" in
+    2023_R2|2026-R1) ;;
+    *) echo "Unsupported CIM release: $ADIDT_CIM_RELEASE" >&2; exit 1 ;;
+esac
 # An ordinary CIM image is NOT a modular runtime-overlay kernel.
 shopt -s nullglob
 ordinary=(test/hw/*"${BOARD}"*"${CARRIER}"*_hw.py)
@@ -33,13 +39,16 @@ export PATH="$VENV_DIR/bin:/usr/bin:/bin"
 exports=$(mktemp)
 trap 'rm -f "$exports"' EXIT
 "$VENV_DIR/bin/python" .github/scripts/prepare_cim_kernel.py \
-    --platform "$platform" --cim "${ADIDT_CIM_EXECUTABLE:-cim}" \
+    --release "$ADIDT_CIM_RELEASE" --platform "$platform" --cim "${ADIDT_CIM_EXECUTABLE:-cim}" \
     --source "${CIM_MANIFEST_SOURCE:-https://github.com/tfcollins/cim.git}" \
-    --version "${CIM_MANIFEST_COMMIT:-d4dd5677cb965b3ee4085041535154483f3daecf}" \
-    --workspace "${RUNNER_TEMP:-/tmp}/adidt-cim-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$BOARD-$CARRIER" \
+    --version "${CIM_MANIFEST_COMMIT:-29d715ff8de7f35aae66463864ce1631887e2198}" \
+    --workspace "${RUNNER_TEMP:-/tmp}/adidt-cim-${ADIDT_CIM_RELEASE}-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}-$BOARD-$CARRIER" \
     > "$exports"
 source "$exports"
 # GitHub makes the validated selection available to the later test step.
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+    printf 'ADIDT_CIM_RELEASE=%s\n' "$ADIDT_CIM_RELEASE" >> "$GITHUB_ENV"
+fi
 artifact_var="ADIDT_KERNEL_ARTIFACTS_${platform^^}"
 if [[ -n "${GITHUB_ENV:-}" && -n "${!artifact_var:-}" ]]; then
     printf '%s=%s\n' "$artifact_var" "${!artifact_var}" >> "$GITHUB_ENV"

@@ -23,6 +23,7 @@ def options(tmp_path, **kw):
         **(
             dict(
                 platform="zynq",
+                release=None,
                 source="https://github.com/tfcollins/cim.git",
                 version="a" * 40,
                 workspace=tmp_path / "workspace",
@@ -65,16 +66,23 @@ def test_existing_workspace_never_overwritten(tmp_path):
         prep.prepare(options(tmp_path, workspace=tmp_path))
 
 
-def test_exact_cim_contract_and_validated_handoff(tmp_path, monkeypatch, capsys):
-    args = options(tmp_path)
+@pytest.mark.parametrize("release", ["2023_R2", "2026-R1"])
+@pytest.mark.parametrize("platform", ["zynq", "zynqmp"])
+def test_exact_cim_contract_and_validated_handoff(
+    tmp_path, monkeypatch, capsys, release, platform
+):
+    args = options(tmp_path, release=release, platform=platform)
+    output = args.workspace / "artifacts"
+    if release != "2023_R2":
+        output /= prep.CIM_RELEASES[release]["builder_release"]
+    output /= platform
     calls = []
 
     def run(command, **kwargs):
         calls.append((command, kwargs.get("cwd")))
         if command[0] == "make":
-            output = args.workspace / "artifacts/zynq"
             output.mkdir(parents=True)
-            manifest(output)
+            manifest(output, platform, release)
 
     monkeypatch.setattr(prep.subprocess, "run", run)
     prep.prepare(args)
@@ -84,7 +92,7 @@ def test_exact_cim_contract_and_validated_handoff(tmp_path, monkeypatch, capsys)
                 args.cim,
                 "init",
                 "--target",
-                "adi-linux-2023-r2-zynq",
+                f"{prep.CIM_RELEASES[release]['target']}-{platform}",
                 "--source",
                 args.source,
                 "--version",
@@ -102,16 +110,18 @@ def test_exact_cim_contract_and_validated_handoff(tmp_path, monkeypatch, capsys)
                 prep.sys.executable,
                 str(args.workspace / "scripts/build-kernel.py"),
                 "--platform",
-                "zynq",
+                platform,
+                "--release",
+                prep.CIM_RELEASES[release]["builder_release"],
                 "--output",
-                str(args.workspace / "artifacts/zynq"),
+                str(output),
                 "--verify",
             ],
             None,
         ),
     ]
     assert (
-        f"export ADIDT_KERNEL_ARTIFACTS_ZYNQ={args.workspace}/artifacts/zynq/artifacts.json"
+        f"export ADIDT_KERNEL_ARTIFACTS_{platform.upper()}={output}/artifacts.json"
         in capsys.readouterr().out
     )
 

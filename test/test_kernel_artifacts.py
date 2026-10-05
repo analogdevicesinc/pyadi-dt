@@ -9,7 +9,11 @@ from unittest.mock import Mock
 import pytest
 
 from test.hw import conftest, hw_helpers
-from test.hw.kernel_artifacts import read_kernel_artifacts, resolve_kernel_image
+from test.hw.kernel_artifacts import (
+    CIM_RELEASES,
+    read_kernel_artifacts,
+    resolve_kernel_image,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -22,10 +26,11 @@ def isolated_environment(monkeypatch):
         ):
             monkeypatch.delenv(f"{prefix}_{platform}", raising=False)
     monkeypatch.delenv("ADI_XSA_BUILD_KERNEL", raising=False)
+    monkeypatch.delenv("ADIDT_CIM_RELEASE", raising=False)
     monkeypatch.setattr(hw_helpers, "DEFAULT_BUILD_KERNEL", True)
 
 
-def manifest(tmp_path, platform="zynq"):
+def manifest(tmp_path, platform="zynq", release="2023_R2"):
     image = tmp_path / ("uImage" if platform == "zynq" else "Image")
     image.write_bytes(b"test kernel payload")
     data = dict(
@@ -33,7 +38,7 @@ def manifest(tmp_path, platform="zynq"):
         platform=platform,
         kernel_image=str(image),
         sha256=hashlib.sha256(image.read_bytes()).hexdigest(),
-        provenance={"target": f"adi-linux-2023-r2-{platform}"},
+        provenance={"source": {k: CIM_RELEASES[release][k] for k in ("ref", "commit")}},
     )
     path = tmp_path / "artifacts.json"
     path.write_text(json.dumps(data))

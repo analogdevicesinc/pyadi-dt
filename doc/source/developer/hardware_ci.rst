@@ -93,10 +93,37 @@ target's ``os-dependencies.yml`` separately. For example, for ZC706:
    python .github/scripts/prepare_cim_kernel.py \
        --platform zynq --cim /path/to/installed/cim \
        --source "$CIM_MANIFEST_SOURCE" --version "$CIM_MANIFEST_COMMIT" \
-       --workspace "$HOME/cim-kernels/$CIM_MANIFEST_COMMIT-zynq" \
+       --workspace "$HOME/cim-kernels/2023_R2/$CIM_MANIFEST_COMMIT-zynq" \
        > /tmp/adidt-kernel.env
    # Only source the output if preparation succeeded.
    source /tmp/adidt-kernel.env
+
+The default release remains **2023_R2**. Opt in to **2026-R1** with
+``ADIDT_CIM_RELEASE=2026-R1`` in the runner environment or per-board file,
+or pass ``--release 2026-R1`` to the Python helper (CLI takes precedence).
+Only these exact two spellings are accepted. The selected targets are
+``adi-linux-2023-r2-zynq`` / ``adi-linux-2023-r2-zynqmp`` or
+``adi-linux-2026-r1-zynq`` / ``adi-linux-2026-r1-zynqmp``.
+2026-R1 here means the ``analogdevicesinc/linux`` **tag**
+``xlnx_2026.1.0`` at commit
+``b47bbbe8ca7bc582c96251fa30d86e55de363f68``; it is not a mutable branch.
+The legacy source remains ``2023_R2`` at
+``86d61468a7856e952c7ca237f798d86d6abd2e27``.
+
+For a manual 2026-R1 build, use the command above with ``--release 2026-R1``
+and a separate workspace such as
+``$HOME/cim-kernels/2026-R1/$CIM_MANIFEST_COMMIT-zynq``.
+The public label ``2026-R1`` maps to CIM's internal helper/provenance key
+``2026_R1`` and output ``artifacts/2026_R1/<platform>/artifacts.json``.
+Legacy output remains ``artifacts/<platform>/artifacts.json``.
+Source both emitted exports: the image manifest and ``ADIDT_CIM_RELEASE``.
+CI workspaces include the release in their names, and the release is propagated
+through ``GITHUB_ENV`` to pytest. CIM owns its release-aware build cache;
+pyadi-dt never searches a shared legacy cache or silently falls back to another
+release. Explicit manifest reuse must match the selected source ref and commit.
+Missing or mismatched provenance fails before acquisition; it does not trigger
+an automatic rebuild. Legacy CIM manifests without a release field remain valid
+when their source pins match 2023_R2.
 
 The helper uses ``cim init``, ``cim makefile``, and ``make sdk-build``. It refuses
 to overwrite a workspace; to reuse its results, export the existing manifest
@@ -113,10 +140,10 @@ validates explicit ordinary images/manifests. Without them it builds using
 ``CIM_MANIFEST_SOURCE``, ``CIM_MANIFEST_COMMIT`` (a full immutable SHA), and
 ``ADIDT_CIM_EXECUTABLE`` (an installed absolute executable path recommended).
 The default manifest source is ``https://github.com/tfcollins/cim.git`` at
-``d4dd5677cb965b3ee4085041535154483f3daecf``. Override settings through the
+``29d715ff8de7f35aae66463864ce1631887e2198``. Override settings through the
 runner environment or per-board file; CIM itself must be installed separately.
 No packages are installed and no mutable branch is silently selected. Missing
-settings fail before acquisition. New workspaces are run-scoped under
+settings fail before acquisition. New workspaces are release- and run-scoped under
 ``RUNNER_TEMP``; for cache reuse provision a persistent manifest explicitly.
 Fabric-only legs do not build ARM kernels; disabled mode and image overrides
 bypass CIM entirely. Do not build on disk-constrained runners: stage verified
@@ -137,12 +164,19 @@ The handoff is a runner-local JSON object with these required fields:
      "schema_version": 1,
      "platform": "zynq",
      "kernel_image": "/absolute/path/to/uImage",
-     "sha256": "<64 hexadecimal characters>"
+     "sha256": "<64 hexadecimal characters>",
+     "provenance": {
+       "source": {
+         "ref": "2023_R2",
+         "commit": "86d61468a7856e952c7ca237f798d86d6abd2e27"
+       }
+     }
    }
 
 CIM additionally records source, toolchain, configuration and packaging
 provenance. pyadi-dt allows extra provenance fields and checks the schema,
-expected platform, non-empty regular image file, absolute image path and
+expected platform, selected release source ref/commit, non-empty regular image
+file, absolute image path and
 SHA-256. Keep the manifest and its image together on the runner; copying just
 the JSON does not relocate the absolute image path. Do not modify images while
 tests are running. No consumer-side packaging or implicit cache fallback occurs.

@@ -13,11 +13,17 @@ import sys
 
 # Run from any cwd with the checkout's consumer, without importing pyadi-dt.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from test.hw.kernel_artifacts import resolve_kernel_image  # noqa: E402
+from test.hw.kernel_artifacts import (  # noqa: E402
+    CIM_RELEASES,
+    cim_release,
+    resolve_kernel_image,
+)
 
 
 def prepare(args):
     """Reuse explicit images/manifests; only invoke CIM when a build is required."""
+    release = cim_release(args.release)
+    os.environ["ADIDT_CIM_RELEASE"] = release
     platform = args.platform
     image_var = f"ADIDT_KERNEL_IMAGE_{platform.upper()}"
     artifact_var = f"ADIDT_KERNEL_ARTIFACTS_{platform.upper()}"
@@ -31,6 +37,7 @@ def prepare(args):
         if image is not None:
             variable = image_var if os.environ.get(image_var) else artifact_var
             print(f"export {variable}={shlex.quote(os.environ[variable])}")
+        print(f"export ADIDT_CIM_RELEASE={shlex.quote(release)}")
         return
     if (
         not args.source
@@ -47,7 +54,12 @@ def prepare(args):
         raise ValueError(
             f"Refusing to overwrite existing workspace: {workspace}; reuse its artifacts.json instead"
         )
-    target = f"adi-linux-2023-r2-{platform}"
+    spec = CIM_RELEASES[release]
+    target = f"{spec['target']}-{platform}"
+    output = workspace / "artifacts"
+    if release != "2023_R2":
+        output /= spec["builder_release"]
+    output /= platform
     commands = [
         (
             [
@@ -79,18 +91,21 @@ def prepare(args):
             str(workspace / "scripts/build-kernel.py"),
             "--platform",
             platform,
+            "--release",
+            spec["builder_release"],
             "--output",
-            str(workspace / "artifacts" / platform),
+            str(output),
             "--verify",
         ],
         check=True,
         stdout=sys.stderr,
         stdin=subprocess.DEVNULL,
     )
-    manifest = workspace / "artifacts" / platform / "artifacts.json"
+    manifest = output / "artifacts.json"
     os.environ[artifact_var] = str(manifest)
     resolve_kernel_image(platform)
     print(f"export {artifact_var}={shlex.quote(str(manifest))}")
+    print(f"export ADIDT_CIM_RELEASE={shlex.quote(release)}")
 
 
 def main():
@@ -109,6 +124,11 @@ def main():
     )
     parser.add_argument(
         "--workspace", type=Path, help="New persistent CIM workspace; never removed"
+    )
+    parser.add_argument(
+        "--release",
+        choices=tuple(CIM_RELEASES),
+        help="CIM kernel release (default: ADIDT_CIM_RELEASE or 2023_R2)",
     )
     parser.add_argument("--jobs", type=int, default=4)
     args = parser.parse_args()
