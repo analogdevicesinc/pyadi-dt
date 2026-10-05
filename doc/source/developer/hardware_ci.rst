@@ -9,8 +9,12 @@ selects hardware through the labgrid coordinator. See
 Discovery and test selection
 ----------------------------
 
-The workflow calls the reusable ``hw-matrix.yml`` workflow from
-``tfcollins/labgrid-plugins`` with ``dynamic_mode: true``. Coordinator place
+The workflow calls a local copy of ``hw-matrix.yml`` (upstream
+``tfcollins/labgrid-plugins`` commit
+``3f6cd9321f2d54edf2110f1d91a3af582ea368d7``) with ``dynamic_mode: true``.
+The local addition prepares ordinary kernels **before** ``acquire-place``;
+the upstream pre-pytest hook runs after acquisition and cannot do this safely.
+Coordinator place
 metadata supplies the runner routing; ``.github/supported-boards.yml`` filters
 supported daughter-board tags. The current allowlist contains ``ad9081``,
 ``adrv9371``, ``adrv9009``, ``adrv9009zu11eg``, and ``daq3``. An allowlist entry
@@ -18,8 +22,8 @@ is not proof that matching hardware is available or validated.
 
 Runs are triggered manually, on pushes to ``main``, nightly at 08:00 UTC,
 and for pull requests carrying the ``hw-test`` label. The reusable workflow
-owns discovery and scheduling. This repository does not define separate
-``hw-direct`` and ``hw-coord`` jobs or route jobs using a static node manifest.
+owns discovery and scheduling. The inherited direct/coordinator jobs remain
+disabled; routing uses dynamic metadata rather than a static node manifest.
 
 Each selected leg receives ``BOARD``, ``CARRIER``, ``LG_ENV``, and
 ``LG_COORDINATOR``. Its test command selects:
@@ -61,6 +65,147 @@ Keep operational labgrid environments private. The workflow passes
 controlled by ``PRISM_UPLOAD_ENABLED`` and uses the explicitly passed
 ``PRISM_EMAIL`` and ``PRISM_PASSWORD`` secrets. These values are not test
 artifacts.
+
+Prepared CIM kernels
+--------------------
+
+The ``dev`` extra no longer installs private ``pyadi-build``. Kernel compilation,
+Zynq ``uImage`` packaging, source/toolchain pinning, and build caches belong to
+`CIM <https://github.com/tfcollins/cim>`_, not pyadi-dt. The old
+``test/hw/2023_R2.yaml``, ``ADIDT_KERNEL_CACHE`` and
+``ADIDT_KERNEL_CACHE_DIR`` are no longer used. Existing cache directories are
+not deleted; explicitly select a known-good image if you need to reuse one.
+``PYADI_BUILD_TOKEN`` remains the reusable workflow's credential name for
+labgrid-plugins access; it is not a kernel build dependency.
+
+Prepare **only the platform needed by the selected tests**, before acquiring a
+place. An installed CIM executable and an explicit, reviewed manifest source
+and full Git commit are required for builds (there is no implicit ``main`` or
+package installation). Install the host build dependencies listed in the CIM
+target's ``os-dependencies.yml`` separately. For example, for ZC706:
+
+.. code-block:: bash
+
+   # Set these to the reviewed manifest repository and full commit containing
+   # the self-contained adi-linux target (both releases and platforms).
+   : "${CIM_MANIFEST_SOURCE:?set the reviewed CIM manifest repository}"
+   : "${CIM_MANIFEST_COMMIT:?set its full reviewed Git commit SHA}"
+   python .github/scripts/prepare_cim_kernel.py \
+       --platform zynq --cim /path/to/installed/cim \
+       --source "$CIM_MANIFEST_SOURCE" --version "$CIM_MANIFEST_COMMIT" \
+       --workspace "$HOME/cim-kernels/2023_R2/$CIM_MANIFEST_COMMIT-zynq" \
+       > /tmp/adidt-kernel.env
+   # Only source the output if preparation succeeded.
+   source /tmp/adidt-kernel.env
+
+The default release remains **2023_R2**. Opt in to **2026-R1** with
+``ADIDT_CIM_RELEASE=2026-R1`` in the runner environment or per-board file,
+or pass ``--release 2026-R1`` to the Python helper (CLI takes precedence).
+Only these exact two spellings are accepted. All combinations initialize the
+single self-contained ``adi-linux`` target. The helper explicitly passes
+``KERNEL_RELEASE``, ``KERNEL_PLATFORM``, ``KERNEL_OUTPUT``, and ``KERNEL_JOBS``
+to ``make sdk-build``; it does not depend on CIM's default release or platform.
+For direct CIM use, ``KERNEL_RELEASE`` defaults to ``2023_R2`` and
+``KERNEL_PLATFORM`` defaults to ``zynq``. For example, in an initialized
+CIM workspace:
+
+.. code-block:: bash
+
+   make sdk-build KERNEL_RELEASE=2026_R1 KERNEL_PLATFORM=zynqmp KERNEL_JOBS=4
+
+2026-R1 here means the ``analogdevicesinc/linux`` **tag**
+``xlnx_2026.1.0`` at commit
+``b47bbbe8ca7bc582c96251fa30d86e55de363f68``; it is not a mutable branch.
+The legacy source remains ``2023_R2`` at
+``86d61468a7856e952c7ca237f798d86d6abd2e27``.
+
+For a manual 2026-R1 build, use the command above with ``--release 2026-R1``
+and a separate workspace such as
+``$HOME/cim-kernels/2026-R1/$CIM_MANIFEST_COMMIT-zynq``.
+The public label ``2026-R1`` maps to CIM's internal helper/provenance key
+``2026_R1``. The preparation helper explicitly sets ``KERNEL_OUTPUT`` to preserve
+its output ``artifacts/2026_R1/<platform>/artifacts.json`` for 2026-R1 and
+``artifacts/<platform>/artifacts.json`` for 2023_R2. Existing manifests at
+other paths can still be selected explicitly.
+Source both emitted exports: the image manifest and ``ADIDT_CIM_RELEASE``.
+CI workspaces include the release in their names, and the release is propagated
+through ``GITHUB_ENV`` to pytest. CIM owns its release-aware build cache;
+pyadi-dt never searches a shared legacy cache or silently falls back to another
+release. Explicit manifest reuse must match the selected source ref and commit.
+Missing or mismatched provenance fails before acquisition; it does not trigger
+an automatic rebuild. Legacy CIM manifests without a release field remain valid
+when their source pins match 2023_R2.
+
+The helper uses ``cim init``, ``cim makefile``, and ``make sdk-build``. It refuses
+to overwrite a workspace; to reuse its results, export the existing manifest
+path instead of rebuilding. It validates the handoff before emitting a
+shell-quoted export. It does not install CIM, reserve boards, or modify runner
+configuration. Run the command with ``set -e`` or explicitly check its exit
+status before sourcing its output. Prepared-image and disabled modes do not
+invoke CIM and do not require source/version/workspace arguments.
+
+For persistent runners, put the resulting export in the existing per-board
+``$BOARD-$CARRIER.env`` file. The matrix runs
+``prepare-hardware-kernels.sh`` before acquisition, loads that same file, and
+validates explicit ordinary images/manifests. Without them it builds using
+``CIM_MANIFEST_SOURCE``, ``CIM_MANIFEST_COMMIT`` (a full immutable SHA), and
+``ADIDT_CIM_EXECUTABLE`` (an installed absolute executable path recommended).
+The default manifest source is ``https://github.com/tfcollins/cim.git`` at
+``24d638ca8be24762a436af114f16f8bef84cdfc0``. Override settings through the
+runner environment or per-board file; CIM itself must be installed separately.
+No packages are installed and no mutable branch is silently selected. Missing
+settings fail before acquisition. New workspaces are release- and run-scoped under
+``RUNNER_TEMP``; for cache reuse provision a persistent manifest explicitly.
+Fabric-only legs do not build ARM kernels; disabled mode and image overrides
+bypass CIM entirely. Do not build on disk-constrained runners: stage verified
+CIM artifacts built on another host and update their absolute image paths and
+checksums, or explicitly select a boot-ready external image.
+
+Runtime-overlay tests still require their separately qualified modular kernels
+and matching modules; the ordinary CIM target does not qualify overlays. The
+pre-acquisition step refuses an enabled overlay leg without an explicit
+overlay image (or a qualified generic image override). Existing
+``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ`` and module settings are not rewritten.
+
+The handoff is a runner-local JSON object with these required fields:
+
+.. code-block:: json
+
+   {
+     "schema_version": 1,
+     "platform": "zynq",
+     "kernel_image": "/absolute/path/to/uImage",
+     "sha256": "<64 hexadecimal characters>",
+     "provenance": {
+       "source": {
+         "ref": "2023_R2",
+         "commit": "86d61468a7856e952c7ca237f798d86d6abd2e27"
+       }
+     }
+   }
+
+CIM additionally records source, toolchain, configuration and packaging
+provenance. pyadi-dt allows extra provenance fields and checks the schema,
+expected platform, selected release source ref/commit, non-empty regular image
+file, absolute image path and
+SHA-256. Keep the manifest and its image together on the runner; copying just
+the JSON does not relocate the absolute image path. Do not modify images while
+tests are running. No consumer-side packaging or implicit cache fallback occurs.
+
+Selection order for each platform is:
+
+#. ``ADIDT_KERNEL_IMAGE_ZYNQ`` / ``ADIDT_KERNEL_IMAGE_ZYNQMP``: explicit prebuilt
+   image, still honored when kernel replacement is otherwise disabled.
+#. ``ADI_XSA_BUILD_KERNEL=0`` (also ``false`` or ``no``): retain the existing
+   kernel and return no replacement, ignoring CIM manifests.
+#. ``ADIDT_KERNEL_ARTIFACTS_ZYNQ`` / ``ADIDT_KERNEL_ARTIFACTS_ZYNQMP``:
+   validate and use the manifest image; missing/invalid input is a hard error.
+
+Hardware collection preflights the selected module profiles before labgrid
+fixtures run, while ``--collect-only`` remains usable without artifacts.
+Overlay-only image overrides take priority for overlay modules, not ordinary
+full-DTB tests. When manually reserving a place outside pytest, perform kernel
+preparation/validation before the explicit ``labgrid-client acquire`` command.
 
 .. _exporter-systemd:
 
