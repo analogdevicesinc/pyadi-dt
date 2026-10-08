@@ -41,7 +41,7 @@ jobs:
       - name: Build documentation
         run: |
           cd doc
-          make SPHINXOPTS="-W --keep-going" html
+          make SPHINXOPTS="-W --keep-going" dirhtml
 
       - name: Check documentation coverage
         run: |
@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: documentation
-          path: doc/build/html
+          path: doc/build/dirhtml
 
   deploy:
     name: Deploy to GitHub Pages
@@ -73,11 +73,11 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: documentation
-          path: doc/build/html
+          path: doc/build/dirhtml
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+        uses: peaceiris/actions-gh-pages@v4.1.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./doc/build/html
+          publish_dir: ./doc/build/dirhtml
           force_orphan: true
