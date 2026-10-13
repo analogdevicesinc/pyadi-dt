@@ -37,11 +37,8 @@ def test_requirements_dev_txt_matches_dev_extra():
     # requirements file cannot, so it must spell them out.
     self_reference = "pyadi-dt[test,xsa]"
     assert self_reference in extras["dev"]
-    # pyadi-build is a private repository only the hardware-CI runners can
-    # clone; it stays in the extra but is intentionally left out of the file.
-    private = [dep for dep in extras["dev"] if dep.startswith("pyadi-build ")]
-    assert private, "expected the dev extra to still carry pyadi-build"
-    excluded = {self_reference, *private}
+    assert not any(dep.startswith("pyadi-build") for dep in extras["dev"])
+    excluded = {self_reference}
     expected = (
         ["-r requirements.txt"]
         + extras["test"]

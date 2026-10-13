@@ -164,8 +164,10 @@ MicroBlaze's direct-boot flow does not support.
 Hardware Test Flow
 ------------------
 
-The hardware tests can optionally build and inject a kernel image with
-``pyadi-build`` while still using the DTB generated from the XSA pipeline.
+The hardware tests can inject a prepared CIM kernel image while using the
+DTB generated from the XSA pipeline. Kernel compilation is an explicit
+pre-acquisition step, not a pytest fixture side effect; see
+:doc:`developer/hardware_ci`.
 
 .. image:: _diagrams/svg/xsa_hw_test.light.svg
    :class: only-light
@@ -184,6 +186,7 @@ Example hardware invocation:
 .. code-block:: bash
 
    source /tools/Xilinx/2025.1/Vivado/settings64.sh
+   export ADIDT_KERNEL_ARTIFACTS_ZYNQMP=/path/to/cim/artifacts/zynqmp/artifacts.json
    LG_ENV=/jenkins/lg_ad9081_zcu102.yaml ADI_XSA_BUILD_KERNEL=1 \
      pytest -q test/hw/ad9081/test_ad9081_xsa_hw_m4_l8.py
 

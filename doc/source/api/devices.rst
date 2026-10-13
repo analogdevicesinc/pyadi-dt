@@ -210,22 +210,16 @@ Copy ``.env.example`` to ``.env`` for the supported variables.  The skip
 guard in each hw test module requires one of ``LG_COORDINATOR`` or
 ``LG_ENV`` to be set.
 
-Kernel image caching
-~~~~~~~~~~~~~~~~~~~~
+Prepared kernel images
+~~~~~~~~~~~~~~~~~~~~~~
 
 ``test/hw/conftest.py`` provides session-scoped ``built_kernel_image_*``
-fixtures backed by a file-based cache keyed on the sha256 of the
-``pyadi-build`` YAML config.  First run per config builds through
-``pyadi-build`` and copies the produced kernel image into
-``~/.cache/adidt/kernel/<platform>/<hash>/<image>``; subsequent runs
-skip ``prepare_source`` + ``build`` entirely.  Zynq-7000 ``zImage`` is
-wrapped as a ``uImage`` via ``mkimage`` so ``BootFPGASoCTFTP``'s
-``tftpboot uImage`` can find the file.
+fixtures. Despite their legacy names they never compile kernels. Prepare
+boot-ready CIM artifacts before reserving hardware, then set
+``ADIDT_KERNEL_ARTIFACTS_ZYNQ`` or ``ADIDT_KERNEL_ARTIFACTS_ZYNQMP`` to the
+corresponding ``artifacts.json``. See :doc:`../developer/hardware_ci` for the
+versioned handoff, pinned preparation command, and prebuilt overrides.
 
-Control via env vars:
-
-- ``ADIDT_KERNEL_CACHE=0`` — force a rebuild.
-- ``ADIDT_KERNEL_CACHE_DIR=<path>`` — relocate the cache (default
-  ``~/.cache/adidt/kernel``).
-
-Measured: first ZC706 run ≈ 600 s; cached re-run ≈ 70 s.
+Selected kernels are validated during collection, before labgrid fixtures
+run. The consumer verifies platform, absolute image path, and SHA-256; it
+neither wraps raw ``zImage`` files nor reads the old config-hash cache.

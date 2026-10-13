@@ -29,9 +29,10 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'hw-test')
-    uses: tfcollins/labgrid-plugins/.github/workflows/hw-matrix.yml@main
+    uses: ./.github/workflows/hw-matrix.yml
     with:
       dynamic_mode: true
+      timeout_minutes: 120
       # Runner routing is owned entirely by the coordinator: each place's
       # `runner` tag selects its self-hosted runner. No in-repo runner names.
       supported_boards_path: .github/supported-boards.yml
@@ -77,8 +78,9 @@ jobs:
       PRISM_EMAIL: ${{ secrets.PRISM_EMAIL }}
       PRISM_PASSWORD: ${{ secrets.PRISM_PASSWORD }}
       # Injected as a github.com `insteadOf` credential during venv install so
-      # the credential-less hosts (nuc, lbvm) can clone the private pyadi-build /
-      # labgrid-plugins deps. MUST be a valid PAT — an expired/invalid token's
+      # the credential-less hosts (nuc, lbvm) can clone labgrid-plugins.
+      # Keep the legacy reusable-workflow secret name. MUST be a valid PAT;
+      # an expired/invalid token's
       # insteadOf clobbers the working git creds on hosts that have their own
       # (mini2/bq/nemo), reddening every leg.
       PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}
