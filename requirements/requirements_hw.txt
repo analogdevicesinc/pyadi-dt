@@ -1,2 +1,5 @@
 # Public hardware-runner dependencies.
 -r labgrid.txt
+
+# Lab runners use the libiio 0.x ABI shipped with Kuiper.
+pylibiio<1

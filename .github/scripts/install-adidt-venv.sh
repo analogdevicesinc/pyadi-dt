@@ -49,7 +49,7 @@ if [[ ! -x "$VENV/bin/sdtgen" ]]; then
     exit 1
 fi
 "$VENV/bin/sdtgen" -help >/dev/null
-"$VENV/bin/python" -c "import adi_lg_plugins, adijif, lopper; assert hasattr(adijif, 'ad9371')"
+"$VENV/bin/python" -c "import adi_lg_plugins, adijif, iio, lopper; assert hasattr(adijif, 'ad9371')"
 
 # CIM drives the pinned public DataX adi-linux target. Keep the verified binary
 # in the hardware venv so it survives the pre-acquisition PATH sanitization.

@@ -48,7 +48,10 @@ the board's boot artifacts, and the appropriate FPGA tools.
 extras and checksum-verified CIM v1.2.4 into a Python 3.12 environment at ``~/.cache/adidt-ci/datax-py312-venv``. It also installs the AD9371
 clock-model requirements and exposes the supported Vivado 2025.1 ``sdtgen``
 launcher in that environment. Missing tools or imports fail setup before
-hardware acquisition.
+hardware acquisition. Hardware requirements select ``pylibiio<1`` to match
+the runners' libiio 0.x ABI. Setup verifies that the Python binding loads before
+acquiring a place. The labgrid plugin pin includes serial-aware JTAG resources
+and exporter-owned recovery payload paths.
 
 ``.github/scripts/prepare-hardware-env.sh`` then:
 

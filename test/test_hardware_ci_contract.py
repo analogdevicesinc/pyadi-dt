@@ -19,6 +19,8 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
     assert '"$VENV/bin/sdtgen" -help' in installer
     assert "requirements/pyadi-jif-ad9371.txt" in installer
     assert "hasattr(adijif, 'ad9371')" in installer
+    assert "import adi_lg_plugins, adijif, iio, lopper" in installer
+    assert "pylibiio<1" in (ROOT / "requirements/requirements_hw.txt").read_text()
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
     assert "source .github/scripts/prepare-hardware-env.sh" in workflow
     assert (
