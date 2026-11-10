@@ -164,11 +164,13 @@ bypass CIM entirely. Do not build on disk-constrained runners: stage verified
 CIM artifacts built on another host and update their absolute image paths and
 checksums, or explicitly select a boot-ready external image.
 
-Runtime-overlay tests still require their separately qualified modular kernels
-and matching modules; the ordinary CIM target does not qualify overlays. The
-pre-acquisition step refuses an enabled overlay leg without an explicit
-overlay image (or a qualified generic image override). Existing
-``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ`` and module settings are not rewritten.
+Profiles declaring ``runtime_modules`` require their separately qualified
+modular kernels and matching modules. The pre-acquisition step checks the
+selected overlay profile before requiring an explicit overlay image (or a
+qualified generic image override). Existing ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ``
+and module settings are preserved. Profiles without runtime module unloading,
+including AD9081, use the selected ordinary kernel unless an overlay image is
+explicitly supplied. Their hardware tests check configfs support on the board.
 
 The handoff is a runner-local JSON object with these required fields:
 

@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 import subprocess
+import shlex
 import sys
 
 import pytest
@@ -14,7 +15,10 @@ ROOT = Path(__file__).resolve().parents[1]
 def run_preflight(tmp_path, **settings):
     venv = tmp_path / "venv/bin"
     venv.mkdir(parents=True)
-    (venv / "python").symlink_to(sys.executable)
+    # Execute the active interpreter in its venv, preserving its dependencies.
+    launcher = venv / "python"
+    launcher.write_text(f'#!/bin/sh\nexec {shlex.quote(sys.executable)} "$@"\n')
+    launcher.chmod(0o755)
     env = {
         k: v
         for k, v in os.environ.items()
@@ -94,3 +98,15 @@ def test_missing_source_pin_fails_before_build(tmp_path):
 def test_fabric_does_not_prepare_arm_kernel(tmp_path):
     result = run_preflight(tmp_path, CARRIER="vcu118", BOARD="daq3")
     assert result.returncode == 0, result.stderr
+
+
+def test_nonmodular_overlay_profile_reaches_standard_kernel_preparation(tmp_path):
+    result = run_preflight(
+        tmp_path,
+        BOARD="ad9081",
+        CARRIER="zcu102",
+        CIM_MANIFEST_COMMIT="main",
+    )
+    assert result.returncode != 0
+    assert "full Git commit SHA" in result.stderr
+    assert "Runtime overlays require" not in result.stderr

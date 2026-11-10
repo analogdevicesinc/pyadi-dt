@@ -19,7 +19,8 @@ case "$ADIDT_CIM_RELEASE" in
     2023_R2|2026-R1) ;;
     *) echo "Unsupported CIM release: $ADIDT_CIM_RELEASE" >&2; exit 1 ;;
 esac
-# An ordinary CIM image is NOT a modular runtime-overlay kernel.
+# Profiles that unload topology drivers require an independently prepared
+# modular kernel. Other overlay profiles exercise the ordinary kernel.
 shopt -s nullglob
 ordinary=(test/hw/*"${BOARD}"*"${CARRIER}"*_hw.py)
 overlays=(test/hw/xsa/test_*"${BOARD}"*"${CARRIER}"*_overlay.py)
@@ -27,10 +28,24 @@ image_var="ADIDT_KERNEL_IMAGE_${platform^^}"
 overlay_var="ADIDT_OVERLAY_KERNEL_IMAGE_${platform^^}"
 disabled="${ADI_XSA_BUILD_KERNEL:-1}"
 if (( ${#overlays[@]} )) && [[ "${disabled,,}" != 0 && "${disabled,,}" != false && "${disabled,,}" != no ]]; then
-    overlay_image="${!overlay_var:-${!image_var:-}}"
-    if [[ ! -s "$overlay_image" ]]; then
-        echo "Runtime overlays require $overlay_var (or a qualified $image_var) and matching modules; stock CIM images cannot replace them" >&2
-        exit 1
+    modular=$("$VENV_DIR/bin/python" - "${overlays[@]}" <<'PROFILE'
+import importlib
+from pathlib import Path
+import sys
+
+profiles = [
+    importlib.import_module(".".join(Path(path).with_suffix("").parts)).SPEC
+    for path in sys.argv[1:]
+]
+print(int(any(profile.runtime_modules for profile in profiles)))
+PROFILE
+    )
+    if [[ "$modular" == 1 ]]; then
+        overlay_image="${!overlay_var:-${!image_var:-}}"
+        if [[ ! -s "$overlay_image" ]]; then
+            echo "Runtime overlays require $overlay_var (or a qualified $image_var) and matching modules; stock CIM images cannot replace them" >&2
+            exit 1
+        fi
     fi
 fi
 if (( ! ${#ordinary[@]} )); then exit 0; fi
