@@ -35,7 +35,7 @@ def test_labgrid_plugins_dependency_is_immutable() -> None:
 
     assert (
         "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
-        "labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e" in dependency
+        "labgrid-plugins.git@7ddcb064d449ce891464b1123b898ee771a9983c" in dependency
     )
 
 
