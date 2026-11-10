@@ -110,6 +110,7 @@ Table of contents
 
    quickstart
    xsa
+   adrv9040
    petalinux
    visualization
    examples

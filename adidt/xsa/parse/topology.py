@@ -45,6 +45,18 @@ class ConverterInstance:
 
 
 @dataclass
+class AxiIpInstance:
+    """Addressed HWH IP block, retaining register size and driver parameters."""
+
+    name: str
+    ip_type: str
+    base_addr: int
+    size: int
+    irq: Optional[int] = None
+    parameters: dict[str, str] = field(default_factory=dict)
+
+
+@dataclass
 class SignalConnection:
     """Connectivity information for one HWH signal net."""
 
@@ -64,6 +76,7 @@ class XsaTopology:
     converters: list[ConverterInstance] = field(default_factory=list)
     signal_connections: list[SignalConnection] = field(default_factory=list)
     fpga_part: str = ""
+    ip_instances: list[AxiIpInstance] = field(default_factory=list)
 
     def _jesd_name_blob(self) -> str:
         """Return a space-joined string of all JESD instance names in lower case."""
@@ -88,8 +101,30 @@ class XsaTopology:
         jesd_names = self._jesd_name_blob()
         return "ad9680" in jesd_names and "ad9152" in jesd_names
 
+    def is_adrv9040_design(self) -> bool:
+        """Recognize both marketed ADRV9040 and upstream ADRV904x names."""
+        return any(
+            re.search(r"adrv904[0x]", item.name.lower())
+            for item in (
+                *self.ip_instances,
+                *self.converters,
+                *self.jesd204_rx,
+                *self.jesd204_tx,
+            )
+        ) or any(c.ip_type in {"axi_adrv9040", "axi_adrv904x"} for c in self.converters)
+
+    def has_adrv9040_observation(self) -> bool:
+        """Return whether any ADRV9040 observation-path block is present."""
+        return any(
+            re.search(r"adrv904[0x]", item.name.lower())
+            and re.search(r"(?:^|_)(?:rx_os|orx|obs)(?:_|$)", item.name.lower())
+            for item in (*self.ip_instances, *self.converters, *self.jesd204_rx)
+        )
+
     def inferred_converter_family(self) -> str:
         """Infer a short converter-family string (e.g. ``"ad9081"``, ``"adrv9009"``) from the topology."""
+        if self.is_adrv9040_design():
+            return "adrv9040"
         if self.is_fmcdaq2_design():
             return "fmcdaq2"
         if self.is_fmcdaq3_design():
@@ -167,6 +202,8 @@ _ADI_CONVERTER_TYPES = {
     "axi_adrv9001",
     "axi_adrv9002",
     "axi_adrv9003",
+    "axi_adrv9040",
+    "axi_adrv904x",
     "axi_adrv9009",
     "axi_adrv9025",
     "axi_adrv9026",
@@ -306,6 +343,16 @@ class XsaParser:
         topology.signal_connections = self._parse_signal_connections(root)
         global_base_addrs = self._parse_global_base_addrs(root)
 
+        resolved_irqs = self._resolve_zynqmp_irqs(root)
+        high_addrs = {}
+        for memrange in root.findall(".//MEMRANGE"):
+            owner = memrange.get("INSTANCE")
+            try:
+                range_base = int(memrange.get("BASEVALUE", ""), 16)
+            except ValueError:
+                continue
+            if memrange.get("HIGHVALUE") and range_base == global_base_addrs.get(owner):
+                high_addrs[owner] = memrange.get("HIGHVALUE")
         found_adi = False
         ad9081_tpl_adc_base: Optional[int] = None
         ad9081_tpl_dac_seen = False
@@ -315,6 +362,38 @@ class XsaParser:
             mod_type = mod.get("MODTYPE", "").lower()
             instance = mod.get("INSTANCE", mod_type)
             base_addr = self._parse_base_addr(mod, instance, global_base_addrs)
+
+            if base_addr:
+                local_range = next(
+                    (
+                        r
+                        for r in mod.findall(".//MEMRANGE")
+                        if r.get("INSTANCE", instance) == instance
+                        and int(r.get("BASEVALUE", "0"), 16) == base_addr
+                    ),
+                    None,
+                )
+                high = local_range.get("HIGHVALUE") if local_range is not None else None
+                if high is None:
+                    high = high_addrs.get(instance)
+                if high is None:
+                    high = self._get_param(mod, "C_HIGHADDR", "") or None
+                size = int(high, 16) - base_addr + 1 if high else 0
+                topology.ip_instances.append(
+                    AxiIpInstance(
+                        name=instance,
+                        ip_type=mod_type,
+                        base_addr=base_addr,
+                        size=size,
+                        irq=resolved_irqs.get(
+                            instance, self._parse_irq(mod, include_signal_suffix=False)
+                        ),
+                        parameters={
+                            p.get("NAME", ""): p.get("VALUE", "")
+                            for p in mod.findall(".//PARAMETER")
+                        },
+                    )
+                )
 
             if mod_type in _ADI_JESD_RX_TYPES:
                 found_adi = True
@@ -356,6 +435,10 @@ class XsaParser:
                     self._parse_converter(mod, instance, mod_type, base_addr)
                 )
 
+        for jesd in (*topology.jesd204_rx, *topology.jesd204_tx):
+            if jesd.name in resolved_irqs:
+                jesd.irq = resolved_irqs[jesd.name]
+
         if (
             not topology.converters
             and ad9081_tpl_adc_base is not None
@@ -392,6 +475,56 @@ class XsaParser:
             )
 
         return topology
+
+    def _resolve_zynqmp_irqs(self, root: ET.Element) -> dict[str, int]:
+        """Trace PS PL interrupt inputs through xlconcat to Linux SPI numbers.
+
+        ZynqMP PL banks start at SPI 89 and 104. Signal-name suffixes are
+        net identifiers and are not interrupt numbers.
+        """
+        sources: dict[str, tuple[ET.Element, str]] = {}
+        sinks: list[tuple[str, int]] = []
+        for mod in root.findall(".//MODULE"):
+            for port in mod.findall("./PORTS/PORT"):
+                signal = port.get("SIGNAME", "")
+                name = port.get("NAME", "").lower()
+                if signal and port.get("DIR") == "O":
+                    sources[signal] = (mod, name)
+                if mod.get("MODTYPE", "").lower() == "zynq_ultra_ps_e" and name in {
+                    "pl_ps_irq0",
+                    "pl_ps_irq1",
+                }:
+                    sinks.append((signal, 89 if name.endswith("0") else 104))
+        result: dict[str, int] = {}
+
+        def visit(signal: str, irq: int, seen: set[str]) -> None:
+            if signal in seen or signal not in sources:
+                return
+            seen = seen | {signal}
+            mod, port = sources[signal]
+            if mod.get("MODTYPE", "").lower() == "xlconcat":
+                ports = sorted(
+                    (
+                        p
+                        for p in mod.findall("./PORTS/PORT")
+                        if re.fullmatch(r"In\d+", p.get("NAME", ""), re.I)
+                    ),
+                    key=lambda p: int(p.get("NAME", "")[2:]),
+                )
+                offset = 0
+                for inp in ports:
+                    visit(inp.get("SIGNAME", ""), irq + offset, seen)
+                    offset += int(
+                        self._get_param(
+                            mod, inp.get("NAME", "").upper() + "_WIDTH", "1"
+                        )
+                    )
+            elif port in {"irq", "interrupt"}:
+                result[mod.get("INSTANCE", "")] = irq
+
+        for signal, irq in sinks:
+            visit(signal, irq, set())
+        return result
 
     def _parse_signal_connections(self, root: ET.Element) -> list[SignalConnection]:
         """Extract module-level connectivity using HWH SIGNAME + port directions."""
@@ -512,7 +645,14 @@ class XsaParser:
     def _parse_base_addr(
         self, mod: ET.Element, instance: str, global_base_addrs: dict[str, int]
     ) -> int:
-        mr = mod.find(".//MEMRANGE")
+        mr = next(
+            (
+                r
+                for r in mod.findall(".//MEMRANGE")
+                if r.get("INSTANCE", instance) == instance
+            ),
+            None,
+        )
         module_addr = 0
         if mr is not None:
             raw = mr.get("BASEVALUE", "0x0")
@@ -602,9 +742,11 @@ class XsaParser:
                 return port.get("SIGNAME", "")
         return ""
 
-    def _parse_irq(self, mod: ET.Element) -> Optional[int]:
+    def _parse_irq(
+        self, mod: ET.Element, *, include_signal_suffix: bool = True
+    ) -> Optional[int]:
         """Extract the IRQ number from a MODULE element's interrupt port or parameter, or None."""
-        for port in mod.findall(".//PORT"):
+        for port in mod.findall(".//PORT") if include_signal_suffix else []:
             if port.get("NAME") in ("interrupt", "irq"):
                 m = re.search(r"(\d+)$", port.get("SIGNAME", ""))
                 if m:

@@ -25,6 +25,7 @@ from .board_configs import (
     AD9084BoardConfig,
     AD9172BoardConfig,
     ADRV9009BoardConfig,
+    ADRV9040BoardConfig,
     ClockConfig,
     FMCDAQ2BoardConfig,
     FMCDAQ3BoardConfig,
@@ -39,6 +40,7 @@ _BOARD_KEY_MAP: dict[str, tuple[str, type]] = {
     "ad9172_board": ("ad9172_board", AD9172BoardConfig),
     "ad9084_board": ("ad9084_board", AD9084BoardConfig),
     "ad9081_board": ("ad9081_board", AD9081BoardConfig),
+    "adrv9040_board": ("adrv9040_board", ADRV9040BoardConfig),
     "adrv9009_board": ("adrv9009_board", ADRV9009BoardConfig),
 }
 
@@ -55,7 +57,7 @@ class PipelineConfig:
     from key presence.
     """
 
-    jesd: JesdConfig = field(default_factory=JesdConfig)
+    jesd: JesdConfig | None = None
     clock: ClockConfig = field(default_factory=ClockConfig)
     fmcdaq2_board: Optional[FMCDAQ2BoardConfig] = None
     fmcdaq3_board: Optional[FMCDAQ3BoardConfig] = None
@@ -63,11 +65,19 @@ class PipelineConfig:
     ad9084_board: Optional[AD9084BoardConfig] = None
     ad9081_board: Optional[AD9081BoardConfig] = None
     adrv9009_board: Optional[ADRV9009BoardConfig] = None
+    adrv9040_board: Optional[ADRV9040BoardConfig] = None
     # Pass-through for fpga_adc / fpga_dac solver output (used by FMCDAQ2/3)
     fpga_adc: dict[str, Any] = field(default_factory=dict)
     fpga_dac: dict[str, Any] = field(default_factory=dict)
     # Extra keys are preserved for forward compatibility
     _extra: dict[str, Any] = field(default_factory=dict, repr=False)
+
+    def __post_init__(self) -> None:
+        """Select board-specific framing when no JESD configuration was supplied."""
+        if self.jesd is None:
+            self.jesd = JesdConfig()
+            if self.adrv9040_board is not None:
+                self.jesd.rx.F = self.jesd.tx.F = 4
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "PipelineConfig":
@@ -76,7 +86,14 @@ class PipelineConfig:
         This is the backward-compatibility bridge for JSON profiles,
         MCP server requests, and existing test dicts.
         """
-        jesd = JesdConfig.from_dict(d.get("jesd", {}))
+        jesd_data = d.get("jesd")
+        if jesd_data is not None and "adrv9040_board" in d:
+            jesd_data = {
+                **jesd_data,
+                "rx": {"F": 4, **jesd_data.get("rx", {})},
+                "tx": {"F": 4, **jesd_data.get("tx", {})},
+            }
+        jesd = JesdConfig.from_dict(jesd_data) if jesd_data is not None else None
         clock = ClockConfig.from_dict(d.get("clock", {}))
 
         kwargs: dict[str, Any] = {
@@ -107,10 +124,14 @@ class PipelineConfig:
         import dataclasses
 
         result: dict[str, Any] = {}
+        if self.jesd is None:
+            raise ValueError("JESD configuration has not been initialized")
         result["jesd"] = {
             "rx": dataclasses.asdict(self.jesd.rx),
             "tx": dataclasses.asdict(self.jesd.tx),
         }
+        if self.jesd.rx_os is not None:
+            result["jesd"]["rx_os"] = dataclasses.asdict(self.jesd.rx_os)
         result["clock"] = dataclasses.asdict(self.clock)
         if self.fpga_adc:
             result["fpga_adc"] = self.fpga_adc

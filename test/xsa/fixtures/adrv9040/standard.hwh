@@ -1,0 +1,115 @@
+<SYSTEM>
+  <SYSTEMINFO DEVICE="xczu9eg" PACKAGE="ffvb1156" SPEEDGRADE="-2" />
+  <MODULES>
+    <MODULE INSTANCE="axi_adrv904x_rx_jesd_rx_axi" MODTYPE="axi_jesd204_rx">
+      <PARAMETERS>
+        <PARAMETER NAME="NUM_LANES" VALUE="4" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_rx_jesd_rx_axi" BASEVALUE="0x84aa0000" HIGHVALUE="0x84aa3fff" />
+      <PORTS>
+        <PORT NAME="device_clk" DIR="I" SIGNAME="rx_device_clk" SIGIS="clk" />
+        <PORT NAME="irq" DIR="O" SIGNAME="irq_107_net" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_rx_clkgen" MODTYPE="axi_clkgen">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="axi_adrv904x_rx_clkgen" BASEVALUE="0x83c10000" HIGHVALUE="0x83c1ffff" />
+      <PORTS>
+        <PORT NAME="clk_0" DIR="O" SIGNAME="rx_device_clk" SIGIS="clk" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_rx_xcvr" MODTYPE="axi_adxcvr">
+      <PARAMETERS>
+        <PARAMETER NAME="SYS_CLK_SEL" VALUE="3" />
+        <PARAMETER NAME="OUT_CLK_SEL" VALUE="3" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_rx_xcvr" BASEVALUE="0x84a60000" HIGHVALUE="0x84a6ffff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="rx_adrv904x_tpl_core_adc_tpl_core" MODTYPE="ad_ip_jesd204_tpl_adc">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="rx_adrv904x_tpl_core_adc_tpl_core" BASEVALUE="0x84a00000" HIGHVALUE="0x84a05fff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_rx_dma" MODTYPE="axi_dmac">
+      <PARAMETERS>
+        <PARAMETER NAME="CACHE_COHERENT" VALUE="1" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_rx_dma" BASEVALUE="0x9c400000" HIGHVALUE="0x9c400fff" />
+      <PORTS>
+        <PORT NAME="irq" DIR="O" SIGNAME="irq_110_net" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_tx_jesd_tx_axi" MODTYPE="axi_jesd204_tx">
+      <PARAMETERS>
+        <PARAMETER NAME="NUM_LANES" VALUE="4" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_tx_jesd_tx_axi" BASEVALUE="0x84a90000" HIGHVALUE="0x84a93fff" />
+      <PORTS>
+        <PORT NAME="device_clk" DIR="I" SIGNAME="tx_device_clk" SIGIS="clk" />
+        <PORT NAME="irq" DIR="O" SIGNAME="irq_106_net" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_tx_clkgen" MODTYPE="axi_clkgen">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="axi_adrv904x_tx_clkgen" BASEVALUE="0x83c00000" HIGHVALUE="0x83c0ffff" />
+      <PORTS>
+        <PORT NAME="clk_0" DIR="O" SIGNAME="tx_device_clk" SIGIS="clk" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_tx_xcvr" MODTYPE="axi_adxcvr">
+      <PARAMETERS>
+        <PARAMETER NAME="SYS_CLK_SEL" VALUE="3" />
+        <PARAMETER NAME="OUT_CLK_SEL" VALUE="3" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_tx_xcvr" BASEVALUE="0x84a80000" HIGHVALUE="0x84a80fff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="tx_adrv904x_tpl_core_dac_tpl_core" MODTYPE="ad_ip_jesd204_tpl_dac">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="tx_adrv904x_tpl_core_dac_tpl_core" BASEVALUE="0x84a04000" HIGHVALUE="0x84a05fff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_tx_dma" MODTYPE="axi_dmac">
+      <PARAMETERS>
+        <PARAMETER NAME="CACHE_COHERENT" VALUE="1" />
+      </PARAMETERS>
+      <MEMRANGE INSTANCE="axi_adrv904x_tx_dma" BASEVALUE="0x9c420000" HIGHVALUE="0x9c420fff" />
+      <PORTS>
+        <PORT NAME="irq" DIR="O" SIGNAME="irq_109_net" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_tx_offload" MODTYPE="axi_data_offload">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="axi_adrv904x_tx_offload" BASEVALUE="0x9c440000" HIGHVALUE="0x9c44ffff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="axi_adrv904x_rx_offload" MODTYPE="axi_data_offload">
+      <PARAMETERS />
+      <MEMRANGE INSTANCE="axi_adrv904x_rx_offload" BASEVALUE="0x9c450000" HIGHVALUE="0x9c45ffff" />
+      <PORTS />
+    </MODULE>
+    <MODULE INSTANCE="zynq_ultra_ps_e_0" MODTYPE="zynq_ultra_ps_e">
+      <PARAMETERS />
+      <PORTS>
+        <PORT NAME="pl_ps_irq1" DIR="I" SIGNAME="pl_irq1" SIGIS="" />
+      </PORTS>
+    </MODULE>
+    <MODULE INSTANCE="sys_concat_intc_1" MODTYPE="xlconcat">
+      <PARAMETERS>
+        <PARAMETER NAME="NUM_PORTS" VALUE="8" />
+      </PARAMETERS>
+      <PORTS>
+        <PORT NAME="dout" DIR="O" SIGNAME="pl_irq1" SIGIS="" />
+        <PORT NAME="In0" DIR="I" SIGNAME="irq_104_net" SIGIS="" />
+        <PORT NAME="In1" DIR="I" SIGNAME="irq_105_net" SIGIS="" />
+        <PORT NAME="In2" DIR="I" SIGNAME="irq_106_net" SIGIS="" />
+        <PORT NAME="In3" DIR="I" SIGNAME="irq_107_net" SIGIS="" />
+        <PORT NAME="In4" DIR="I" SIGNAME="irq_108_net" SIGIS="" />
+        <PORT NAME="In5" DIR="I" SIGNAME="irq_109_net" SIGIS="" />
+        <PORT NAME="In6" DIR="I" SIGNAME="irq_110_net" SIGIS="" />
+        <PORT NAME="In7" DIR="I" SIGNAME="irq_111_net" SIGIS="" />
+      </PORTS>
+    </MODULE>
+  </MODULES>
+</SYSTEM>

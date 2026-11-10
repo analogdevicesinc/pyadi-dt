@@ -11,6 +11,7 @@ from .builders.ad9172 import AD9172Builder
 from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
 from .builders.adrv9003 import ADRV9003Builder
+from .builders.adrv9040 import ADRV9040Builder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
 from ..config.pipeline_config import PipelineConfig
@@ -21,6 +22,7 @@ class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
     _DEFAULT_BUILDERS: list[BoardBuilder] = [
+        ADRV9040Builder(),
         ADRV9003Builder(),
         ADRV9009Builder(),
         ADRV937xBuilder(),
@@ -89,6 +91,8 @@ class NodeBuilder:
             if not skip_generic_jesd:
                 return False
             lower = name.lower()
+            if any(isinstance(b, ADRV9040Builder) for b in matched_builders) and any(k in lower for k in ("adrv9040", "adrv904x")):
+                return True
             # ADRV9009 builder skips its own named instances
             if self._is_adrv90xx_name(name):
                 return True
@@ -128,6 +132,8 @@ class NodeBuilder:
                 used_clkgen_names.add(clkgen.name)
 
         for clkgen in topology.clkgens:
+            if _skip_instance(clkgen.name):
+                continue
             if clkgen.name not in used_clkgen_names:
                 continue
             if self._is_adrv90xx_name(clkgen.name) and any(
