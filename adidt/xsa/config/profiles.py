@@ -378,6 +378,14 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
             _ADRV9009_BOARD_STR_KEYS,
         )
 
+    if "adrv9040_board" in defaults:
+        from .board_configs import ADRV9040BoardConfig
+
+        try:
+            ADRV9040BoardConfig.from_dict(defaults["adrv9040_board"])
+        except (TypeError, ValueError) as exc:
+            raise ProfileError(f"invalid profile defaults.adrv9040_board: {exc}") from exc
+
     adrv9003_board = defaults.get("adrv9003_board")
     if adrv9003_board is not None:
         if not isinstance(adrv9003_board, dict):

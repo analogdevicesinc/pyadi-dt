@@ -56,13 +56,15 @@ class JesdConfig:
 
     rx: JesdLinkParams = field(default_factory=JesdLinkParams)
     tx: JesdLinkParams = field(default_factory=JesdLinkParams)
+    rx_os: Optional[JesdLinkParams] = None
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "JesdConfig":
         """Construct from a ``{"rx": {...}, "tx": {...}}`` dict."""
         rx = JesdLinkParams.from_dict(d.get("rx", {}))
         tx = JesdLinkParams.from_dict(d.get("tx", {}))
-        return cls(rx=rx, tx=tx)
+        rx_os = JesdLinkParams.from_dict(d["rx_os"]) if d.get("rx_os") is not None else None
+        return cls(rx=rx, tx=tx, rx_os=rx_os)
 
 
 @dataclass
@@ -456,3 +458,97 @@ class ADRV9009BoardConfig:
     def from_dict(cls, d: dict[str, Any]) -> "ADRV9009BoardConfig":
         """Construct from a board config dict, ignoring unknown keys."""
         return _board_from_dict(cls, d)
+
+
+@dataclass
+class ADRV9040BoardConfig:
+    """ZCU102 ADRV9040 wiring and external firmware configuration.
+
+    ``observation=None`` selects the layout from the XSA. Explicit booleans
+    require the matching standard or NLS topology.
+    """
+
+    spi_bus: str = "spi0"
+    clock_cs: int = 1
+    trx_cs: int = 0
+    spi_max_frequency: int = 25_000_000
+    reset_gpio: int | None = 134
+    interrupt_gpio: int | None = 134
+    sysref_req_gpio: int | None = None
+    clock_reset_gpio: int | None = 147
+    observation: bool | None = None
+    ignore_jesd_errors: bool = False
+    device_config_name: str | None = None
+    arm_firmware_name: str = "ADRV9040_FW.bin"
+    arm_dfe_firmware_name: str = "ADRV9040_DFE_CALS_FW.bin"
+    stream_firmware_name: str = "stream_image.bin"
+    rx_gaintable_names: list[str] = field(
+        default_factory=lambda: ["ADRV9040_RxGainTable.csv"]
+    )
+    rx_gaintable_channel_masks: list[int] = field(default_factory=lambda: [255])
+    tx_attntable_names: list[str] | None = None
+    tx_attntable_channel_masks: list[int] | None = None
+    ad9528_vcxo_hz: int = 122_880_000
+    ad9528_channels: list[dict[str, Any]] | None = None
+
+    def __post_init__(self) -> None:
+        for key in (
+            "spi_bus",
+            "arm_firmware_name",
+            "arm_dfe_firmware_name",
+            "stream_firmware_name",
+        ):
+            _validate_non_empty_str(getattr(self, key), key)
+        if self.device_config_name is not None:
+            _validate_non_empty_str(self.device_config_name, "device_config_name")
+        for key in (
+            "clock_cs",
+            "trx_cs",
+            "spi_max_frequency",
+            "ad9528_vcxo_hz",
+            "reset_gpio",
+            "interrupt_gpio",
+            "clock_reset_gpio",
+            "sysref_req_gpio",
+        ):
+            value = getattr(self, key)
+            if value is not None:
+                _validate_non_negative_int(value, key)
+        if self.clock_cs == self.trx_cs:
+            raise ValueError("clock_cs and trx_cs must differ")
+        if self.spi_max_frequency == 0 or self.ad9528_vcxo_hz == 0:
+            raise ValueError("clock and SPI frequencies must be positive")
+        if self.observation is not None and not isinstance(self.observation, bool):
+            raise ValueError("observation must be a boolean or None")
+        if not isinstance(self.ignore_jesd_errors, bool):
+            raise ValueError("ignore_jesd_errors must be a boolean")
+        for names, masks in (
+            (self.rx_gaintable_names, self.rx_gaintable_channel_masks),
+            (self.tx_attntable_names, self.tx_attntable_channel_masks),
+        ):
+            if names is None and masks is None:
+                continue
+            if (
+                not isinstance(names, list)
+                or not isinstance(masks, list)
+                or not names
+                or len(names) != len(masks)
+            ):
+                raise ValueError(
+                    "gain/attenuation table names and channel masks must be matching nonempty lists"
+                )
+            for name in names:
+                _validate_non_empty_str(name, "table filename")
+            for mask in masks:
+                _validate_non_negative_int(mask, "channel mask")
+                if mask > 255:
+                    raise ValueError("channel mask must fit eight channels")
+        if self.ad9528_channels is not None and not isinstance(
+            self.ad9528_channels, list
+        ):
+            raise ValueError("ad9528_channels must be a list")
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "ADRV9040BoardConfig":
+        """Construct and validate ADRV9040 options, rejecting unknown keys."""
+        return _board_from_dict(cls, d, strict=True)

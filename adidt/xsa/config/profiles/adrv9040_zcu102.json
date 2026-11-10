@@ -1,0 +1,11 @@
+{
+  "name": "adrv9040_zcu102",
+  "defaults": {
+    "adrv9040_board": {"observation": false}
+  },
+  "reference": {
+    "repo": "https://github.com/analogdevicesinc/linux",
+    "ref": "22534a028813fc8e9f283b0b52dce09b05df6387",
+    "path": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv904x.dts"
+  }
+}
