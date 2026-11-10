@@ -95,9 +95,10 @@ jobs:
           if-no-files-found: error
 
   macos-package:
-    name: macOS 14 installer package
+    name: macOS 15 installer package
     needs: identify_version
-    runs-on: macos-14
+    # GitHub retired all macOS 14 runners on November 2, 2026.
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -108,18 +109,18 @@ jobs:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
           architecture=$(uname -m)
-          output="dist/system/python3-pyadi-dt-${VERSION}-1-macos14-${architecture}.pkg"
-          .github/scripts/create_system_package.sh osxpkg "$VERSION" "$architecture" macos14 "$output"
+          output="dist/system/python3-pyadi-dt-${VERSION}-1-macos15-${architecture}.pkg"
+          .github/scripts/create_system_package.sh osxpkg "$VERSION" "$architecture" macos15 "$output"
       - name: Install and verify package
         env:
           VERSION: ${{ needs.identify_version.outputs.app-version }}
         run: |
           architecture=$(uname -m)
-          package="dist/system/python3-pyadi-dt-${VERSION}-1-macos14-${architecture}.pkg"
+          package="dist/system/python3-pyadi-dt-${VERSION}-1-macos15-${architecture}.pkg"
           .github/scripts/verify_system_package.sh osxpkg "$package"
       - uses: actions/upload-artifact@v7
         with:
-          name: pyadi-dt-system-macos14
+          name: pyadi-dt-system-macos15
           path: dist/system/*.pkg
           if-no-files-found: error
 

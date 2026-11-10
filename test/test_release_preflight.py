@@ -174,7 +174,7 @@ def test_native_system_package_ci_contract():
 
     assert "debian:12" in workflow
     assert "fedora:42" in workflow
-    assert "runs-on: macos-14" in workflow
+    assert "runs-on: macos-15" in workflow
     assert 'package_type: "deb"' in workflow
     assert 'package_type: "rpm"' in workflow
     assert "create_system_package.sh osxpkg" in workflow
