@@ -76,13 +76,13 @@ this environment; no PyPI API token is required.
    Generated-DTB evidence requires a boot strategy that actually deploys the
    staged DTB, rather than booting the existing SD tree.
 
-## Hardware credential and security gates
+## Hardware and security gates
 
-The latest reviewed hardware run on `92e6fc8` failed fetching private
-`pyadi-build` before any board tests ran. The repository owner must repair the
-hardware workflow credentials, then rerun the hardware matrix for the exact
-release candidate. Do not treat earlier candidate results as current hardware
-qualification. Release hardening does not change secrets or perform board actions.
+Hardware CI prepares kernels from the pinned public DataX ``adi-linux`` target
+before acquiring boards. Rerun the matrix for the exact release candidate and
+inspect per-board JUnit counts, boot logs, and individual skips. Record
+unavailable boards separately. The migration removes the private dependency
+credential requirement.
 
 CodeQL is defined in `.github/workflows/codeql.yml` for Python and GitHub Actions.
 Advanced setup requires GitHub's managed default setup to be disabled; keep this

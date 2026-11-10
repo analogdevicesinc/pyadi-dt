@@ -9,6 +9,7 @@
 pytest
 pytest-asyncio
 pytest-dotenv
+PyYAML
 pyadi-iio
 pyadi-jif[cplex,draw]
 hashable_list
@@ -23,9 +24,6 @@ requests
 # [project.optional-dependencies].dev plus the public hardware-test plugin.
 usbsdmux
 -r requirements/labgrid.txt
-
-# Private pyadi-build is installed only by hardware CI through
-# requirements/requirements_hw.txt, never by the published dev extra.
 
 # The AD9371 profile model needs a reviewed pyadi-jif revision until it ships in
 # a release; CI and the hardware venv install it on top of the above:

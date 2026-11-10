@@ -210,22 +210,16 @@ Copy ``.env.example`` to ``.env`` for the supported variables.  The skip
 guard in each hw test module requires one of ``LG_COORDINATOR`` or
 ``LG_ENV`` to be set.
 
-Kernel image caching
-~~~~~~~~~~~~~~~~~~~~
+Prepared kernel images
+~~~~~~~~~~~~~~~~~~~~~~
 
-``test/hw/conftest.py`` provides session-scoped ``built_kernel_image_*``
-fixtures backed by a file-based cache keyed on the sha256 of the
-``pyadi-build`` YAML config.  First run per config builds through
-``pyadi-build`` and copies the produced kernel image into
-``~/.cache/adidt/kernel/<platform>/<hash>/<image>``; subsequent runs
-skip ``prepare_source`` + ``build`` entirely.  Zynq-7000 ``zImage`` is
-wrapped as a ``uImage`` via ``mkimage`` so ``BootFPGASoCTFTP``'s
-``tftpboot uImage`` can find the file.
+The session-scoped ``built_kernel_image_*`` fixtures consume checksum-verified
+``artifacts.json`` files produced by the pinned DataX ``adi-linux`` target.
+Set ``ADIDT_KERNEL_ARTIFACTS_ZYNQ`` or ``ADIDT_KERNEL_ARTIFACTS_ZYNQMP`` before
+pytest. CI prepares kernels before acquiring a board.
 
-Control via env vars:
-
-- ``ADIDT_KERNEL_CACHE=0`` — force a rebuild.
-- ``ADIDT_KERNEL_CACHE_DIR=<path>`` — relocate the cache (default
-  ``~/.cache/adidt/kernel``).
-
-Measured: first ZC706 run ≈ 600 s; cached re-run ≈ 70 s.
+Explicit ``ADIDT_KERNEL_IMAGE_ZYNQ`` and ``ADIDT_KERNEL_IMAGE_ZYNQMP`` image
+paths take precedence. Set ``ADI_XSA_BUILD_KERNEL=0`` to use the board's existing
+kernel. Runtime overlays require a separately qualified modular image and
+matching modules. See :doc:`../developer/hardware_ci` for preparation and
+release selection.

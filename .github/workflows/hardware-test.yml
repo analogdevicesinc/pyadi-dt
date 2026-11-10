@@ -8,7 +8,7 @@ name: Hardware Tests
 #
 # Dynamic mode: the matrix is discovered from the coordinator at preflight
 # and gated by .github/supported-boards.yml; one leg per matching place. The
-# reusable workflow lives in tfcollins/labgrid-plugins (hw-matrix.yml).
+# reusable workflow is vendored locally for pre-acquisition kernel preparation.
 
 permissions:
   contents: read
@@ -29,14 +29,15 @@ jobs:
     if: >-
       github.event_name != 'pull_request' ||
       contains(github.event.pull_request.labels.*.name, 'hw-test')
-    uses: tfcollins/labgrid-plugins/.github/workflows/hw-matrix.yml@main
+    uses: ./.github/workflows/hw-matrix.yml
     with:
       dynamic_mode: true
+      timeout_minutes: 120
       # Runner routing is owned entirely by the coordinator: each place's
       # `runner` tag selects its self-hosted runner. No in-repo runner names.
       supported_boards_path: .github/supported-boards.yml
       venv_install_cmd: 'bash .github/scripts/install-adidt-venv.sh'
-      venv_dir: $HOME/.cache/adidt-ci/adidt-venv
+      venv_dir: $HOME/.cache/adidt-ci/datax-py312-venv
       # Dynamic mode exports $BOARD + $CARRIER (no manifest test list). Select
       # this place's full-DTB and runtime-overlay tests by filename convention
       # (e.g. daq3 matches fmcdaq3_vcu118), excluding slow PetaLinux builds.
@@ -71,14 +72,6 @@ jobs:
         --auto-create-project
         --tag "board=$PRISM_BOARD" --tag "carrier=$PRISM_CARRIER"
         --tag "place=$PRISM_PLACE" --tag "sha=$GITHUB_SHA"
-    # Pass Prism creds explicitly: secrets: inherit does not cross orgs
-    # (this repo is analogdevicesinc; the reusable workflow is tfcollins).
     secrets:
       PRISM_EMAIL: ${{ secrets.PRISM_EMAIL }}
       PRISM_PASSWORD: ${{ secrets.PRISM_PASSWORD }}
-      # Injected as a github.com `insteadOf` credential during venv install so
-      # the credential-less hosts (nuc, lbvm) can clone the private pyadi-build /
-      # labgrid-plugins deps. MUST be a valid PAT — an expired/invalid token's
-      # insteadOf clobbers the working git creds on hosts that have their own
-      # (mini2/bq/nemo), reddening every leg.
-      PYADI_BUILD_TOKEN: ${{ secrets.PYADI_BUILD_TOKEN }}

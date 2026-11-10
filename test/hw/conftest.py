@@ -35,6 +35,38 @@ def _hw_mode() -> str | None:
     return None
 
 
+def pytest_collection_finish(session):
+    """Validate only selected kernels before any labgrid fixtures acquire a board."""
+    if session.config.option.collectonly or not _hw_mode():
+        return
+    from test.hw.kernel_artifacts import _image_file
+
+    checked = set()
+    for item in session.items:
+        spec = getattr(item.module, "SPEC", None)
+        fixture = getattr(spec, "kernel_fixture_name", None)
+        platform = {
+            "built_kernel_image_zynq": "zynq",
+            "built_kernel_image_zynqmp": "zynqmp",
+        }.get(fixture)
+        if platform is None:
+            continue  # Fabric and PetaLinux flows do not consume these kernels.
+        overlay = item.path.name.endswith("_overlay.py")
+        key = (platform, overlay)
+        if key in checked:
+            continue
+        checked.add(key)
+        variable = f"ADIDT_OVERLAY_KERNEL_IMAGE_{platform.upper()}"
+        override = os.environ.get(variable) if overlay else None
+        try:
+            if override:
+                _image_file(override, variable)
+            else:
+                build_kernel_image(platform)
+        except RuntimeError as exc:
+            raise pytest.UsageError(str(exc)) from exc
+
+
 @pytest.fixture(scope="module")
 def board(strategy, request):
     """Verify tool prerequisites then transition the board to *powered_off*.
@@ -150,10 +182,10 @@ def _teardown_power_off(strategy) -> None:
 
 @pytest.fixture(scope="session")
 def built_kernel_image_zynqmp() -> Path | None:
-    """Build (or fetch from cache) a Linux kernel image for ZynqMP platforms.
+    """Resolve a prepared Linux kernel image for ZynqMP platforms.
 
     Session-scoped so the image is shared across all ZCU102 hw tests in
-    a single pytest run; results are also cached across runs by
+    a single pytest run; artifacts are validated by
     :func:`~test.hw.hw_helpers.build_kernel_image`.
 
     Returns:
@@ -165,10 +197,10 @@ def built_kernel_image_zynqmp() -> Path | None:
 
 @pytest.fixture(scope="session")
 def built_kernel_image_zynq() -> Path | None:
-    """Build (or fetch from cache) a Linux kernel image for Zynq-7000 platforms.
+    """Resolve a prepared Linux kernel image for Zynq-7000 platforms.
 
     Session-scoped so the image is shared across all ZC706 hw tests in
-    a single pytest run; results are also cached across runs by
+    a single pytest run; artifacts are validated by
     :func:`~test.hw.hw_helpers.build_kernel_image`.
 
     Returns:

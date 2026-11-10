@@ -41,6 +41,7 @@ test = [
     "pytest",
     "pytest-asyncio",
     "pytest-dotenv",
+    "PyYAML",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
     "hashable_list",
@@ -59,9 +60,6 @@ mcp = ["fastmcp"]
 Documentation = "https://analogdevicesinc.github.io/pyadi-dt/"
 Issues = "https://github.com/analogdevicesinc/pyadi-dt/issues"
 Repository = "https://github.com/analogdevicesinc/pyadi-dt"
-
-#[tool.uv.sources]
-#pyadi-build = { path = "./pyadi-build", editable = true }
 
 [project.scripts]
 adidtc = "adidt.cli.main:cli"

@@ -25,7 +25,9 @@ The candidate fixes all ten findings from the main-branch review:
   existing clock/MxFE type errors are fixed with generic model types.
 - CodeQL is an explicit Python/Actions workflow, avoiding C/C++ fixture headers.
 
-Local validation on the hardening tree: **1024 passed, 15 skipped**.
+Local validation after the DataX hardware-CI migration: **1108 passed, 15 skipped**.
+The migration adds 84 tests for kernel handoff, preparation, release selection,
+pre-acquisition checks, and job-owned reservation cleanup.
 Ruff and ty 0.0.100 passed; ty reports only the existing renamed-rule warning.
 Bandit passed against the existing baseline, and the runtime dependency audit
 reported no known vulnerabilities. Source/wheel builds, `twine check`, clean
@@ -53,11 +55,13 @@ PyPI upload acceptance.
 
 ## Outstanding release gates
 
-**Hardware credentials require owner action.** [Hardware run 42780867296](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42780867296)
-on `92e6fc8` failed authenticating to private `tfcollins/pyadi-build` during
-venv installation, before tests or board acquisition. Repair the hardware
-workflow credentials and rerun the exact candidate. This PR does not edit
-secrets or change the private repository's access policy.
+Hardware CI now uses public `tfcollins/datax-manifests` at
+`6efed11c826f35f5e3a5da3c10ebd54c309f25fa`, driven by checksum-verified CIM
+v1.2.4. The `adi-linux` target prepares artifacts before board acquisition,
+with consumer-side source pin and image checksum validation. The earlier
+[authentication failure](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42780867296)
+is superseded by this migration. Exact-head hardware results must be reviewed
+before release qualification.
 
 The earlier [C/C++ CodeQL run](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42749801840)
 failed with “No source files found.” The committed advanced workflow replaces

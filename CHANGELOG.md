@@ -65,8 +65,10 @@ content is folded into this entry.
 - Kuiper test container images are pulled from the ADI Cloudsmith registry
   instead of a private Docker Hub repository.
 - Hardware CI resolves `sdtgen`, Vitis, and `usbsdmux` tool paths explicitly,
-  pins the labgrid plugin revision, and falls back to runner git credentials
-  when the injected private-dependency token cannot authenticate.
+  pins the labgrid plugin revision, and prepares checksum-verified DataX
+  `adi-linux` kernel artifacts before acquiring boards. The manifest revision
+  and CIM executable are pinned, and public dependency installation requires
+  no private repository credentials.
 
 ### Fixed
 
