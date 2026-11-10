@@ -28,7 +28,8 @@ The candidate fixes all ten findings from the main-branch review:
 Local validation after the DataX hardware-CI migration: **1108 passed, 15 skipped**.
 The migration adds 84 tests for kernel handoff, preparation, release selection,
 pre-acquisition checks, and job-owned reservation cleanup.
-Ruff and ty 0.0.100 passed; ty reports only the existing renamed-rule warning.
+Ruff and ty 0.0.100 passed. The renamed import rule is updated so hosted
+checking exits successfully.
 Bandit passed against the existing baseline, and the runtime dependency audit
 reported no known vulnerabilities. Source/wheel builds, `twine check`, clean
 wheel `[xsa]` installation, and strict Sphinx `dirhtml` builds passed.

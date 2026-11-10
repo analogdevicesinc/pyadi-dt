@@ -116,7 +116,7 @@ markers = [
 
 [tool.ty.rules]
 # Ignore third-party import errors (missing stubs).
-unresolved-import = "ignore"
+import-not-found = "ignore"
 # `unknown-argument` fires on every pydantic `Field(..., alias=...)`
 # call site because ty's current pydantic support doesn't honor
 # ``model_config = ConfigDict(populate_by_name=True)`` — the calls
