@@ -42,3 +42,34 @@ def test_staging_rejects_stale_upload_contents(tmp_path):
     )
     assert result.returncode != 0
     assert "must be empty" in result.stderr
+
+
+@pytest.mark.parametrize(
+    "requirement",
+    [
+        "requests>=2",
+        'tool @ git+https://example.com/tool.git ; extra == "dev"',
+        "tool @ https://example.com/tool.whl",
+    ],
+)
+def test_wheel_metadata_rejects_direct_references(tmp_path, requirement):
+    import sys
+    import zipfile
+
+    wheel = tmp_path / "package.whl"
+    with zipfile.ZipFile(wheel, "w") as archive:
+        archive.writestr(
+            "package-1.0.dist-info/METADATA",
+            "Metadata-Version: 2.4\nName: package\nVersion: 1.0\nRequires-Dist: "
+            + requirement
+            + "\n",
+        )
+    script = SCRIPT.with_name("verify-release-wheel.py")
+    proc = subprocess.run(
+        [sys.executable, str(script), str(wheel)], capture_output=True, text=True
+    )
+    if " @ " in requirement:
+        assert proc.returncode != 0
+        assert "direct URL" in proc.stderr
+    else:
+        assert proc.returncode == 0, proc.stderr

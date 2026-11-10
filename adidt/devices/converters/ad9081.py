@@ -262,7 +262,7 @@ def _jesd_link_block(
 # --- Top-level AD9081 device ----------------------------------------------
 
 
-class AD9081(MxFEDevice):
+class AD9081(MxFEDevice[AD9081Adc, AD9081Dac]):
     """AD9081 MxFE (quad-ADC / quad-DAC) device."""
 
     FEATURES: ClassVar[MxFEFeatures] = MxFEFeatures(
@@ -270,8 +270,12 @@ class AD9081(MxFEDevice):
         compatible="adi,ad9081",
         default_label="trx0_ad9081",
         gpio_properties=(
-            "reset-gpios", "sysref-req-gpios", "rx2-enable-gpios",
-            "rx1-enable-gpios", "tx2-enable-gpios", "tx1-enable-gpios",
+            "reset-gpios",
+            "sysref-req-gpios",
+            "rx2-enable-gpios",
+            "rx1-enable-gpios",
+            "tx2-enable-gpios",
+            "tx1-enable-gpios",
         ),
     )
     part: ClassVar[str] = "ad9081"

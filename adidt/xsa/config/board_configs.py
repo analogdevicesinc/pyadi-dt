@@ -33,16 +33,31 @@ from typing import Any, Optional
 # ---------------------------------------------------------------------------
 
 
+class _ImplicitFramingDefault(int):
+    """Keep the generic Python default distinct from an explicit assignment."""
+
+
 @dataclass
 class JesdLinkParams:
     """JESD204 framing parameters for one direction (RX or TX)."""
 
-    F: int = 1
+    F: int = _ImplicitFramingDefault(1)
     K: int = 32
     M: int = 2
     L: int = 4
     Np: int = 16
     S: int = 1
+
+    def to_dict(self, *, default_f: int = 1) -> dict[str, int]:
+        """Serialize framing with the implicit F resolved for the target board.
+
+        The nominal generic default remains 1 for Python callers. Assigning
+        any ordinary integer, including 1, makes it an explicit override.
+        """
+        result = dataclasses.asdict(self)
+        if isinstance(self.F, _ImplicitFramingDefault):
+            result["F"] = default_f
+        return result
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "JesdLinkParams":
@@ -63,7 +78,9 @@ class JesdConfig:
         """Construct from a ``{"rx": {...}, "tx": {...}}`` dict."""
         rx = JesdLinkParams.from_dict(d.get("rx", {}))
         tx = JesdLinkParams.from_dict(d.get("tx", {}))
-        rx_os = JesdLinkParams.from_dict(d["rx_os"]) if d.get("rx_os") is not None else None
+        rx_os = (
+            JesdLinkParams.from_dict(d["rx_os"]) if d.get("rx_os") is not None else None
+        )
         return cls(rx=rx, tx=tx, rx_os=rx_os)
 
 
@@ -450,9 +467,7 @@ class ADRV9009BoardConfig:
         _validate_non_negative_int(self.clk_cs, "clk_cs")
         _validate_non_negative_int(self.trx_cs, "trx_cs")
         if self.ad9371_profile_path is not None:
-            _validate_non_empty_str(
-                self.ad9371_profile_path, "ad9371_profile_path"
-            )
+            _validate_non_empty_str(self.ad9371_profile_path, "ad9371_profile_path")
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "ADRV9009BoardConfig":

@@ -29,6 +29,7 @@ jobs:
 
       - name: Run pip-audit
         run: |
+          set -euo pipefail
           pip-audit 2>&1 | tee audit-report.txt
 
       - name: Add summary

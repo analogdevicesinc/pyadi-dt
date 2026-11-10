@@ -125,7 +125,15 @@ def upsert_github_release(
     release_exists = view_proc.returncode == 0
 
     if not release_exists:
-        create_cmd = ["gh", "release", "create", tag, "--verify-tag", "--title", rel_title]
+        create_cmd = [
+            "gh",
+            "release",
+            "create",
+            tag,
+            "--verify-tag",
+            "--title",
+            rel_title,
+        ]
         if notes_file and notes_file.exists():
             create_cmd.extend(["--notes-file", str(notes_file)])
         else:
@@ -135,7 +143,9 @@ def upsert_github_release(
         if create_proc.returncode != 0:
             view_proc2 = runner_func(["gh", "release", "view", tag], check=False)
             if view_proc2.returncode != 0:
-                sys.stderr.write(f"Failed to create release {tag}: {create_proc.stderr}\n")
+                sys.stderr.write(
+                    f"Failed to create release {tag}: {create_proc.stderr}\n"
+                )
                 sys.exit(create_proc.returncode)
 
     if release_exists and notes_file and notes_file.exists():
@@ -151,11 +161,17 @@ def upsert_github_release(
         ]
         edit_proc = runner_func(edit_cmd, check=False)
         if edit_proc.returncode != 0:
-            sys.stderr.write(f"Warning: Failed to edit release notes: {edit_proc.stderr}\n")
+            sys.stderr.write(
+                f"Warning: Failed to edit release notes: {edit_proc.stderr}\n"
+            )
 
     valid_files = [p for p in files_to_upload if p.exists()]
     if valid_files:
-        upload_cmd = ["gh", "release", "upload", tag] + [str(p) for p in valid_files] + ["--clobber"]
+        upload_cmd = (
+            ["gh", "release", "upload", tag]
+            + [str(p) for p in valid_files]
+            + ["--clobber"]
+        )
         runner_func(upload_cmd, check=True)
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -164,13 +180,16 @@ def upsert_github_release(
             ["gh", "release", "download", tag, "-D", str(tmp_path), "--clobber"],
             check=False,
         )
-        if dl_proc.returncode == 0:
-            manifest_file = tmp_path / MANIFEST_NAME
-            generate_manifest(tmp_path, output_file=manifest_file)
-            runner_func(
-                ["gh", "release", "upload", tag, str(manifest_file), "--clobber"],
-                check=True,
+        if dl_proc.returncode != 0:
+            raise RuntimeError(
+                f"Unable to refresh SHA256SUMS for {tag}: {dl_proc.stderr}"
             )
+        manifest_file = tmp_path / MANIFEST_NAME
+        generate_manifest(tmp_path, output_file=manifest_file)
+        runner_func(
+            ["gh", "release", "upload", tag, str(manifest_file), "--clobber"],
+            check=True,
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -185,14 +204,24 @@ def main(argv: list[str] | None = None) -> int:
 
     # verify
     ver_parser = subparsers.add_parser("verify", help="Verify files against manifest")
-    ver_parser.add_argument("--manifest", type=Path, required=True, help="Manifest file path")
-    ver_parser.add_argument("--dir", type=Path, required=True, help="Directory with files")
+    ver_parser.add_argument(
+        "--manifest", type=Path, required=True, help="Manifest file path"
+    )
+    ver_parser.add_argument(
+        "--dir", type=Path, required=True, help="Directory with files"
+    )
 
     # upsert-release
-    upsert_parser = subparsers.add_parser("upsert-release", help="Upsert GitHub release & manifest")
+    upsert_parser = subparsers.add_parser(
+        "upsert-release", help="Upsert GitHub release & manifest"
+    )
     upsert_parser.add_argument("--tag", required=True, help="Release tag (e.g. v0.1.0)")
-    upsert_parser.add_argument("--files", type=Path, nargs="*", default=[], help="Files to upload")
-    upsert_parser.add_argument("--notes-file", type=Path, help="Path to release notes file")
+    upsert_parser.add_argument(
+        "--files", type=Path, nargs="*", default=[], help="Files to upload"
+    )
+    upsert_parser.add_argument(
+        "--notes-file", type=Path, help="Path to release notes file"
+    )
     upsert_parser.add_argument("--title", help="Release title")
 
     args = parser.parse_args(argv)

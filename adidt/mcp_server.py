@@ -147,20 +147,26 @@ def read_dt_property(
     """
     try:
         if filepath:
-            d = _load_dt(dt_source="local_file", local_dt_filepath=filepath)
+            # Parsing a local DTB/DTS is architecture-independent; the loader
+            # requires an explicit architecture for its boot-file operations.
+            d = _load_dt(
+                arch="arm64", dt_source="local_file", local_dt_filepath=filepath
+            )
         else:
             d = _load_dt(dt_source="local_sysfs")
 
-        # Use fdt-based lookup: find node by name in the parsed tree
-        node = None
-        if hasattr(d, "fdt") and d.fdt is not None:
-            for path, nodes, props in d.fdt.walk():
-                if path.endswith("/" + node_name) or path == "/" + node_name:
-                    node = d.fdt.get_node(path)
-                    break
-            # Also try compatible string match
-            if node is None:
-                node = d.get_node_by_compatible(node_name)
+        requested = node_name.lstrip("/")
+        matches = []
+        for path, _, _ in d.tree.walk():
+            if path.lstrip("/") == requested or (
+                "/" not in requested and path.rsplit("/", 1)[-1] == requested
+            ):
+                matches.append(d.tree.get_node(path))
+        if not matches:
+            matches = d.get_node_by_compatible(node_name)
+        if len(matches) > 1:
+            return {"error": f"Ambiguous node: {node_name}; use its full path"}
+        node = matches[0] if matches else None
 
         if node is None:
             return {"error": f"Node not found: {node_name}"}

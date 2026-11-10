@@ -1,0 +1,3 @@
+# Private hardware-runner dependencies; requires credentials for pyadi-build.
+-r labgrid.txt
+pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git

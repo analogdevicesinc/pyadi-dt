@@ -8,6 +8,7 @@ concurrency:
   # workflow so this job and native-system packaging can both reach execution.
   group: ${{ github.ref_type == 'tag' && format('release-{0}', github.ref_name) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: false
+  queue: max
 
 env:
   APP_NAME: pyadi-dt

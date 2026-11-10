@@ -31,11 +31,11 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
 
 
 def test_labgrid_plugins_dependency_is_immutable() -> None:
-    pyproject = (ROOT / "pyproject.toml").read_text()
+    dependency = (ROOT / "requirements" / "labgrid.txt").read_text()
 
     assert (
         "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
-        "labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e" in pyproject
+        "labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e" in dependency
     )
 
 

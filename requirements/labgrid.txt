@@ -1,0 +1,2 @@
+# Public hardware-test plugin, kept out of published wheel metadata.
+labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e

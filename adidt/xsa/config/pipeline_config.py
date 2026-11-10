@@ -76,8 +76,6 @@ class PipelineConfig:
         """Select board-specific framing when no JESD configuration was supplied."""
         if self.jesd is None:
             self.jesd = JesdConfig()
-            if self.adrv9040_board is not None:
-                self.jesd.rx.F = self.jesd.tx.F = 4
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "PipelineConfig":
@@ -87,12 +85,6 @@ class PipelineConfig:
         MCP server requests, and existing test dicts.
         """
         jesd_data = d.get("jesd")
-        if jesd_data is not None and "adrv9040_board" in d:
-            jesd_data = {
-                **jesd_data,
-                "rx": {"F": 4, **jesd_data.get("rx", {})},
-                "tx": {"F": 4, **jesd_data.get("tx", {})},
-            }
         jesd = JesdConfig.from_dict(jesd_data) if jesd_data is not None else None
         clock = ClockConfig.from_dict(d.get("clock", {}))
 
@@ -119,19 +111,25 @@ class PipelineConfig:
 
         return cls(**kwargs)
 
-    def to_dict(self) -> dict[str, Any]:
+    def to_dict(self, *, converter_family: str | None = None) -> dict[str, Any]:
         """Convert back to a raw dict (for serialization or backward compat)."""
         import dataclasses
 
         result: dict[str, Any] = {}
         if self.jesd is None:
             raise ValueError("JESD configuration has not been initialized")
+        default_f = (
+            4
+            if converter_family == "adrv9040"
+            or (converter_family is None and self.adrv9040_board is not None)
+            else 1
+        )
         result["jesd"] = {
-            "rx": dataclasses.asdict(self.jesd.rx),
-            "tx": dataclasses.asdict(self.jesd.tx),
+            "rx": self.jesd.rx.to_dict(default_f=default_f),
+            "tx": self.jesd.tx.to_dict(default_f=default_f),
         }
         if self.jesd.rx_os is not None:
-            result["jesd"]["rx_os"] = dataclasses.asdict(self.jesd.rx_os)
+            result["jesd"]["rx_os"] = self.jesd.rx_os.to_dict(default_f=default_f)
         result["clock"] = dataclasses.asdict(self.clock)
         if self.fpga_adc:
             result["fpga_adc"] = self.fpga_adc

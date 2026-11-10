@@ -97,8 +97,6 @@ class XsaPipeline:
             DtsLintError: When *strict_lint* is ``True`` and the linter finds
                 errors in the generated DTS.
         """
-        if isinstance(cfg, PipelineConfig):
-            cfg = cfg.to_dict()
         if strict_lint:
             lint = True
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -108,12 +106,18 @@ class XsaPipeline:
         base_dts_path = SdtgenRunner().run(xsa_path, base_dir, timeout=sdtgen_timeout)
 
         topology = XsaParser().parse(xsa_path)
+        if isinstance(cfg, PipelineConfig):
+            cfg = cfg.to_dict(converter_family=topology.inferred_converter_family())
         inferred_name = self._derive_name(topology)
         name = profile or inferred_name
         safe_name = re.sub(r"[^\w\-.]", "_", name)  # Same logic as visualizer
         cfg_merged = cfg
         selected_profile = profile or self._auto_profile_name(topology)
-        if profile and (profile.startswith("adrv9040_") or topology.is_adrv9040_design()) and profile != inferred_name:
+        if (
+            profile
+            and (profile.startswith("adrv9040_") or topology.is_adrv9040_design())
+            and profile != inferred_name
+        ):
             raise ValueError("ADRV9040 profile does not match XSA topology")
         if selected_profile:
             profile_data = ProfileManager().load(selected_profile)
@@ -140,7 +144,7 @@ class XsaPipeline:
         }
 
         if output_format == "petalinux":
-            from .petalinux import PetalinuxFormatter
+            from .merge.petalinux import PetalinuxFormatter
 
             formatter = PetalinuxFormatter()
             plat = topology.inferred_platform()
@@ -169,9 +173,7 @@ class XsaPipeline:
             wiring = WiringGraph.from_topology(
                 topology, cfg_merged, merged_dts=merged_content
             )
-            result.update(
-                WiringGraphGenerator().generate(wiring, output_dir, name)
-            )
+            result.update(WiringGraphGenerator().generate(wiring, output_dir, name))
 
         if reference_dts is not None:
             manifest = ReferenceManifestExtractor().extract(reference_dts)
@@ -262,19 +264,23 @@ class XsaPipeline:
         Returns:
             Dict with ``"system_user_dtsi"`` and ``"bbappend"`` keys.
         """
-        from .petalinux import PetalinuxFormatter
+        from .merge.petalinux import PetalinuxFormatter
 
-        if isinstance(cfg, PipelineConfig):
-            cfg = cfg.to_dict()
         output_dir.mkdir(parents=True, exist_ok=True)
 
         topology = XsaParser().parse(xsa_path)
+        if isinstance(cfg, PipelineConfig):
+            cfg = cfg.to_dict(converter_family=topology.inferred_converter_family())
         inferred_name = self._derive_name(topology)
         name = profile or inferred_name
 
         cfg_merged = cfg
         selected_profile = profile or self._auto_profile_name(topology)
-        if profile and (profile.startswith("adrv9040_") or topology.is_adrv9040_design()) and profile != inferred_name:
+        if (
+            profile
+            and (profile.startswith("adrv9040_") or topology.is_adrv9040_design())
+            and profile != inferred_name
+        ):
             raise ValueError("ADRV9040 profile does not match XSA topology")
         if selected_profile:
             profile_data = ProfileManager().load(selected_profile)
@@ -319,7 +325,11 @@ class XsaPipeline:
         """
         conv_type = topology.inferred_converter_family()
         platform = topology.inferred_platform()
-        suffix = "_nls" if conv_type == "adrv9040" and topology.has_adrv9040_observation() else ""
+        suffix = (
+            "_nls"
+            if conv_type == "adrv9040" and topology.has_adrv9040_observation()
+            else ""
+        )
         return f"{conv_type}_{platform}{suffix}"
 
     @staticmethod

@@ -6,6 +6,7 @@ import random
 import string
 import os.path
 import os
+import re
 from adidt.sd import sd
 
 
@@ -168,14 +169,38 @@ class dt(sd):
             self._dtb_data_file = file.read()
             self._dt = fdt.parse_dtb(self._dtb_data_file)
 
+    @property
+    def tree(self):
+        """Return the parsed fdt tree for read-only inspection."""
+        return self._dt
+
     def _import_file(self):
         """Import device tree blob from a local file path."""
         if not os.path.isfile(self.local_dt_filepath):
             raise Exception(f"Local DT not found at {self.local_dt_filepath}")
 
-        with open(self.local_dt_filepath, "rb") as f:
-            self._dtb_data_file = f.read()
-            self._dt = fdt.parse_dtb(self._dtb_data_file)
+        if str(self.local_dt_filepath).lower().endswith((".dts", ".dtsi")):
+            with open(self.local_dt_filepath, encoding="utf-8") as source:
+                # fdt's parser expects one structural statement per line.
+                # Preserve quoted strings/comments while accepting compact DTS.
+                text = re.sub(
+                    r'"(?:\\.|[^"\\])*"|/\*.*?\*/|//[^\n]*|}\s*;|[{};]',
+                    lambda match: (
+                        "};\n"
+                        if match[0].startswith("}") and match[0].endswith(";")
+                        else match[0] + "\n"
+                        if match[0] in ("{", ";")
+                        else match[0]
+                    ),
+                    source.read(),
+                    flags=re.DOTALL,
+                )
+                self._dt = fdt.parse_dts(text)
+            self._dtb_data_file = self._dt.to_dtb(version=17)
+        else:
+            with open(self.local_dt_filepath, "rb") as source:
+                self._dtb_data_file = source.read()
+                self._dt = fdt.parse_dtb(self._dtb_data_file)
 
     def _import_local_sd(self):
         """Import device tree blob from the local system's SD card."""

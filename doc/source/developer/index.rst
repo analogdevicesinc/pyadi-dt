@@ -14,5 +14,6 @@ board builders.
    hardware_validation
    labgrid_exporter
    release_runbook
+   release_hardening_2026-11-10
    runtime_overlay_validation
    release_readiness_2026-09-05

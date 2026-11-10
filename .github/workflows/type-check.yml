@@ -35,6 +35,7 @@ jobs:
 
     - name: Run ty type checker
       run: |
+        set -euo pipefail
         ty check adidt/model/ adidt/xsa/build/builders/ adidt/devices/ adidt/system.py adidt/tools/ 2>&1 | tee ty_report.txt
         echo "## Type Check Report (ty)" >> $GITHUB_STEP_SUMMARY
         echo '```' >> $GITHUB_STEP_SUMMARY

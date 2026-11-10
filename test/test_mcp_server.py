@@ -370,9 +370,9 @@ def test_lint_devicetree_missing_file_returns_error():
 
 
 def _fake_dt_with_node(node_name, props):
-    """Build a mock dt-class instance whose .fdt walker yields one node.
+    """Build a mock dt-class instance whose .tree walker yields one node.
 
-    The MCP wrapper accesses ``d.fdt.walk()`` then ``d.fdt.get_node(path)``.
+    The MCP wrapper accesses ``d.tree.walk()`` then ``d.tree.get_node(path)``.
     The returned node exposes ``.props`` — an iterable of objects with
     ``.name`` and a string representation.
     """
@@ -390,9 +390,9 @@ def _fake_dt_with_node(node_name, props):
     fake_node.props = [_FakeProp(k, v) for k, v in props.items()]
 
     path = "/" + node_name
-    fake_dt.fdt.walk.return_value = [(path, [], list(props.keys()))]
-    fake_dt.fdt.get_node.return_value = fake_node
-    fake_dt.get_node_by_compatible.return_value = fake_node
+    fake_dt.tree.walk.return_value = [(path, [], list(props.keys()))]
+    fake_dt.tree.get_node.return_value = fake_node
+    fake_dt.get_node_by_compatible.return_value = [fake_node]
     return fake_dt
 
 
@@ -436,8 +436,8 @@ def test_read_dt_property_returns_all_properties_when_property_omitted():
 
 def test_read_dt_property_unknown_node_returns_error():
     fake_dt = MagicMock()
-    fake_dt.fdt.walk.return_value = []
-    fake_dt.get_node_by_compatible.return_value = None
+    fake_dt.tree.walk.return_value = []
+    fake_dt.get_node_by_compatible.return_value = []
 
     with patch("adidt.mcp_server._load_dt", return_value=fake_dt):
         tool = asyncio.run(mcp.get_tool("read_dt_property"))
@@ -470,3 +470,38 @@ def test_read_dt_property_invalid_filepath_returns_error():
         data = _tool_data(result)
 
     assert "error" in data
+
+
+@pytest.mark.parametrize("suffix", [".dts", ".dtb", ".compact.dts"])
+@pytest.mark.parametrize(
+    "selector", ["device@0", "/bus/device@0", "test,release-device"]
+)
+def test_read_property_from_real_device_tree(tmp_path, suffix, selector):
+    import fdt
+
+    source = """/dts-v1/;
+/ {
+    bus {
+        device@0 {
+            compatible = "test,release-device";
+            answer = <42>;
+        };
+    };
+};
+"""
+    path = tmp_path / ("tree" + suffix)
+    if suffix == ".dtb":
+        path.write_bytes(fdt.parse_dts(source).to_dtb(version=17))
+    else:
+        path.write_text(
+            " ".join(source.splitlines()) if suffix == ".compact.dts" else source
+        )
+    tool = asyncio.run(mcp.get_tool("read_dt_property"))
+    result = asyncio.run(
+        tool.run(
+            {"node_name": selector, "property_name": "answer", "filepath": str(path)}
+        )
+    )
+    data = _tool_data(result)
+    assert "error" not in data, data
+    assert "42" in data["value"] or "2A" in data["value"].upper(), data

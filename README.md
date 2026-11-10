@@ -173,6 +173,7 @@ version. Start a new agent session after installation.
 
 ```bash
 # Install with dev dependencies
+pip install -r requirements_dev.txt
 pip install -e ".[dev]"
 
 # Or, for tooling that consumes requirements files:

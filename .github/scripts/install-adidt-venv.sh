@@ -18,7 +18,8 @@ if [[ ! -x "$VENV/bin/python" ]]; then
     uv venv --quiet "$VENV"
 fi
 
-uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]"
+uv pip install --quiet --python "$VENV/bin/python" -e ".[dev]" \
+    -r requirements/requirements_hw.txt
 uv pip install --quiet --python "$VENV/bin/python" \
     -r requirements/pyadi-jif-ad9371.txt
 

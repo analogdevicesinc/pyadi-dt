@@ -120,7 +120,10 @@ def test_upsert_release_creates_new(tmp_path):
         proc.stderr = ""
         # Simulate initial view failing (release does not exist yet)
         if cmd[:3] == ["gh", "release", "view"]:
-            if len([c for c in executed_cmds if c[:3] == ["gh", "release", "view"]]) == 1:
+            if (
+                len([c for c in executed_cmds if c[:3] == ["gh", "release", "view"]])
+                == 1
+            ):
                 proc.returncode = 1
         return proc
 
@@ -169,3 +172,21 @@ def test_cli_subcommands(tmp_path):
     # test verify
     ret = main(["verify", "--manifest", str(out_manifest), "--dir", str(tmp_path)])
     assert ret == 0
+
+
+def test_upsert_fails_if_asset_download_cannot_refresh_manifest():
+    commands = []
+
+    def runner(command, check=True):
+        commands.append(command)
+        failed = command[:3] == ["gh", "release", "download"]
+        return subprocess.CompletedProcess(
+            command,
+            1 if failed else 0,
+            stdout="",
+            stderr="download unavailable" if failed else "",
+        )
+
+    with pytest.raises(RuntimeError, match="download unavailable"):
+        upsert_github_release("v0.1.0", [], runner_func=runner)
+    assert not any(cmd[:3] == ["gh", "release", "upload"] for cmd in commands)

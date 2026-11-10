@@ -15,7 +15,12 @@ from .builders.adrv9040 import ADRV9040Builder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
 from ..config.pipeline_config import PipelineConfig
-from ..parse.topology import XsaTopology, Jesd204Instance, ClkgenInstance, ConverterInstance
+from ..parse.topology import (
+    XsaTopology,
+    Jesd204Instance,
+    ClkgenInstance,
+    ConverterInstance,
+)
 
 
 class NodeBuilder:
@@ -64,7 +69,7 @@ class NodeBuilder:
             Dict with keys "jesd204_rx", "jesd204_tx", "converters".
         """
         if isinstance(cfg, PipelineConfig):
-            cfg = cfg.to_dict()
+            cfg = cfg.to_dict(converter_family=topology.inferred_converter_family())
         platform = topology.inferred_platform()
         self._addr_cells = 1 if platform in self._32BIT_PLATFORMS else 2
         clock_map = self._build_clock_map(topology)
@@ -91,7 +96,9 @@ class NodeBuilder:
             if not skip_generic_jesd:
                 return False
             lower = name.lower()
-            if any(isinstance(b, ADRV9040Builder) for b in matched_builders) and any(k in lower for k in ("adrv9040", "adrv904x")):
+            if any(isinstance(b, ADRV9040Builder) for b in matched_builders) and any(
+                k in lower for k in ("adrv9040", "adrv904x")
+            ):
                 return True
             # ADRV9009 builder skips its own named instances
             if self._is_adrv90xx_name(name):

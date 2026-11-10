@@ -113,6 +113,25 @@ class DtsMerger:
         Returns:
             (overlay_content, merged_content)
         """
+        # Xilinx SDTGen and Linux reference trees use different GIC labels.
+        # Resolve only generated interrupt-parent references; leave the base
+        # and any explicitly declared gic controller unchanged.
+        labels = self._scan_labels(base_dts) | self._scan_include_labels(
+            base_dts, [output_dir, output_dir / "base"]
+        )
+        if "gic" not in labels and "gic_a53" in labels:
+            nodes = {
+                key: [
+                    re.sub(
+                        r"(interrupt-parent\s*=\s*<&)gic(\s*>\s*;)",
+                        r"\1gic_a53\2",
+                        node,
+                    )
+                    for node in group
+                ]
+                for key, group in nodes.items()
+            }
+
         # Build a flat node list with section-divider comments interleaved.
         # Comments are only prepended to groups that contain bus-type nodes
         # (not starting with "&"), so top-only groups (e.g. &spi0 overlays)
@@ -297,17 +316,30 @@ class DtsMerger:
         include_bus = self._bus_label(include_labels)
 
         if bus and f"{bus}:" in merged and bus_nodes:
-            pattern = re.compile(
-                r"(\s*" + re.escape(bus) + r"\s*:.*?\{)(.*?)(\n\s*\};)",
-                re.DOTALL,
-            )
-            new_merged = pattern.sub(
-                lambda m: m.group(1) + m.group(2) + "\n" + nodes_block + m.group(3),
-                merged,
-                count=1,
-            )
-            if new_merged != merged:
-                return self._append_top_nodes(new_merged, top_nodes_block)
+            header = re.search(r"\b" + re.escape(bus) + r"\s*:\s*[^{};]+\{", merged)
+            if header:
+                depth = 1
+                # Ignore braces in comments and quoted property strings.
+                tokens = re.finditer(
+                    r'/\*.*?\*/|//[^\n]*|"(?:\\.|[^"\\])*"|[{}]',
+                    merged[header.end() :],
+                    re.DOTALL,
+                )
+                for token in tokens:
+                    if token[0] == "{":
+                        depth += 1
+                    elif token[0] == "}":
+                        depth -= 1
+                    if depth == 0:
+                        close = header.end() + token.start()
+                        line_start = merged.rfind("\n", header.end(), close) + 1
+                        insert = (
+                            line_start - 1
+                            if line_start and not merged[line_start:close].strip()
+                            else close
+                        )
+                        content = merged[:insert] + "\n" + nodes_block + merged[insert:]
+                        return self._append_top_nodes(content, top_nodes_block)
             warnings.warn(
                 f"Could not insert into bus node '{bus}'; appending at root level",
                 UserWarning,

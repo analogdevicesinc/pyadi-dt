@@ -18,15 +18,14 @@ tomli; python_version < "3.11"
 
 # [project.optional-dependencies].xsa
 lopper
+requests
 
-# [project.optional-dependencies].dev
-#
-# pyadi-build is deliberately omitted: it is a private repository that only
-# the hardware-CI runners can clone, so listing it here would make this file
-# uninstallable everywhere else. The `dev` extra still carries it; the
-# hardware venv installs `.[dev]` and gets it that way.
-labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e
+# [project.optional-dependencies].dev plus the public hardware-test plugin.
 usbsdmux
+-r requirements/labgrid.txt
+
+# Private pyadi-build is installed only by hardware CI through
+# requirements/requirements_hw.txt, never by the published dev extra.
 
 # The AD9371 profile model needs a reviewed pyadi-jif revision until it ships in
 # a release; CI and the hardware venv install it on top of the above:
