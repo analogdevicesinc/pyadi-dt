@@ -76,6 +76,8 @@ content is folded into this entry.
   ZynqMP overlay-kernel and module-bundle builds.
 - Apply the JESD teardown patch reliably on fresh and repeated kernel builds.
 - Connect the serial console before stock JTAG/SD autoboot starts.
+- Allow a bounded 120 seconds for full kernel-log reads over busy serial
+  transports, preserving complete diagnostics instead of timing out mid-log.
 - Retry overlay-module downloads while networking becomes available after boot,
   and verify the bundle checksum before extraction.
 - Publish generated DTBs and kernel overrides through the current labgrid

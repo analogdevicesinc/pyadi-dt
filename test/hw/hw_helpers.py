@@ -763,7 +763,9 @@ def collect_dmesg(
     ``dmesg | grep -Ei <grep_pattern>`` tail for diagnostics.
     """
     dmesg_log = out_dir / f"dmesg_{label}.log"
-    dmesg_txt = shell_out(shell, "dmesg")
+    # A full ring buffer can exceed the shell driver's 30-second default on
+    # a busy serial transport. Keep the complete log and a bounded deadline.
+    dmesg_txt = shell_out(shell, "dmesg", timeout=120)
     dmesg_log.write_text(dmesg_txt)
 
     err_log = out_dir / f"dmesg_{label}_err.log"

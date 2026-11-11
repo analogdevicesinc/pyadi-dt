@@ -256,6 +256,10 @@ S-record loader. It verifies the complete RAM payload CRC, the marker in both
 U-Boot and Linux, four online CPUs, both PHYs, JESD DATA, and RX DMA.
 See :doc:`hardware_validation` for prerequisites and a local test command.
 
+Full kernel-log collection allows 120 seconds for a busy serial transport to
+deliver the complete ring buffer. This timeout does not truncate diagnostics
+or relax boot, JESD, capture, or kernel-fault checks.
+
 For runtime overlays, use the matching modular kernels, module bundles, and
 base trees described in :doc:`runtime_overlay_validation`. Installing
 ``pyadi-dt`` does not update a board's kernel. Overlay tests verify live-tree

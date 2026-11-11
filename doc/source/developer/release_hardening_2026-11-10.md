@@ -25,7 +25,8 @@ The candidate fixes all ten findings from the main-branch review:
   existing clock/MxFE type errors are fixed with generic model types.
 - CodeQL is an explicit Python/Actions workflow, avoiding C/C++ fixture headers.
 
-Local validation after the DataX hardware-CI migration: **1116 passed, 15 skipped**.
+Local validation after the DataX hardware-CI migration and serial-log fix:
+**1117 passed, 15 skipped**.
 Regression coverage includes kernel handoff, preparation, release selection,
 pre-acquisition checks, and job-owned reservation cleanup.
 Ruff and ty 0.0.100 passed. The renamed import rule is updated so hosted
@@ -64,6 +65,19 @@ with consumer-side source pin and image checksum validation. The earlier
 is superseded by this migration. Exact-head hardware results must be reviewed
 before release qualification.
 
+At `91ae339`, five board legs passed. ZU11EG booted its generated DTB but
+timed out while streaming the full kernel log under the shell driver's
+30-second command limit, including on the single failed-leg retry. Bulk
+kernel-log reads now allow a bounded 120 seconds and retain the complete
+diagnostics. The regression test failed under the original limit and passed
+with the corrected budget. Final per-board results and their exact head are
+recorded in [PR #126](https://github.com/analogdevicesinc/pyadi-dt/pull/126).
+
+The ZU11EG SD root filesystem also reported an inode error; earlier passing
+boots already warned that it was mounted with errors. This requires separate
+lab maintenance before broader hardware qualification. No filesystem repair
+or image replacement is part of this change.
+
 The earlier [C/C++ CodeQL run](https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42749801840)
 failed with “No source files found.” The committed advanced workflow replaces
 language autodetection with Python and Actions. Managed default setup must be
@@ -74,6 +88,7 @@ a controlled SDTGen base. Real SDTGen/Vivado execution, physical boot, JESD
 training and RF operation are unqualified. External firmware, ACE profiles and
 gain tables remain user-supplied. No new Kuiper release compatibility is claimed.
 
-No tag, GitHub Release, PyPI publication or hardware qualification is produced
-by this hardening work. Trusted publishing and the release-reviewer environment
+No tag, GitHub Release or PyPI publication is produced by this hardening work.
+Hardware evidence is limited to the exact-head board tests recorded in the PR.
+Trusted publishing and the release-reviewer environment
 still require operator verification per the [runbook](release_runbook.md).
