@@ -1,0 +1,66 @@
+# ad9081_zcu102_jesd_gpio_wiring
+direction: right
+
+spi0: {
+  label: "spi0"
+  shape: oval
+  style.fill: "#2a4d6e"
+  style.font-color: "#ffffff"
+}
+hmc7044: {
+  label: "hmc7044"
+  shape: rectangle
+  style.fill: "#1a3d5c"
+  style.font-color: "#ffffff"
+}
+spi1: {
+  label: "spi1"
+  shape: oval
+  style.fill: "#2a4d6e"
+  style.font-color: "#ffffff"
+}
+trx0_ad9081: {
+  label: "trx0_ad9081"
+  shape: rectangle
+  style.fill: "#5c1a1a"
+  style.font-color: "#ffffff"
+}
+trx0_ad9081_adc: {
+  label: "trx0_ad9081_adc"
+  shape: rectangle
+  style.fill: "#5c1a1a"
+  style.font-color: "#ffffff"
+}
+zcu102_gt0: {
+  label: "zcu102_gt0"
+  shape: rectangle
+  style.fill: "#2a2a2a"
+  style.font-color: "#ffffff"
+}
+zcu102_gt1: {
+  label: "zcu102_gt1"
+  shape: rectangle
+  style.fill: "#2a2a2a"
+  style.font-color: "#ffffff"
+}
+trx0_ad9081_dac: {
+  label: "trx0_ad9081_dac"
+  shape: rectangle
+  style.fill: "#5c1a1a"
+  style.font-color: "#ffffff"
+}
+gpio: {
+  label: "gpio"
+  shape: oval
+  style.fill: "#6e4d2a"
+  style.font-color: "#ffffff"
+}
+
+trx0_ad9081_adc -> zcu102_gt0: "JESD204" { style.stroke: "#44cc44" }
+zcu102_gt1 -> trx0_ad9081_dac: "JESD204" { style.stroke: "#44cc44" }
+gpio -> trx0_ad9081: "reset=133" { style.stroke: "#cc9944" }
+gpio -> trx0_ad9081: "sysref-req=121" { style.stroke: "#cc9944" }
+gpio -> trx0_ad9081: "rx1-enable=134" { style.stroke: "#cc9944" }
+gpio -> trx0_ad9081: "rx2-enable=135" { style.stroke: "#cc9944" }
+gpio -> trx0_ad9081: "tx1-enable=136" { style.stroke: "#cc9944" }
+gpio -> trx0_ad9081: "tx2-enable=137" { style.stroke: "#cc9944" }

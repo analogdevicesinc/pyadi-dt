@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="This candidate is the fix/release-hardening branch based on 92e6fc8. It is not tagged or released. GitHub checks and artifacts identify the exact PR head commit; repeat the release dry run and hardware checks for the final commit before tagging. No previous hardware result qualifies this branch." name="description" />
+
+    <title>Release hardening candidate — 2026-11-10 &#8212; pyadi-dt 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=a3ee7af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/d2-theme-images.css?v=96837a00" />
+    <script async="async" src="../../_static/app.umd.js?v=048c1170"></script>
+    <link rel="icon" href="../../_static/pyadi-dt_72.png"/>
+    <link rel="index" title="Index" href="../../genindex/" />
+    <link rel="search" title="Search" href="../../search/" />
+    <link rel="next" title="Runtime JESD overlay validation" href="../runtime_overlay_validation/" />
+    <link rel="prev" title="Release Operator Runbook" href="../release_runbook/" />
+   
+  
+  
+  
+  <meta name="repository" content="pyadi-dt">
+  <meta name="version" content="0.1.0">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../../">
+          <div>pyadi-dt</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../../index.html" class="current">pyadi-dt</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Release hardening candidate — 2026-11-10</a><ul>
+<li><a class="reference internal" href="#software-checks">Software checks</a></li>
+<li><a class="reference internal" href="#outstanding-release-gates">Outstanding release gates</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="logo" href="../../">
+      <img class="only-light" src="../../_static/media/pyadi-dt.svg"/>
+      <img class="only-dark" src="../../_static/media/pyadi-dt_w.svg"/>
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../../index.html" class="current">pyadi-dt</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <p class="caption" role="heading">
+  <span class="caption-text">User Guide</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../quickstart/">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../xsa/">XSA to Device Tree</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../adrv9040/">ADRV9040 on ZCU102</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../petalinux/">PetaLinux Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../visualization/">Visualization and Diagnostics</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../../examples/">Examples</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../examples/xsa_tutorial/">XSA Flow Tutorials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../examples/xsa_adijif_tutorial/">XSA + adijif Tutorial</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../examples/xsa_ad9081_zcu102/">XSA → Device Tree: AD9081 on ZCU102</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../examples/board_model_usage/">Board Model: Unified Device Tree Generation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../access/">Live Update Access Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils/">Utilities</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Developer Guide</span>
+</p>
+
+<ul class="current">
+<li class="toctree-l1 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2" checked=""/><div class="collapse"><a class="reference internal" href="../">Developer Guides</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../authoring_devices/">Authoring a new device class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../jif_dt_contract/">pyadi-jif to pyadi-dt interface contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware_ci/">Hardware CI</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../hardware_validation/">Release hardware validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../labgrid_exporter/">Labgrid exporter systemd service</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_runbook/">Release Operator Runbook</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Release hardening candidate — 2026-11-10</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../runtime_overlay_validation/">Runtime JESD overlay validation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../release_readiness_2026-09-05/">Release readiness audit — 2026-09-05</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../xsa_developer/">XSA Pipeline — Developer Guide</a></li>
+</ul>
+
+<p class="caption" role="heading">
+  <span class="caption-text">Reference</span>
+</p>
+
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../cli/">Command Line Interface</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ai_skill/">AI Agent CLI Skill</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../mcp_server/">MCP Server</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../../api/">API Reference</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../api/core/">Core Module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/jif_contract/">pyadi-jif Interface Contract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/devices/">Declarative Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/model/">Board Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../api/xsa/">XSA Pipeline Module</a></li>
+</ul>
+</li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb"><ol><li><a href="../">Developer Guides</a></li></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="release-hardening-candidate-2026-11-10">
+<h1>Release hardening candidate — 2026-11-10<a class="headerlink" href="#release-hardening-candidate-2026-11-10" title="Link to this heading"></a></h1>
+<p>This candidate is the <code class="docutils literal notranslate"><span class="pre">fix/release-hardening</span></code> branch based on <code class="docutils literal notranslate"><span class="pre">92e6fc8</span></code>. It is
+not tagged or released. GitHub checks and artifacts identify the exact PR head
+commit; repeat the release dry run and hardware checks for the final commit
+before tagging. No previous hardware result qualifies this branch.</p>
+<section id="software-checks">
+<h2>Software checks<a class="headerlink" href="#software-checks" title="Link to this heading"></a></h2>
+<p>The candidate fixes all ten findings from the main-branch review:</p>
+<ul class="simple">
+<li><p>PyPI-safe metadata: Git-only lab tools moved to source requirements.</p></li>
+<li><p>A clean, isolated wheel <code class="docutils literal notranslate"><span class="pre">[xsa]</span></code> installation exercises imports, profile
+discovery and CLI help; <code class="docutils literal notranslate"><span class="pre">requests</span></code> is declared in the extra.</p></li>
+<li><p>Nested AXI children retain their structure; compiled DTB path checks verify
+generated IP is under the bus. Both ADRV9040 layouts resolve SDTGen-style
+<code class="docutils literal notranslate"><span class="pre">gic_a53</span></code> references in the merged DTS and overlay.</p></li>
+<li><p>Both PetaLinux pipeline entry points execute; ZynqMP output uses <code class="docutils literal notranslate"><span class="pre">gic_a53</span></code>.</p></li>
+<li><p>Typed and raw implicit JESD framing agree after topology detection, including
+partial ORX settings and explicit <code class="docutils literal notranslate"><span class="pre">F=1</span></code> overrides.</p></li>
+<li><p>MCP reads actual DTS and DTB fixtures by short name, full path and compatible.</p></li>
+<li><p>Failed release-asset downloads fail checksum refresh.</p></li>
+<li><p>Tag workflows use a shared queue that retains all pending publication runs.</p></li>
+<li><p>Type checking and dependency audit preserve nonzero checker exits; the
+existing clock/MxFE type errors are fixed with generic model types.</p></li>
+<li><p>CodeQL is an explicit Python/Actions workflow, avoiding C/C++ fixture headers.</p></li>
+</ul>
+<p>Local validation after the DataX hardware-CI migration and serial-log fix:
+<strong>1117 passed, 15 skipped</strong>.
+Regression coverage includes kernel handoff, preparation, release selection,
+pre-acquisition checks, and job-owned reservation cleanup.
+Ruff and ty 0.0.100 passed. The renamed import rule is updated so hosted
+checking exits successfully.
+Bandit passed against the existing baseline, and the runtime dependency audit
+reported no known vulnerabilities. Source/wheel builds, <code class="docutils literal notranslate"><span class="pre">twine</span> <span class="pre">check</span></code>, clean
+wheel <code class="docutils literal notranslate"><span class="pre">[xsa]</span></code> installation, and strict Sphinx <code class="docutils literal notranslate"><span class="pre">dirhtml</span></code> builds passed.</p>
+<p>Reproduce the software checks from the candidate checkout:</p>
+<div class="highlight-sh notranslate"><div class="highlight"><pre><span></span>pytest<span class="w"> </span>-q
+ruff<span class="w"> </span>check<span class="w"> </span>adidt<span class="w"> </span><span class="nb">test</span>
+ty<span class="w"> </span>check<span class="w"> </span>adidt/model/<span class="w"> </span>adidt/xsa/build/builders/<span class="w"> </span>adidt/devices/<span class="w"> </span>adidt/system.py<span class="w"> </span>adidt/tools/
+bandit<span class="w"> </span>-r<span class="w"> </span>adidt<span class="w"> </span>-c<span class="w"> </span>.bandit<span class="w"> </span>-b<span class="w"> </span>.bandit-baseline.json
+pip-audit<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+python<span class="w"> </span>-m<span class="w"> </span>build
+python<span class="w"> </span>.github/scripts/verify-release-wheel.py<span class="w"> </span>dist/*.whl<span class="w"> </span>--smoke-xsa
+twine<span class="w"> </span>check<span class="w"> </span>dist/*
+sphinx-build<span class="w"> </span>-W<span class="w"> </span>--keep-going<span class="w"> </span>-b<span class="w"> </span>dirhtml<span class="w"> </span>doc/source<span class="w"> </span>doc/build/dirhtml
+</pre></div>
+</div>
+<p>The final fresh-context review found a generic typed framing regression;
+its reproducer failed before the topology-aware default resolution fix and
+passed afterward, together with the full suite. The hosted release build also runs the clean-wheel
+smoke check; building a wheel or passing <code class="docutils literal notranslate"><span class="pre">twine</span> <span class="pre">check</span></code> alone does not establish
+PyPI upload acceptance.</p>
+</section>
+<section id="outstanding-release-gates">
+<h2>Outstanding release gates<a class="headerlink" href="#outstanding-release-gates" title="Link to this heading"></a></h2>
+<p>Hardware CI now uses public <code class="docutils literal notranslate"><span class="pre">tfcollins/datax-manifests</span></code> at
+<code class="docutils literal notranslate"><span class="pre">6efed11c826f35f5e3a5da3c10ebd54c309f25fa</span></code>, driven by checksum-verified CIM
+v1.2.4. The <code class="docutils literal notranslate"><span class="pre">adi-linux</span></code> target prepares artifacts before board acquisition,
+with consumer-side source pin and image checksum validation. The earlier
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42780867296" target="_blank">authentication failure</a>
+is superseded by this migration. Exact-head hardware results must be reviewed
+before release qualification.</p>
+<p>At <code class="docutils literal notranslate"><span class="pre">91ae339</span></code>, five board legs passed. ZU11EG booted its generated DTB but
+timed out while streaming the full kernel log under the shell driver’s
+30-second command limit, including on the single failed-leg retry. Bulk
+kernel-log reads now allow a bounded 120 seconds and retain the complete
+diagnostics. The regression test failed under the original limit and passed
+with the corrected budget. Final per-board results and their exact head are
+recorded in <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/pull/126" target="_blank">PR #126</a>.</p>
+<p>The ZU11EG SD root filesystem also reported an inode error; earlier passing
+boots already warned that it was mounted with errors. This requires separate
+lab maintenance before broader hardware qualification. No filesystem repair
+or image replacement is part of this change.</p>
+<p>The earlier <a class="icon link reference external" href="https://github.com/analogdevicesinc/pyadi-dt/actions/runs/42749801840" target="_blank">C/C++ CodeQL run</a>
+failed with “No source files found.” The committed advanced workflow replaces
+language autodetection with Python and Actions. Managed default setup must be
+disabled for advanced SARIF uploads to work.</p>
+<p>ADRV9040 validation remains software-only with representative HWH fixtures and
+a controlled SDTGen base. Real SDTGen/Vivado execution, physical boot, JESD
+training and RF operation are unqualified. External firmware, ACE profiles and
+gain tables remain user-supplied. No new Kuiper release compatibility is claimed.</p>
+<p>No tag, GitHub Release or PyPI publication is produced by this hardening work.
+Hardware evidence is limited to the exact-head board tests recorded in the PR.
+Trusted publishing and the release-reviewer environment
+still require operator verification per the <a class="reference internal" href="../release_runbook/"><span class="std std-doc">runbook</span></a>.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../release_runbook/" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Release Operator Runbook</a>
+    <a href="../runtime_overlay_validation/" title="Next document (Alt+Shift+RightArrow)" class="next">Runtime JESD overlay validation</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2024-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>

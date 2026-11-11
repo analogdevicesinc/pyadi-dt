@@ -1,0 +1,25 @@
+digraph "ad9081_zcu102_jesd_gpio_wiring" {
+    rankdir=LR;
+    node [style="filled,rounded" fontcolor="#ffffff" color="#000000" fontname="Helvetica"];
+    edge [fontname="Helvetica" fontsize=10];
+    bgcolor="#1a1a1a";
+
+    spi0 [label="spi0" fillcolor="#2a4d6e" shape="ellipse"];
+    hmc7044 [label="hmc7044" fillcolor="#1a3d5c" shape="box"];
+    spi1 [label="spi1" fillcolor="#2a4d6e" shape="ellipse"];
+    trx0_ad9081 [label="trx0_ad9081" fillcolor="#5c1a1a" shape="box"];
+    trx0_ad9081_adc [label="trx0_ad9081_adc" fillcolor="#5c1a1a" shape="box"];
+    zcu102_gt0 [label="zcu102_gt0" fillcolor="#2a2a2a" shape="box"];
+    zcu102_gt1 [label="zcu102_gt1" fillcolor="#2a2a2a" shape="box"];
+    trx0_ad9081_dac [label="trx0_ad9081_dac" fillcolor="#5c1a1a" shape="box"];
+    gpio [label="gpio" fillcolor="#6e4d2a" shape="ellipse"];
+
+    trx0_ad9081_adc -> zcu102_gt0 [color="#44cc44" fontcolor="#44cc44" label="JESD204"];
+    zcu102_gt1 -> trx0_ad9081_dac [color="#44cc44" fontcolor="#44cc44" label="JESD204"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="reset=133"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="sysref-req=121"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="rx1-enable=134"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="rx2-enable=135"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="tx1-enable=136"];
+    gpio -> trx0_ad9081 [color="#cc9944" fontcolor="#cc9944" label="tx2-enable=137"];
+}
