@@ -634,18 +634,19 @@ def detect_link_loss(status_txt: str) -> bool:
     return bool(_LINK_NOT_DATA_RX.search(status_txt))
 
 
-def shell_out(shell, cmd: str) -> str:
+def shell_out(shell, cmd: str, **run_options) -> str:
     """Run *cmd* via an ``ADIShellDriver`` and return the output as a string.
 
     Args:
         shell: An ``ADIShellDriver`` instance whose ``run`` method executes
             shell commands on the target board.
         cmd: Shell command string to execute.
+        **run_options: Options forwarded to the driver's command runner.
 
     Returns:
         Command output as a single newline-joined string.
     """
-    res = shell.run(cmd)
+    res = shell.run(cmd, **run_options)
     out = res[0] if isinstance(res, tuple) else res
     if isinstance(out, list):
         return "\n".join(out)

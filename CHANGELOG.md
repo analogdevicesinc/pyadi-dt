@@ -72,6 +72,12 @@ content is folded into this entry.
 
 ### Fixed
 
+- Use modular JESD clients for AD9081 runtime overlays and support
+  ZynqMP overlay-kernel and module-bundle builds.
+- Apply the JESD teardown patch reliably on fresh and repeated kernel builds.
+- Connect the serial console before stock JTAG/SD autoboot starts.
+- Retry overlay-module downloads while networking becomes available after boot,
+  and verify the bundle checksum before extraction.
 - Publish generated DTBs and kernel overrides through the current labgrid
   artifact handoff, render the SD storage driver, and select a reachable
   management interface for the test TFTP server.

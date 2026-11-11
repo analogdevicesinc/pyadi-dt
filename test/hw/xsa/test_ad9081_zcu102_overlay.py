@@ -5,18 +5,10 @@ live in :mod:`test.hw.xsa._overlay_base`.  Per-board specifics
 (:func:`_solve_ad9081_config`, :func:`_create_ad9081`) stay in this
 file because they are genuinely AD9081-only.
 
-Boot strategy: ``KuiperDLDriver.get_boot_files_from_release()`` followed
-by an SD-card stage of the merged DTB (renamed to ``system.dtb`` so
-Kuiper's ZCU102 U-Boot picks it up).  The merged DTB has the AD9081
-SPI nodes already in place, so the overlay exercises the configfs
-lifecycle on top of an already-probed tree.
-
-Stock-Kuiper boot was tried first; on the lab's current 2023_R2 image
-the AD9081 SPI probe fails at boot with ``-EBUSY`` (the bitstream's
-clock chain is not yet up when the SPI driver runs), which then makes
-every subsequent overlay test see an unrelated boot-time error.
-Booting with our merged DTB avoids that and is deterministic across
-runs.
+Runtime tests boot a generated base DTB with overlay-owned children removed,
+using a modular IIO/JESD kernel and its matching module bundle. The tests unload
+the topology before applying or removing the overlay, then load the clock,
+converter and transport modules to validate the updated tree and capture data.
 
 LG_ENV / LG_COORDINATOR: see ``.env.example``.  Runs against the
 ``mini2`` labgrid place (ZCU102 + AD9081-FMCA-EBZ).
@@ -157,6 +149,17 @@ SPEC = BoardOverlayProfile(
     topology_assert=_topology_assert,
     dtso_must_contain_all=("axi-ad9081",),
     boot_mode="sd",
+    runtime_modules=(
+        "jesd204",
+        "hmc7044",
+        "clk_axi_clkgen",
+        "axi_adxcvr_drv",
+        "axi_jesd204_rx",
+        "axi_jesd204_tx",
+        "cf_axi_adc",
+        "ad9081_drv",
+        "cf_axi_dds_drv",
+    ),
     kernel_fixture_name="built_kernel_image_zynqmp",
     iio_required_all=("hmc7044",),
     iio_required_any=("axi-ad9081-rx-hpc", "ad_ip_jesd204_tpl_adc"),

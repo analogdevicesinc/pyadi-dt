@@ -137,6 +137,9 @@ def board(strategy, request):
             original_kernel = kernel_resource.kernel_path
             kernel_resource.kernel_path = kernel
             kernel_overridden = True
+        if getattr(strategy, "sd_autoboot", False):
+            # Capture a short kernel banner emitted during JTAG bootstrap.
+            strategy.target.activate(strategy.shell.console)
         yield strategy
     finally:
         _teardown_power_off(strategy)

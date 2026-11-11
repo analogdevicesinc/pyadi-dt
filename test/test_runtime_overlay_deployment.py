@@ -118,6 +118,64 @@ def test_module_archive_requires_checksum_before_download(monkeypatch):
 
 
 @pytest.mark.skipif(
+    not all(shutil.which(tool) for tool in ("bash", "timeout", "sha256sum", "tar")),
+    reason="Linux transfer tools required",
+)
+def test_module_archive_retries_a_transient_network_failure(tmp_path, monkeypatch):
+    import hashlib
+    import io
+    import os
+    import shlex
+    import tarfile
+
+    archive = tmp_path / "modules.tar.gz"
+    with tarfile.open(archive, "w:gz") as bundle:
+        member = tarfile.TarInfo("lib/modules/test/kernel.ko")
+        member.size = len(b"module")
+        bundle.addfile(member, io.BytesIO(b"module"))
+    counter = tmp_path / "attempts"
+    tools = tmp_path / "bin"
+    tools.mkdir()
+    wget = tools / "wget"
+    wget.write_text(
+        "#!/bin/sh\n"
+        f"if [ ! -f {shlex.quote(str(counter))} ]; then\n"
+        f"    echo first > {shlex.quote(str(counter))}\n"
+        "    exit 4\n"
+        "fi\n"
+        f"echo retried >> {shlex.quote(str(counter))}\n"
+        f"cp {shlex.quote(str(archive))} \"$2\"\n"
+    )
+    wget.chmod(0o755)
+    environment = {**os.environ, "PATH": f"{tools}:{os.environ['PATH']}"}
+
+    class LocalShell:
+        def run(self, command, **options):
+            result = subprocess.run(
+                ["bash", "-c", command],
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=options.get("timeout", 30),
+            )
+            return (
+                result.stdout.splitlines(),
+                result.stderr.splitlines(),
+                result.returncode,
+            )
+
+    root = tmp_path / "target"
+    monkeypatch.setattr(_overlay_modules, "_MODULE_ROOT", str(root))
+    monkeypatch.setenv("ADIDT_OVERLAY_MODULES_URL", "http://modules.invalid/modules.tar.gz")
+    monkeypatch.setenv(
+        "ADIDT_OVERLAY_MODULES_SHA256", hashlib.sha256(archive.read_bytes()).hexdigest()
+    )
+    _overlay_modules.stage_overlay_modules(LocalShell())
+    assert counter.read_text().splitlines() == ["first", "retried"]
+    assert (root / "lib/modules/test/kernel.ko").read_bytes() == b"module"
+
+
+@pytest.mark.skipif(
     not all(shutil.which(tool) for tool in ("dtc", "fdtget", "fdtput", "fdtoverlay")),
     reason="device-tree compiler tools required",
 )

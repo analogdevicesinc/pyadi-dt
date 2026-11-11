@@ -100,13 +100,11 @@ def test_fabric_does_not_prepare_arm_kernel(tmp_path):
     assert result.returncode == 0, result.stderr
 
 
-def test_nonmodular_overlay_profile_reaches_standard_kernel_preparation(tmp_path):
+def test_ad9081_overlay_requires_modular_kernel(tmp_path):
     result = run_preflight(
         tmp_path,
         BOARD="ad9081",
         CARRIER="zcu102",
-        CIM_MANIFEST_COMMIT="main",
     )
     assert result.returncode != 0
-    assert "full Git commit SHA" in result.stderr
-    assert "Runtime overlays require" not in result.stderr
+    assert "Runtime overlays require ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQMP" in result.stderr

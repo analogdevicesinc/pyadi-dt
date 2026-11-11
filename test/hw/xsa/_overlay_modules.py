@@ -30,12 +30,18 @@ def stage_overlay_modules(shell) -> None:
         "Set both ADIDT_OVERLAY_MODULES_URL and ADIDT_OVERLAY_MODULES_SHA256"
     )
     archive = f"{_MODULE_ROOT}/modules.tar.gz"
+    download = (
+        f"until wget -O {archive}.download {shlex.quote(url)} 2>&1; "
+        "do sleep 1; done"
+    )
     result = shell_out(
         shell,
         f"mkdir -p {_MODULE_ROOT} && "
-        f"wget -q -O {archive} {shlex.quote(url)} && "
+        f"timeout 60 sh -c {shlex.quote(download)} && "
+        f"mv {archive}.download {archive} && "
         f"echo '{digest}  {archive}' | sha256sum -c - && "
         f"tar -xzf {archive} -C {_MODULE_ROOT}; echo MODULE_RC=$?",
+        timeout=90,
     )
     assert "MODULE_RC=0" in result, f"Could not stage overlay modules: {result}"
 

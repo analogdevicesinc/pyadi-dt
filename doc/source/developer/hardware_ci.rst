@@ -178,9 +178,20 @@ Profiles declaring ``runtime_modules`` require their separately qualified
 modular kernels and matching modules. The pre-acquisition step checks the
 selected overlay profile before requiring an explicit overlay image (or a
 qualified generic image override). Existing ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ``
-and module settings are preserved. Profiles without runtime module unloading,
-including AD9081, use the selected ordinary kernel unless an overlay image is
-explicitly supplied. Their hardware tests check configfs support on the board.
+and module settings are preserved. Profiles without runtime module unloading use the selected ordinary kernel
+unless an overlay image is explicitly supplied. Their hardware tests check
+configfs support on the board.
+
+AD9081/ZCU102, AD9371/ZC706 and ADRV9009/ZC706 declare their JESD clients in
+``runtime_modules``. Their overlay tests boot a modular kernel with the
+matching modules from ``ADIDT_OVERLAY_MODULES_ARCHIVE``. The helper
+``.github/scripts/build-runtime-overlay-kernel.sh`` supports ``zynq``,
+``zynqmp`` and ``microblaze``. For ZynqMP it emits ``Image`` and
+``modules.tar.gz`` from the selected disposable ADI Linux source tree.
+The helper applies the required JESD teardown patch before compilation and
+verifies its direction when checking a previously patched source tree.
+Select those files with ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQMP`` and
+``ADIDT_OVERLAY_MODULES_ARCHIVE`` in the per-board runner configuration.
 
 The handoff is a runner-local JSON object with these required fields:
 
