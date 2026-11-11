@@ -63,6 +63,16 @@ and exporter-owned recovery payload paths.
    TFTP deployment disables SD autoboot; ZynqMP deployment registers the
    pinned production JTAG strategy and accepts either Ethernet port.
 
+SD-mux environments use the pinned client's current storage-driver template.
+The managed TFTP server advertises the runner's interface used to reach the
+coordinator, which connects it to the lab management network. Set
+``ADIDT_TFTP_SERVER_ADDRESS`` in the per-board runner configuration to select
+a DUT-facing address explicitly.
+
+Kernel and DTB overrides are published through the strategy's location-aware
+artifact cache. Each generated DTB carries a unique validation property that
+the boot test checks in the running device tree.
+
 Keep operational labgrid environments private. Optional Prism upload is
 controlled by ``PRISM_UPLOAD_ENABLED`` and uses the explicitly passed
 ``PRISM_EMAIL`` and ``PRISM_PASSWORD`` secrets. These values are not test

@@ -72,6 +72,9 @@ content is folded into this entry.
 
 ### Fixed
 
+- Publish generated DTBs and kernel overrides through the current labgrid
+  artifact handoff, render the SD storage driver, and select a reachable
+  management interface for the test TFTP server.
 - Insert generated FPGA nodes at the actual AXI bus closing brace, preserving
   nested peripherals, and resolve SDTGen's `gic_a53` interrupt controller.
 - Restore both PetaLinux pipeline entry points and target the ZynqMP GIC label.

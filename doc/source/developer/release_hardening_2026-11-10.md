@@ -25,8 +25,8 @@ The candidate fixes all ten findings from the main-branch review:
   existing clock/MxFE type errors are fixed with generic model types.
 - CodeQL is an explicit Python/Actions workflow, avoiding C/C++ fixture headers.
 
-Local validation after the DataX hardware-CI migration: **1109 passed, 15 skipped**.
-The migration adds 85 tests for kernel handoff, preparation, release selection,
+Local validation after the DataX hardware-CI migration: **1113 passed, 15 skipped**.
+Regression coverage includes kernel handoff, preparation, release selection,
 pre-acquisition checks, and job-owned reservation cleanup.
 Ruff and ty 0.0.100 passed. The renamed import rule is updated so hosted
 checking exits successfully.

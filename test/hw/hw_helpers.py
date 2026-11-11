@@ -703,6 +703,7 @@ def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
     board.transition("powered_off")
     marker = mark_dtb_for_boot(dtb)
     kuiper.get_boot_files_from_release()
+    replacements = [dtb]
     if kernel_image is not None:
         # The TFTP strategy requests a fixed basename. Staging an override
         # named e.g. uImage-test must replace uImage, not leave stock booting.
@@ -710,6 +711,7 @@ def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
         assert Path(kernel_name).name == kernel_name, "Invalid kernel image basename"
         if kernel_image.name == kernel_name:
             kuiper.add_files_to_target(kernel_image)
+            replacements.append(kernel_image)
         else:
             # Kuiper records paths; the strategy copies them during boot.
             # Keep the override beside the test DTB for the fixture lifetime.
@@ -718,7 +720,17 @@ def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
             staged_kernel = directory / kernel_name
             shutil.copyfile(kernel_image, staged_kernel)
             kuiper.add_files_to_target(staged_kernel)
+            replacements.append(staged_kernel)
     kuiper.add_files_to_target(dtb)
+    if hasattr(board, "_boot_artifacts"):
+        from adi_lg_plugins.artifacts import local_artifact
+
+        # Exporter-capable strategies cache location-aware artifacts at setup.
+        # Replace by boot filename and retain the original bootstrap artifacts.
+        artifacts = {Path(item.path).name: item for item in board._boot_artifacts}
+        for replacement in replacements:
+            artifacts[replacement.name] = local_artifact(str(replacement))
+        board._boot_artifacts = list(artifacts.values())
     # Opening a remote serial connection can take several seconds. Do it
     # before power/JTAG boot so the strategy can catch a short U-Boot
     # countdown rather than connecting after the board has booted from SD.
