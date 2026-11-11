@@ -1,6 +1,7 @@
 """Generated-DTB tests must boot the staged tree rather than the stock SD tree."""
 
 from types import SimpleNamespace
+from pathlib import Path
 from unittest.mock import Mock
 import shutil
 import subprocess
@@ -140,3 +141,50 @@ def test_boot_marker_is_unique_and_preserves_tree(tmp_path):
         ).strip()
         == "test-board"
     )
+
+
+@pytest.mark.parametrize(
+    ("kernel_name", "dtb_name"), [("uImage", "devicetree.dtb"), ("Image", "system.dtb")]
+)
+def test_cached_artifacts_receive_generated_kernel_and_tree(
+    tmp_path, monkeypatch, kernel_name, dtb_name
+):
+    import sys
+
+    def artifact(path):
+        return SimpleNamespace(path=str(path), host=None)
+
+    monkeypatch.setitem(
+        sys.modules,
+        "adi_lg_plugins.artifacts",
+        SimpleNamespace(local_artifact=artifact),
+    )
+    kuiper, shell = Mock(), object()
+    stock_boot = SimpleNamespace(path="/exporter/BOOT.BIN", host="exporter")
+    board = SimpleNamespace(
+        target=SimpleNamespace(
+            get_driver=lambda name: kuiper if name == "KuiperDLDriver" else shell
+        ),
+        kuiper=kuiper,
+        kernel_image_name=kernel_name,
+        _boot_artifacts=[
+            stock_boot,
+            artifact(tmp_path / "stock" / kernel_name),
+            artifact(tmp_path / "stock" / dtb_name),
+        ],
+    )
+    observed = {}
+
+    def transition(status):
+        if status == "shell":
+            observed.update({Path(item.path).name: item for item in board._boot_artifacts})
+
+    board.transition = transition
+    kernel, dtb = tmp_path / "custom-kernel", tmp_path / dtb_name
+    kernel.write_bytes(b"prepared kernel")
+    dtb.write_bytes(b"generated tree")
+    assert deploy_and_boot(board, dtb, kernel) is shell
+    assert observed["BOOT.BIN"] is stock_boot
+    assert Path(observed[kernel_name].path).read_bytes() == b"prepared kernel"
+    assert Path(observed[dtb_name].path).read_bytes() == b"generated tree"
+    assert len(board._boot_artifacts) == 3

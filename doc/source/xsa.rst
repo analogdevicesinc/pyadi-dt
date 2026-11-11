@@ -164,8 +164,9 @@ MicroBlaze's direct-boot flow does not support.
 Hardware Test Flow
 ------------------
 
-The hardware tests can optionally build and inject a kernel image with
-``pyadi-build`` while still using the DTB generated from the XSA pipeline.
+The hardware tests consume a prepared kernel from the pinned DataX
+``adi-linux`` target together with the DTB generated from the XSA pipeline.
+See :doc:`developer/hardware_ci` for kernel preparation and explicit overrides.
 
 .. image:: _diagrams/svg/xsa_hw_test.light.svg
    :class: only-light

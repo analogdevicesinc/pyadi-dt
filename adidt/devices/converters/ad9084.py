@@ -40,7 +40,7 @@ class AD9084Dac(MxFEDac):
     fduc_interpolation: int = 1
 
 
-class AD9084(MxFEDevice):
+class AD9084(MxFEDevice[AD9084Adc, AD9084Dac]):
     """AD9084 wideband RF MxFE."""
 
     FEATURES: ClassVar[MxFEFeatures] = MxFEFeatures(

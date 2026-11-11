@@ -5,14 +5,7 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ## [Unreleased]
 
-### Added
-
-- `requirements.txt` and `requirements_dev.txt` mirroring the runtime
-  dependencies and the `dev` extra in `pyproject.toml`, with a contract test
-  that fails when they drift. The private `pyadi-build` dependency is left out
-  of `requirements_dev.txt` so the file installs outside the hardware runners.
-
-## [0.1.0] - 2026-09-17
+## [0.1.0] - 2026-11-10
 
 First public release. The `0.0.1` version number was used internally while
 the release process was built out but was never tagged or published; its
@@ -20,6 +13,12 @@ content is folded into this entry.
 
 ### Added
 
+- ADRV9040 standard RX/TX and ORX/NLS device models and ZCU102 XSA profiles,
+  with pinned ADI Linux property parity, external-firmware documentation, and
+  runnable examples. Hardware boot and RF qualification remain pending.
+- Shared feature-driven MxFE core for AD9081/AD9084 with typed converter sides.
+- Runtime/development requirements files and clean `[xsa]` wheel-install checks;
+  PyPI metadata validation rejects direct URL requirements, including extras.
 - Device-centric Python API for composing ADI converters, clocks, transceivers,
   evaluation boards, FPGA platforms, SPI connections, and JESD204 links.
 - XSA-to-DTS pipeline with board profiles, structural validation, reference-DTS
@@ -45,7 +44,7 @@ content is folded into this entry.
 - Runtime overlay validation with configurable reload cycles, JESD and DMA
   checks on every cycle, and a reproducible modular test-kernel build.
 - Pure-Python wheel and source distribution, Kuiper/Ubuntu Debian packages for
-  amd64, arm64, and armhf, and native Debian 12, Fedora 42, and macOS 14
+  amd64, arm64, and armhf, and native Debian 12, Fedora 42, and macOS 15
   system packages.
 - Release workflow with preflight validation, SHA-256 asset manifests,
   non-publishing dry runs, PyPI trusted publishing, and an operator runbook.
@@ -55,16 +54,46 @@ content is folded into this entry.
 
 ### Changed
 
+- Git-only lab dependencies live in source requirements files rather than
+  published extras. Hardware runners explicitly install
+  `requirements/requirements_hw.txt`; public development installs use
+  `requirements_dev.txt`.
+- CodeQL analysis explicitly targets Python and GitHub Actions; vendored
+  binding headers are data fixtures, not C/C++ build targets.
 - Package and deployment name is `pyadi-dt` (import name remains `adidt`).
 - Python 3.14 is supported; the supported range is 3.10 through 3.14.
 - Kuiper test container images are pulled from the ADI Cloudsmith registry
   instead of a private Docker Hub repository.
 - Hardware CI resolves `sdtgen`, Vitis, and `usbsdmux` tool paths explicitly,
-  pins the labgrid plugin revision, and falls back to runner git credentials
-  when the injected private-dependency token cannot authenticate.
+  pins the labgrid plugin revision, and prepares checksum-verified DataX
+  `adi-linux` kernel artifacts before acquiring boards. The manifest revision
+  and CIM executable are pinned, and public dependency installation requires
+  no private repository credentials.
 
 ### Fixed
 
+- Use modular JESD clients for AD9081 runtime overlays and support
+  ZynqMP overlay-kernel and module-bundle builds.
+- Apply the JESD teardown patch reliably on fresh and repeated kernel builds.
+- Connect the serial console before stock JTAG/SD autoboot starts.
+- Allow a bounded 120 seconds for full kernel-log reads over busy serial
+  transports, preserving complete diagnostics instead of timing out mid-log.
+- Retry overlay-module downloads while networking becomes available after boot,
+  and verify the bundle checksum before extraction.
+- Publish generated DTBs and kernel overrides through the current labgrid
+  artifact handoff, render the SD storage driver, and select a reachable
+  management interface for the test TFTP server.
+- Insert generated FPGA nodes at the actual AXI bus closing brace, preserving
+  nested peripherals, and resolve SDTGen's `gic_a53` interrupt controller.
+- Restore both PetaLinux pipeline entry points and target the ZynqMP GIC label.
+- Preserve implicit and explicit JESD framing across raw/typed configurations,
+  including auto-detected ADRV9040 and partial ORX overrides.
+- Read real DTS/DTB files through MCP using the supported tree interface,
+  full paths and compatible-string lookup.
+- Fail checksum refresh on release-asset download errors, queue all tag
+  publication workflows without cancellation, and propagate type/security
+  checker failures through log capture.
+- Correct clock/MxFE generic model types without suppressing diagnostics.
 - Preserve ZynqMP DDR banks when removing duplicate SDT CPU metadata, including
   64-bit memory ranges and R5 aliases.
 - Correct ZU11EG SoM/carrier HMC7044 wiring, unique output names, the dual-radio

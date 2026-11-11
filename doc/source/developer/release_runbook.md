@@ -4,8 +4,9 @@ This runbook covers validation, publication, verification, and recovery for a
 `pyadi-dt` release. The **Publish Release** workflow builds on manual dispatch but
 publishes only when an annotated `v*` tag is pushed.
 
-The [validation summary](hardware_validation.md) records the completed candidate
-checks and retained hardware limits. The [2026-09-05 readiness audit](release_readiness_2026-09-05.md)
+The [current hardening candidate](release_hardening_2026-11-10.md) records current
+software evidence and outstanding release gates. The [historical validation
+summary](hardware_validation.md) retains earlier hardware scope and limits. The [2026-09-05 readiness audit](release_readiness_2026-09-05.md)
 contains the investigation history. Refresh affected checks for a new release commit.
 
 ## One-time setup
@@ -67,13 +68,26 @@ this environment; no PyPI API token is required.
 4. Confirm all required `main` workflows—including hardware, Kuiper/Ubuntu
    Debian packaging, and native system packaging—are green for the exact commit
    to be tagged. The native workflow builds on Debian 12, Fedora 42, and macOS
-   14 rather than cross-packaging those artifacts on Ubuntu.
+   15 rather than cross-packaging those artifacts on Ubuntu.
 
    Hardware jobs must select tests and produce at least one passing testcase;
    skip-only jobs are failures. This minimum gate does not certify every test
    path: review individual skips and record unavailable boards separately.
    Generated-DTB evidence requires a boot strategy that actually deploys the
    staged DTB, rather than booting the existing SD tree.
+
+## Hardware and security gates
+
+Hardware CI prepares kernels from the pinned public DataX ``adi-linux`` target
+before acquiring boards. Rerun the matrix for the exact release candidate and
+inspect per-board JUnit counts, boot logs, and individual skips. Record
+unavailable boards separately. The migration removes the private dependency
+credential requirement.
+
+CodeQL is defined in `.github/workflows/codeql.yml` for Python and GitHub Actions.
+Advanced setup requires GitHub's managed default setup to be disabled; keep this
+non-secret repository setting aligned with the committed workflow. No C/C++
+autobuild is required for vendored device-tree binding headers.
 
 ## Tag and publish
 
@@ -100,7 +114,7 @@ are correct.
 1. Confirm **Publish Release** completed successfully for the tagged SHA.
 2. Confirm both packaging workflows completed for the same tag. The release
    must contain Kuiper/Ubuntu `.deb` files plus the Debian 12 `.deb`, Fedora 42
-   `.rpm`, and macOS 14 `.pkg` artifacts. Each job installs and smoke-tests its
+   `.rpm`, and macOS 15 `.pkg` artifacts. Each job installs and smoke-tests its
    package before upload.
 3. Verify the GitHub Release contains the wheel, source distribution, release
    notes, all native system packages, and the `SHA256SUMS` manifest file.

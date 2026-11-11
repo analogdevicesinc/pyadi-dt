@@ -19,6 +19,8 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
     assert '"$VENV/bin/sdtgen" -help' in installer
     assert "requirements/pyadi-jif-ad9371.txt" in installer
     assert "hasattr(adijif, 'ad9371')" in installer
+    assert "import adi_lg_plugins, adijif, iio, lopper" in installer
+    assert "pylibiio<1" in (ROOT / "requirements/requirements_hw.txt").read_text()
     assert "/tools/Xilinx/2025.1/Vivado/bin/sdtgen" in installer
     assert "source .github/scripts/prepare-hardware-env.sh" in workflow
     assert (
@@ -31,11 +33,11 @@ def test_hardware_venv_installs_and_exposes_sdtgen():
 
 
 def test_labgrid_plugins_dependency_is_immutable() -> None:
-    pyproject = (ROOT / "pyproject.toml").read_text()
+    dependency = (ROOT / "requirements" / "labgrid.txt").read_text()
 
     assert (
         "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/"
-        "labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e" in pyproject
+        "labgrid-plugins.git@7ddcb064d449ce891464b1123b898ee771a9983c" in dependency
     )
 
 

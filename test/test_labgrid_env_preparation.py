@@ -2,6 +2,7 @@
 
 import importlib.util
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
@@ -98,7 +99,7 @@ def test_sd_autoboot_opt_out_prefers_ci_board_environment(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "boot_mode", ["BootFabric", "BootFPGASoC", "BootZynq7000JTAGRecovery", "unknown"]
+    "boot_mode", ["BootFabric", "BootZynq7000JTAGRecovery", "unknown"]
 )
 def test_other_boot_modes_preserve_supplied_environment(boot_mode):
     original = environment()
@@ -157,3 +158,80 @@ def test_zynqmp_renders_production_strategy_and_accepts_either_ethernet_port():
     assert "grep -c '^adrv9009-phy'" in checks[1]
     assert "jesd204-fsm" in checks[2]
     assert "drivers" not in original["targets"]["main"]
+
+
+def test_sd_deployment_uses_current_storage_driver_template():
+    original = environment()
+    rendered = environment()
+    rendered["targets"]["main"]["drivers"] = {
+        "MassStorageDriver": {},
+        "BootFPGASoC": {},
+    }
+    renderer = Mock(return_value=rendered)
+    place = {"name": "bench", "tags": {"boot-strategy": "BootFPGASoC"}}
+    prepared = module.deployment_config(original, place, tftp_root="", render=renderer)
+    renderer.assert_called_once_with(place, {})
+    assert "MassStorageDriver" in prepared["targets"]["main"]["drivers"]
+
+
+def test_tftp_advertises_selected_management_address():
+    rendered = environment()
+    rendered["targets"]["main"]["resources"]["TFTPServerResource"] = {
+        "name": "local-tftp",
+        "address": "auto",
+        "port": 3069,
+    }
+    rendered["targets"]["main"]["drivers"] = {"BootFPGASoCTFTP": {}}
+    prepared = module.deployment_config(
+        environment(),
+        {"name": "bench", "tags": {"boot-strategy": "BootFPGASoCTFTP"}},
+        tftp_root="/tmp/tftp",
+        render=Mock(return_value=rendered),
+        tftp_address="192.0.2.50",
+    )
+    assert prepared["targets"]["main"]["resources"]["TFTPServerResource"]["address"] == "192.0.2.50"
+
+
+def test_cli_selects_tftp_address_from_coordinator_route(tmp_path, monkeypatch):
+    import io
+    import json
+    import sys
+    import yaml
+    from unittest.mock import MagicMock
+
+    source = tmp_path / "input.yaml"
+    output = tmp_path / "prepared.yaml"
+    source.write_text(yaml.safe_dump(environment()))
+    place = {"name": "bench", "tags": {"boot-strategy": "BootFPGASoCTFTP"}}
+    rendered = environment()
+    rendered["targets"]["main"]["resources"]["TFTPServerResource"] = {
+        "name": "local-tftp",
+        "address": "auto",
+    }
+    rendered["targets"]["main"]["drivers"] = {"BootFPGASoCTFTP": {}}
+    monkeypatch.setattr(module, "urlopen", Mock(return_value=io.StringIO(json.dumps(place))))
+    monkeypatch.setitem(
+        sys.modules,
+        "adi_lg_plugins.hw_ci.render_env",
+        SimpleNamespace(render_env=Mock(return_value=yaml.safe_dump(rendered))),
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "adi_lg_plugins.hw_ci.schema",
+        SimpleNamespace(validate_place=lambda raw: raw),
+    )
+    connection = MagicMock()
+    connection.__enter__.return_value = connection
+    connection.getsockname.return_value = ("192.0.2.50", 40000)
+    monkeypatch.setattr(module.socket, "socket", Mock(return_value=connection))
+    monkeypatch.delenv("ADIDT_TFTP_SERVER_ADDRESS", raising=False)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["prepare", "--env", str(source), "--output", str(output),
+         "--coordinator", "coordinator.example:20408"],
+    )
+    assert module.main() == 0
+    connection.connect.assert_called_once_with(("coordinator.example", 20408))
+    resources = yaml.safe_load(output.read_text())["targets"]["main"]["resources"]
+    assert resources["TFTPServerResource"]["address"] == "192.0.2.50"

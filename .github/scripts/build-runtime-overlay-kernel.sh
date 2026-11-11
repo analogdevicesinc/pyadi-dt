@@ -2,7 +2,7 @@
 # Build private test artifacts; SOURCE must be a disposable ADI Linux checkout.
 set -euo pipefail
 if (( $# < 3 || $# > 4 )); then
-    echo "Usage: $0 SOURCE OUTPUT {zynq|microblaze} [STOCK_INITRAMFS.cpio.gz]" >&2
+    echo "Usage: $0 SOURCE OUTPUT {zynq|zynqmp|microblaze} [STOCK_INITRAMFS.cpio.gz]" >&2
     exit 2
 fi
 source_dir=$(realpath "$1")
@@ -16,6 +16,11 @@ case "$3" in
         : "${CROSS_COMPILE:=arm-linux-gnueabihf-}"
         defconfig=zynq_xcomm_adv7511_defconfig
         ;;
+    zynqmp)
+        export ARCH=arm64
+        : "${CROSS_COMPILE:=aarch64-linux-gnu-}"
+        defconfig=adi_zynqmp_defconfig
+        ;;
     microblaze)
         (( $# == 4 )) || { echo "MicroBlaze requires the stock initramfs" >&2; exit 2; }
         rootfs=$(realpath "$4")
@@ -27,8 +32,10 @@ case "$3" in
 esac
 export CROSS_COMPILE
 command -v "${CROSS_COMPILE}gcc" >/dev/null
-if ! patch --dry-run --reverse --batch -d "$source_dir" -p1 < "$patch_file" >/dev/null 2>&1; then
-    patch --forward --batch -d "$source_dir" -p1 < "$patch_file"
+# Prevent automatic direction reversal during the already-applied check.
+if ! patch --dry-run --reverse --force --batch -d "$source_dir" -p1 < "$patch_file" >/dev/null 2>&1; then
+    patch --dry-run --forward --force --batch -d "$source_dir" -p1 < "$patch_file" >/dev/null
+    patch --forward --force --batch -d "$source_dir" -p1 < "$patch_file"
 fi
 make -C "$source_dir" O="$output_dir" "$defconfig"
 "$source_dir/scripts/config" --file "$output_dir/.config" \
@@ -47,7 +54,7 @@ if [[ "$ARCH" == microblaze ]]; then
         "$source_dir/arch/microblaze/boot/dts/"
 fi
 make -C "$source_dir" O="$output_dir" olddefconfig
-make -C "$source_dir" O="$output_dir" -j"${JOBS:-8}" modules
+make -C "$source_dir" O="$output_dir" -j"${JOBS:-8}" vmlinux modules
 make -C "$source_dir" O="$output_dir" \
     INSTALL_MOD_PATH="$output_dir/modules-root" INSTALL_MOD_STRIP=1 modules_install
 tar -C "$output_dir/modules-root" -czf "$output_dir/modules.tar.gz" lib
@@ -66,6 +73,9 @@ if [[ "$ARCH" == microblaze ]]; then
         simpleImage.vcu118_fmcdaq3_runtime
     cp "$output_dir/arch/microblaze/boot/simpleImage.vcu118_fmcdaq3_runtime.strip" \
         "$output_dir/simpleImage.vcu118_fmcdaq3_runtime.strip"
+elif [[ "$ARCH" == arm64 ]]; then
+    make -C "$source_dir" O="$output_dir" -j"${JOBS:-8}" Image
+    cp "$output_dir/arch/arm64/boot/Image" "$output_dir/Image"
 else
     make -C "$source_dir" O="$output_dir" -j"${JOBS:-8}" LOADADDR=0x8000 uImage
     cp "$output_dir/arch/arm/boot/uImage" "$output_dir/uImage"

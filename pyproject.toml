@@ -36,11 +36,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-xsa = ["lopper"]
+xsa = ["lopper", "requests"]
 test = [
     "pytest",
     "pytest-asyncio",
     "pytest-dotenv",
+    "PyYAML",
     "pyadi-iio",
     "pyadi-jif[cplex,draw]",
     "hashable_list",
@@ -51,8 +52,6 @@ test = [
 ]
 dev = [
     "pyadi-dt[test,xsa]",
-    "labgrid-plugins[kuiper] @ git+https://github.com/tfcollins/labgrid-plugins.git@4ddb45a01ea3445ee192d36546be4ba20050862e",
-    "pyadi-build @ git+https://github.com/tfcollins/pyadi-build.git",
     "usbsdmux",
 ]
 mcp = ["fastmcp"]
@@ -61,9 +60,6 @@ mcp = ["fastmcp"]
 Documentation = "https://analogdevicesinc.github.io/pyadi-dt/"
 Issues = "https://github.com/analogdevicesinc/pyadi-dt/issues"
 Repository = "https://github.com/analogdevicesinc/pyadi-dt"
-
-#[tool.uv.sources]
-#pyadi-build = { path = "./pyadi-build", editable = true }
 
 [project.scripts]
 adidtc = "adidt.cli.main:cli"
@@ -120,7 +116,7 @@ markers = [
 
 [tool.ty.rules]
 # Ignore third-party import errors (missing stubs).
-unresolved-import = "ignore"
+import-not-found = "ignore"
 # `unknown-argument` fires on every pydantic `Field(..., alias=...)`
 # call site because ty's current pydantic support doesn't honor
 # ``model_config = ConfigDict(populate_by_name=True)`` — the calls

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import socket
 import tempfile
 from pathlib import Path
 from urllib.parse import quote, urlsplit
@@ -43,7 +44,13 @@ def keeps_sd_autoboot(place: dict) -> bool:
 
 
 def deployment_config(
-    config: dict, place: dict, *, tftp_root: str, render, uboot_image: str | None = None
+    config: dict,
+    place: dict,
+    *,
+    tftp_root: str,
+    render,
+    uboot_image: str | None = None,
+    tftp_address: str | None = None,
 ) -> dict:
     """Render advertised TFTP or production ZynqMP deployment strategies.
 
@@ -54,6 +61,8 @@ def deployment_config(
         raise ValueError(
             "Coordinator returned a different place from the supplied environment"
         )
+    if place.get("tags", {}).get("boot-strategy") == "BootFPGASoC":
+        return render(place, {})
     if place.get("tags", {}).get("boot-strategy") == "BootZynqMPJTAG":
         prepared = render(place, {})
         imports = prepared.setdefault("imports", [])
@@ -85,6 +94,9 @@ def deployment_config(
     strategy = prepared["targets"]["main"]["drivers"]["BootFPGASoCTFTP"]
     strategy["sd_autoboot"] = False
     strategy["tftp_root_folder"] = tftp_root
+    if tftp_address:
+        resource = prepared["targets"]["main"]["resources"]["TFTPServerResource"]
+        resource["address"] = tftp_address
     if uboot_image:
         if not Path(uboot_image).is_absolute():
             raise ValueError("U-Boot image must be an absolute exporter path")
@@ -98,6 +110,11 @@ def main() -> int:
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--coordinator", default=os.environ.get("LG_COORDINATOR"))
     parser.add_argument("--api", help="Override the coordinator REST API base URL")
+    parser.add_argument(
+        "--tftp-address",
+        default=os.environ.get("ADIDT_TFTP_SERVER_ADDRESS"),
+        help="DUT-reachable address advertised by the local managed TFTP server",
+    )
     args = parser.parse_args()
 
     import yaml
@@ -132,12 +149,20 @@ def main() -> int:
             if place.get("tags", {}).get("boot-strategy") == "BootFPGASoCTFTP"
             else ""
         )
+        tftp_address = args.tftp_address
+        if tftp_root and not keeps_sd_autoboot(place) and not tftp_address:
+            # The coordinator and DUTs share the management network. Selecting
+            # its route avoids advertising a runner's isolated data-plane NIC.
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as route:
+                route.connect((address.hostname, address.port or 20408))
+                tftp_address = route.getsockname()[0]
         config = deployment_config(
             config,
             place,
             tftp_root=tftp_root,
             render=render,
             uboot_image=os.environ.get("ADIDT_ZYNQ_UBOOT_IMAGE"),
+            tftp_address=tftp_address,
         )
     with args.output.open("w") as output:
         os.chmod(args.output, 0o600)

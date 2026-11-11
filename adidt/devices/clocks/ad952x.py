@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from .._dt_render import render_node
 from .._fields import DtSkip, DtSubnodes
 from ..base import ClockOutput
-from .base import ClockDevice
+from .base import ChannelT, ClockChannel, ClockDevice
 
 
 _AD9523_OUTPUT_NAMES = [f"ad9523-1_out{i}" for i in range(14)]
@@ -27,7 +27,7 @@ class _GpioLine(BaseModel):
     index: int
 
 
-class AD9523Channel(BaseModel):
+class AD9523Channel(ClockChannel):
     """One output channel on an AD9523-1."""
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
@@ -46,7 +46,7 @@ class AD9523Channel(BaseModel):
     is_sysref: Annotated[bool, DtSkip()] = False
 
 
-class AD9528Channel(BaseModel):
+class AD9528Channel(ClockChannel):
     """One output channel on an AD9528 / AD9528-1."""
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")
@@ -73,7 +73,7 @@ class AD9528_1Channel(AD9528Channel):
     driver_mode: int = Field(0, alias="adi,driver-mode")
 
 
-class _AD952xBase(ClockDevice):
+class _AD952xBase(ClockDevice[ChannelT]):
     """Common machinery for AD9523/AD9528 style clock chips."""
 
     # Subclasses override:
@@ -136,7 +136,7 @@ class _AD952xBase(ClockDevice):
     jesd204_max_sysref_hz: Annotated[int | None, DtSkip()] = None
 
 
-class AD9523_1(_AD952xBase):
+class AD9523_1(_AD952xBase[AD9523Channel]):
     """AD9523-1 clock distributor."""
 
     part: ClassVar[str] = "ad9523_1"
@@ -173,7 +173,7 @@ class AD9523_1(_AD952xBase):
     ] = Field(default_factory=dict)
 
 
-class AD9528(_AD952xBase):
+class AD9528(_AD952xBase[AD9528Channel]):
     """AD9528 clock distributor / JESD204 SYSREF source."""
 
     part: ClassVar[str] = "ad9528"
@@ -218,7 +218,7 @@ class AD9528(_AD952xBase):
     ] = Field(default_factory=dict)
 
 
-class AD9528_1(_AD952xBase):
+class AD9528_1(_AD952xBase[AD9528_1Channel]):
     """AD9528-1 clock distributor (ADRV9009 variant)."""
 
     part: ClassVar[str] = "ad9528_1"

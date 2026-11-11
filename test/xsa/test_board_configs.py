@@ -271,3 +271,16 @@ def test_builtin_profile_parses_to_pipeline_config(profile_name):
     # Basic sanity: JESD config was parsed
     assert isinstance(cfg.jesd, JesdConfig)
     assert isinstance(cfg.clock, ClockConfig)
+
+
+def test_generic_typed_defaults_remain_usable_by_node_builder():
+    from adidt.xsa.build.node_builder import NodeBuilder
+    from adidt.xsa.parse.topology import XsaTopology, Jesd204Instance
+
+    topology = XsaTopology(
+        jesd204_rx=[
+            Jesd204Instance("axi_jesd204_rx_0", 0x44A90000, 4, 54, "device_clk", "rx")
+        ]
+    )
+    nodes = NodeBuilder().build(topology, PipelineConfig())
+    assert "adi,octets-per-frame = <1>;" in nodes["jesd204_rx"][0]

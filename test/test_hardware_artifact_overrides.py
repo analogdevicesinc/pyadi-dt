@@ -51,6 +51,30 @@ def _request(filename):
     return SimpleNamespace(node=SimpleNamespace(path=Path(filename)))
 
 
+def test_stock_autoboot_connects_console_before_starting_boot(monkeypatch):
+    from unittest.mock import call
+
+    monkeypatch.setattr(conftest, "require_hw_prereqs", lambda: None)
+    calls = Mock()
+    console = object()
+    strategy = SimpleNamespace(
+        sd_autoboot=True,
+        shell=SimpleNamespace(console=console),
+        target=SimpleNamespace(activate=calls.activate),
+        transition=calls.transition,
+    )
+    fixture = conftest.board.__wrapped__(strategy, _request("test_stock_hw.py"))
+    assert next(fixture) is strategy
+    strategy.transition("shell")
+    fixture.close()
+    assert calls.mock_calls == [
+        call.transition("powered_off"),
+        call.activate(console),
+        call.transition("shell"),
+        call.transition("powered_off"),
+    ]
+
+
 @pytest.mark.parametrize(
     "filename,expected",
     [

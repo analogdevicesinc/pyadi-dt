@@ -538,3 +538,94 @@ def test_typed_observation_framing_roundtrips_and_preserves_explicit_values(tmp_
     props = _properties(text, "axi_adrv904x_rx_os_jesd_rx_axi")
     assert props["adi,octets-per-frame"] == "<8>"
     assert props["adi,frames-per-multiframe"] == "<16>"
+
+
+@pytest.mark.parametrize("nls", [False, True])
+def test_sdtgen_controller_and_nested_bus_node_paths(tmp_path, nls):
+    xsa = handoff(tmp_path, nls)
+    base = BASE.replace("gic: interrupt-controller", "gic_a53: interrupt-controller")
+    base = base.replace(
+        "ranges; };",
+        'ranges;\n uart0: serial@ff000000 {\n compatible = "xlnx,uart";\n reg = <0 0xff000000 0 0x1000>;\n };\n };',
+    )
+
+    def sdtgen(_xsa, output_dir, timeout=120):
+        path = output_dir / "system-top.dts"
+        path.write_text(base)
+        return path
+
+    with patch("adidt.xsa.pipeline.SdtgenRunner.run", side_effect=sdtgen):
+        result = XsaPipeline().run(
+            xsa,
+            {},
+            tmp_path / "out",
+            emit_report=False,
+            emit_clock_graphs=False,
+            emit_wiring_graph=False,
+        )
+    dtc = shutil.which("dtc")
+    if not dtc:
+        pytest.skip("dtc required")
+    blob = tmp_path / "tree.dtb"
+    proc = subprocess.run(
+        [dtc, "-I", "dts", "-O", "dtb", "-o", str(blob), str(result["merged"])],
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, proc.stderr
+    import fdt
+
+    tree = fdt.parse_dtb(blob.read_bytes())
+    assert tree.get_node("/axi/serial@ff000000")
+    assert tree.get_node("/axi/axi-dmac@9c400000")
+    assert tree.get_node("/axi/axi-jesd204-rx@84aa0000")
+    assert "<&gic_a53>" in result["overlay"].read_text()
+
+
+@pytest.mark.parametrize("only", [False, True])
+def test_petalinux_pipeline_entry_points(tmp_path, only):
+    xsa = handoff(tmp_path)
+
+    def sdtgen(_xsa, output_dir, timeout=120):
+        path = output_dir / "system-top.dts"
+        path.write_text(BASE)
+        return path
+
+    with patch("adidt.xsa.pipeline.SdtgenRunner.run", side_effect=sdtgen) as runner:
+        if only:
+            result = XsaPipeline().run_petalinux_only(xsa, {}, tmp_path / "out")
+            runner.assert_not_called()
+        else:
+            result = XsaPipeline().run(
+                xsa,
+                {},
+                tmp_path / "out",
+                output_format="petalinux",
+                emit_report=False,
+                emit_clock_graphs=False,
+                emit_wiring_graph=False,
+            )
+    assert "adi,adrv9040" in result["system_user_dtsi"].read_text()
+    assert result["bbappend"].exists()
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        {},
+        {"adrv9040_board": {}, "jesd": {"rx_os": {"K": 64}}},
+        {"jesd": {"rx": {"F": 1}, "rx_os": {"F": 1, "K": 64}}},
+    ],
+)
+def test_implicit_typed_framing_matches_raw_after_auto_detection(tmp_path, raw):
+    topo = XsaParser().parse(handoff(tmp_path, True))
+    texts = [
+        "\n".join(NodeBuilder().build(topo, cfg)["converters"])
+        for cfg in (raw, PipelineConfig.from_dict(raw))
+    ]
+    for path in ("rx", "tx", "rx_os"):
+        label = f"axi_adrv904x_{path}_jesd_{'tx' if path == 'tx' else 'rx'}_axi"
+        for prop in ("adi,octets-per-frame", "adi,frames-per-multiframe"):
+            assert (
+                _properties(texts[0], label)[prop] == _properties(texts[1], label)[prop]
+            )

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Generic, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
@@ -41,7 +41,10 @@ class ClockChannel(BaseModel):
     signal_source: Annotated[int | None, DtSkip()] = None
 
 
-class ClockDevice(Device):
+ChannelT = TypeVar("ChannelT", bound=ClockChannel)
+
+
+class ClockDevice(Device, Generic[ChannelT]):
     """Base class for clock distribution chips.
 
     Subclasses populate :attr:`clk_out` with :class:`ClockOutput` handles
@@ -55,7 +58,7 @@ class ClockDevice(Device):
 
     role: ClassVar[str] = "clock"
 
-    channels: dict[int, ClockChannel] = Field(default_factory=dict)
+    channels: dict[int, ChannelT] = Field(default_factory=dict)
 
     _spi: SpiPort = PrivateAttr()
     _clk_out: list[ClockOutput] = PrivateAttr(default_factory=list)

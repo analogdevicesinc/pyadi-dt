@@ -283,7 +283,7 @@ The TFTP-boot boards (`nemo`, `bq`) don't need ssh access to the exporter host (
   sudo install -d -o $USER -g $USER /var/lib/tftpboot
   ```
 
-- **Pre-built kernel uImage** when the `pyadi-build` package isn't available: set `ADIDT_KERNEL_IMAGE_ZYNQ` (Zynq-7000) or `ADIDT_KERNEL_IMAGE_ZYNQMP` (ZynqMP) to a local kernel image path.  The corresponding fixture returns it directly and `deploy_and_boot` uploads it via the same path the built kernel would have taken.
+- **Explicit pre-built kernel image** instead of a DataX artifact manifest: set `ADIDT_KERNEL_IMAGE_ZYNQ` (Zynq-7000) or `ADIDT_KERNEL_IMAGE_ZYNQMP` (ZynqMP) to a local kernel image path.  The corresponding fixture returns it directly and `deploy_and_boot` uploads it via the same path the built kernel would have taken.
 
 - **iptables UDP 69→3069 redirect** if the board's U-Boot (typically pre-2019) ignores `tftpdstport` and always queries the well-known TFTP port.  The labgrid `SimpleTFTPServer` listens on the unprivileged port 3069 (per `TFTPServerResource.port`); a one-line redirect bridges the two without running the test as root:
   ```sh

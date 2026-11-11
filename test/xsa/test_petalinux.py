@@ -172,3 +172,11 @@ class TestValidatePetalinuxProject:
         (tmp_path / "project-spec" / "meta-user").mkdir(parents=True)
         with pytest.raises(ValueError):
             validate_petalinux_project(tmp_path)
+
+
+def test_zynqmp_resolves_reference_gic_controller():
+    result = PetalinuxFormatter().format_system_user_dtsi(
+        "/dts-v1/;\n/plugin/;\n&amba { node@0 { interrupt-parent = <&gic>; }; };",
+        platform="zcu102",
+    )
+    assert "interrupt-parent = <&gic_a53>;" in result

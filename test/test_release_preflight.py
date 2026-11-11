@@ -125,8 +125,7 @@ def test_manual_dispatch_cannot_publish():
     workflow = (repo_root / ".github" / "workflows" / "release.yml").read_text()
 
     publish_guard = (
-        "if: github.event_name == 'push' && "
-        "startsWith(github.ref, 'refs/tags/v')"
+        "if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')"
     )
     assert workflow.count(publish_guard) == 2
     assert "Candidate v-prefixed tag to validate without publishing" in workflow
@@ -146,7 +145,10 @@ def test_workflows_use_release_manifest_without_sleep_loops():
     assert "release_manifest.py upsert-release" in release_wf
 
     assert debian_wf.count("release_manifest.py upsert-release") == 1
-    assert "needs: [identify_version, build_and_deploy_for_kuiper, build_and_deploy_for_ubuntu]" in debian_wf
+    assert (
+        "needs: [identify_version, build_and_deploy_for_kuiper, build_and_deploy_for_ubuntu]"
+        in debian_wf
+    )
     assert "Expected three Debian artifacts" in debian_wf
     concurrency_group = (
         "group: ${{ github.ref_type == 'tag' && "
@@ -154,7 +156,10 @@ def test_workflows_use_release_manifest_without_sleep_loops():
         "format('{0}-{1}', github.workflow, github.ref) }}"
     )
     assert concurrency_group in debian_wf
-    assert "group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}" in release_wf
+    assert (
+        "group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
+        in release_wf
+    )
     assert "sleep 10" not in debian_wf
     assert "for attempt in {1..30}" not in debian_wf
 
@@ -169,8 +174,12 @@ def test_native_system_package_ci_contract():
     workflow = (
         repo_root / ".github" / "workflows" / "build_system_packages.yml"
     ).read_text()
-    builder = (repo_root / ".github" / "scripts" / "create_system_package.sh").read_text()
-    verifier = (repo_root / ".github" / "scripts" / "verify_system_package.sh").read_text()
+    builder = (
+        repo_root / ".github" / "scripts" / "create_system_package.sh"
+    ).read_text()
+    verifier = (
+        repo_root / ".github" / "scripts" / "verify_system_package.sh"
+    ).read_text()
 
     assert "debian:12" in workflow
     assert "fedora:42" in workflow
@@ -193,3 +202,47 @@ def test_native_system_package_ci_contract():
     assert 'ln -s /usr/bin/pkgbuild "$pkgbuild_shim/pkgbuild"' in builder
     assert "pkgutil --files com.analogdevices.python3-pyadi-dt" in verifier
     assert '"$package_test_python" "$package_cli" --help' in verifier
+
+
+def test_release_tag_workflows_queue_without_replacing_pending_runs():
+    for name in ("release.yml", "build_debian.yaml", "build_system_packages.yml"):
+        content = (repo_root / ".github" / "workflows" / name).read_text()
+        assert "queue: max" in content, name
+
+
+def test_validation_workflows_propagate_checker_failures(tmp_path):
+    import os
+    import subprocess
+    import sys
+
+    try:
+        import yaml
+    except ImportError:
+        pytest.skip("PyYAML is required to inspect workflow steps")
+    for workflow, command in [("type-check.yml", "ty"), ("security.yml", "pip-audit")]:
+        content = yaml.safe_load(
+            (repo_root / ".github" / "workflows" / workflow).read_text()
+        )
+        step = next(
+            step
+            for job in content["jobs"].values()
+            for step in job["steps"]
+            if step.get("run", "").lstrip().startswith(command + " ")
+            or step.get("name") in ("Run ty type checker", "Run pip-audit")
+        )
+        fake = tmp_path / command
+        fake.write_text('#!/bin/sh\necho "simulated checker failure"\nexit 19\n')
+        fake.chmod(0o755)
+        env = {
+            **os.environ,
+            "PATH": str(tmp_path) + os.pathsep + os.environ["PATH"],
+            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary"),
+        }
+        result = subprocess.run(
+            ["bash", "-e", "-c", step["run"]],
+            cwd=tmp_path,
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0, workflow

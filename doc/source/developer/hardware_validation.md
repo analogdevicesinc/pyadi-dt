@@ -1,6 +1,10 @@
 # Release hardware validation
 
-## 0.1.0 candidate (2026-09-17)
+The current candidate and open release gates are recorded in
+[release hardening, 2026-11-10](release_hardening_2026-11-10.md). All evidence below
+is historical and does not qualify the current branch.
+
+## Historical 0.1.0 candidate (2026-09-17)
 
 The 0.1.0 candidate is `main` at
 [`2bcd45c`](https://github.com/analogdevicesinc/pyadi-dt/commit/2bcd45c).

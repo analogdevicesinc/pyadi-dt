@@ -651,3 +651,28 @@ def test_detect_link_loss_positive_and_negative():
     assert detect_link_loss("Link status: reset") is True
     assert detect_link_loss("Link status: DATA") is False
     assert detect_link_loss("Link status: DATA\nLink status: DATA") is False
+
+
+def test_collect_dmesg_preserves_full_log_over_slow_serial(tmp_path):
+    full_log = "[12.479510] jesd204: transition completed\n" * 1600
+    warnings = "[44.900575] EXT4-fs error: filesystem needs maintenance"
+
+    class SlowSerialShell:
+        def run(self, cmd, *, timeout=30.0):
+            # A busy CI serial transport can take longer than the driver's
+            # default command budget to deliver the complete kernel buffer.
+            if cmd == "dmesg":
+                if timeout < 45:
+                    raise TimeoutError("kernel log is still arriving over serial")
+                output = full_log
+            elif cmd == "dmesg --level=err,warn":
+                output = warnings
+            else:
+                output = "spi1.0\nspi1.1"
+            return output, [], 0
+
+    result = hw_helpers.collect_dmesg(SlowSerialShell(), tmp_path, "slow_serial")
+
+    assert result == full_log
+    assert (tmp_path / "dmesg_slow_serial.log").read_text() == full_log
+    assert (tmp_path / "dmesg_slow_serial_err.log").read_text() == warnings

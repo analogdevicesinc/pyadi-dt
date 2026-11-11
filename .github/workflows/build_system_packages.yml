@@ -23,6 +23,7 @@ concurrency:
   # packaging workflow cannot cancel another workflow while it is still queued.
   group: ${{ github.ref_type == 'tag' && format('release-{0}', github.ref_name) || format('{0}-{1}', github.workflow, github.ref) }}
   cancel-in-progress: false
+  queue: max
 
 jobs:
   identify_version:

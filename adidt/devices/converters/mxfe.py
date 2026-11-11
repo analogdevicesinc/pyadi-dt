@@ -9,7 +9,7 @@ implemented here so new MxFE parts do not copy an AD9081-shaped core.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, Any, ClassVar
+from typing import Annotated, Any, ClassVar, Generic, TypeVar
 
 from pydantic import Field
 
@@ -49,7 +49,11 @@ class MxFEAdc(ConverterSide):
         """Return configured or derived ADC converter clock."""
         if self.converter_clock is not None:
             return int(self.converter_clock)
-        return int(self.sample_rate) * int(self.cddc_decimation or 1) * int(self.fddc_decimation or 1)
+        return (
+            int(self.sample_rate)
+            * int(self.cddc_decimation or 1)
+            * int(self.fddc_decimation or 1)
+        )
 
 
 class MxFEDac(ConverterSide):
@@ -63,10 +67,18 @@ class MxFEDac(ConverterSide):
         """Return configured or derived DAC converter clock."""
         if self.converter_clock is not None:
             return int(self.converter_clock)
-        return int(self.sample_rate) * int(self.cduc_interpolation or 1) * int(self.fduc_interpolation or 1)
+        return (
+            int(self.sample_rate)
+            * int(self.cduc_interpolation or 1)
+            * int(self.fduc_interpolation or 1)
+        )
 
 
-class MxFEDevice(ConverterDevice):
+AdcT = TypeVar("AdcT", bound=MxFEAdc)
+DacT = TypeVar("DacT", bound=MxFEDac)
+
+
+class MxFEDevice(ConverterDevice, Generic[AdcT, DacT]):
     """Feature-driven base for converters with independent ADC and DAC sides."""
 
     FEATURES: ClassVar[MxFEFeatures]
@@ -77,9 +89,11 @@ class MxFEDevice(ConverterDevice):
 
     label: str
     spi_max_hz: int = Field(5_000_000, alias="spi-max-frequency")
-    adc: Annotated[MxFEAdc, DtSkip()] = Field(default_factory=MxFEAdc)
-    dac: Annotated[MxFEDac, DtSkip()] = Field(default_factory=MxFEDac)
-    gpio_values: Annotated[dict[str, int | None], DtSkip()] = Field(default_factory=dict)
+    adc: Annotated[AdcT, DtSkip()] = Field(default_factory=dict, validate_default=True)
+    dac: Annotated[DacT, DtSkip()] = Field(default_factory=dict, validate_default=True)
+    gpio_values: Annotated[dict[str, int | None], DtSkip()] = Field(
+        default_factory=dict
+    )
 
     @classmethod
     def configure_features(cls, features: MxFEFeatures) -> None:
@@ -122,19 +136,34 @@ class MxFEDevice(ConverterDevice):
         lines.append(f"jesd204-link-ids = <{rx_link_id} {tx_link_id}>;")
         rx_core, tx_core = ctx.get("rx_core_label"), ctx.get("tx_core_label")
         if rx_core and tx_core:
-            lines.append(f"jesd204-inputs = <&{rx_core} 0 {rx_link_id}>, <&{tx_core} 0 {tx_link_id}>;")
+            lines.append(
+                f"jesd204-inputs = <&{rx_core} 0 {rx_link_id}>, <&{tx_core} 0 {tx_link_id}>;"
+            )
         return lines
 
     def render_dt(self, *, cs: int, context: dict | None = None) -> str:
         """Render the SPI child node using the declared feature set."""
-        return render_node(self, label=self.label, node_name=f"{self.part}@{cs}", reg=cs, context=context)
+        return render_node(
+            self,
+            label=self.label,
+            node_name=f"{self.part}@{cs}",
+            reg=cs,
+            context=context,
+        )
 
-    def to_component_model(self, *, spi_bus: str, spi_cs: int, extra: dict[str, Any] | None = None):
+    def to_component_model(
+        self, *, spi_bus: str, spi_cs: int, extra: dict[str, Any] | None = None
+    ):
         """Export this MxFE through the common board-model component contract."""
         from adidt.model.board_model import ComponentModel
 
-        return ComponentModel(role=self.role, part=self.part, spi_bus=spi_bus, spi_cs=spi_cs,
-                              rendered=self.render_dt(cs=spi_cs, context=extra))
+        return ComponentModel(
+            role=self.role,
+            part=self.part,
+            spi_bus=spi_bus,
+            spi_cs=spi_cs,
+            rendered=self.render_dt(cs=spi_cs, context=extra),
+        )
 
 
 __all__ = ["MxFEAdc", "MxFEDac", "MxFEDevice", "MxFEFeatures"]

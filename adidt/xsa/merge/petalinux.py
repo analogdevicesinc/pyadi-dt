@@ -61,6 +61,10 @@ class PetalinuxFormatter:
         # Rewrite &amba to &amba_pl for ZynqMP platforms
         if platform and platform.lower() in _ZYNQMP_PLATFORMS:
             lines = [re.sub(r"^&amba\b", "&amba_pl", ln) for ln in lines]
+            lines = [
+                re.sub(r"(interrupt-parent\s*=\s*<&)gic(\s*>\s*;)", r"\1gic_a53\2", ln)
+                for ln in lines
+            ]
 
         # Build output
         header = [
