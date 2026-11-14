@@ -384,7 +384,9 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
         try:
             ADRV9040BoardConfig.from_dict(defaults["adrv9040_board"])
         except (TypeError, ValueError) as exc:
-            raise ProfileError(f"invalid profile defaults.adrv9040_board: {exc}") from exc
+            raise ProfileError(
+                f"invalid profile defaults.adrv9040_board: {exc}"
+            ) from exc
 
     adrv9003_board = defaults.get("adrv9003_board")
     if adrv9003_board is not None:
@@ -433,6 +435,58 @@ def _validate_profile_defaults(defaults: dict[str, Any]) -> None:
         )
 
 
+def _is_lines(value: Any) -> bool:
+    return isinstance(value, list) and all(isinstance(line, str) for line in value)
+
+
+def _validate_design(name: str, design: Any) -> None:
+    """Check the shape of a declarative profile's ``design`` section."""
+
+    def fail(reason: str) -> None:
+        raise ProfileError(f"invalid profile design for {name}: {reason}")
+
+    if not isinstance(design, dict):
+        fail("expected object")
+    for key in ("project", "carrier"):
+        if not isinstance(design.get(key), str) or not design[key]:
+            fail(f"missing {key}")
+    for index, entry in enumerate(design.get("pl", [])):
+        where = f"pl[{index}]"
+        if not isinstance(entry, dict):
+            fail(f"{where}: expected object")
+        if isinstance(entry.get("instance"), str) == isinstance(
+            entry.get("address"), int
+        ):
+            fail(f"{where}: needs exactly one of instance or address")
+        if not isinstance(entry.get("node"), str) or not entry["node"]:
+            fail(f"{where}: missing node")
+        if not _is_lines(entry.get("body", [])) or not _is_lines(
+            entry.get("labels", [])
+        ):
+            fail(f"{where}: body and labels must be lists of strings")
+        reg = entry.get("reg", [])
+        if not isinstance(reg, list) or not all(
+            isinstance(pair, list)
+            and len(pair) == 2
+            and all(_is_valid_int(cell) for cell in pair)
+            for pair in reg
+        ):
+            fail(f"{where}: reg must be a list of [offset, size] pairs")
+    if not _is_lines(design.get("root", [])):
+        fail("root must be a list of strings")
+    bus = design.get("bus", [])
+    if not isinstance(bus, list) or not all(_is_lines(node) for node in bus):
+        fail("bus must be a list of node line lists")
+    for index, overlay in enumerate(design.get("overlays", [])):
+        if (
+            not isinstance(overlay, dict)
+            or not isinstance(overlay.get("target"), str)
+            or not overlay["target"].startswith("&")
+            or not _is_lines(overlay.get("body"))
+        ):
+            fail(f"overlays[{index}]: needs an &target and a body of strings")
+
+
 class ProfileManager:
     """Loads built-in XSA board profiles."""
 
@@ -445,6 +499,34 @@ class ProfileManager:
         if not self.profile_dir.exists():
             return []
         return sorted(p.stem for p in self.profile_dir.glob("*.json"))
+
+    def find_design_profile(
+        self, project: str, carrier: str, variant: str = ""
+    ) -> str | None:
+        """Return the profile declared for an HDL design, or None.
+
+        Profiles with a ``design`` section name the HDL project, carrier and
+        build variant they describe; that identity comes from the XSA's
+        system-ID ROM, so it selects the right profile even where the
+        netlist alone is ambiguous.
+        """
+        if not project or not carrier:
+            return None
+        for name in self.list_profiles():
+            try:
+                design = json.loads((self.profile_dir / f"{name}.json").read_text())
+            except (OSError, json.JSONDecodeError):
+                continue
+            design = design.get("design") if isinstance(design, dict) else None
+            if (
+                isinstance(design, dict)
+                and design.get("project") == project
+                and design.get("carrier") == carrier
+                and (design.get("variant") or "") == variant
+                and design.get("default", True)
+            ):
+                return name
+        return None
 
     def load(self, name: str) -> dict[str, Any]:
         """Load, validate, and return the profile dict for *name*; raises ProfileError on failure."""
@@ -462,6 +544,8 @@ class ProfileManager:
         if defaults is None or not isinstance(defaults, dict):
             raise ProfileError(f"invalid profile format for {name}: missing defaults")
         _validate_profile_defaults(defaults)
+        if "design" in profile:
+            _validate_design(name, profile["design"])
         return profile
 
 

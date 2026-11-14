@@ -1,0 +1,210 @@
+{
+ "name": "adv7511_zc702",
+ "defaults": {},
+ "design": {
+  "project": "adv7511",
+  "carrier": "zc702",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-zc702-adv7511.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "pulled in /audio_clock: referenced as &audio_clock"
+  ],
+  "pl": [
+   {
+    "instance": "axi_iic_main",
+    "ip_type": "axi_iic",
+    "labels": [],
+    "node": "i2c",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"xlnx,axi-iic-1.02.a\", \"xlnx,xps-iic-2.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"pclk\";",
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "",
+     "mux@74 {",
+     "\tcompatible = \"pca9548\";",
+     "\treg = <0x74>;",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "",
+     "\ti2c@1 {",
+     "\t\t#size-cells = <0>;",
+     "\t\t#address-cells = <1>;",
+     "\t\treg = <1>;",
+     "",
+     "\t\tadv7511: adv7511@39 {",
+     "\t\t\tcompatible = \"adi,adv7511\";",
+     "\t\t\treg = <0x39>, <0x3f>;",
+     "\t\t\treg-names = \"primary\", \"edid\";",
+     "\t\t\tadi,input-depth = <8>;",
+     "\t\t\tadi,input-colorspace = \"yuv422\";",
+     "\t\t\tadi,input-clock = \"1x\";",
+     "\t\t\tadi,input-style = <1>;",
+     "\t\t\tadi,input-justification = \"right\";",
+     "\t\t\tadi,clock-delay = <0>;",
+     "\t\t\t#sound-dai-cells = <1>;",
+     "",
+     "\t\t\tports {",
+     "\t\t\t\t#address-cells = <1>;",
+     "\t\t\t\t#size-cells = <0>;",
+     "",
+     "\t\t\t\tport@0 {",
+     "\t\t\t\t\treg = <0>;",
+     "",
+     "\t\t\t\t\tadv7511_in: endpoint {",
+     "\t\t\t\t\t\tremote-endpoint = <&axi_hdmi_out>;",
+     "\t\t\t\t\t};",
+     "\t\t\t\t};",
+     "",
+     "\t\t\t\tport@1 {",
+     "\t\t\t\t\treg = <1>;",
+     "\t\t\t\t};",
+     "\t\t\t};",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@4 {",
+     "\t\t#size-cells = <0>;",
+     "\t\t#address-cells = <1>;",
+     "\t\treg = <4>;",
+     "",
+     "\t\trtc@51 {",
+     "\t\t\tcompatible = \"rtc8564\";",
+     "\t\t\treg = <0x51>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tfmc_i2c: i2c@5 {",
+     "\t\t#size-cells = <0>;",
+     "\t\t#address-cells = <1>;",
+     "\t\treg = <5>;",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "hdmi_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "hdmi_clock"
+    ],
+    "node": "clock-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clkc 16>, <&clkc 15>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_core",
+    "ip_type": "axi_hdmi_tx",
+    "labels": [],
+    "node": "axi_hdmi",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-hdmi-tx-1.00.a\";",
+     "dmas = <&hdmi_dma 0>;",
+     "dma-names = \"video\";",
+     "clocks = <&hdmi_clock>;",
+     "",
+     "port {",
+     "\taxi_hdmi_out: endpoint {",
+     "\t\tremote-endpoint = <&adv7511_in>;",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_spdif_tx_core",
+    "ip_type": "axi_spdif_tx",
+    "labels": [
+     "axi_spdif_tx_0"
+    ],
+    "node": "axi-spdif-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-spdif-tx-1.00.a\";",
+     "dmas = <&dmac_s 0>;",
+     "dma-names = \"tx\";",
+     "clocks = <&clkc 15>, <&audio_clock>;",
+     "clock-names = \"axi\", \"ref\";",
+     "#sound-dai-cells = <0>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "audio_clock: audio_clock {",
+   "\tcompatible = \"fixed-clock\";",
+   "\t#clock-cells = <0>;",
+   "\tclock-frequency = <12288000>;",
+   "};"
+  ],
+  "overlays": []
+ }
+}

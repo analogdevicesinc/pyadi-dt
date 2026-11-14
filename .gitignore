@@ -148,3 +148,6 @@ docs/superpowers/
 
 # Lab-specific labgrid-exporter deploy manifest (per user, not in repo).
 scripts/labgrid-exporter/nodes.conf
+
+# Scratch directory sdtgen leaves in the working directory.
+.Xil/

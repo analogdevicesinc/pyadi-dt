@@ -137,6 +137,11 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 | FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi |
 
+For the XSA pipeline, every Xilinx design in the HDL 2026.1 release is listed
+with its support state in the
+[HDL 2026.1 design support](https://analogdevicesinc.github.io/pyadi-dt/hdl_2026_r1_support.html)
+page, which is generated from `adidt/xsa/config/hdl_2026_r1_designs.json`.
+
 ## Documentation
 
 - [Quick Start](https://analogdevicesinc.github.io/pyadi-dt/quickstart.html)

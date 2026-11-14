@@ -1,0 +1,587 @@
+{
+ "name": "fmcomms11_zc706",
+ "defaults": {},
+ "design": {
+  "project": "fmcomms11",
+  "carrier": "zc706",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-fmcomms11.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "pulled in /audio_clock: referenced as &audio_clock"
+  ],
+  "pl": [
+   {
+    "instance": "axi_iic_main",
+    "ip_type": "axi_iic",
+    "labels": [],
+    "node": "i2c",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"xlnx,axi-iic-1.02.a\", \"xlnx,xps-iic-2.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"pclk\";",
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "",
+     "i2c_mux: i2cswitch@74 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x74>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\tosc@5d {",
+     "\t\t\tcompatible = \"si570\";",
+     "\t\t\ttemperature-stability = <50>;",
+     "\t\t\treg = <0x5d>;",
+     "\t\t\tfactory-fout = <156250000>;",
+     "\t\t\tinitial-fout = <148500000>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@1 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <1>;",
+     "",
+     "\t\tadv7511: adv7511@39 {",
+     "\t\t\tcompatible = \"adi,adv7511\";",
+     "\t\t\treg = <0x39>, <0x3f>;",
+     "\t\t\treg-names = \"primary\", \"edid\";",
+     "\t\t\tadi,input-depth = <8>;",
+     "\t\t\tadi,input-colorspace = \"rgb\";",
+     "\t\t\tadi,input-clock = \"1x\";",
+     "\t\t\tadi,clock-delay = <0>;",
+     "\t\t\t#sound-dai-cells = <1>;",
+     "",
+     "\t\t\tports {",
+     "\t\t\t\t#address-cells = <1>;",
+     "\t\t\t\t#size-cells = <0>;",
+     "",
+     "\t\t\t\tport@0 {",
+     "\t\t\t\t\treg = <0>;",
+     "",
+     "\t\t\t\t\tadv7511_in: endpoint {",
+     "\t\t\t\t\t\tremote-endpoint = <&axi_hdmi_out>;",
+     "\t\t\t\t\t};",
+     "\t\t\t\t};",
+     "",
+     "\t\t\t\tport@1 {",
+     "\t\t\t\t\treg = <1>;",
+     "\t\t\t\t};",
+     "\t\t\t};",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@2 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <2>;",
+     "",
+     "\t\teeprom@54 {",
+     "\t\t\tcompatible = \"at,24c08\";",
+     "\t\t\treg = <0x54>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@3 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <3>;",
+     "",
+     "\t\tgpio@21 {",
+     "\t\t\tcompatible = \"ti,tca6416\";",
+     "\t\t\treg = <0x21>;",
+     "\t\t\tgpio-controller;",
+     "\t\t\t#gpio-cells = <2>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@4 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <4>;",
+     "",
+     "\t\trtc@51 {",
+     "\t\t\tcompatible = \"nxp,pcf8563\";",
+     "\t\t\treg = <0x51>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\ti2c@5 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <5>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "",
+     "\t\tad7291@2f {",
+     "\t\t\tcompatible = \"adi,ad7291\";",
+     "\t\t\treg = <0x2f>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "hdmi_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "hdmi_clock"
+    ],
+    "node": "clock-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clkc 16>, <&clkc 15>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_core",
+    "ip_type": "axi_hdmi_tx",
+    "labels": [],
+    "node": "axi_hdmi",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-hdmi-tx-1.00.a\";",
+     "dmas = <&hdmi_dma 0>;",
+     "dma-names = \"video\";",
+     "clocks = <&hdmi_clock>;",
+     "adi,is-rgb;",
+     "",
+     "port {",
+     "\taxi_hdmi_out: endpoint {",
+     "\t\tremote-endpoint = <&adv7511_in>;",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_spdif_tx_core",
+    "ip_type": "axi_spdif_tx",
+    "labels": [
+     "axi_spdif_tx_0"
+    ],
+    "node": "axi-spdif-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-spdif-tx-1.00.a\";",
+     "dmas = <&dmac_s 0>;",
+     "dma-names = \"tx\";",
+     "clocks = <&clkc 15>, <&audio_clock>;",
+     "clock-names = \"axi\", \"ref\";",
+     "#sound-dai-cells = <0>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "instance": "axi_ad9625_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9162_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "ad9162_data_offload_i_data_offload",
+    "ip_type": "data_offload",
+    "labels": [
+     "axi_data_offload_tx"
+    ],
+    "node": "axi-data-offload-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-data-offload-1.0.a\";"
+    ]
+   },
+   {
+    "instance": "ad9625_data_offload_i_data_offload",
+    "ip_type": "data_offload",
+    "labels": [
+     "axi_data_offload_rx"
+    ],
+    "node": "axi-data-offload-1",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-data-offload-1.0.a\";"
+    ]
+   },
+   {
+    "instance": "axi_ad9162_core_dac_tpl_core",
+    "ip_type": "ad_ip_jesd204_tpl_dac",
+    "labels": [
+     "axi_ad9162_core"
+    ],
+    "node": "axi-ad9162-hpc",
+    "reg": [
+     [
+      0,
+      16384
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9162-1.0\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "spibus-connected = <&dac0_ad9162>;",
+     "adi,axi-pl-fifo-enable;",
+     "adi,axi-data-offload-connected = <&axi_data_offload_tx>;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_ad9162_jesd 0 0>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9162_jesd_tx_axi",
+    "ip_type": "axi_jesd204_tx",
+    "labels": [
+     "axi_ad9162_jesd"
+    ],
+    "node": "axi-jesd204-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-jesd204-tx-1.0\";",
+     "clocks = <&clkc 15>, <&tx_adxcvr 1>, <&tx_adxcvr 0>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\";",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_dac_lane_clk\";",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&tx_adxcvr 0 0>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9625_core_adc_tpl_core",
+    "ip_type": "ad_ip_jesd204_tpl_adc",
+    "labels": [
+     "axi_ad9625_core"
+    ],
+    "node": "axi-ad9625-hpc",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9625-1.0\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc0_ad9625>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9625_jesd_rx_axi",
+    "ip_type": "axi_jesd204_rx",
+    "labels": [
+     "axi_ad9625_jesd"
+    ],
+    "node": "axi-jesd204-rx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-jesd204-rx-1.0\";",
+     "clocks = <&clkc 15>, <&rx_adxcvr 1>, <&rx_adxcvr 0>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\";",
+     "adi,octets-per-frame = <1>;",
+     "adi,frames-per-multiframe = <32>;",
+     "adi,subclass = <0>;",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_adc_lane_clk\";"
+    ]
+   },
+   {
+    "instance": "axi_ad9625_xcvr",
+    "ip_type": "axi_adxcvr",
+    "labels": [
+     "rx_adxcvr"
+    ],
+    "node": "axi-adxcvr-rx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&adc_divclk>;",
+     "clock-names = \"conv\";",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"adc_gt_clk\", \"rx_out_clk\";",
+     "adi,sys-clk-select = <0>;",
+     "adi,out-clk-select = <2>;",
+     "adi,use-lpm-enable;"
+    ]
+   },
+   {
+    "instance": "axi_ad9162_xcvr",
+    "ip_type": "axi_adxcvr",
+    "labels": [
+     "tx_adxcvr"
+    ],
+    "node": "axi-adxcvr-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&adc0_ad9625>;",
+     "clock-names = \"conv\";",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"dac_gt_clk\", \"tx_out_clk\";",
+     "adi,sys-clk-select = <3>;",
+     "adi,out-clk-select = <2>;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "audio_clock: audio_clock {",
+   "\tcompatible = \"fixed-clock\";",
+   "\t#clock-cells = <0>;",
+   "\tclock-frequency = <12288000>;",
+   "};",
+   "clocks {",
+   "\tadf4355_clkin: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <122880000>;",
+   "\t\tclock-output-names = \"clkin\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "",
+   "\tadc_clk_div: hmc361 {",
+   "\t\tcompatible = \"fixed-factor-clock\";",
+   "\t\tclock-div = <2>;",
+   "\t\tclock-mult = <1>;",
+   "\t\tclocks = <&adf4355_clk>;",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "",
+   "\tadc_divclk: ad9625-divclk {",
+   "\t\tcompatible = \"fixed-factor-clock\";",
+   "\t\tclock-div = <2>;",
+   "\t\tclock-mult = <1>;",
+   "\t\tclocks = <&adc_clk_div>;",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "is-decoded-cs = <1>;",
+     "num-cs = <7>;",
+     "",
+     "adf4355_clk: adf4355@5 {",
+     "\tcompatible = \"adi,adf4355-2\";",
+     "\treg = <5>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclocks = <&adf4355_clkin>;",
+     "\tclock-names = \"clkin\";",
+     "\tclock-scales = <1 2>;",
+     "\tclock-output-names = \"adf4355_pll\";",
+     "\t#clock-cells = <0>;",
+     "\tadi,charge-pump-current = <900>;",
+     "\tadi,muxout-select = <6>;",
+     "\tadi,output-a-power = <3>;",
+     "\tadi,output-b-power = <3>;",
+     "\tadi,charge-pump-negative-bleed-enable;",
+     "\tadi,reference-differential-input-enable;",
+     "\tadi,muxout-level-3v3-enable;",
+     "\tadi,power-up-frequency = /bits/ 64 <3932160000>;",
+     "\tadi,output-a-enable;",
+     "\tadi,output-b-enable;",
+     "\tadi,clock-shift = <1>;",
+     "};",
+     "",
+     "dac0_ad9162: ad9162@2 {",
+     "\tcompatible = \"adi,ad9162\";",
+     "\treg = <2>;",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tclocks = <&adf4355_clk>;",
+     "\tclock-names = \"dac_clk\";",
+     "\tdac_clk-clock-scales = <1 2>;",
+     "\tadi,full-scale-current-microamp = <20000>;",
+     "\tadi,spi-3wire-enable;",
+     "\tjesd204-device;",
+     "\t#jesd204-cells = <2>;",
+     "\tjesd204-top-device = <0>;",
+     "\tjesd204-link-ids = <0>;",
+     "\tjesd204-inputs = <&axi_ad9162_core 0 0>;",
+     "\tadi,subclass = <0>;",
+     "\tadi,version = <1>;",
+     "\tadi,converters-per-device = <2>;",
+     "\tadi,octets-per-frame = <1>;",
+     "\tadi,frames-per-multiframe = <32>;",
+     "\tadi,converter-resolution = <16>;",
+     "\tadi,bits-per-sample = <16>;",
+     "\tadi,control-bits-per-sample = <0>;",
+     "\tadi,lanes-per-device = <8>;",
+     "\tadi,samples-per-converter-per-frame = <2>;",
+     "\tadi,interpolation = <2>;",
+     "\ttxen-gpios = <&gpio0 88 0>;",
+     "\tirq-gpios = <&gpio0 86 0>;",
+     "};",
+     "",
+     "adc0_ad9625: ad9625@1 {",
+     "\tcompatible = \"adi,ad9625\";",
+     "\treg = <1>;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tclocks = <&axi_ad9625_jesd>, <&adc_clk_div>;",
+     "\tclock-names = \"jesd_adc_clk\", \"adc_clk\";",
+     "\tadc_clk-clock-scales = <1 2>;",
+     "\t#clock-cells = <0>;",
+     "\tclock-output-names = \"div_clk\";",
+     "\tirq-gpios = <&gpio0 87 0>;",
+     "};",
+     "",
+     "dga0_adl5240: adl5240@4 {",
+     "\tcompatible = \"adi,adl5240\";",
+     "\treg = <4>;",
+     "\tspi-max-frequency = <100000>;",
+     "};",
+     "",
+     "att0_hmc1119: hmc1119@6 {",
+     "\tcompatible = \"adi,hmc1119\";",
+     "\treg = <6>;",
+     "\tspi-max-frequency = <100000>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

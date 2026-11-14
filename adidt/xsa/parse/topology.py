@@ -1,6 +1,7 @@
 # adidt/xsa/topology.py
 """Data model and parser for extracting IP topology from a Vivado XSA archive."""
 
+import math
 import re
 import warnings
 import zipfile
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import Optional
 
 from ..exceptions import XsaParseError
+from ..platforms import detect_platform
 
 
 @dataclass
@@ -22,6 +24,20 @@ class Jesd204Instance:
     irq: Optional[int]
     link_clk: str
     direction: str  # "rx" or "tx"
+    encoder: str = "8b10b"  # "8b10b" (JESD204B) or "64b66b" (JESD204C)
+
+
+@dataclass
+class TplCoreInstance:
+    """One JESD204 transport-layer (TPL) core and the framing it was built for."""
+
+    name: str
+    direction: str  # "rx" (ADC TPL) or "tx" (DAC TPL)
+    num_channels: int  # JESD M
+    num_lanes: int  # JESD L
+    samples_per_frame: int  # JESD S
+    converter_resolution: int  # JESD N
+    bits_per_sample: int  # JESD Np
 
 
 @dataclass
@@ -76,7 +92,50 @@ class XsaTopology:
     converters: list[ConverterInstance] = field(default_factory=list)
     signal_connections: list[SignalConnection] = field(default_factory=list)
     fpga_part: str = ""
+    board: str = ""
+    # HDL design identity recorded by the system-ID ROM: the project,
+    # carrier and (for non-default builds) parameter-variant directory the
+    # bitstream was built from.  Empty for XSAs not built from ADI HDL.
+    hdl_project: str = ""
+    hdl_carrier: str = ""
+    hdl_variant: str = ""
     ip_instances: list[AxiIpInstance] = field(default_factory=list)
+    tpl_cores: list[TplCoreInstance] = field(default_factory=list)
+
+    def jesd_framing(self, direction: str) -> Optional[dict[str, int]]:
+        """Return the JESD204 framing the bitstream was built for, if unambiguous.
+
+        The transport-layer core fixes M, L, S, N and Np at synthesis time, so
+        F follows from them.  K is a run-time choice the HDL does not record;
+        the value returned is the one ADI reference designs use (32 for
+        8b10b links, the shortest multiblock-aligned value for 64b66b links).
+
+        Returns ``None`` when *direction* has no TPL core, more than one (the
+        caller must then say which link it means), or an inconsistent one.
+        """
+        cores = [c for c in self.tpl_cores if c.direction == direction]
+        if len(cores) != 1:
+            return None
+        core = cores[0]
+        if core.num_lanes <= 0 or core.num_channels <= 0:
+            return None
+        bits = core.num_channels * core.samples_per_frame * core.bits_per_sample
+        octets, remainder = divmod(bits, 8 * core.num_lanes)
+        if remainder or octets <= 0:
+            return None
+        links = self.jesd204_rx if direction == "rx" else self.jesd204_tx
+        encoders = {link.encoder for link in links}
+        encoder = encoders.pop() if len(encoders) == 1 else "8b10b"
+        frames = 256 // math.gcd(256, octets) if encoder == "64b66b" else 32
+        return {
+            "M": core.num_channels,
+            "L": core.num_lanes,
+            "S": core.samples_per_frame,
+            "N": core.converter_resolution,
+            "Np": core.bits_per_sample,
+            "F": octets,
+            "K": frames,
+        }
 
     def _jesd_name_blob(self) -> str:
         """Return a space-joined string of all JESD instance names in lower case."""
@@ -175,17 +234,15 @@ class XsaTopology:
         return "unknown"
 
     def inferred_platform(self) -> str:
-        """Infer the target platform name (e.g. ``"zcu102"``) from the FPGA part string."""
-        part = self.fpga_part.lower()
-        for prefix, platform in _PART_TO_PLATFORM.items():
-            if part.startswith(prefix):
-                return platform
-        for prefix, platform in _PART_TO_PLATFORM.items():
-            if prefix in part:
-                return platform
-        return "unknown"
+        """Infer the target platform name (e.g. ``"zcu102"``) from the board file and FPGA part."""
+        return detect_platform(self.fpga_part, self.board)
 
 
+# Output ports that carry an IP's interrupt (ADI ``irq``, Xilinx ``ip2intc_irpt``).
+_IRQ_PORT_RE = re.compile(r"irq|interrupt|irpt|intr")
+_SYSID_PATH_RE = re.compile(
+    r"projects/([^/]+)/([^/]+)/(?:([^/]+)/)?mem_init_sys\.txt$"
+)
 _ADI_JESD_RX_TYPES = {"axi_jesd204_rx"}
 _ADI_JESD_TX_TYPES = {"axi_jesd204_tx"}
 _ADI_CLKGEN_TYPES = {"axi_clkgen"}
@@ -208,19 +265,6 @@ _ADI_CONVERTER_TYPES = {
     "axi_adrv9025",
     "axi_adrv9026",
     "axi_ad9371",
-}
-_PART_TO_PLATFORM = {
-    "xczu9eg": "zcu102",
-    "xczu11eg": "zu11eg",
-    "xczu3eg": "zcu104",
-    "xck26": "kv260",
-    "xcvp1202": "vpk180",
-    "xc7z045": "zc706",
-    "xc7z020": "zc702",
-    "xcvu9p": "vcu118",
-    # Some exported HWHs omit the leading "xc" (e.g. "7z045-ffg900-2").
-    "7z045": "zc706",
-    "7z020": "zc702",
 }
 
 
@@ -340,6 +384,13 @@ class XsaParser:
         #     f.write(str(root))
         topology = XsaTopology()
         topology.fpga_part = self._parse_part(root)
+        sysinfo = root.find(".//SYSTEMINFO")
+        topology.board = sysinfo.get("BOARD", "") if sysinfo is not None else ""
+        (
+            topology.hdl_project,
+            topology.hdl_carrier,
+            topology.hdl_variant,
+        ) = self._parse_hdl_design(root)
         topology.signal_connections = self._parse_signal_connections(root)
         global_base_addrs = self._parse_global_base_addrs(root)
 
@@ -409,6 +460,7 @@ class XsaParser:
                 found_adi = True
                 topology.clkgens.append(self._parse_clkgen(mod, instance, base_addr))
             elif mod_type in _ADI_AD9081_TPL_ADC_TYPES:
+                self._append_tpl_core(topology, mod, instance, "rx")
                 # AD9081/AD9084 HDL designs can expose TPL blocks but no
                 # explicit axi_ad9081/axi_ad9084 converter module in the HWH.
                 found_adi = True
@@ -421,6 +473,7 @@ class XsaParser:
                     ad9081_tpl_signature = True
                     is_apollo_design = True
             elif mod_type in _ADI_AD9081_TPL_DAC_TYPES:
+                self._append_tpl_core(topology, mod, instance, "tx")
                 found_adi = True
                 ad9081_tpl_dac_seen = True
                 inst_lower = instance.lower()
@@ -479,25 +532,31 @@ class XsaParser:
     def _resolve_zynqmp_irqs(self, root: ET.Element) -> dict[str, int]:
         """Trace PS PL interrupt inputs through xlconcat to Linux SPI numbers.
 
-        ZynqMP PL banks start at SPI 89 and 104. Signal-name suffixes are
-        net identifiers and are not interrupt numbers.
+        ZynqMP PL banks start at SPI 89 and 104.  Zynq-7000 ``IRQ_F2P`` bits
+        0-7 are SPI 29-36 and bits 8-15 are SPI 52-59.  Signal-name suffixes
+        are net identifiers and are not interrupt numbers.
         """
         sources: dict[str, tuple[ET.Element, str]] = {}
-        sinks: list[tuple[str, int]] = []
+        # (signal, SPI number of each bit of the PS input)
+        sinks: list[tuple[str, list[int]]] = []
         for mod in root.findall(".//MODULE"):
+            modtype = mod.get("MODTYPE", "").lower()
             for port in mod.findall("./PORTS/PORT"):
                 signal = port.get("SIGNAME", "")
                 name = port.get("NAME", "").lower()
                 if signal and port.get("DIR") == "O":
                     sources[signal] = (mod, name)
-                if mod.get("MODTYPE", "").lower() == "zynq_ultra_ps_e" and name in {
+                if modtype == "zynq_ultra_ps_e" and name in {
                     "pl_ps_irq0",
                     "pl_ps_irq1",
                 }:
-                    sinks.append((signal, 89 if name.endswith("0") else 104))
-        result: dict[str, int] = {}
+                    base = 89 if name.endswith("0") else 104
+                    sinks.append((signal, list(range(base, base + 8))))
+                elif modtype == "processing_system7" and name == "irq_f2p":
+                    sinks.append((signal, [*range(29, 37), *range(52, 60)]))
+        found: dict[str, set[int]] = {}
 
-        def visit(signal: str, irq: int, seen: set[str]) -> None:
+        def visit(signal: str, bit: int, spis: list[int], seen: set[str]) -> None:
             if signal in seen or signal not in sources:
                 return
             seen = seen | {signal}
@@ -513,18 +572,20 @@ class XsaParser:
                 )
                 offset = 0
                 for inp in ports:
-                    visit(inp.get("SIGNAME", ""), irq + offset, seen)
+                    visit(inp.get("SIGNAME", ""), bit + offset, spis, seen)
                     offset += int(
                         self._get_param(
                             mod, inp.get("NAME", "").upper() + "_WIDTH", "1"
                         )
                     )
-            elif port in {"irq", "interrupt"}:
-                result[mod.get("INSTANCE", "")] = irq
+            elif _IRQ_PORT_RE.search(port) and bit < len(spis):
+                found.setdefault(mod.get("INSTANCE", ""), set()).add(spis[bit])
 
-        for signal, irq in sinks:
-            visit(signal, irq, set())
-        return result
+        for signal, spis in sinks:
+            visit(signal, 0, spis, set())
+        # A core with several interrupt outputs has no single answer; leave
+        # it unresolved rather than report the wrong line.
+        return {name: irqs.pop() for name, irqs in found.items() if len(irqs) == 1}
 
     def _parse_signal_connections(self, root: ET.Element) -> list[SignalConnection]:
         """Extract module-level connectivity using HWH SIGNAME + port directions."""
@@ -701,7 +762,52 @@ class XsaParser:
             irq=self._parse_irq(mod),
             link_clk=link_clk,
             direction=direction,
+            # LINK_MODE: 1 = 8b10b (JESD204B), 2 = 64b66b (JESD204C)
+            encoder="64b66b" if self._get_param(mod, "LINK_MODE") == "2" else "8b10b",
         )
+
+    @staticmethod
+    def _parse_hdl_design(root: ET.Element) -> tuple[str, str, str]:
+        """Return ``(project, carrier, variant)`` from the system-ID ROM path.
+
+        ADI HDL builds initialise the ``sysid_rom`` core from
+        ``projects/<project>/<carrier>[/<variant>]/mem_init_sys.txt``; the
+        path survives in the HWH and names the design unambiguously, which
+        matters where two parts share one bitstream layout (AD9081/AD9082)
+        or one project builds several parts (``dac_fmc_ebz``).
+        """
+        for param in root.iter("PARAMETER"):
+            if param.get("NAME") != "PATH_TO_FILE":
+                continue
+            match = _SYSID_PATH_RE.search(param.get("VALUE", "").replace("\\", "/"))
+            if match:
+                return match.group(1), match.group(2), match.group(3) or ""
+        return "", "", ""
+
+    def _append_tpl_core(
+        self, topology: XsaTopology, mod: ET.Element, name: str, direction: str
+    ) -> None:
+        """Record a TPL core's framing parameters; skip cores that do not state them."""
+
+        def param(key: str) -> int:
+            value = self._get_param(mod, key) or self._get_param(mod, f"C_{key}")
+            return int(value) if value.isdigit() else 0
+
+        core = TplCoreInstance(
+            name=name,
+            direction=direction,
+            num_channels=param("NUM_CHANNELS"),
+            num_lanes=param("NUM_LANES"),
+            samples_per_frame=param("SAMPLES_PER_FRAME"),
+            converter_resolution=param("CONVERTER_RESOLUTION"),
+            bits_per_sample=param("BITS_PER_SAMPLE"),
+        )
+        if core.num_channels and core.num_lanes and core.bits_per_sample:
+            core.samples_per_frame = core.samples_per_frame or 1
+            core.converter_resolution = (
+                core.converter_resolution or core.bits_per_sample
+            )
+            topology.tpl_cores.append(core)
 
     def _parse_clkgen(
         self, mod: ET.Element, name: str, base_addr: int

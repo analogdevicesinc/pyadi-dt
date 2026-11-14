@@ -1,0 +1,164 @@
+{
+ "name": "pulsar_adc_coraz7s_adaq4003",
+ "defaults": {},
+ "design": {
+  "project": "pulsar_adc",
+  "carrier": "coraz7s",
+  "variant": "",
+  "default": false,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-coraz7s-adaq4003.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [],
+  "pl": [
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "instance": "pulsar_adc_trigger_gen",
+    "ip_type": "axi_pwm_gen",
+    "labels": [
+     "adc_trigger"
+    ],
+    "node": "pwm",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-pwmgen-2.00.a\";",
+     "label = \"adc_conversion_trigger\";",
+     "#pwm-cells = <2>;",
+     "clocks = <&clkc 15>, <&spi_clk>;",
+     "clock-names = \"axi\", \"ext\";"
+    ]
+   },
+   {
+    "instance": "spi_pulsar_adc_spi_pulsar_adc_axi_regmap",
+    "ip_type": "axi_spi_engine",
+    "labels": [
+     "spi_engine"
+    ],
+    "node": "spi",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-spi-engine-1.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15 &spi_clk>;",
+     "clock-names = \"s_axi_aclk\", \"spi_clk\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"offload0-rx\";",
+     "trigger-sources = <&trigger_pwm>;",
+     "#address-cells = <0x1>;",
+     "#size-cells = <0x0>;",
+     "",
+     "adc@0 {",
+     "\tcompatible = \"adi,adaq4003\";",
+     "\treg = <0>;",
+     "\tspi-max-frequency = <100000000>;",
+     "\tvdd-supply = <&adc_vdd>;",
+     "\tvio-supply = <&adc_vio>;",
+     "\tref-supply = <&adc_vref>;",
+     "\tadi,high-z-input;",
+     "\tadi,gain-milli = /bits/ 16 <454>;",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_pulsar_adc_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "spi_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "spi_clk"
+    ],
+    "node": "clock-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clkc 15>, <&clkc 15>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";",
+     "clock-output-names = \"spi_clk\";",
+     "assigned-clocks = <&spi_clk>;",
+     "assigned-clock-rates = <200000000>;"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "adc_vref: regulator-vref {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"EVAL 5V Vref\";",
+   "\tregulator-min-microvolt = <5000000>;",
+   "\tregulator-max-microvolt = <5000000>;",
+   "\tregulator-always-on;",
+   "};",
+   "adc_vdd: regulator-vdd {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"Eval VDD supply\";",
+   "\tregulator-min-microvolt = <5000000>;",
+   "\tregulator-max-microvolt = <5000000>;",
+   "\tregulator-always-on;",
+   "};",
+   "adc_vio: regulator-vio {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"Eval VIO supply\";",
+   "\tregulator-min-microvolt = <3300000>;",
+   "\tregulator-max-microvolt = <3300000>;",
+   "\tregulator-always-on;",
+   "};",
+   "trigger_pwm: adc-pwm-trigger {",
+   "\tcompatible = \"pwm-trigger\";",
+   "\t#trigger-source-cells = <0>;",
+   "\tpwms = <&adc_trigger 0 1000000 0>;",
+   "};"
+  ],
+  "overlays": []
+ }
+}

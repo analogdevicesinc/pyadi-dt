@@ -110,6 +110,7 @@ Table of contents
 
    quickstart
    xsa
+   hdl_2026_r1_support
    adrv9040
    petalinux
    visualization

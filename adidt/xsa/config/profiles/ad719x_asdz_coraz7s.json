@@ -1,0 +1,69 @@
+{
+ "name": "ad719x_asdz_coraz7s",
+ "defaults": {},
+ "design": {
+  "project": "ad719x_asdz",
+  "carrier": "coraz7s",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7190.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "reference tree has no PL bus matching the XSA"
+  ],
+  "pl": [],
+  "bus": [],
+  "root": [
+   "aincom: fixedregulator@0 {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"fixed-supply0\";",
+   "\tregulator-min-microvolt = <1000000>;",
+   "\tregulator-max-microvolt = <1000000>;",
+   "\tregulator-boot-on;",
+   "};",
+   "avdd: fixedregulator@1 {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"fixed-supply1\";",
+   "\tregulator-min-microvolt = <5000000>;",
+   "\tregulator-max-microvolt = <5000000>;",
+   "\tregulator-boot-on;",
+   "};",
+   "dvdd: fixedregulator@2 {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"fixed-supply2\";",
+   "\tregulator-min-microvolt = <3300000>;",
+   "\tregulator-max-microvolt = <3300000>;",
+   "\tregulator-boot-on;",
+   "};",
+   "vref: fixedregulator@3 {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"fixed-supply3\";",
+   "\tregulator-min-microvolt = <2500000>;",
+   "\tregulator-max-microvolt = <2500000>;",
+   "\tregulator-boot-on;",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "ad7190: adc@0 {",
+     "\tcompatible = \"adi,ad7190\";",
+     "\treg = <0>;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tinterrupts = <86 0x2>;",
+     "\tinterrupt-parent = <&gpio0>;",
+     "\taincom-supply = <&aincom>;",
+     "\tavdd-supply = <&avdd>;",
+     "\tdvdd-supply = <&dvdd>;",
+     "\tvref-supply = <&vref>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

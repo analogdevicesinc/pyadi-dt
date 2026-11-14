@@ -401,6 +401,105 @@ Use the CLI to browse profiles without reading JSON files directly:
 The MCP server exposes the same data via ``list_xsa_profiles()`` and
 ``show_xsa_profile()``.
 
+Profile selection
+~~~~~~~~~~~~~~~~~
+
+When ``profile`` is not given, the pipeline picks one in two steps:
+
+1. **HDL design identity.**  Every bitstream built from ADI HDL initialises
+   its system-ID ROM from
+   ``projects/<project>/<carrier>[/<variant>]/mem_init_sys.txt``, and that
+   path is kept in the XSA.  The parser exposes it as
+   ``XsaTopology.hdl_project``, ``hdl_carrier`` and ``hdl_variant``.  A
+   profile whose ``design`` section names the same project, carrier and
+   variant is selected.  This tells apart designs whose netlists look alike
+   (AD9081 and AD9082) and parts built from one project (``dac_fmc_ebz``).
+2. **Converter family.**  Otherwise the profile named
+   ``<converter_family>_<platform>`` is used, as before.
+
+Declarative design profiles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Most HDL designs need no bespoke builder: their device tree is a fixed set of
+PL cores plus the devices on the PS SPI/I2C buses.  A profile can describe
+those nodes directly in a ``design`` section, which ``DeclarativeBuilder``
+renders in place of the family builders:
+
+.. code-block:: json
+
+   {
+     "name": "ad9083_evb_zcu102",
+     "defaults": {},
+     "design": {
+       "project": "ad9083_evb", "carrier": "zcu102", "variant": "",
+       "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9083-fmc-ebz.dts",
+       "pl": [
+         {
+           "instance": "axi_ad9083_rx_dma",
+           "labels": ["rx_dma"],
+           "node": "dma-controller",
+           "reg": [[0, 65536]],
+           "interrupt_flags": 4,
+           "body": ["compatible = \"adi,axi-dmac-1.00.a\";", "#dma-cells = <1>;"]
+         }
+       ],
+       "root": ["clocks {", "\t...", "};"],
+       "overlays": [{"target": "&spi0", "body": ["status = \"okay\";", "..."]}],
+       "notes": []
+     }
+   }
+
+``pl``
+   One entry per PL core.  ``instance`` is the IP instance name in the XSA;
+   the node's unit address, ``reg`` (offsets and sizes relative to the
+   instance's base address) and interrupt number are taken from that
+   instance when the tree is generated.  If the XSA lacks a named instance,
+   generation fails with ``ProfileError`` rather than describing hardware
+   the bitstream does not contain.  The stub sdtgen generated for the same
+   instance is deleted.
+``root``
+   Lines added to the root node (fixed clocks, regulators).
+``overlays``
+   Blocks applied to nodes of the base tree, such as the PS SPI bus the
+   converter sits on.
+``notes``
+   What the seeder dropped, created or overrode; read these when reviewing
+   a profile.
+
+These profiles are seeded from the kernel reference tree of the matching
+release rather than written by hand:
+
+.. code-block:: bash
+
+   python scripts/seed_declarative_profile.py \
+       --inventory adidt/xsa/config/hdl_2026_r1_designs.json \
+       --linux ~/dev/linux \
+       --xsa-cache ~/.cache/adidt/kuiper/2026_r1_xsa \
+       --only 'zynqmp-zcu102-rev10-ad9083*'
+
+The seeder separates the design's nodes from the carrier's by source file,
+matches every PL node to the XSA instance at its address, and pulls in any
+carrier node the design refers to that the sdtgen base tree does not
+provide.  Where the reference and the XSA disagree on an interrupt, the XSA
+wins and the difference is recorded in ``notes``.
+
+Boards that share a bitstream
+   Some boards differ only in the part fitted (the ``pulsar_adc`` ZedBoard
+   design serves a dozen ADCs).  No XSA can tell them apart, so the first
+   reference tree seeded for a bitstream is its default profile and the
+   others are selected by name::
+
+      adidtc xsa2dt -x system_top.xsa -c cfg.json --profile pulsar_adc_zed_ad4020
+
+Designs without a released XSA
+   Passing ``--base-for <carrier>=<system-top.dts>`` also seeds designs the
+   release ships no XSA for, borrowing an sdtgen base tree of another design
+   on the same carrier.  Their PL entries carry an ``address`` instead of an
+   ``instance`` and are bound to an IP only when a tree is generated; such
+   profiles are marked ``"validated": false``.
+
+See :doc:`hdl_2026_r1_support` for the state of every design in the release.
+
 Reference DTS parity checking
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -797,13 +896,24 @@ For AD9081 + MXFE XSA designs, ``NodeBuilder`` resolves
 
 1. ``cfg["ad9081"]["rx_link_mode"]`` / ``cfg["ad9081"]["tx_link_mode"]``
 2. ``cfg["jesd"]["rx"]["mode"]`` / ``cfg["jesd"]["tx"]["mode"]``
-3. Inference from JESD ``(M, L)`` tuples:
+3. Inference from the link framing ``(M, L, Np, S)``, using the mode each
+   framing has in the ADI kernel reference device trees, for example:
 
-   - ``(8, 4)`` -> RX ``17``, TX ``18``
-   - ``(4, 8)`` -> RX ``10``, TX ``11``
+   - ``M=8, L=4, Np=16`` -> RX ``10``, TX ``9``
+   - ``M=4, L=8, Np=16`` -> RX ``18``, TX ``17``
+   - ``M=8, L=8, Np=12, S=2`` -> RX ``26``, TX ``24``
 
-If no explicit mode is set and ``(M, L)`` does not match a supported tuple,
-``ConfigError`` is raised instead of silently falling back to hardcoded modes.
+   ``Np`` and ``S`` may be omitted when ``(M, L)`` alone identifies one mode.
+
+JESD framing that the configuration leaves out is read from the XSA: the
+transport-layer core records ``M``, ``L``, ``S``, ``N`` and ``Np``, from which
+``F`` follows.  ``K`` is not recorded in the bitstream, so it defaults to
+``32`` for 8b10b links and to the shortest multiblock-aligned value for
+64b66b links.  Values given in the configuration or the profile always win.
+
+If no explicit mode is set and the framing does not identify exactly one
+mode, ``ConfigError`` is raised instead of silently falling back to hardcoded
+modes.
 
 Board override keys
 ~~~~~~~~~~~~~~~~~~~

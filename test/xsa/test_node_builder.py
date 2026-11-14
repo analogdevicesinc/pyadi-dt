@@ -981,10 +981,12 @@ def test_build_ad9081_mxfe_inferrs_link_modes_from_jesd_params(cfg):
     nodes = NodeBuilder().build(topo_ad9081, cfg)
     merged = "\n".join(nodes["converters"])
 
-    assert "adi,link-mode = <17>;" in merged
-    assert "adi,link-mode = <18>;" in merged
-    assert "adi,link-mode = <4>;" not in merged
-    assert "adi,link-mode = <9>;" not in merged
+    # M=8, L=4 is RX mode 10 / TX mode 9 in the kernel reference device
+    # tree (zynqmp-zcu102-rev10-ad9081-m8-l4.dts).
+    assert "adi,link-mode = <10>;" in merged
+    assert "adi,link-mode = <9>;" in merged
+    assert "adi,link-mode = <17>;" not in merged
+    assert "adi,link-mode = <18>;" not in merged
 
 
 def test_build_adrv9009_applies_board_overrides(cfg):

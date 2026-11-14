@@ -12,8 +12,10 @@ from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
 from .builders.adrv9003 import ADRV9003Builder
 from .builders.adrv9040 import ADRV9040Builder
+from .builders.declarative import DESIGN_KEY, DeclarativeBuilder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
+from ..platforms import platform_info
 from ..config.pipeline_config import PipelineConfig
 from ..parse.topology import (
     XsaTopology,
@@ -27,6 +29,7 @@ class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
     _DEFAULT_BUILDERS: list[BoardBuilder] = [
+        DeclarativeBuilder(),
         ADRV9040Builder(),
         ADRV9003Builder(),
         ADRV9009Builder(),
@@ -38,11 +41,6 @@ class NodeBuilder:
         AD9172Builder(),
     ]
 
-    _AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
-        # (M, L): (rx_link_mode, tx_link_mode)
-        (8, 4): (17, 18),
-        (4, 8): (10, 11),
-    }
     _ADRV90XX_KEYWORDS = ("adrv9009", "adrv9025", "adrv9026")
 
     @classmethod
@@ -52,7 +50,6 @@ class NodeBuilder:
         return any(key in lower for key in cls._ADRV90XX_KEYWORDS)
 
     # Platforms using single-cell (32-bit) addressing in amba_pl
-    _32BIT_PLATFORMS = {"vcu118", "zc706"}
 
     def build(
         self, topology: XsaTopology, cfg: PipelineConfig | dict[str, Any]
@@ -70,8 +67,20 @@ class NodeBuilder:
         """
         if isinstance(cfg, PipelineConfig):
             cfg = cfg.to_dict(converter_family=topology.inferred_converter_family())
+        if isinstance(cfg.get(DESIGN_KEY), dict):
+            # A declarative profile describes every node of the design, so
+            # none of the family heuristics below apply.
+            built = DeclarativeBuilder().build(topology, cfg[DESIGN_KEY])
+            return {
+                "clkgens": [],
+                "jesd204_rx": [],
+                "jesd204_tx": [],
+                "converters": [],
+                "design": [*built["design"], *built["overlays"]],
+                "replaced_instances": built["replaced"],
+            }
         platform = topology.inferred_platform()
-        self._addr_cells = 1 if platform in self._32BIT_PLATFORMS else 2
+        self._addr_cells = platform_info(platform).addr_cells
         clock_map = self._build_clock_map(topology)
         ps_clk_label, ps_clk_index, gpio_label = self._platform_ps_labels(topology)
         result: dict[str, list[str]] = {
@@ -461,15 +470,8 @@ class NodeBuilder:
     @staticmethod
     def _platform_ps_labels(topology: XsaTopology) -> tuple[str, int | None, str]:
         """Return ``(ps_clk_label, ps_clk_index, gpio_label)`` appropriate for the topology's platform."""
-        platform = topology.inferred_platform()
-        if platform == "zc706":
-            return ("clkc", 15, "gpio0")
-        if platform == "vcu118":
-            # MicroBlaze/VCU118: AXI bus clock is a fixed-clock with #clock-cells = <0>
-            return ("clk_bus_0", None, "axi_gpio")
-        if platform in {"vpk180", "vck190"}:
-            return ("versal_clk", 65, "gpio")
-        return ("zynqmp_clk", 71, "gpio")
+        info = platform_info(topology.inferred_platform())
+        return (info.ps_clk_label, info.ps_clk_index, info.gpio_label)
 
     # ------------------------------------------------------------------
     # Helpers that may be used by builders via import

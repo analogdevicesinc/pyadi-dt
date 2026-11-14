@@ -1,0 +1,317 @@
+{
+ "name": "ad916x_fmc_zcu102",
+ "defaults": {},
+ "design": {
+  "project": "ad916x_fmc",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": true,
+  "validated": false,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9161-fmc-ebz_m2_s2.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "seeded without an XSA: the release ships none for this design, so nothing here was checked against a bitstream",
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "address": 2621571072,
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "adi,cyclic;",
+     "interrupts = <0 108 4>;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "address": 2225094656,
+    "labels": [
+     "axi_ad9161_core"
+    ],
+    "node": "axi-ad9161-hpc",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9162-1.0\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "spibus-connected = <&dac0_ad9161>;",
+     "adi,axi-pl-fifo-enable;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_ad9161_jesd 0 0>;"
+    ]
+   },
+   {
+    "address": 2225668096,
+    "labels": [
+     "axi_ad9161_jesd"
+    ],
+    "node": "axi-jesd204-tx",
+    "reg": [
+     [
+      0,
+      16384
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-jesd204-tx-1.0\";",
+     "interrupts = <0 106 4>;",
+     "clocks = <&zynqmp_clk 71>, <&axi_ad9161_adxcvr 1>, <&axi_ad9161_adxcvr 0>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\";",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_dac_lane_clk\";",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_ad9161_adxcvr 0 0>;"
+    ]
+   },
+   {
+    "address": 2225471488,
+    "labels": [
+     "axi_ad9161_adxcvr"
+    ],
+    "node": "axi-adxcvr-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&ad9508_clk 0>;",
+     "clock-names = \"conv\";",
+     "adi,sys-clk-select = <3>;",
+     "adi,out-clk-select = <3>;",
+     "adi,use-lpm-enable;",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"dac_gt_clk\", \"tx_out_clk\";",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;"
+    ]
+   },
+   {
+    "address": 2231369728,
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "ad9161_control@0 {",
+   "\tcompatible = \"adi,one-bit-adc-dac\";",
+   "\t#address-cells = <1>;",
+   "\t#size-cells = <0>;",
+   "\tout-gpios = <&gpio 99 0>, <&gpio 100 0>, <&gpio 101 0>, <&gpio 102 0>, <&gpio 103 0>;",
+   "\tlabel = \"ad9161_control\";",
+   "",
+   "\tchannel@0 {",
+   "\t\treg = <0>;",
+   "\t\tlabel = \"dac_ctrl_0\";",
+   "\t};",
+   "",
+   "\tchannel@1 {",
+   "\t\treg = <1>;",
+   "\t\tlabel = \"dac_ctrl_1\";",
+   "\t};",
+   "",
+   "\tchannel@2 {",
+   "\t\treg = <2>;",
+   "\t\tlabel = \"dac_ctrl_2\";",
+   "\t};",
+   "",
+   "\tchannel@3 {",
+   "\t\treg = <3>;",
+   "\t\tlabel = \"dac_ctrl_3\";",
+   "\t};",
+   "",
+   "\tchannel@4 {",
+   "\t\treg = <4>;",
+   "\t\tlabel = \"dac_ctrl_4\";",
+   "\t};",
+   "};",
+   "clocks {",
+   "\tadf4355_clkin: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <120000000>;",
+   "\t\tclock-output-names = \"clkin\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "",
+   "\tadf4355_out_div4: hmc365 {",
+   "\t\tcompatible = \"fixed-factor-clock\";",
+   "\t\tclock-div = <4>;",
+   "\t\tclock-mult = <1>;",
+   "\t\tclocks = <&adf4355_clk>;",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "",
+   "\tad9508_clkin: clock@1 {",
+   "\t\tcompatible = \"fixed-factor-clock\";",
+   "\t\tclock-div = <1>;",
+   "\t\tclock-mult = <1>;",
+   "\t\tclocks = <&adf4355_out_div4>;",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adf4355_clk: adf4355@2 {",
+     "\tcompatible = \"adi,adf4355-2\";",
+     "\treg = <2>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclocks = <&adf4355_clkin>;",
+     "\tclock-names = \"clkin\";",
+     "\tclock-scales = <1 1>;",
+     "\tclock-output-names = \"adf4355_pll\";",
+     "\t#clock-cells = <0>;",
+     "\tadi,charge-pump-current = <900>;",
+     "\tadi,muxout-select = <6>;",
+     "\tadi,output-a-power = <3>;",
+     "\tadi,output-b-power = <3>;",
+     "\tadi,charge-pump-negative-bleed-enable;",
+     "\tadi,reference-differential-input-enable;",
+     "\tadi,muxout-level-3v3-enable;",
+     "\tadi,power-up-frequency = /bits/ 64 <5000000000>;",
+     "\tadi,output-a-enable;",
+     "\tadi,output-b-enable;",
+     "\tadi,clock-shift = <1>;",
+     "};",
+     "",
+     "ad9508_clk: ad9508@0 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\t#clock-cells = <1>;",
+     "\tcompatible = \"adi,ad9508\";",
+     "\treg = <0>;",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tclocks = <&ad9508_clkin>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclock-output-names = \"ad9508-1_out0\", \"ad9508-1_out1\", \"ad9508-1_out2\", \"ad9508-1_out3\";",
+     "\tjesd204-device;",
+     "\tadi,write-mode-only;",
+     "\t#jesd204-cells = <2>;",
+     "\tjesd204-sysref-provider;",
+     "",
+     "\tad9508_0_c0: channel@0 {",
+     "\t\treg = <0>;",
+     "\t\tadi,extended-name = \"REF_CLK\";",
+     "\t\tadi,driver-mode = <((1 << 4) | (2 << 1))>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t};",
+     "",
+     "\tad9508_0_c2: channel@2 {",
+     "\t\treg = <2>;",
+     "\t\tadi,extended-name = \"SYSREF2\";",
+     "\t\tadi,driver-mode = <((1 << 4) | (2 << 1))>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <32>;",
+     "\t};",
+     "",
+     "\tad9508_0_c3: channel@3 {",
+     "\t\treg = <3>;",
+     "\t\tadi,extended-name = \"SYSREF\";",
+     "\t\tadi,driver-mode = <((1 << 4) | (2 << 1))>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <32>;",
+     "\t};",
+     "};",
+     "",
+     "dac0_ad9161: ad9161@1 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\tcompatible = \"adi,ad9161\";",
+     "\treg = <1>;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tclocks = <&adf4355_clk 0>;",
+     "\tclock-names = \"dac_clk\";",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tadi,full-scale-current-mircoamp = <40000>;",
+     "\tdac_clk-clock-scales = <1 1>;",
+     "\tjesd204-device;",
+     "\t#jesd204-cells = <2>;",
+     "\tjesd204-top-device = <0>;",
+     "\tjesd204-link-ids = <0>;",
+     "\tjesd204-inputs = <&axi_ad9161_core 0 0>;",
+     "\tadi,jesd-subclass = <1>;",
+     "\tadi,dac-interpolation = <2>;",
+     "\tadi,channel-interpolation = <1>;",
+     "\tadi,clock-output-divider = <1>;",
+     "\tadi,syncoutb-signal-type-lvds-enable;",
+     "\tadi,sysref-mode = <2>;",
+     "\tadi,subclass = <1>;",
+     "\tadi,version = <1>;",
+     "\tadi,converters-per-device = <2>;",
+     "\tadi,octets-per-frame = <1>;",
+     "\tadi,frames-per-multiframe = <32>;",
+     "\tadi,converter-resolution = <16>;",
+     "\tadi,bits-per-sample = <16>;",
+     "\tadi,control-bits-per-sample = <0>;",
+     "\tadi,lanes-per-device = <8>;",
+     "\tadi,samples-per-converter-per-frame = <2>;",
+     "\tadi,interpolation = <2>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

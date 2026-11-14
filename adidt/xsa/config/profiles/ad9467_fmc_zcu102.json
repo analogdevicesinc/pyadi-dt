@@ -1,0 +1,141 @@
+{
+ "name": "ad9467_fmc_zcu102",
+ "defaults": {},
+ "design": {
+  "project": "ad9467_fmc",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9467-fmc-250ebz.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_ad9467_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9467",
+    "ip_type": "axi_ad9467",
+    "labels": [
+     "cf_ad9467_core_0"
+    ],
+    "node": "cf-ad9467-core-lpc",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adc-legacy-10.0.a\", \"adi,axi-ad9467-1.0\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc_ad9467>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tad9517_ref_clk: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <250000000>;",
+   "\t\tclock-output-names = \"ad9517_refclk\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adc_ad9467: ad9467@0 {",
+     "\tcompatible = \"adi,ad9467\";",
+     "\treg = <0>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tadi,spi-3wire-enable;",
+     "\tclocks = <&ad9517_ref_clk>;",
+     "\tclock-names = \"adc_clk\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "};",
+     "",
+     "clk_ad9517: ad9517@1 {",
+     "\tcompatible = \"adi,ad9517-4\";",
+     "\treg = <1>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tadi,spi-3wire-enable;",
+     "\tclocks = <&ad9517_ref_clk>, <&ad9517_ref_clk>;",
+     "\tclock-names = \"refclk\", \"clkin\";",
+     "\tclock-output-names = \"out0\", \"out1\", \"out2\", \"out3\", \"out4\", \"out5\", \"out6\", \"out7\";",
+     "\t#clock-cells = <1>;",
+     "\tfirmware = \"ad9467_intbypass_ad9517.stp\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

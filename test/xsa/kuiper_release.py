@@ -109,3 +109,59 @@ def download_project_xsa(
         output_dir=output_dir,
         xsa_name=xsa_name,
     )
+
+
+def extract_release_xsas(
+    tarball_path: Path,
+    project_dirs: list[str],
+    output_dir: Path,
+    xsa_name: str = "system_top.xsa",
+) -> dict[str, Path]:
+    """Extract the XSA of every project in *project_dirs* in one archive pass.
+
+    ``extract_project_xsa`` re-reads the whole (several hundred MB) archive for
+    each project; this walks it once and caches results under
+    ``output_dir/<project_dir>/<xsa_name>`` so repeated runs are free.
+
+    Returns a mapping of project directory to extracted XSA path.  Projects
+    whose archive entry holds no XSA are omitted.
+    """
+    result: dict[str, Path] = {}
+    wanted: dict[str, str] = {}
+    for project_dir in project_dirs:
+        cached = output_dir / project_dir / xsa_name
+        if cached.exists():
+            result[project_dir] = cached
+        else:
+            wanted[f"{project_dir}/bootgen_sysfiles.tgz"] = project_dir
+    if not wanted:
+        return result
+
+    with tarfile.open(tarball_path, "r:gz") as outer_tar:
+        for member in outer_tar:
+            project_dir = wanted.get(member.name.removeprefix("./"))
+            if project_dir is None:
+                continue
+            nested_f = outer_tar.extractfile(member)
+            if nested_f is None:
+                continue
+            with tarfile.open(
+                fileobj=io.BytesIO(nested_f.read()), mode="r:gz"
+            ) as inner_tar:
+                xsa_members = [
+                    m for m in inner_tar.getmembers() if m.name.endswith(".xsa")
+                ]
+                if not xsa_members:
+                    continue
+                selected = next(
+                    (m for m in xsa_members if Path(m.name).name == xsa_name),
+                    xsa_members[0],
+                )
+                src = inner_tar.extractfile(selected)
+                if src is None:
+                    continue
+                out_path = output_dir / project_dir / xsa_name
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_bytes(src.read())
+                result[project_dir] = out_path
+    return result

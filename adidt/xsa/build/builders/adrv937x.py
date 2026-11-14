@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ...platforms import platform_info
 from ....model.board_model import (
     BoardModel,
     ComponentModel,
@@ -742,8 +743,7 @@ class ADRV937xBuilder:
             tx_core_second,
         ]
 
-        _32BIT_PLATFORMS = {"vcu118", "zc706"}
-        addr_cells = 1 if platform in _32BIT_PLATFORMS else 2
+        addr_cells = platform_info(platform).addr_cells
 
         fpga_cfg = FpgaConfig(
             platform=platform or "unknown",

@@ -117,8 +117,21 @@ def _parse_spi_buses(dts: str) -> dict[str, list[tuple[str, str]]]:
         full_body = dts[full_body_start:full_body_end]
         if "#address-cells" not in full_body or "spi-max-frequency" not in full_body:
             continue
+        # Only direct children are devices on this bus.  Nested nodes (for
+        # example an AD9081's adi,tx-dacs channel@0) have their own ``reg``
+        # address space and must not be mistaken for chip selects.
+        depth_at = [0] * (len(full_body) + 1)
+        level = 0
+        for i, ch in enumerate(full_body):
+            depth_at[i] = level
+            if ch == "{":
+                level += 1
+            elif ch == "}":
+                level -= 1
         children: list[tuple[str, str]] = []
         for child_m in _LABELED_NODE_RE.finditer(full_body):
+            if depth_at[child_m.start("label")] != 0:
+                continue
             children.append((child_m.group("label"), child_m.group("body")))
         if children:
             result[bus_label] = children
@@ -251,6 +264,50 @@ def _find_child_labels(dts: str) -> set[str]:
     return child_labels
 
 
+_BUS_COMPATIBLE_RE = re.compile(r"simple-bus|spi|i2c|iic")
+_PHY_PARENT_RE = re.compile(r"gem\d*|mdio|ethernet|emac", re.IGNORECASE)
+
+
+def _find_subnode_labels(dts: str) -> set[str]:
+    """Return labels of nodes that a parent device's driver owns.
+
+    A node needs its own ``compatible`` only when something instantiates it
+    by that string: a bus (``simple-bus``, an SPI or I2C controller).  Nodes
+    below a device -- converter channels, the ADC/DAC halves of a
+    transceiver, PHYs under an Ethernet MAC -- are read by the parent's
+    driver and legitimately carry ``reg`` alone.
+    """
+    from ..declarative.dts_source import DtsSyntaxError, DtsTree
+
+    text = re.sub(r"^\s*#include[^\n]*$", "", dts, flags=re.MULTILINE)
+    try:
+        tree = DtsTree.parse(text)
+    except DtsSyntaxError:
+        return set()  # a fragment, not a whole tree: no structure to go on
+    owned: set[str] = set()
+    for top in (tree.root, *tree.unresolved):
+        if top.name.startswith("&") and "reg" not in top.properties:
+            # An overlay that only adds children: its own reg and
+            # compatible live where the node is defined.
+            owned.add(top.name.lstrip("&"))
+        for node in top.walk():
+            parent = node.parent
+            if not node.labels or parent is None:
+                continue
+            if parent.name.startswith("&"):
+                # An overlay of a node defined elsewhere: only Ethernet MACs
+                # and MDIO buses are known to take compatible-less children.
+                is_subnode = bool(_PHY_PARENT_RE.search(parent.name))
+            elif parent is tree.root:
+                is_subnode = False
+            else:
+                compatible = " ".join(parent.compatible())
+                is_subnode = not _BUS_COMPATIBLE_RE.search(compatible)
+            if is_subnode:
+                owned.update(node.labels)
+    return owned
+
+
 def _check_compatible_missing(dts: str, nodes: dict[str, str]) -> list[LintDiagnostic]:
     """Check that device nodes with reg also have a compatible string.
 
@@ -259,7 +316,7 @@ def _check_compatible_missing(dts: str, nodes: dict[str, str]) -> list[LintDiagn
     compatible string.
     """
     diagnostics: list[LintDiagnostic] = []
-    child_labels = _find_child_labels(dts)
+    child_labels = _find_child_labels(dts) | _find_subnode_labels(dts)
 
     for label, body in nodes.items():
         if label in child_labels:

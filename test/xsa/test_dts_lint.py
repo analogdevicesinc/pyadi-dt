@@ -170,6 +170,61 @@ class TestSpiCsDuplicate:
         diags = _lint(dts)
         assert not any(d.rule == "spi-cs-duplicate" for d in diags)
 
+    def test_nested_channel_nodes_are_not_chip_selects(self):
+        # An AD9081 node carries channel sub-nodes whose ``reg`` is a channel
+        # index, not a chip select on the parent's SPI bus.
+        dts = """\
+        &spi0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            trx0: ad9081@0 {
+                reg = <0>;
+                spi-max-frequency = <5000000>;
+                adi,tx-dacs {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    tx_chan0: channel@0 {
+                        reg = <0>;
+                    };
+                    tx_chan1: channel@1 {
+                        reg = <1>;
+                    };
+                };
+            };
+            clk: hmc7044@1 {
+                reg = <1>;
+                spi-max-frequency = <1000000>;
+            };
+        };
+        """
+        diags = _lint(dts)
+        assert not any(d.rule == "spi-cs-duplicate" for d in diags)
+
+    def test_still_detects_duplicates_beside_nested_nodes(self):
+        dts = """\
+        &spi0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            trx0: ad9081@0 {
+                reg = <0>;
+                spi-max-frequency = <5000000>;
+                adi,tx-dacs {
+                    tx_chan0: channel@0 {
+                        reg = <0>;
+                    };
+                };
+            };
+            clk: hmc7044@0 {
+                reg = <0>;
+                spi-max-frequency = <1000000>;
+            };
+        };
+        """
+        diags = _lint(dts)
+        dup = [d for d in diags if d.rule == "spi-cs-duplicate"]
+        assert len(dup) == 1
+        assert "trx0, clk" in dup[0].message
+
 
 # ---------------------------------------------------------------------------
 # compatible-missing
@@ -270,3 +325,55 @@ class TestLinterGeneral:
         )
         assert "[error]" in str(d)
         assert "phandle-unresolved" in str(d)
+
+
+class TestCompatibleMissingStructure:
+    """With a whole tree to go on, only bus children need a compatible."""
+
+    TREE = """\
+/dts-v1/;
+/ {
+	amba: axi {
+		compatible = "simple-bus";
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi-r1p6";
+			trx: transceiver@0 {
+				compatible = "adi,ad9081";
+				reg = <0>;
+				adc0: adc@0 {
+					reg = <0>;
+				};
+			};
+			bare_dev: bare@1 {
+				reg = <1>;
+			};
+		};
+		pl_stub: stub@80000000 {
+			reg = <0x80000000 0x1000>;
+		};
+	};
+};
+&gem3 {
+	phy0: ethernet-phy@c {
+		reg = <0xc>;
+	};
+};
+&spi1 {
+	other_bare: bare@0 {
+		reg = <0>;
+	};
+};
+"""
+
+    def _missing(self) -> set[str]:
+        return {
+            d.node for d in _lint(self.TREE) if d.rule == "compatible-missing"
+        }
+
+    def test_nodes_owned_by_a_device_driver_are_not_flagged(self):
+        missing = self._missing()
+        assert "adc0" not in missing
+        assert "phy0" not in missing
+
+    def test_bus_children_without_compatible_are_still_flagged(self):
+        assert {"bare_dev", "pl_stub", "other_bare"} <= self._missing()

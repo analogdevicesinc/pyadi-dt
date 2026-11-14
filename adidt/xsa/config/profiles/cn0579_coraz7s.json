@@ -1,0 +1,167 @@
+{
+ "name": "cn0579_coraz7s",
+ "defaults": {},
+ "design": {
+  "project": "cn0579",
+  "carrier": "coraz7s",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-coraz7s-cn0579_i2c.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [],
+  "pl": [
+   {
+    "instance": "axi_iic_ard",
+    "ip_type": "axi_iic",
+    "labels": [
+     "axi_i2c_0"
+    ],
+    "node": "i2c",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"xlnx,axi-iic-1.01.b\", \"xlnx,xps-iic-2.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"pclk\";",
+     "#size-cells = <0>;",
+     "#address-cells = <1>;",
+     "",
+     "ad5696: dac@c {",
+     "\tcompatible = \"adi,ad5696\";",
+     "\treg = <0x0c>;",
+     "\tvref-supply = <&vref>;",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "instance": "cn0579_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "axi_ad77684_adc",
+    "ip_type": "axi_ad7768",
+    "labels": [
+     "axi_adc_ad7768"
+    ],
+    "node": "cf_axi_adc",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adc-legacy-10.0.a\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&ad7768>;"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "vref: regulator-vref {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"fixed-supply\";",
+   "\tregulator-min-microvolt = <4096000>;",
+   "\tregulator-max-microvolt = <4096000>;",
+   "\tregulator-always-on;",
+   "};",
+   "clocks {",
+   "\tad7768_mclk: clock@0 {",
+   "\t\t#clock-cells = <0>;",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <32768000>;",
+   "\t};",
+   "};",
+   "cn0579_control@0 {",
+   "\tcompatible = \"adi,one-bit-adc-dac\";",
+   "\t#address-cells = <1>;",
+   "\t#size-cells = <0>;",
+   "\tout-gpios = <&ad7768 0 0>, <&ad7768 1 0>, <&ad7768 2 0>, <&ad7768 3 0>;",
+   "\tlabel = \"cn0579_control\";",
+   "",
+   "\tchannel@0 {",
+   "\t\treg = <0>;",
+   "\t\tlabel = \"CC_CH0\";",
+   "\t};",
+   "",
+   "\tchannel@1 {",
+   "\t\treg = <1>;",
+   "\t\tlabel = \"CC_CH1\";",
+   "\t};",
+   "",
+   "\tchannel@2 {",
+   "\t\treg = <2>;",
+   "\t\tlabel = \"CC_CH2\";",
+   "\t};",
+   "",
+   "\tchannel@3 {",
+   "\t\treg = <3>;",
+   "\t\tlabel = \"CC_CH3\";",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "ad7768: adc@0 {",
+     "\tcompatible = \"adi,ad7768-4\";",
+     "\treg = <0>;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tvref-supply = <&vref>;",
+     "\treset-gpios = <&gpio0 86 1>;",
+     "\tclocks = <&ad7768_mclk>;",
+     "\tclock-names = \"mclk\";",
+     "\tadi,data-lines = <4>;",
+     "\tgpio-controller;",
+     "\t#gpio-cells = <2>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

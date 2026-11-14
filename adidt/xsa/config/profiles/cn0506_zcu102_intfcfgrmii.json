@@ -1,0 +1,117 @@
+{
+ "name": "cn0506_zcu102_intfcfgrmii",
+ "defaults": {},
+ "design": {
+  "project": "cn0506",
+  "carrier": "zcu102",
+  "variant": "INTFCFGRMII",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-cn0506-rmii.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@1: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [],
+  "overlays": [
+   {
+    "target": "&gem0",
+    "body": [
+     "status = \"okay\";",
+     "clock-names = \"pclk\", \"hclk\", \"tx_clk\", \"rx_clk\", \"tsu_clk\";",
+     "clocks = <&zynqmp_clk 31>, <&fmc_mii_clk1>, <&zynqmp_clk 45>, <&zynqmp_clk 49>, <&zynqmp_clk 44>;",
+     "phy-mode = \"rmii\";",
+     "phy-handle = <&ethernet_gem0_phy1>;",
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "",
+     "ethernet_gem0_phy1: ethernet-phy@1 {",
+     "\treg = <1>;",
+     "\treset-gpios = <&gpio 115 0>;",
+     "\treset-assert-us = <20>;",
+     "\treset-deassert-us = <10000>;",
+     "};"
+    ]
+   },
+   {
+    "target": "&gem1",
+    "body": [
+     "status = \"okay\";",
+     "clock-names = \"pclk\", \"hclk\", \"tx_clk\", \"rx_clk\", \"tsu_clk\";",
+     "clocks = <&zynqmp_clk 31>, <&fmc_mii_clk2>, <&zynqmp_clk 46>, <&zynqmp_clk 50>, <&zynqmp_clk 44>;",
+     "phy-mode = \"rmii\";",
+     "phy-handle = <&ethernet_gem1_phy2>;",
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "",
+     "ethernet_gem1_phy2: ethernet-phy@2 {",
+     "\treg = <2>;",
+     "\treset-gpios = <&gpio 114 0>;",
+     "\treset-assert-us = <20>;",
+     "\treset-deassert-us = <10000>;",
+     "};"
+    ]
+   },
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@1 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <1>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "",
+     "\t\tfmc_mii_clk1: clock-generator@32 {",
+     "\t\t\t#clock-cells = <0>;",
+     "\t\t\tcompatible = \"silabs,si514\";",
+     "\t\t\treg = <0x32>;",
+     "\t\t\tclock-output-names = \"si514_fmc_mii_clk1\";",
+     "\t\t\tassigned-clocks = <&fmc_mii_clk1>;",
+     "\t\t\tassigned-clock-rates = <50000000>;",
+     "\t\t};",
+     "",
+     "\t\tfmc_mii_clk2: clock-generator@33 {",
+     "\t\t\t#clock-cells = <0>;",
+     "\t\t\tcompatible = \"silabs,si514\";",
+     "\t\t\treg = <0x33>;",
+     "\t\t\tclock-output-names = \"si514_fmc_mii_clk2\";",
+     "\t\t\tassigned-clocks = <&fmc_mii_clk2>;",
+     "\t\t\tassigned-clock-rates = <50000000>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   }
+  ]
+ }
+}

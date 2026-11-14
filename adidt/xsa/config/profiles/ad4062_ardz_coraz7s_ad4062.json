@@ -1,0 +1,99 @@
+{
+ "name": "ad4062_ardz_coraz7s_ad4062",
+ "defaults": {},
+ "design": {
+  "project": "ad4062_ardz",
+  "carrier": "coraz7s",
+  "variant": "",
+  "default": false,
+  "validated": false,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad4062.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "seeded without an XSA: the release ships none for this design, so nothing here was checked against a bitstream"
+  ],
+  "pl": [
+   {
+    "address": 1157627904,
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "address": 1151336448,
+    "labels": [
+     "i3c_master"
+    ],
+    "node": "i3c-master",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,i3c-master-v1\";",
+     "interrupt-parent = <&intc>;",
+     "interrupts = <0 56 4>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"axi\";",
+     "#address-cells = <3>;",
+     "#size-cells = <0>;",
+     "",
+     "eeprom1: eeprom@52 {",
+     "\tcompatible = \"atmel,24c32\";",
+     "\treg = <0x52 0x0 0x10>;",
+     "};",
+     "",
+     "ad4062: adc@0,2ee007c0000 {",
+     "\treg = <0x0 0x2ee 0x7c0000>;",
+     "\tcompatible = \"adi,ad4062\";",
+     "\tgp1-gpios = <&gpio0 87 0>;",
+     "\tgp0-gpios = <&gpio0 86 0>;",
+     "\tvdd-supply = <&vdd>;",
+     "\tvio-supply = <&vio>;",
+     "\tref-supply = <&ref>;",
+     "\tinterrupt-parent = <&gpio0>;",
+     "\tinterrupts = <86 1>, <87 2>;",
+     "\tinterrupt-names = \"gp0\", \"gp1\";",
+     "};"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "vdd: regulator-vdd {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"vdd-fixed-supply\";",
+   "\tregulator-min-microvolt = <3300000>;",
+   "\tregulator-max-microvolt = <3300000>;",
+   "\tregulator-always-on;",
+   "};",
+   "vio: regulator-vio {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"vio-fixed-supply\";",
+   "\tregulator-min-microvolt = <3300000>;",
+   "\tregulator-max-microvolt = <3300000>;",
+   "\tregulator-always-on;",
+   "};",
+   "ref: regulator-ref {",
+   "\tcompatible = \"regulator-fixed\";",
+   "\tregulator-name = \"ref-fixed-supply\";",
+   "\tregulator-min-microvolt = <2500000>;",
+   "\tregulator-max-microvolt = <2500000>;",
+   "\tregulator-always-on;",
+   "};"
+  ],
+  "overlays": []
+ }
+}
