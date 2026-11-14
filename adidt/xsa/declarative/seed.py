@@ -13,7 +13,9 @@ XSA rather than from the reference.
 from __future__ import annotations
 
 import re
-import subprocess
+
+# Fixed argv lists for git, tar and cpp; no shell and no untrusted input.
+import subprocess  # nosec B404
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
@@ -54,7 +56,7 @@ class SeedResult:
 
 def export_kernel_tree(linux: Path, commit: str, dest: Path) -> Path:
     """Extract the device-tree sources of kernel *commit* into *dest*."""
-    archive = subprocess.run(
+    archive = subprocess.run(  # nosec B603 B607
         ["git", "-C", str(linux), "archive", commit, *KERNEL_DTS_PATHS],
         capture_output=True,
         check=False,
@@ -65,7 +67,9 @@ def export_kernel_tree(linux: Path, commit: str, dest: Path) -> Path:
             f"{archive.stderr.decode(errors='replace').strip()}"
         )
     dest.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["tar", "-x", "-C", str(dest)], input=archive.stdout, check=True)
+    subprocess.run(  # nosec B603 B607
+        ["tar", "-x", "-C", str(dest)], input=archive.stdout, check=True
+    )
     return dest
 
 
@@ -74,7 +78,7 @@ def preprocess(dts_path: Path, include_dirs: list[Path]) -> str:
     cmd = ["cpp", "-nostdinc", "-undef", "-D__DTS__", "-x", "assembler-with-cpp"]
     for directory in include_dirs:
         cmd += ["-I", str(directory)]
-    proc = subprocess.run(
+    proc = subprocess.run(  # nosec B603
         [*cmd, str(dts_path)], capture_output=True, text=True, check=False
     )
     if proc.returncode != 0:
