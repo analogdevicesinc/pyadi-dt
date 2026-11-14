@@ -170,6 +170,61 @@ class TestSpiCsDuplicate:
         diags = _lint(dts)
         assert not any(d.rule == "spi-cs-duplicate" for d in diags)
 
+    def test_nested_channel_nodes_are_not_chip_selects(self):
+        # An AD9081 node carries channel sub-nodes whose ``reg`` is a channel
+        # index, not a chip select on the parent's SPI bus.
+        dts = """\
+        &spi0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            trx0: ad9081@0 {
+                reg = <0>;
+                spi-max-frequency = <5000000>;
+                adi,tx-dacs {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    tx_chan0: channel@0 {
+                        reg = <0>;
+                    };
+                    tx_chan1: channel@1 {
+                        reg = <1>;
+                    };
+                };
+            };
+            clk: hmc7044@1 {
+                reg = <1>;
+                spi-max-frequency = <1000000>;
+            };
+        };
+        """
+        diags = _lint(dts)
+        assert not any(d.rule == "spi-cs-duplicate" for d in diags)
+
+    def test_still_detects_duplicates_beside_nested_nodes(self):
+        dts = """\
+        &spi0 {
+            #address-cells = <1>;
+            #size-cells = <0>;
+            trx0: ad9081@0 {
+                reg = <0>;
+                spi-max-frequency = <5000000>;
+                adi,tx-dacs {
+                    tx_chan0: channel@0 {
+                        reg = <0>;
+                    };
+                };
+            };
+            clk: hmc7044@0 {
+                reg = <0>;
+                spi-max-frequency = <1000000>;
+            };
+        };
+        """
+        diags = _lint(dts)
+        dup = [d for d in diags if d.rule == "spi-cs-duplicate"]
+        assert len(dup) == 1
+        assert "trx0, clk" in dup[0].message
+
 
 # ---------------------------------------------------------------------------
 # compatible-missing

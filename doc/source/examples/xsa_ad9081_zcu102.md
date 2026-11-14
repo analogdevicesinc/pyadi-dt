@@ -157,12 +157,15 @@ builder resolves mode values in this order:
 
 1. `cfg["ad9081"]["rx_link_mode"]` / `cfg["ad9081"]["tx_link_mode"]`
 2. `cfg["jesd"]["rx"]["mode"]` / `cfg["jesd"]["tx"]["mode"]`
-3. Inference from JESD `(M, L)`:
-   - `(8, 4)` -> RX `17`, TX `18`
-   - `(4, 8)` -> RX `10`, TX `11`
+3. Inference from the link framing `(M, L, Np, S)`, using the mode each
+   framing has in the ADI kernel reference device trees:
+   - `M=8, L=4, Np=16` -> RX `10`, TX `9`
+   - `M=4, L=8, Np=16` -> RX `18`, TX `17`
 
-If no explicit mode is provided and `(M, L)` is unsupported, generation fails
-with `ConfigError` so invalid link mode assumptions are not emitted into DTS.
+Framing left out of the configuration is read from the XSA's transport-layer
+cores. If no explicit mode is provided and the framing does not identify
+exactly one mode, generation fails with `ConfigError` so invalid link mode
+assumptions are not emitted into DTS.
 
 ## Full Pipeline (with sdtgen)
 

@@ -126,6 +126,8 @@ class XsaPipeline:
                 cfg, cfg_merged, selected_profile
             )
 
+        cfg_merged = self._apply_xsa_jesd_defaults(cfg_merged, topology)
+
         # Apply board-level fixups to the sdtgen base DTS before merging.
         # These correct board-specific issues (PHY config, node naming) that
         # sdtgen cannot derive from the XSA alone.
@@ -369,6 +371,39 @@ class XsaPipeline:
             return cfg_out
 
         return cfg_out
+
+    @staticmethod
+    def _apply_xsa_jesd_defaults(
+        cfg: dict[str, Any], topology: XsaTopology
+    ) -> dict[str, Any]:
+        """Fill JESD framing the caller left out from what the XSA was built with.
+
+        Values already present -- from the caller or the profile -- always
+        win; only missing keys are added, and only for directions whose
+        framing the XSA states unambiguously.
+
+        Args:
+            cfg: Configuration after profile defaults were merged.
+            topology: Parsed XSA topology.
+
+        Returns:
+            A new configuration dict; *cfg* is left untouched.
+        """
+        inferred = {
+            direction: framing
+            for direction in ("rx", "tx")
+            if (framing := topology.jesd_framing(direction)) is not None
+        }
+        if not inferred:
+            return cfg
+        result = dict(cfg)
+        jesd = {k: dict(v) for k, v in cfg.get("jesd", {}).items()}
+        for direction, framing in inferred.items():
+            link = jesd.setdefault(direction, {})
+            for key, value in framing.items():
+                link.setdefault(key, value)
+        result["jesd"] = jesd
+        return result
 
     def _auto_profile_name(self, topology: XsaTopology) -> str | None:
         """Return the inferred profile name if a matching built-in profile exists, else None.

@@ -117,8 +117,21 @@ def _parse_spi_buses(dts: str) -> dict[str, list[tuple[str, str]]]:
         full_body = dts[full_body_start:full_body_end]
         if "#address-cells" not in full_body or "spi-max-frequency" not in full_body:
             continue
+        # Only direct children are devices on this bus.  Nested nodes (for
+        # example an AD9081's adi,tx-dacs channel@0) have their own ``reg``
+        # address space and must not be mistaken for chip selects.
+        depth_at = [0] * (len(full_body) + 1)
+        level = 0
+        for i, ch in enumerate(full_body):
+            depth_at[i] = level
+            if ch == "{":
+                level += 1
+            elif ch == "}":
+                level -= 1
         children: list[tuple[str, str]] = []
         for child_m in _LABELED_NODE_RE.finditer(full_body):
+            if depth_at[child_m.start("label")] != 0:
+                continue
             children.append((child_m.group("label"), child_m.group("body")))
         if children:
             result[bus_label] = children

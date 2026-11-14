@@ -797,13 +797,24 @@ For AD9081 + MXFE XSA designs, ``NodeBuilder`` resolves
 
 1. ``cfg["ad9081"]["rx_link_mode"]`` / ``cfg["ad9081"]["tx_link_mode"]``
 2. ``cfg["jesd"]["rx"]["mode"]`` / ``cfg["jesd"]["tx"]["mode"]``
-3. Inference from JESD ``(M, L)`` tuples:
+3. Inference from the link framing ``(M, L, Np, S)``, using the mode each
+   framing has in the ADI kernel reference device trees, for example:
 
-   - ``(8, 4)`` -> RX ``17``, TX ``18``
-   - ``(4, 8)`` -> RX ``10``, TX ``11``
+   - ``M=8, L=4, Np=16`` -> RX ``10``, TX ``9``
+   - ``M=4, L=8, Np=16`` -> RX ``18``, TX ``17``
+   - ``M=8, L=8, Np=12, S=2`` -> RX ``26``, TX ``24``
 
-If no explicit mode is set and ``(M, L)`` does not match a supported tuple,
-``ConfigError`` is raised instead of silently falling back to hardcoded modes.
+   ``Np`` and ``S`` may be omitted when ``(M, L)`` alone identifies one mode.
+
+JESD framing that the configuration leaves out is read from the XSA: the
+transport-layer core records ``M``, ``L``, ``S``, ``N`` and ``Np``, from which
+``F`` follows.  ``K`` is not recorded in the bitstream, so it defaults to
+``32`` for 8b10b links and to the shortest multiblock-aligned value for
+64b66b links.  Values given in the configuration or the profile always win.
+
+If no explicit mode is set and the framing does not identify exactly one
+mode, ``ConfigError`` is raised instead of silently falling back to hardcoded
+modes.
 
 Board override keys
 ~~~~~~~~~~~~~~~~~~~

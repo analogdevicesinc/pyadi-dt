@@ -78,6 +78,7 @@ adidt = [
     "xsa/viz/d3_bundle.js",
     "xsa/config/profiles/*.json",
     "xsa/config/kuiper_boards.json",
+    "xsa/config/hdl_*_designs.json",
 ]
 
 [tool.ruff.lint]

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from ...platforms import platform_info
 from ....model.board_model import (
     BoardModel,
     ComponentModel,
@@ -26,11 +27,34 @@ from ....devices.fpga_ip import (
 from ....model.renderer import BoardModelRenderer
 from ...parse.topology import XsaTopology
 
-# (M, L) -> (rx_link_mode, tx_link_mode)
-_AD9081_LINK_MODE_BY_ML: dict[tuple[int, int], tuple[int, int]] = {
-    (8, 4): (17, 18),
-    (4, 8): (10, 11),
-    (8, 8): (26, 24),
+# AD9081/AD9082 JESD204 "quick configuration" link modes, keyed by
+# (direction, M, L, Np, S).  Taken from the adi,link-mode / framing pairs of
+# every AD9081, AD9082 and AD9209 reference device tree in the ADI kernel
+# (xlnx/release/v6.12.y-2026r1); each framing maps to exactly one mode there.
+_AD9081_LINK_MODES: dict[tuple[str, int, int, int, int], int] = {
+    ("rx", 1, 8, 16, 4): 19,
+    ("rx", 16, 1, 16, 1): 2,
+    ("rx", 2, 2, 12, 4): 23,
+    ("rx", 2, 8, 12, 8): 28,
+    ("rx", 4, 4, 12, 2): 25,
+    ("rx", 4, 8, 12, 4): 27,
+    ("rx", 4, 8, 16, 1): 18,
+    ("rx", 8, 1, 12, 1): 1,
+    ("rx", 8, 2, 12, 1): 5,
+    ("rx", 8, 2, 16, 1): 4,
+    ("rx", 8, 4, 16, 1): 10,
+    ("rx", 8, 8, 12, 2): 26,
+    ("tx", 1, 8, 16, 4): 20,
+    ("tx", 2, 2, 12, 2): 22,
+    ("tx", 2, 8, 12, 8): 36,
+    ("tx", 4, 1, 16, 1): 1,
+    ("tx", 4, 4, 12, 2): 23,
+    ("tx", 4, 8, 12, 4): 35,
+    ("tx", 4, 8, 16, 1): 17,
+    ("tx", 8, 1, 12, 1): 0,
+    ("tx", 8, 2, 12, 1): 4,
+    ("tx", 8, 4, 16, 1): 9,
+    ("tx", 8, 8, 12, 2): 24,
 }
 
 
@@ -39,26 +63,40 @@ def _resolve_link_mode(
     jesd_cfg: dict[str, Any],
     direction: str,
 ) -> int:
-    """Determine the AD9081 link mode for *direction* from config or by inference."""
+    """Determine the AD9081 link mode for *direction* from config or by inference.
+
+    Precedence: ``ad9081.<direction>_link_mode``, then
+    ``jesd.<direction>.mode``, then a lookup of the link's framing.  When the
+    config gives only M and L, the lookup succeeds if every known mode with
+    that M and L agrees.
+    """
     from ...exceptions import ConfigError
 
     explicit = ad9081_cfg.get(f"{direction}_link_mode")
     if explicit is not None:
         return int(explicit)
 
-    alt_explicit = jesd_cfg.get(direction, {}).get("mode")
+    link = jesd_cfg.get(direction, {})
+    alt_explicit = link.get("mode")
     if alt_explicit is not None:
         return int(alt_explicit)
 
-    m = int(jesd_cfg.get(direction, {}).get("M", 0))
-    lanes = int(jesd_cfg.get(direction, {}).get("L", 0))
-    modes = _AD9081_LINK_MODE_BY_ML.get((m, lanes))
-    if modes is None:
+    m = int(link.get("M", 0))
+    lanes = int(link.get("L", 0))
+    candidates = {
+        mode
+        for (d, km, kl, knp, ks), mode in _AD9081_LINK_MODES.items()
+        if d == direction
+        and (km, kl) == (m, lanes)
+        and ("Np" not in link or int(link["Np"]) == knp)
+        and ("S" not in link or int(link["S"]) == ks)
+    }
+    if len(candidates) != 1:
         raise ConfigError(
             f"ad9081.{direction}_link_mode "
             f"(missing and could not infer for M={m}, L={lanes})"
         )
-    return modes[0] if direction == "rx" else modes[1]
+    return candidates.pop()
 
 
 def _format_nested_block(block: str, prefix: str = "\t\t\t") -> str:
@@ -436,8 +474,7 @@ class AD9081Builder:
         )
 
         # --- FPGA config ---
-        _32BIT_PLATFORMS = {"vcu118", "zc706"}
-        addr_cells = 1 if platform in _32BIT_PLATFORMS else 2
+        addr_cells = platform_info(platform).addr_cells
 
         fpga_config = FpgaConfig(
             platform=platform,

@@ -5,6 +5,34 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ## [Unreleased]
 
+### Added
+
+- Inventory of every Xilinx design in the HDL 2026.1 release
+  (`adidt/xsa/config/hdl_2026_r1_designs.json`), joined to its kernel
+  reference device trees and Kuiper boot directories, with
+  `scripts/generate_hdl_release_inventory.py` to regenerate it and an
+  opt-in coverage gate (`test/xsa/test_hdl_release_coverage.py`) that runs
+  the pipeline on every released XSA.
+- JESD204 framing (M, L, S, N, Np, F and a default K) is read from the XSA's
+  transport-layer cores when the configuration leaves it out.
+- Platform detection for ZedBoard, ZC702, Cora Z7S, the ADRV9361/ADRV9364
+  SoMs, VCK190, VMK180, KCU105, KC705, VC707, VC709, AC701 and VCU128, using
+  the XSA's board file to tell ZedBoard and ZC702 apart.
+
+### Changed
+
+- `kuiper_boards.json` now describes the Kuiper 2026_r1 boot partition.
+- Zynq-7000 carriers other than ZC706 now use one address cell and the
+  `clkc`/`gpio0` labels instead of the ZynqMP defaults.
+
+### Fixed
+
+- AD9081 link-mode inference returned the wrong modes for M=8/L=4 and
+  M=4/L=8; it now follows the kernel reference device trees (RX 10 / TX 9 and
+  RX 18 / TX 17) and covers every framing they use.
+- The linter no longer reports nested channel nodes as duplicate SPI chip
+  selects.
+
 ## [0.1.0] - 2026-11-10
 
 First public release. The `0.0.1` version number was used internally while
