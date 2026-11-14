@@ -1,0 +1,134 @@
+{
+ "name": "ad9783_ebz_zcu102",
+ "defaults": {},
+ "design": {
+  "project": "ad9783_ebz",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9783.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_ad9783_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "instance": "axi_ad9783",
+    "ip_type": "axi_ad9783",
+    "labels": [
+     "axi_ad9783_core"
+    ],
+    "node": "ad9783_core_dds",
+    "offset": 16384,
+    "reg": [
+     [
+      16384,
+      16384
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9783-1.0\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "spibus-connected = <&ad9783_spi>;"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tad9783_clk: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\t#clock-cells = <0>;",
+   "\t\tclock-frequency = <500000000>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "ad9783_spi: ad9783@0 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\tcompatible = \"adi,ad9783\";",
+     "\treg = <0>;",
+     "\tspi-max-freequency = <10000000>;",
+     "\tclocks = <&ad9783_clk>;",
+     "\tclock-names = \"dac_clk\";",
+     "};"
+    ]
+   },
+   {
+    "target": "&dwc3_0",
+    "body": [
+     "status = \"okay\";",
+     "dr_mode = \"otg\";"
+    ]
+   }
+  ]
+ }
+}

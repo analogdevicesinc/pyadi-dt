@@ -93,6 +93,12 @@ class XsaTopology:
     signal_connections: list[SignalConnection] = field(default_factory=list)
     fpga_part: str = ""
     board: str = ""
+    # HDL design identity recorded by the system-ID ROM: the project,
+    # carrier and (for non-default builds) parameter-variant directory the
+    # bitstream was built from.  Empty for XSAs not built from ADI HDL.
+    hdl_project: str = ""
+    hdl_carrier: str = ""
+    hdl_variant: str = ""
     ip_instances: list[AxiIpInstance] = field(default_factory=list)
     tpl_cores: list[TplCoreInstance] = field(default_factory=list)
 
@@ -232,6 +238,11 @@ class XsaTopology:
         return detect_platform(self.fpga_part, self.board)
 
 
+# Output ports that carry an IP's interrupt (ADI ``irq``, Xilinx ``ip2intc_irpt``).
+_IRQ_PORT_RE = re.compile(r"irq|interrupt|irpt|intr")
+_SYSID_PATH_RE = re.compile(
+    r"projects/([^/]+)/([^/]+)/(?:([^/]+)/)?mem_init_sys\.txt$"
+)
 _ADI_JESD_RX_TYPES = {"axi_jesd204_rx"}
 _ADI_JESD_TX_TYPES = {"axi_jesd204_tx"}
 _ADI_CLKGEN_TYPES = {"axi_clkgen"}
@@ -375,6 +386,11 @@ class XsaParser:
         topology.fpga_part = self._parse_part(root)
         sysinfo = root.find(".//SYSTEMINFO")
         topology.board = sysinfo.get("BOARD", "") if sysinfo is not None else ""
+        (
+            topology.hdl_project,
+            topology.hdl_carrier,
+            topology.hdl_variant,
+        ) = self._parse_hdl_design(root)
         topology.signal_connections = self._parse_signal_connections(root)
         global_base_addrs = self._parse_global_base_addrs(root)
 
@@ -516,25 +532,31 @@ class XsaParser:
     def _resolve_zynqmp_irqs(self, root: ET.Element) -> dict[str, int]:
         """Trace PS PL interrupt inputs through xlconcat to Linux SPI numbers.
 
-        ZynqMP PL banks start at SPI 89 and 104. Signal-name suffixes are
-        net identifiers and are not interrupt numbers.
+        ZynqMP PL banks start at SPI 89 and 104.  Zynq-7000 ``IRQ_F2P`` bits
+        0-7 are SPI 29-36 and bits 8-15 are SPI 52-59.  Signal-name suffixes
+        are net identifiers and are not interrupt numbers.
         """
         sources: dict[str, tuple[ET.Element, str]] = {}
-        sinks: list[tuple[str, int]] = []
+        # (signal, SPI number of each bit of the PS input)
+        sinks: list[tuple[str, list[int]]] = []
         for mod in root.findall(".//MODULE"):
+            modtype = mod.get("MODTYPE", "").lower()
             for port in mod.findall("./PORTS/PORT"):
                 signal = port.get("SIGNAME", "")
                 name = port.get("NAME", "").lower()
                 if signal and port.get("DIR") == "O":
                     sources[signal] = (mod, name)
-                if mod.get("MODTYPE", "").lower() == "zynq_ultra_ps_e" and name in {
+                if modtype == "zynq_ultra_ps_e" and name in {
                     "pl_ps_irq0",
                     "pl_ps_irq1",
                 }:
-                    sinks.append((signal, 89 if name.endswith("0") else 104))
-        result: dict[str, int] = {}
+                    base = 89 if name.endswith("0") else 104
+                    sinks.append((signal, list(range(base, base + 8))))
+                elif modtype == "processing_system7" and name == "irq_f2p":
+                    sinks.append((signal, [*range(29, 37), *range(52, 60)]))
+        found: dict[str, set[int]] = {}
 
-        def visit(signal: str, irq: int, seen: set[str]) -> None:
+        def visit(signal: str, bit: int, spis: list[int], seen: set[str]) -> None:
             if signal in seen or signal not in sources:
                 return
             seen = seen | {signal}
@@ -550,18 +572,20 @@ class XsaParser:
                 )
                 offset = 0
                 for inp in ports:
-                    visit(inp.get("SIGNAME", ""), irq + offset, seen)
+                    visit(inp.get("SIGNAME", ""), bit + offset, spis, seen)
                     offset += int(
                         self._get_param(
                             mod, inp.get("NAME", "").upper() + "_WIDTH", "1"
                         )
                     )
-            elif port in {"irq", "interrupt"}:
-                result[mod.get("INSTANCE", "")] = irq
+            elif _IRQ_PORT_RE.search(port) and bit < len(spis):
+                found.setdefault(mod.get("INSTANCE", ""), set()).add(spis[bit])
 
-        for signal, irq in sinks:
-            visit(signal, irq, set())
-        return result
+        for signal, spis in sinks:
+            visit(signal, 0, spis, set())
+        # A core with several interrupt outputs has no single answer; leave
+        # it unresolved rather than report the wrong line.
+        return {name: irqs.pop() for name, irqs in found.items() if len(irqs) == 1}
 
     def _parse_signal_connections(self, root: ET.Element) -> list[SignalConnection]:
         """Extract module-level connectivity using HWH SIGNAME + port directions."""
@@ -741,6 +765,24 @@ class XsaParser:
             # LINK_MODE: 1 = 8b10b (JESD204B), 2 = 64b66b (JESD204C)
             encoder="64b66b" if self._get_param(mod, "LINK_MODE") == "2" else "8b10b",
         )
+
+    @staticmethod
+    def _parse_hdl_design(root: ET.Element) -> tuple[str, str, str]:
+        """Return ``(project, carrier, variant)`` from the system-ID ROM path.
+
+        ADI HDL builds initialise the ``sysid_rom`` core from
+        ``projects/<project>/<carrier>[/<variant>]/mem_init_sys.txt``; the
+        path survives in the HWH and names the design unambiguously, which
+        matters where two parts share one bitstream layout (AD9081/AD9082)
+        or one project builds several parts (``dac_fmc_ebz``).
+        """
+        for param in root.iter("PARAMETER"):
+            if param.get("NAME") != "PATH_TO_FILE":
+                continue
+            match = _SYSID_PATH_RE.search(param.get("VALUE", "").replace("\\", "/"))
+            if match:
+                return match.group(1), match.group(2), match.group(3) or ""
+        return "", "", ""
 
     def _append_tpl_core(
         self, topology: XsaTopology, mod: ET.Element, name: str, direction: str

@@ -1,0 +1,33 @@
+{
+ "name": "adv7511_zed_otg",
+ "defaults": {},
+ "design": {
+  "project": "adv7511",
+  "carrier": "zed",
+  "variant": "",
+  "default": false,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-zed-otg.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "reference tree has no PL bus matching the XSA"
+  ],
+  "pl": [],
+  "bus": [],
+  "root": [
+   "fpga_axi: fpga-axi@0 {",
+   "\tcompatible = \"simple-bus\";",
+   "\t#address-cells = <0x1>;",
+   "\t#size-cells = <0x1>;",
+   "\tranges;",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&usb0",
+    "body": [
+     "dr_mode = \"otg\";"
+    ]
+   }
+  ]
+ }
+}

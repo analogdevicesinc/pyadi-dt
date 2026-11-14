@@ -126,17 +126,19 @@ def test_kuiper_boards_zu11eg_full_support():
     assert entry["builder"] == "ADRV9009Builder"
 
 
-def test_kuiper_boards_zu11eg_variants_profile_only():
+def test_kuiper_boards_zu11eg_variants_full_support():
+    """The carrier variants pass the 2026_r1 coverage gate, so they are full."""
     boards = _kuiper_boards()
-    for name in (
-        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge",
-        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8",
-        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave",
-    ):
+    expected_builder = {
+        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge": "ADRV9009Builder",
+        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8": "DeclarativeBuilder",
+        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave": "ADRV9009Builder",
+    }
+    for name, builder in expected_builder.items():
         entry = boards[name]
-        assert entry["status"] == "profile_only", name
+        assert entry["status"] == "full", name
         assert entry["platform"] == "zu11eg", name
-        assert entry["builder"] == "ADRV9009Builder", name
+        assert entry["builder"] == builder, name
 
 
 # ---------------------------------------------------------------------------

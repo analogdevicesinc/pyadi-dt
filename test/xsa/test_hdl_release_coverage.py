@@ -12,11 +12,18 @@ The online gate (``ADI_XSA_KUIPER_ONLINE=1``) runs the real pipeline on every
 released XSA and checks, in order:
 
 ``xsa``       the boot directory actually contains an XSA
-``profile``   the pipeline auto-selects the profile the inventory names
+``profile``   the pipeline auto-selects the profile the inventory names (for
+              boards that share a bitstream: the bitstream's default
+              profile, after which the board's own profile is used)
 ``generate``  ``XsaPipeline.run`` succeeds with an empty user config
 ``compile``   the merged device tree compiles with ``dtc``
-``lint``      the structural linter reports no errors
-``roles``     every driver role in the kernel reference DTS is present
+``lint``      the structural linter reports no errors (declarative profiles
+              copy the kernel reference's nodes, so for them: none beyond
+              those the reference tree has itself)
+``bindings``  declarative profiles: every ADI driver binding in the kernel
+              reference DTS is present
+``roles``     hand-written builders: every driver role in the kernel
+              reference DTS is present
 
 Designs the inventory marks ``unsupported`` and the entries in
 :data:`KNOWN_GAPS` are strict ``xfail``: when support lands the test starts
@@ -25,13 +32,16 @@ so coverage can only move forward.
 
 Requirements for the online gate: ``sdtgen`` and ``dtc`` on ``PATH``.
 Optional: ``ADI_LINUX_REPO`` pointing at an ``analogdevicesinc/linux`` clone
-that has the inventory's ``linux_commit`` fetched (enables the ``roles``
-stage), ``ADI_KUIPER_CACHE_DIR`` (default ``~/.cache/adidt/kuiper``) and
-``ADI_XSA_COVERAGE_REPORT`` (path of a JSON summary to write).
+that has the inventory's ``linux_commit`` fetched (enables the ``bindings``
+and ``roles`` stages), ``ADI_KUIPER_CACHE_DIR`` (default
+``~/.cache/adidt/kuiper``) and ``ADI_XSA_COVERAGE_REPORT`` (path of a JSON
+summary to write).  sdtgen output is cached per XSA under the Kuiper cache
+directory; set ``ADI_XSA_SDTGEN_NO_CACHE=1`` to regenerate it every time.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -45,8 +55,16 @@ import pytest
 
 from adidt.xsa.build.node_builder import NodeBuilder
 from adidt.xsa.config.profiles import ProfileManager
+from adidt.xsa.declarative.dts_source import DtsTree
+from adidt.xsa.declarative.seed import (
+    SeedError,
+    export_kernel_tree,
+    kernel_include_dirs,
+    preprocess,
+)
 from adidt.xsa.parse.topology import XsaParser
 from adidt.xsa.pipeline import XsaPipeline
+from adidt.xsa.validate.bindings import missing_bindings
 from adidt.xsa.validate.dts_lint import DtsLinter
 from adidt.xsa.validate.parity import check_manifest_against_dts
 from adidt.xsa.validate.reference import ReferenceManifestExtractor
@@ -69,7 +87,7 @@ CLASSES = {
     "misc",
 }
 STATUSES = {"full", "profile_only", "unsupported"}
-STAGES = ("xsa", "profile", "generate", "compile", "lint", "roles")
+STAGES = ("xsa", "profile", "generate", "compile", "lint", "bindings", "roles")
 
 # Kuiper boot directory -> (first failing stage, why).  These are designs the
 # inventory counts as supported that do not pass the gate yet.  Remove an
@@ -83,36 +101,7 @@ _ZU11EG_FMCOMMS8 = (
     "FMComms8 on the ADRV9009-ZU11EG renders one ADRV9009 instead of the "
     "reference's additional transceivers",
 )
-KNOWN_GAPS: dict[str, tuple[str, str]] = {
-    "zynqmp-zcu102-rev10-ad9082-m4-l8": (
-        "profile",
-        "AD9082 XSAs are indistinguishable from AD9081 and select ad9081_zcu102",
-    ),
-    "zynqmp-zcu102-rev10-ad9083-fmc-ebz": (
-        "profile",
-        "AD9083 is not recognised as a converter family",
-    ),
-    "zynqmp-zcu102-rev10-adrv9002/boot_bin_CMOS": (
-        "profile",
-        "no adrv9002_zcu102 profile; only adrv9003_zcu102 exists",
-    ),
-    "zynqmp-zcu102-rev10-adrv9002/boot_bin_LVDS": (
-        "profile",
-        "no adrv9002_zcu102 profile; only adrv9003_zcu102 exists",
-    ),
-    "zynqmp-zcu102-rev10-adrv9025": (
-        "compile",
-        "generated nodes reference axi_adrv9009_core_rx/tx, which the "
-        "ADRV9026 design does not contain",
-    ),
-    "zynqmp-zcu102-rev10-ad9144-fmc-ebz": _DAC_FAMILY,
-    "zynqmp-zcu102-rev10-ad9154-fmc-ebz": _DAC_FAMILY,
-    "zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4": _DAC_FAMILY,
-    "zynqmp-adrv9009-zu11eg-fmcomms8-tx-l4-rx-l4-orx-l4": _ZU11EG_FMCOMMS8,
-    "zynqmp-adrv9009-zu11eg-fmcomms8-tx-l8": _ZU11EG_FMCOMMS8,
-    "zynqmp-adrv9009-zu11eg-fmcomms8-tx-l8-rx-l4-orx-l4": _ZU11EG_FMCOMMS8,
-    "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8": _ZU11EG_FMCOMMS8,
-}
+KNOWN_GAPS: dict[str, tuple[str, str]] = {}
 
 
 class GateStageMismatch(Exception):
@@ -206,7 +195,7 @@ _REPORT: list[dict[str, Any]] = []
 
 
 def _stage_can_run(stage: str) -> bool:
-    return stage != "roles" or bool(LINUX_REPO)
+    return stage not in {"roles", "bindings"} or bool(LINUX_REPO)
 
 
 def _gate_cases() -> list[Any]:
@@ -270,28 +259,63 @@ def kernel_tree(tmp_path_factory) -> Path | None:
     if not LINUX_REPO:
         return None
     out = tmp_path_factory.mktemp("kernel_dts")
-    archive = subprocess.run(
-        [
-            "git",
-            "-C",
-            LINUX_REPO,
-            "archive",
-            INVENTORY["linux_commit"],
-            "arch/arm/boot/dts/xilinx",
-            "arch/arm64/boot/dts/xilinx",
-            "arch/microblaze/boot/dts",
-            "include/dt-bindings",
-        ],
-        capture_output=True,
-        check=False,
+    try:
+        return export_kernel_tree(Path(LINUX_REPO), INVENTORY["linux_commit"], out)
+    except SeedError as exc:
+        pytest.fail(f"ADI_LINUX_REPO is unusable: {exc}")
+
+
+class _CachedSdtgen:
+    """Run sdtgen once per distinct XSA and reuse its output afterwards.
+
+    sdtgen takes tens of seconds per design and its output depends only on
+    the XSA, so a gate rerun would spend nearly all its time regenerating
+    identical base trees.  Set ``ADI_XSA_SDTGEN_NO_CACHE=1`` to always run it.
+    """
+
+    def __init__(self, runner_cls: Any, cache_root: Path) -> None:
+        self._runner_cls = runner_cls
+        self._cache_root = cache_root
+
+    def run(self, xsa_path: Path, base_dir: Path, **kwargs: Any) -> Path:
+        digest = hashlib.sha256(Path(xsa_path).read_bytes()).hexdigest()[:20]
+        cached = self._cache_root / digest
+        marker = cached / ".base_dts_name"
+        if not marker.exists():
+            staging = self._cache_root / f"{digest}.tmp"
+            shutil.rmtree(staging, ignore_errors=True)
+            staging.mkdir(parents=True)
+            base_dts = self._runner_cls().run(xsa_path, staging, **kwargs)
+            (staging / ".base_dts_name").write_text(Path(base_dts).name)
+            # Bitstreams and PS init code are most of sdtgen's output and
+            # nothing downstream reads them.
+            for pattern in ("*.bit", "psu_init*", "ps7_init*", "*.mmi"):
+                for unused in staging.glob(pattern):
+                    unused.unlink()
+            shutil.rmtree(cached, ignore_errors=True)
+            staging.rename(cached)
+        shutil.copytree(cached, base_dir, dirs_exist_ok=True)
+        return base_dir / marker.read_text()
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _cache_sdtgen():
+    """Route the pipeline's sdtgen runs through :class:`_CachedSdtgen`."""
+    if not ONLINE or os.getenv("ADI_XSA_SDTGEN_NO_CACHE") == "1":
+        yield
+        return
+    import adidt.xsa.pipeline as pipeline
+
+    cache_root = (
+        Path(os.getenv("ADI_KUIPER_CACHE_DIR", Path.home() / ".cache/adidt/kuiper"))
+        / f"{INVENTORY['release']}_sdtgen"
     )
-    if archive.returncode != 0:
-        pytest.fail(
-            f"ADI_LINUX_REPO lacks commit {INVENTORY['linux_commit']}: "
-            f"{archive.stderr.decode(errors='replace').strip()}"
+    runner_cls = pipeline.SdtgenRunner
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(
+            pipeline, "SdtgenRunner", lambda: _CachedSdtgen(runner_cls, cache_root)
         )
-    subprocess.run(["tar", "-x", "-C", str(out)], input=archive.stdout, check=True)
-    return out
+        yield
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -300,6 +324,37 @@ def _write_coverage_report():
     target = os.getenv("ADI_XSA_COVERAGE_REPORT")
     if target and _REPORT:
         Path(target).write_text(json.dumps(_REPORT, indent=2) + "\n")
+
+
+def _declared_profile(reference: str, topology: Any) -> tuple[str, str] | None:
+    """Return ``(profile, default sibling)`` seeded from *reference*, if any.
+
+    Boards that share a bitstream differ only in the part fitted, so each
+    has its own profile but only one of them can be auto-selected.  One
+    reference tree can also serve several build variants; the XSA's own
+    variant picks among those.
+    """
+    manager = ProfileManager()
+    identity = (topology.hdl_project, topology.hdl_carrier, topology.hdl_variant)
+    for name in manager.list_profiles():
+        design = manager.load(name).get("design")
+        if (
+            isinstance(design, dict)
+            and design.get("reference") == reference
+            and (design["project"], design["carrier"], design.get("variant") or "")
+            == identity
+        ):
+            return name, manager.find_design_profile(*identity) or name
+    return None
+
+
+def _reference_lint_errors(reference_text: str) -> set[str]:
+    """Lint errors the kernel reference tree itself has."""
+    return {
+        f"{diag.rule}({diag.node})"
+        for diag in DtsLinter().lint(reference_text, None)
+        if diag.severity == "error"
+    }
 
 
 def _lint_errors(merged: Path) -> list[str]:
@@ -347,7 +402,16 @@ def _run_gate(
     record["family"] = topology.inferred_converter_family()
     selected = XsaPipeline()._auto_profile_name(topology)
     record["auto_profile"] = selected
-    expected = {design["profile"], *design["extra_profiles"]} - {None}
+    declared = _declared_profile(design["kuiper_projects"][directory], topology)
+    if declared is None:
+        expected = {design["profile"], *design["extra_profiles"]} - {None}
+        explicit = None
+    else:
+        # The XSA must lead to this board's profile, or to the default
+        # profile of the bitstream it shares with other boards.
+        expected = {declared[1]}
+        explicit = declared[0] if declared[0] != declared[1] else None
+    record["profile"] = explicit or selected
     assert selected in expected, (
         f"profile: auto-selected {selected!r}, inventory expects "
         f"{sorted(expected) or 'a profile'}"
@@ -362,6 +426,7 @@ def _run_gate(
             emit_report=False,
             emit_clock_graphs=False,
             emit_wiring_graph=False,
+            profile=explicit,
         )
     except Exception as exc:  # noqa: BLE001 - any pipeline error fails the stage
         raise AssertionError(f"generate: {type(exc).__name__}: {exc}") from exc
@@ -374,11 +439,42 @@ def _run_gate(
 
     stage("lint")
     errors = _lint_errors(merged)
+    reference_text = None
+    if kernel_tree is not None and declared is not None:
+        # A declarative profile carries the reference's nodes verbatim, so
+        # what the linter dislikes in the kernel tree is reported, not failed.
+        reference = kernel_tree / design["kuiper_projects"][directory]
+        reference_text = preprocess(
+            reference, kernel_include_dirs(kernel_tree, reference)
+        )
+        inherited = _reference_lint_errors(reference_text)
+        record["inherited_lint"] = sorted(
+            e for e in errors if e.split(":")[0] in inherited
+        )
+        errors = [e for e in errors if e.split(":")[0] not in inherited]
     assert not errors, f"lint: {len(errors)} error(s): {'; '.join(errors[:5])}"
 
     if kernel_tree is not None:
-        stage("roles")
         reference = kernel_tree / design["kuiper_projects"][directory]
+        missing = missing_bindings(
+            DtsTree.parse(
+                reference_text
+                or preprocess(reference, kernel_include_dirs(kernel_tree, reference))
+            ),
+            DtsTree.parse(merged.with_suffix(".pp.dts").read_text()),
+        )
+        record["missing_bindings"] = missing
+        if declared is not None:
+            # Declarative profiles are held to the reference's full set of
+            # ADI driver bindings; the role checker below only knows the
+            # JESD-era parts the hand-written builders cover.
+            stage("bindings")
+            assert not missing, f"bindings: {reference.name} binds " + ", ".join(
+                f"{c} (x{n} short)" for c, n in missing.items()
+            )
+            record["failed_stage"] = None
+            return
+        stage("roles")
         manifest = ReferenceManifestExtractor().extract(reference)
         parity = check_manifest_against_dts(manifest, merged.read_text())
         record["parity"] = {

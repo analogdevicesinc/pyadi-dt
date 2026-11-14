@@ -1,0 +1,454 @@
+{
+ "name": "fmcomms5_zcu102_ad9361_fmcomms5_ext_lo_adf5355",
+ "defaults": {},
+ "design": {
+  "project": "fmcomms5",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": false,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9361-fmcomms5-ext-lo-adf5355.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_ad9361_adc_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "#clock-cells = <0>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 73>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9361_dac_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "#clock-cells = <0>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 73>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9361_0",
+    "ip_type": "axi_ad9361",
+    "labels": [
+     "cf_ad9361_adc_core_0"
+    ],
+    "node": "cf-ad9361-A",
+    "reg": [
+     [
+      0,
+      24576
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9361-6.00.a\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc0_ad9361>;",
+     "slavecore-reg = <0x99040000 0x6000>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9361_0",
+    "ip_type": "axi_ad9361",
+    "labels": [
+     "cf_ad9361_dac_core_0"
+    ],
+    "node": "cf-ad9361-dds-core-lpc",
+    "offset": 16384,
+    "reg": [
+     [
+      16384,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9361x2-dds-6.00.a\";",
+     "clocks = <&adc0_ad9361 13>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "slavecore-reg = <0x99044000 0x1000>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9361_1",
+    "ip_type": "axi_ad9361",
+    "labels": [
+     "cf_ad9361_adc_core_1"
+    ],
+    "node": "cf-ad9361-B",
+    "reg": [
+     [
+      0,
+      24576
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9361-6.00.a\";",
+     "spibus-connected = <&adc1_ad9361>;"
+    ]
+   },
+   {
+    "instance": "axi_ad9361_1",
+    "ip_type": "axi_ad9361",
+    "labels": [
+     "cf_ad9361_dac_core_1"
+    ],
+    "node": "cf-ad9361-dds-core-B",
+    "offset": 16384,
+    "reg": [
+     [
+      16384,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9361x2-dds-6.00.a\";",
+     "clocks = <&adc1_ad9361 13>;",
+     "clock-names = \"sampl_clk\";",
+     "mastercore-reg = <0x99024000 0x1000>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tad9361_clkin: clock@0 {",
+   "\t\t#clock-cells = <0>;",
+   "\t\tcompatible = \"adjustable-clock\";",
+   "\t\tclock-frequency = <40000000>;",
+   "\t\tclock-accuracy = <200000>;",
+   "\t\tclock-output-names = \"ad9361_ext_refclk\";",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\tfmc_i2c: i2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\tad7291@2f {",
+     "\t\t\tcompatible = \"adi,ad7291\";",
+     "\t\t\treg = <0x2f>;",
+     "\t\t};",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adc0_ad9361: ad9361-phy@0 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\t#clock-cells = <1>;",
+     "\tcompatible = \"adi,ad9361-2x\";",
+     "\treg = <0>;",
+     "\tspi-cpha;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclocks = <&ad9361_clkin>, <&lo_adf5355>, <&lo_adf5355>;",
+     "\tclock-names = \"ad9361_ext_refclk\", \"ext_tx_lo\", \"ext_rx_lo\";",
+     "\tclock-output-names = \"rx_sampl_clk\", \"tx_sampl_clk\";",
+     "\tadi,pp-tx-swap-enable;",
+     "\tadi,pp-rx-swap-enable;",
+     "\tadi,rx-frame-pulse-mode-enable;",
+     "\tadi,lvds-mode-enable;",
+     "\tadi,lvds-bias-mV = <150>;",
+     "\tadi,lvds-rx-onchip-termination-enable;",
+     "\tadi,rx-data-clock-delay = <0>;",
+     "\tadi,rx-data-delay = <9>;",
+     "\tadi,tx-fb-clock-delay = <4>;",
+     "\tadi,tx-data-delay = <0>;",
+     "\tadi,xo-disable-use-ext-refclk-enable;",
+     "\tadi,2rx-2tx-mode-enable;",
+     "\tadi,frequency-division-duplex-mode-enable;",
+     "\tadi,rx1-rx2-phase-inversion-enable;",
+     "\tadi,rx-rf-port-input-select = <0>;",
+     "\tadi,tx-rf-port-input-select = <0>;",
+     "\tadi,tx-attenuation-mdB = <10000>;",
+     "\tadi,tx-lo-powerdown-managed-enable;",
+     "\tadi,rf-rx-bandwidth-hz = <18000000>;",
+     "\tadi,rf-tx-bandwidth-hz = <18000000>;",
+     "\tadi,rx-synthesizer-frequency-hz = /bits/ 64 <2400000000>;",
+     "\tadi,tx-synthesizer-frequency-hz = /bits/ 64 <2400000000>;",
+     "\tadi,rx-path-clock-frequencies = <983040000 245760000 122880000 61440000 30720000 30720000>;",
+     "\tadi,tx-path-clock-frequencies = <983040000 122880000 122880000 61440000 30720000 30720000>;",
+     "\tadi,gc-rx1-mode = <2>;",
+     "\tadi,gc-rx2-mode = <2>;",
+     "\tadi,gc-adc-ovr-sample-size = <4>;",
+     "\tadi,gc-adc-small-overload-thresh = <47>;",
+     "\tadi,gc-adc-large-overload-thresh = <58>;",
+     "\tadi,gc-lmt-overload-high-thresh = <800>;",
+     "\tadi,gc-lmt-overload-low-thresh = <704>;",
+     "\tadi,gc-dec-pow-measurement-duration = <8192>;",
+     "\tadi,gc-low-power-thresh = <24>;",
+     "\tadi,mgc-inc-gain-step = <2>;",
+     "\tadi,mgc-dec-gain-step = <2>;",
+     "\tadi,mgc-split-table-ctrl-inp-gain-mode = <0>;",
+     "\tadi,agc-attack-delay-extra-margin-us = <1>;",
+     "\tadi,agc-outer-thresh-high = <5>;",
+     "\tadi,agc-outer-thresh-high-dec-steps = <2>;",
+     "\tadi,agc-inner-thresh-high = <10>;",
+     "\tadi,agc-inner-thresh-high-dec-steps = <1>;",
+     "\tadi,agc-inner-thresh-low = <12>;",
+     "\tadi,agc-inner-thresh-low-inc-steps = <1>;",
+     "\tadi,agc-outer-thresh-low = <18>;",
+     "\tadi,agc-outer-thresh-low-inc-steps = <2>;",
+     "\tadi,agc-adc-small-overload-exceed-counter = <10>;",
+     "\tadi,agc-adc-large-overload-exceed-counter = <10>;",
+     "\tadi,agc-adc-large-overload-inc-steps = <2>;",
+     "\tadi,agc-lmt-overload-large-exceed-counter = <10>;",
+     "\tadi,agc-lmt-overload-small-exceed-counter = <10>;",
+     "\tadi,agc-lmt-overload-large-inc-steps = <2>;",
+     "\tadi,agc-gain-update-interval-us = <1000>;",
+     "\tadi,fagc-dec-pow-measurement-duration = <64>;",
+     "\tadi,fagc-lp-thresh-increment-steps = <1>;",
+     "\tadi,fagc-lp-thresh-increment-time = <5>;",
+     "\tadi,fagc-energy-lost-stronger-sig-gain-lock-exit-cnt = <8>;",
+     "\tadi,fagc-final-overrange-count = <3>;",
+     "\tadi,fagc-gain-index-type-after-exit-rx-mode = <0>;",
+     "\tadi,fagc-lmt-final-settling-steps = <1>;",
+     "\tadi,fagc-lock-level = <10>;",
+     "\tadi,fagc-lock-level-gain-increase-upper-limit = <5>;",
+     "\tadi,fagc-lock-level-lmt-gain-increase-enable;",
+     "\tadi,fagc-lpf-final-settling-steps = <1>;",
+     "\tadi,fagc-optimized-gain-offset = <5>;",
+     "\tadi,fagc-power-measurement-duration-in-state5 = <64>;",
+     "\tadi,fagc-rst-gla-engergy-lost-goto-optim-gain-enable;",
+     "\tadi,fagc-rst-gla-engergy-lost-sig-thresh-below-ll = <10>;",
+     "\tadi,fagc-rst-gla-engergy-lost-sig-thresh-exceeded-enable;",
+     "\tadi,fagc-rst-gla-if-en-agc-pulled-high-mode = <0>;",
+     "\tadi,fagc-rst-gla-large-adc-overload-enable;",
+     "\tadi,fagc-rst-gla-large-lmt-overload-enable;",
+     "\tadi,fagc-rst-gla-stronger-sig-thresh-above-ll = <10>;",
+     "\tadi,fagc-rst-gla-stronger-sig-thresh-exceeded-enable;",
+     "\tadi,fagc-state-wait-time-ns = <260>;",
+     "\tadi,fagc-use-last-lock-level-for-set-gain-enable;",
+     "\tadi,rssi-restart-mode = <3>;",
+     "\tadi,rssi-delay = <1>;",
+     "\tadi,rssi-wait = <1>;",
+     "\tadi,rssi-duration = <1000>;",
+     "\tadi,ctrl-outs-index = <0>;",
+     "\tadi,ctrl-outs-enable-mask = <0xFF>;",
+     "\tadi,temp-sense-measurement-interval-ms = <1000>;",
+     "\tadi,temp-sense-offset-signed = <0xCE>;",
+     "\tadi,temp-sense-periodic-measurement-enable;",
+     "\tadi,aux-dac-manual-mode-enable;",
+     "\tadi,aux-dac1-default-value-mV = <0>;",
+     "\tadi,aux-dac1-rx-delay-us = <0>;",
+     "\tadi,aux-dac1-tx-delay-us = <0>;",
+     "\tadi,aux-dac2-default-value-mV = <0>;",
+     "\tadi,aux-dac2-rx-delay-us = <0>;",
+     "\tadi,aux-dac2-tx-delay-us = <0>;",
+     "\treset-gpios = <&gpio 130 0>;",
+     "\tsync-gpios = <&gpio 129 0>;",
+     "\tcal-sw1-gpios = <&gpio 137 0>;",
+     "\tcal-sw2-gpios = <&gpio 138 0>;",
+     "\tadi,external-rx-lo-enable;",
+     "\tadi,external-tx-lo-enable;",
+     "};",
+     "",
+     "adc1_ad9361: ad9361-phy-B@1 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\t#clock-cells = <1>;",
+     "\tcompatible = \"adi,ad9361\";",
+     "\treg = <1>;",
+     "\tspi-cpha;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclocks = <&ad9361_clkin>, <&lo_adf5355>, <&lo_adf5355>;",
+     "\tclock-names = \"ad9361_ext_refclk\", \"ext_tx_lo\", \"ext_rx_lo\";",
+     "\tclock-output-names = \"rx_sampl_clk\", \"tx_sampl_clk\";",
+     "\tadi,pp-tx-swap-enable;",
+     "\tadi,pp-rx-swap-enable;",
+     "\tadi,rx-frame-pulse-mode-enable;",
+     "\tadi,lvds-mode-enable;",
+     "\tadi,lvds-bias-mV = <150>;",
+     "\tadi,lvds-rx-onchip-termination-enable;",
+     "\tadi,rx-data-clock-delay = <0>;",
+     "\tadi,rx-data-delay = <9>;",
+     "\tadi,tx-fb-clock-delay = <4>;",
+     "\tadi,tx-data-delay = <0>;",
+     "\tadi,xo-disable-use-ext-refclk-enable;",
+     "\tadi,2rx-2tx-mode-enable;",
+     "\tadi,frequency-division-duplex-mode-enable;",
+     "\tadi,rx1-rx2-phase-inversion-enable;",
+     "\tadi,rx-rf-port-input-select = <0>;",
+     "\tadi,tx-rf-port-input-select = <0>;",
+     "\tadi,tx-attenuation-mdB = <10000>;",
+     "\tadi,tx-lo-powerdown-managed-enable;",
+     "\tadi,rf-rx-bandwidth-hz = <18000000>;",
+     "\tadi,rf-tx-bandwidth-hz = <18000000>;",
+     "\tadi,rx-synthesizer-frequency-hz = /bits/ 64 <2400000000>;",
+     "\tadi,tx-synthesizer-frequency-hz = /bits/ 64 <2400000000>;",
+     "\tadi,rx-path-clock-frequencies = <983040000 245760000 122880000 61440000 30720000 30720000>;",
+     "\tadi,tx-path-clock-frequencies = <983040000 122880000 122880000 61440000 30720000 30720000>;",
+     "\tadi,gc-rx1-mode = <2>;",
+     "\tadi,gc-rx2-mode = <2>;",
+     "\tadi,gc-adc-ovr-sample-size = <4>;",
+     "\tadi,gc-adc-small-overload-thresh = <47>;",
+     "\tadi,gc-adc-large-overload-thresh = <58>;",
+     "\tadi,gc-lmt-overload-high-thresh = <800>;",
+     "\tadi,gc-lmt-overload-low-thresh = <704>;",
+     "\tadi,gc-dec-pow-measurement-duration = <8192>;",
+     "\tadi,gc-low-power-thresh = <24>;",
+     "\tadi,mgc-inc-gain-step = <2>;",
+     "\tadi,mgc-dec-gain-step = <2>;",
+     "\tadi,mgc-split-table-ctrl-inp-gain-mode = <0>;",
+     "\tadi,agc-attack-delay-extra-margin-us = <1>;",
+     "\tadi,agc-outer-thresh-high = <5>;",
+     "\tadi,agc-outer-thresh-high-dec-steps = <2>;",
+     "\tadi,agc-inner-thresh-high = <10>;",
+     "\tadi,agc-inner-thresh-high-dec-steps = <1>;",
+     "\tadi,agc-inner-thresh-low = <12>;",
+     "\tadi,agc-inner-thresh-low-inc-steps = <1>;",
+     "\tadi,agc-outer-thresh-low = <18>;",
+     "\tadi,agc-outer-thresh-low-inc-steps = <2>;",
+     "\tadi,agc-adc-small-overload-exceed-counter = <10>;",
+     "\tadi,agc-adc-large-overload-exceed-counter = <10>;",
+     "\tadi,agc-adc-large-overload-inc-steps = <2>;",
+     "\tadi,agc-lmt-overload-large-exceed-counter = <10>;",
+     "\tadi,agc-lmt-overload-small-exceed-counter = <10>;",
+     "\tadi,agc-lmt-overload-large-inc-steps = <2>;",
+     "\tadi,agc-gain-update-interval-us = <1000>;",
+     "\tadi,fagc-dec-pow-measurement-duration = <64>;",
+     "\tadi,fagc-lp-thresh-increment-steps = <1>;",
+     "\tadi,fagc-lp-thresh-increment-time = <5>;",
+     "\tadi,fagc-energy-lost-stronger-sig-gain-lock-exit-cnt = <8>;",
+     "\tadi,fagc-final-overrange-count = <3>;",
+     "\tadi,fagc-gain-index-type-after-exit-rx-mode = <0>;",
+     "\tadi,fagc-lmt-final-settling-steps = <1>;",
+     "\tadi,fagc-lock-level = <10>;",
+     "\tadi,fagc-lock-level-gain-increase-upper-limit = <5>;",
+     "\tadi,fagc-lock-level-lmt-gain-increase-enable;",
+     "\tadi,fagc-lpf-final-settling-steps = <1>;",
+     "\tadi,fagc-optimized-gain-offset = <5>;",
+     "\tadi,fagc-power-measurement-duration-in-state5 = <64>;",
+     "\tadi,fagc-rst-gla-engergy-lost-goto-optim-gain-enable;",
+     "\tadi,fagc-rst-gla-engergy-lost-sig-thresh-below-ll = <10>;",
+     "\tadi,fagc-rst-gla-engergy-lost-sig-thresh-exceeded-enable;",
+     "\tadi,fagc-rst-gla-if-en-agc-pulled-high-mode = <0>;",
+     "\tadi,fagc-rst-gla-large-adc-overload-enable;",
+     "\tadi,fagc-rst-gla-large-lmt-overload-enable;",
+     "\tadi,fagc-rst-gla-stronger-sig-thresh-above-ll = <10>;",
+     "\tadi,fagc-rst-gla-stronger-sig-thresh-exceeded-enable;",
+     "\tadi,fagc-state-wait-time-ns = <260>;",
+     "\tadi,fagc-use-last-lock-level-for-set-gain-enable;",
+     "\tadi,rssi-restart-mode = <3>;",
+     "\tadi,rssi-delay = <1>;",
+     "\tadi,rssi-wait = <1>;",
+     "\tadi,rssi-duration = <1000>;",
+     "\tadi,ctrl-outs-index = <0>;",
+     "\tadi,ctrl-outs-enable-mask = <0xFF>;",
+     "\tadi,temp-sense-measurement-interval-ms = <1000>;",
+     "\tadi,temp-sense-offset-signed = <0xCE>;",
+     "\tadi,temp-sense-periodic-measurement-enable;",
+     "\tadi,aux-dac-manual-mode-enable;",
+     "\tadi,aux-dac1-default-value-mV = <0>;",
+     "\tadi,aux-dac1-rx-delay-us = <0>;",
+     "\tadi,aux-dac1-tx-delay-us = <0>;",
+     "\tadi,aux-dac2-default-value-mV = <0>;",
+     "\tadi,aux-dac2-rx-delay-us = <0>;",
+     "\tadi,aux-dac2-tx-delay-us = <0>;",
+     "\treset-gpios = <&gpio 143 0>;",
+     "\tadi,external-rx-lo-enable;",
+     "\tadi,external-tx-lo-enable;",
+     "};",
+     "",
+     "lo_adf5355: adf5355@2 {",
+     "\t#clock-cells = <0>;",
+     "\tcompatible = \"adi,adf5355\";",
+     "\treg = <2>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclocks = <&ad9361_clkin>;",
+     "\tclock-names = \"clkin\";",
+     "\tclock-output-names = \"ADF5355\";",
+     "\tgpios = <&gpio 142 0>;",
+     "\tadi,charge-pump-current = <900>;",
+     "\tadi,muxout-select = <6>;",
+     "\tadi,output-a-power = <3>;",
+     "\tadi,output-b-power = <0>;",
+     "\tadi,charge-pump-negative-bleed-enable;",
+     "\tadi,reference-differential-input-enable;",
+     "\tadi,power-up-frequency = /bits/ 64 <4800000000>;",
+     "\tadi,output-a-enable;",
+     "\tadi,clock-shift = <2>;",
+     "\tadi,reference-doubler-enable;",
+     "};"
+    ]
+   },
+   {
+    "target": "&dwc3_0",
+    "body": [
+     "status = \"okay\";",
+     "dr_mode = \"otg\";"
+    ]
+   }
+  ]
+ }
+}

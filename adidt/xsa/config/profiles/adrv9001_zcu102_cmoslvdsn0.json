@@ -1,0 +1,385 @@
+{
+ "name": "adrv9001_zcu102_cmoslvdsn0",
+ "defaults": {},
+ "design": {
+  "project": "adrv9001",
+  "carrier": "zcu102",
+  "variant": "CMOSLVDSN0",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9002.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_adrv9001_rx1_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx1_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_rx2_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx2_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_tx1_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx1_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_tx2_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx2_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_rx1"
+    ],
+    "node": "axi-adrv9002-rx-lpc",
+    "reg": [
+     [
+      0,
+      24576
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-rx-1.0\";",
+     "clocks = <&adc0_adrv9002 0>;",
+     "dmas = <&rx1_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc0_adrv9002>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tx1"
+    ],
+    "node": "axi-adrv9002-tx-lpc",
+    "offset": 40960,
+    "reg": [
+     [
+      40960,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-tx-1.0\";",
+     "clocks = <&adc0_adrv9002 1>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&tx1_dma 0>;",
+     "dma-names = \"tx\";",
+     "adi,axi-dds-default-scale = <0x800>;",
+     "adi,axi-dds-default-frequency = <2000000>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tdd1"
+    ],
+    "node": "axi-adrv9002-core-tdd1-lpc",
+    "offset": 51200,
+    "reg": [
+     [
+      51200,
+      1024
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-tdd-1.00\";",
+     "clocks = <&zynqmp_clk 71>, <&adc0_adrv9002 2>;",
+     "clock-names = \"s_axi_aclk\", \"intf_clk\";",
+     "label = \"axi-core-tdd-1\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_rx2"
+    ],
+    "node": "axi-adrv9002-rx2-lpc",
+    "offset": 36864,
+    "reg": [
+     [
+      36864,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-rx2-1.0\";",
+     "clocks = <&adc0_adrv9002 3>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&rx2_dma 0>;",
+     "dma-names = \"rx\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tx2"
+    ],
+    "node": "axi-adrv9002-tx2-lpc",
+    "offset": 49152,
+    "reg": [
+     [
+      49152,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-tx-1.0\";",
+     "clocks = <&adc0_adrv9002 4>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&tx2_dma 0>;",
+     "dma-names = \"tx\";",
+     "adi,axi-dds-default-scale = <0x800>;",
+     "adi,axi-dds-default-frequency = <2000000>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tdd2"
+    ],
+    "node": "axi-adrv9002-core-tdd2-lpc",
+    "offset": 52224,
+    "reg": [
+     [
+      52224,
+      1024
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-tdd-1.00\";",
+     "clocks = <&zynqmp_clk 71>, <&adc0_adrv9002 5>;",
+     "clock-names = \"s_axi_aclk\", \"intf_clk\";",
+     "label = \"axi-core-tdd-2\";"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tadrv9002_clkin: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <38400000>;",
+   "\t\tclock-output-names = \"adrv9002_ext_refclk\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adc0_adrv9002: adrv9002-phy@0 {",
+     "\tcompatible = \"adi,adrv9002\";",
+     "\treg = <0>;",
+     "\tinterrupt-parent = <&gpio>;",
+     "\tinterrupts = <122 1>;",
+     "\tspi-max-frequency = <20000000>;",
+     "\tclocks = <&adrv9002_clkin>;",
+     "\tclock-names = \"adrv9002_ext_refclk\";",
+     "\tclock-output-names = \"rx1_sampl_clk\", \"tx1_sampl_clk\", \"tdd1_intf_clk\", \"rx2_sampl_clk\", \"tx2_sampl_clk\", \"tdd2_intf_clk\";",
+     "\t#clock-cells = <1>;",
+     "\treset-gpios = <&gpio 124 1>;",
+     "",
+     "\tadi,channels {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\trx@0 {",
+     "\t\t\treg = <0>;",
+     "\t\t\tadi,port = <0>;",
+     "\t\t\torx-gpios = <&gpio 110 0>;",
+     "\t\t\tenable-gpios = <&gpio 126 0>;",
+     "\t\t};",
+     "",
+     "\t\trx@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,port = <0>;",
+     "\t\t\torx-gpios = <&gpio 111 0>;",
+     "\t\t\tenable-gpios = <&gpio 127 0>;",
+     "\t\t};",
+     "",
+     "\t\ttx@0 {",
+     "\t\t\treg = <0>;",
+     "\t\t\tadi,port = <1>;",
+     "\t\t\tadi,dpd;",
+     "\t\t\tenable-gpios = <&gpio 128 0>;",
+     "\t\t};",
+     "",
+     "\t\ttx@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,port = <1>;",
+     "\t\t\tadi,dpd;",
+     "\t\t\tenable-gpios = <&gpio 129 0>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tadi,gpios {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\tgpio@0 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,signal = <0>;",
+     "\t\t};",
+     "",
+     "\t\tgpio@1 {",
+     "\t\t\treg = <2>;",
+     "\t\t\tadi,signal = <1>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tadi,frequency-hopping {",
+     "\t\tadi,fh-mode = <3>;",
+     "\t\tadi-fh-rx-zero-if-en;",
+     "",
+     "\t\tadi,fh-hop-signal-2 {",
+     "\t\t\tadi,fh-hop-rx-ports = <1>;",
+     "\t\t\tadi,fh-hop-tx-ports = <1>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tadi,plls {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\tpll@0 {",
+     "\t\t\treg = <0>;",
+     "\t\t\tadi,calibration-mode = <0>;",
+     "\t\t\tadi,power = <0>;",
+     "\t\t\tadi,loop-bw-khz = <300>;",
+     "\t\t\tadi,phase-margin-deg = <60>;",
+     "\t\t};",
+     "",
+     "\t\tpll@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,calibration-mode = <0>;",
+     "\t\t\tadi,power = <0>;",
+     "\t\t\tadi,loop-bw-khz = <300>;",
+     "\t\t\tadi,phase-margin-deg = <60>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   }
+  ]
+ }
+}

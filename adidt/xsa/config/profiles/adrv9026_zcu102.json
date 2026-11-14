@@ -1,0 +1,491 @@
+{
+ "name": "adrv9026_zcu102",
+ "defaults": {},
+ "design": {
+  "project": "adrv9026",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9025.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@1: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "axi_adrv9026_rx_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "#clock-cells = <0>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 73>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_tx_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "#clock-cells = <0>;",
+     "dma-coherent;",
+     "clocks = <&zynqmp_clk 73>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_rx_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "axi_rx_clkgen"
+    ],
+    "node": "axi-clkgen",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clk0_ad9528 3>, <&zynqmp_clk 71>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";",
+     "clock-output-names = \"axi_rx_clkgen\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_tx_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "axi_tx_clkgen"
+    ],
+    "node": "axi-clkgen",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clk0_ad9528 3>, <&zynqmp_clk 71>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";",
+     "clock-output-names = \"axi_tx_clkgen\";"
+    ]
+   },
+   {
+    "instance": "rx_adrv9026_tpl_core_adc_tpl_core",
+    "ip_type": "ad_ip_jesd204_tpl_adc",
+    "labels": [
+     "axi_adrv9025_core_rx"
+    ],
+    "node": "axi-adrv9025-rx-hpc",
+    "reg": [
+     [
+      0,
+      32768
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adc-legacy-10.0.a\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&trx0_adrv9025>;"
+    ]
+   },
+   {
+    "instance": "tx_adrv9026_tpl_core_dac_tpl_core",
+    "ip_type": "ad_ip_jesd204_tpl_dac",
+    "labels": [
+     "axi_adrv9025_core_tx"
+    ],
+    "node": "axi-adrv9025-tx-hpc",
+    "reg": [
+     [
+      0,
+      16384
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9025-tx-1.0\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "clocks = <&trx0_adrv9025 1>;",
+     "clock-names = \"sampl_clk\";",
+     "adi,axi-pl-fifo-enable;",
+     "adi,axi-data-offload-connected = <&axi_data_offload_tx>;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_adrv9025_tx_jesd 0 0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_rx_jesd_rx_axi",
+    "ip_type": "axi_jesd204_rx",
+    "labels": [
+     "axi_adrv9025_rx_jesd"
+    ],
+    "node": "axi-jesd204-rx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-jesd204-rx-1.0\";",
+     "clocks = <&zynqmp_clk 71>, <&axi_rx_clkgen>, <&axi_adrv9025_adxcvr_rx 0>, <&axi_adrv9025_adxcvr_rx 1>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\", \"link_clk\";",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_rx_lane_clk\";",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_adrv9025_adxcvr_rx 0 2>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_tx_jesd_tx_axi",
+    "ip_type": "axi_jesd204_tx",
+    "labels": [
+     "axi_adrv9025_tx_jesd"
+    ],
+    "node": "axi-jesd204-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-jesd204-tx-1.0\";",
+     "clocks = <&zynqmp_clk 71>, <&axi_tx_clkgen>, <&axi_adrv9025_adxcvr_tx 0>, <&axi_adrv9025_adxcvr_tx 1>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\", \"link_clk\";",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_tx_lane_clk\";",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&axi_adrv9025_adxcvr_tx 0 0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_rx_xcvr",
+    "ip_type": "axi_adxcvr",
+    "labels": [
+     "axi_adrv9025_adxcvr_rx"
+    ],
+    "node": "axi-adxcvr-rx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&clk0_ad9528 13>;",
+     "clock-names = \"conv\";",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"rx_gt_clk\", \"rx_out_clk\";",
+     "adi,sys-clk-select = <0>;",
+     "adi,out-clk-select = <3>;",
+     "adi,use-lpm-enable;",
+     "adi,use-cpll-enable;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&clk0_ad9528 0 2>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9026_tx_xcvr",
+    "ip_type": "axi_adxcvr",
+    "labels": [
+     "axi_adrv9025_adxcvr_tx"
+    ],
+    "node": "axi-adxcvr-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "#address-cells = <1>;",
+     "#size-cells = <0>;",
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&clk0_ad9528 13>;",
+     "clock-names = \"conv\";",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"tx_gt_clk\", \"tx_out_clk\";",
+     "adi,sys-clk-select = <3>;",
+     "adi,out-clk-select = <3>;",
+     "jesd204-device;",
+     "#jesd204-cells = <2>;",
+     "jesd204-inputs = <&clk0_ad9528 0 0>;"
+    ]
+   },
+   {
+    "instance": "adrv9026_data_offload_i_data_offload",
+    "ip_type": "data_offload",
+    "labels": [
+     "axi_data_offload_tx"
+    ],
+    "node": "axi-data-offload-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-data-offload-1.0.a\";"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@1 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <1>;",
+     "",
+     "\t\tad7291@2f {",
+     "\t\t\tcompatible = \"adi,ad7291\";",
+     "\t\t\treg = <0x2f>;",
+     "\t\t};",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "clk0_ad9528: ad9528-1@1 {",
+     "\tcompatible = \"adi,ad9528\";",
+     "\treg = <1>;",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tclock-output-names = \"ad9528-1_out0\", \"ad9528-1_out1\", \"ad9528-1_out2\", \"ad9528-1_out3\", \"ad9528-1_out4\", \"ad9528-1_out5\", \"ad9528-1_out6\", \"ad9528-1_out7\", \"ad9528-1_out8\", \"ad9528-1_out9\", \"ad9528-1_out10\", \"ad9528-1_out11\", \"ad9528-1_out12\", \"ad9528-1_out13\";",
+     "\t#clock-cells = <1>;",
+     "\tjesd204-device;",
+     "\t#jesd204-cells = <2>;",
+     "\tjesd204-sysref-provider;",
+     "\tadi,vcxo-freq = <122880000>;",
+     "\tadi,refa-enable;",
+     "\tadi,refa-diff-rcv-enable;",
+     "\tadi,refa-r-div = <1>;",
+     "\tadi,pll1-feedback-div = <4>;",
+     "\tadi,pll1-charge-pump-current-nA = <5000>;",
+     "\tadi,pll2-vco-div-m1 = <4>;",
+     "\tadi,pll2-n2-div = <4>;",
+     "\tadi,pll2-r1-div = <1>;",
+     "\tadi,pll2-charge-pump-current-nA = <805000>;",
+     "\tadi,pll2-freq-doubler-enable;",
+     "\tadi,sysref-src = <2>;",
+     "\tadi,sysref-pattern-mode = <0>;",
+     "\tadi,sysref-k-div = <512>;",
+     "\tadi,sysref-nshot-mode = <5>;",
+     "\tadi,jesd204-desired-sysref-frequency-hz = <1920000>;",
+     "\tadi,rpole2 = <0>;",
+     "\tadi,rzero = <7>;",
+     "\tadi,cpole1 = <2>;",
+     "\tadi,status-mon-pin0-function-select = <1>;",
+     "\tadi,status-mon-pin1-function-select = <7>;",
+     "\treset-gpios = <&gpio 146 0>;",
+     "",
+     "\tad9528_0_c0: channel@0 {",
+     "\t\treg = <0>;",
+     "\t\tadi,extended-name = \"DEV_SYSREF\";",
+     "\t\tadi,driver-mode = <0>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t\tadi,signal-source = <2>;",
+     "\t};",
+     "",
+     "\tad9528_0_c1: channel@1 {",
+     "\t\treg = <1>;",
+     "\t\tadi,extended-name = \"DEV_CLK\";",
+     "\t\tadi,driver-mode = <0>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t\tadi,signal-source = <0>;",
+     "\t};",
+     "",
+     "\tad9528_0_c3: channel@3 {",
+     "\t\treg = <3>;",
+     "\t\tadi,extended-name = \"CORE_CLK\";",
+     "\t\tadi,driver-mode = <0>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t\tadi,signal-source = <0>;",
+     "\t};",
+     "",
+     "\tad9528_0_c12: channel@12 {",
+     "\t\treg = <12>;",
+     "\t\tadi,extended-name = \"FMC_SYSREF\";",
+     "\t\tadi,driver-mode = <0>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t\tadi,signal-source = <2>;",
+     "\t};",
+     "",
+     "\tad9528_0_c13: channel@13 {",
+     "\t\treg = <13>;",
+     "\t\tadi,extended-name = \"FMC_CLK\";",
+     "\t\tadi,driver-mode = <0>;",
+     "\t\tadi,divider-phase = <0>;",
+     "\t\tadi,channel-divider = <4>;",
+     "\t\tadi,signal-source = <0>;",
+     "\t};",
+     "};",
+     "",
+     "trx0_adrv9025: adrv9025-phy@0 {",
+     "\tcompatible = \"adrv9025\";",
+     "\treg = <0>;",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\tspi-max-frequency = <25000000>;",
+     "\tinterrupt-parent = <&gpio>;",
+     "\tinterrupts = <134 1>;",
+     "\tclocks = <&clk0_ad9528 1>;",
+     "\tclock-names = \"dev_clk\";",
+     "\tclock-output-names = \"rx_sampl_clk\", \"tx_sampl_clk\";",
+     "\t#clock-cells = <1>;",
+     "\tjesd204-device;",
+     "\t#jesd204-cells = <2>;",
+     "\tjesd204-top-device = <0>;",
+     "\tjesd204-link-ids = <0 2>;",
+     "\tjesd204-inputs = <&axi_adrv9025_rx_jesd 0 2>, <&axi_adrv9025_core_tx 0 0>;",
+     "\tadi,device-profile-name = \"ActiveUseCase.profile\";",
+     "\tadi,init-profile-name = \"ActiveUtilInit.profile\";",
+     "\tadi,arm-firmware-name = \"ADRV9025_FW.bin;ADRV9025_DPDCORE_FW.bin\";",
+     "\tadi,stream-firmware-name = \"stream_image_6E3E00EFB74FE7D465FA88A171B81B8F.bin\";",
+     "\tadi,rx-gaintable-names = \"ADRV9025_RxGainTable.csv\";",
+     "\tadi,rx-gaintable-channel-masks = <0xFF>;",
+     "\tadi,tx-attntable-names = \"ADRV9025_TxAttenTable.csv\";",
+     "\tadi,tx-attntable-channel-masks = <0x0F>;",
+     "\tadi,rxagc-rx-channel-mask = <0x0F>;",
+     "\tadi,rxagc-agc-peak-wait-time = <4>;",
+     "\tadi,rxagc-agc-rx-max-gain-index = <255>;",
+     "\tadi,rxagc-agc-rx-min-gain-index = <195>;",
+     "\tadi,rxagc-agc-gain-update-counter = <921600>;",
+     "\tadi,rxagc-agc-rx-attack-delay = <10>;",
+     "\tadi,rxagc-agc-slow-loop-settling-delay = <16>;",
+     "\tadi,rxagc-agc-low-thresh-prevent-gain-inc = <1>;",
+     "\tadi,rxagc-agc-change-gain-if-thresh-high = <1>;",
+     "\tadi,rxagc-agc-peak-thresh-gain-control-mode = <1>;",
+     "\tadi,rxagc-agc-reset-on-rxon = <0>;",
+     "\tadi,rxagc-agc-enable-sync-pulse-for-gain-counter = <0>;",
+     "\tadi,rxagc-agc-enable-fast-recovery-loop = <0>;",
+     "\tadi,rxagc-peak-agc-under-range-low-interval = <836>;",
+     "\tadi,rxagc-peak-agc-under-range-mid-interval = <2>;",
+     "\tadi,rxagc-peak-agc-under-range-high-interval = <4>;",
+     "\tadi,rxagc-peak-apd-high-thresh = <38>;",
+     "\tadi,rxagc-peak-apd-low-thresh = <25>;",
+     "\tadi,rxagc-peak-apd-upper-thresh-peak-exceeded-cnt = <10>;",
+     "\tadi,rxagc-peak-apd-lower-thresh-peak-exceeded-cnt = <3>;",
+     "\tadi,rxagc-peak-enable-hb2-overload = <1>;",
+     "\tadi,rxagc-peak-hb2-overload-duration-cnt = <1>;",
+     "\tadi,rxagc-peak-hb2-overload-thresh-cnt = <1>;",
+     "\tadi,rxagc-peak-hb2-high-thresh = <11598>;",
+     "\tadi,rxagc-peak-hb2-under-range-low-thresh = <8211>;",
+     "\tadi,rxagc-peak-hb2-under-range-mid-thresh = <5813>;",
+     "\tadi,rxagc-peak-hb2-under-range-high-thresh = <2913>;",
+     "\tadi,rxagc-peak-hb2-upper-thresh-peak-exceeded-cnt = <10>;",
+     "\tadi,rxagc-peak-hb2-under-range-high-thresh-exceeded-cnt = <3>;",
+     "\tadi,rxagc-peak-hb2-under-range-mid-thresh-exceeded-cnt = <3>;",
+     "\tadi,rxagc-peak-hb2-under-range-low-thresh-exceeded-cnt = <3>;",
+     "\tadi,rxagc-peak-hb2-overload-power-mode = <0>;",
+     "\tadi,rxagc-peak-hb2-thresh-config = <3>;",
+     "\tadi,rxagc-peak-apd-gain-step-attack = <4>;",
+     "\tadi,rxagc-peak-apd-gain-step-recovery = <2>;",
+     "\tadi,rxagc-peak-hb2-gain-step-attack = <4>;",
+     "\tadi,rxagc-peak-hb2-gain-step-high-recovery = <2>;",
+     "\tadi,rxagc-peak-hb2-gain-step-mid-recovery = <4>;",
+     "\tadi,rxagc-peak-hb2-gain-step-low-recovery = <8>;",
+     "\tadi,rxagc-power-power-enable-measurement = <0>;",
+     "\tadi,rxagc-power-power-input-select = <0>;",
+     "\tadi,rxagc-power-under-range-high-power-thresh = <9>;",
+     "\tadi,rxagc-power-under-range-low-power-thresh = <2>;",
+     "\tadi,rxagc-power-under-range-high-power-gain-step-recovery = <0>;",
+     "\tadi,rxagc-power-under-range-low-power-gain-step-recovery = <0>;",
+     "\tadi,rxagc-power-power-measurement-duration = <5>;",
+     "\tadi,rxagc-power-rx-tdd-power-meas-duration = <5>;",
+     "\tadi,rxagc-power-rx-tdd-power-meas-delay = <1>;",
+     "\tadi,rxagc-power-over-range-high-power-thresh = <2>;",
+     "\tadi,rxagc-power-over-range-low-power-thresh = <0>;",
+     "\tadi,rxagc-power-power-log-shift = <1>;",
+     "\tadi,rxagc-power-over-range-high-power-gain-step-attack = <0>;",
+     "\tadi,rxagc-power-over-range-low-power-gain-step-attack = <0>;",
+     "\treset-gpios = <&gpio 135 0>;",
+     "\ttest-gpios = <&gpio 136 0>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

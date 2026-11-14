@@ -1,0 +1,213 @@
+{
+ "name": "ad9694_fmc_zcu102",
+ "defaults": {},
+ "design": {
+  "project": "ad9694_fmc",
+  "carrier": "zcu102",
+  "variant": "",
+  "default": true,
+  "validated": false,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9694.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "seeded without an XSA: the release ships none for this design, so nothing here was checked against a bitstream",
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "address": 2621440000,
+    "labels": [
+     "rx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "dma-coherent;",
+     "interrupts = <0 109 4>;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "address": 2225078272,
+    "labels": [
+     "axi_ad9694_core"
+    ],
+    "node": "axi-ad9694-hpc",
+    "reg": [
+     [
+      0,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9208-1.0\";",
+     "dmas = <&rx_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc0_ad9694>;"
+    ]
+   },
+   {
+    "address": 2225733632,
+    "labels": [
+     "axi_ad9694_jesd"
+    ],
+    "node": "axi-jesd204-rx",
+    "reg": [
+     [
+      0,
+      16384
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-jesd204-rx-1.0\";",
+     "interrupts = <0 108 4>;",
+     "clocks = <&zynqmp_clk 71>, <&device_clk>, <&axi_ad9694_adxcvr 0>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\";",
+     "adi,octets-per-frame = <2>;",
+     "adi,frames-per-multiframe = <32>;",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_adc_lane_clk\";"
+    ]
+   },
+   {
+    "address": 2225471488,
+    "labels": [
+     "axi_ad9694_adxcvr"
+    ],
+    "node": "axi-adxcvr-rx",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&device_clk>, <&device_clk>;",
+     "clock-names = \"conv\", \"div40\";",
+     "adi,sys-clk-select = <3>;",
+     "adi,out-clk-select = <3>;",
+     "adi,use-lpm-enable;",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"adc_gt_clk\", \"rx_out_clk\";"
+    ]
+   },
+   {
+    "address": 2231369728,
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tad9694_clkin: clock@0 {",
+   "\t\t#clock-cells = <0>;",
+   "\t\tcompatible = \"adjustable-clock\";",
+   "\t\tclock-frequency = <500000000>;",
+   "\t\tclock-accuracy = <1000000000>;",
+   "\t\tclock-output-names = \"ad9694_clk\";",
+   "\t};",
+   "",
+   "\tdevice_clk: clock@1 {",
+   "\t\t#clock-cells = <0>;",
+   "\t\tcompatible = \"adjustable-clock\";",
+   "\t\tclock-frequency = <250000000>;",
+   "\t\tclock-accuracy = <1000000000>;",
+   "\t\tclock-output-names = \"dev_clk\";",
+   "\t};",
+   "",
+   "\tsysref: clock@2 {",
+   "\t\t#clock-cells = <0>;",
+   "\t\tcompatible = \"adjustable-clock\";",
+   "\t\tclock-frequency = <7812500>;",
+   "\t\tclock-accuracy = <1000000000>;",
+   "\t\tclock-output-names = \"adc_sysref\";",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adc0_ad9694: ad9694@0 {",
+     "\tcompatible = \"adi,ad9694\";",
+     "\tpowerdown-gpios = <&gpio 110 0>;",
+     "\tfastdetect-a-gpios = <&gpio 111 0>;",
+     "\tfastdetect-b-gpios = <&gpio 112 0>;",
+     "\tspi-cpol;",
+     "\tspi-cpha;",
+     "\tspi-max-frequency = <5000000>;",
+     "\treg = <0>;",
+     "\tclocks = <&axi_ad9694_jesd>, <&ad9694_clkin>, <&sysref>;",
+     "\tclock-names = \"jesd_adc_clk\", \"adc_clk\", \"adc_sysref\";",
+     "\tadi,powerdown-mode = <0x3>;",
+     "\tadi,sampling-frequency = /bits/ 64 <500000000>;",
+     "\tadi,input-clock-divider-ratio = <1>;",
+     "\tadi,duty-cycle-stabilizer-enable;",
+     "\tadi,analog-input-neg-buffer-current = <0x1E>;",
+     "\tadi,analog-input-pos-buffer-current = <0x1E>;",
+     "\tadi,sysref-lmfc-offset = <0>;",
+     "\tadi,sysref-pos-window-skew = <0>;",
+     "\tadi,sysref-neg-window-skew = <0>;",
+     "\tadi,sysref-mode = <1>;",
+     "\tadi,sysref-nshot-ignore-count = <0>;",
+     "\tadi,octets-per-frame = <2>;",
+     "\tadi,frames-per-multiframe = <32>;",
+     "\tadi,converter-resolution = <16>;",
+     "\tadi,bits-per-sample = <16>;",
+     "\tadi,converters-per-device = <4>;",
+     "\tadi,control-bits-per-sample = <0>;",
+     "\tadi,lanes-per-device = <4>;",
+     "\tadi,subclass = <1>;",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}

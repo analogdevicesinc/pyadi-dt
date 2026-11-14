@@ -10,6 +10,7 @@ from .config.profiles import ProfileManager, merge_profile_defaults
 from .parse.sdtgen import SdtgenRunner
 from .parse.topology import XsaParser, XsaTopology
 from .build.node_builder import NodeBuilder
+from .build.builders.declarative import DESIGN_KEY
 from .build.board_fixups import apply_board_fixups
 from .merge.merger import DtsMerger
 from .validate.dts_lint import DtsLinter
@@ -125,6 +126,11 @@ class XsaPipeline:
             cfg_merged = self._apply_profile_jesd_defaults(
                 cfg, cfg_merged, selected_profile
             )
+            if isinstance(profile_data.get("design"), dict):
+                cfg_merged = {**cfg_merged, DESIGN_KEY: profile_data["design"]}
+                if not profile:
+                    name = selected_profile
+                    safe_name = re.sub(r"[^\w\-.]", "_", name)
 
         cfg_merged = self._apply_xsa_jesd_defaults(cfg_merged, topology)
 
@@ -290,6 +296,8 @@ class XsaPipeline:
             cfg_merged = self._apply_profile_jesd_defaults(
                 cfg, cfg_merged, selected_profile
             )
+            if isinstance(profile_data.get("design"), dict):
+                cfg_merged = {**cfg_merged, DESIGN_KEY: profile_data["design"]}
 
         # Stub base DTS: only used by DtsMerger._build_overlay to detect
         # the bus label.  Both Zynq-7000 and ZynqMP sdtgen output use
@@ -415,6 +423,11 @@ class XsaPipeline:
             The candidate profile name (e.g. ``"adrv9009_zcu102"``) when a
             matching built-in profile is available, otherwise ``None``.
         """
+        declared = ProfileManager().find_design_profile(
+            topology.hdl_project, topology.hdl_carrier, topology.hdl_variant
+        )
+        if declared is not None:
+            return declared
         candidate = self._derive_name(topology)
         if candidate in ProfileManager().list_profiles():
             return candidate

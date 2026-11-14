@@ -32,6 +32,7 @@ _SECTION_LABELS: list[tuple[str, str]] = [
     ("jesd204_rx", "JESD204 RX — transport, link and physical layers"),
     ("jesd204_tx", "JESD204 TX — transport, link and physical layers"),
     ("converters", "ADC / DAC / Transceiver PHY"),
+    ("design", "HDL design nodes"),
 ]
 
 
@@ -149,8 +150,13 @@ class DtsMerger:
             all_nodes.extend(group)
 
         overlay = self._build_overlay(base_dts, nodes, name)
+        # Included stubs that the generated nodes stand in for (named after
+        # the IP instance by sdtgen) are deleted rather than left beside them.
+        replaced = tuple(
+            label.replace("-", "_") for label in nodes.get("replaced_instances", [])
+        )
         merged = self._build_merged(
-            base_dts, all_nodes, [output_dir, output_dir / "base"], name
+            base_dts, all_nodes, [output_dir, output_dir / "base"], name, replaced
         )
 
         (output_dir / f"{name}.dtso").write_text(overlay)
@@ -219,7 +225,12 @@ class DtsMerger:
         return "\n".join(lines) + "\n"
 
     def _build_merged(
-        self, base_dts: str, all_nodes: list[str], include_dirs: list[Path], name: str
+        self,
+        base_dts: str,
+        all_nodes: list[str],
+        include_dirs: list[Path],
+        name: str,
+        replaced_labels: tuple[str, ...] = (),
     ) -> str:
         """Return the merged DTS with a file header prepended.
 
@@ -235,11 +246,17 @@ class DtsMerger:
             Complete merged DTS text with a ``/* ... */`` file header at the
             top, followed by the original DTS content with ADI nodes inserted.
         """
-        content = self._merge_content(base_dts, all_nodes, include_dirs)
+        content = self._merge_content(
+            base_dts, all_nodes, include_dirs, replaced_labels
+        )
         return _file_header(name, "merged") + "\n" + content
 
     def _merge_content(
-        self, base_dts: str, all_nodes: list[str], include_dirs: list[Path]
+        self,
+        base_dts: str,
+        all_nodes: list[str],
+        include_dirs: list[Path],
+        replaced_labels: tuple[str, ...] = (),
     ) -> str:
         """Insert *all_nodes* into *base_dts*, resolving conflicts and returning the merged DTS text."""
         merged = base_dts
@@ -251,6 +268,12 @@ class DtsMerger:
         delete_directives = self._include_conflict_delete_directives(
             all_nodes, include_labels
         )
+        delete_directives += [
+            f"/delete-node/ &{label};"
+            for label in replaced_labels
+            if label in include_labels
+            and f"/delete-node/ &{label};" not in delete_directives
+        ]
         if delete_directives:
             merged = self._insert_delete_directives(merged, delete_directives)
 
@@ -616,8 +639,9 @@ class DtsMerger:
         if not additions:
             return node
 
+        # Right after the opening brace: properties may not follow subnodes.
         insertion = "".join(f"\n\t\t{line}" for line in additions)
-        return re.sub(r"\n\s*\};\s*$", f"{insertion}\n\t}};", node)
+        return node.replace("{", "{" + insertion, 1)
 
     def _read_include_file(
         self, include_name: str, include_dirs: list[Path]

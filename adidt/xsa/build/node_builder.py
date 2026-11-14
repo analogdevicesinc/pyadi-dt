@@ -12,6 +12,7 @@ from .builders.adrv937x import ADRV937xBuilder
 from .builders.adrv9009 import ADRV9009Builder
 from .builders.adrv9003 import ADRV9003Builder
 from .builders.adrv9040 import ADRV9040Builder
+from .builders.declarative import DESIGN_KEY, DeclarativeBuilder
 from .builders.fmcdaq2 import FMCDAQ2Builder
 from .builders.fmcdaq3 import FMCDAQ3Builder
 from ..platforms import platform_info
@@ -28,6 +29,7 @@ class NodeBuilder:
     """Builds ADI DTS node strings from XsaTopology + pyadi-jif JSON config."""
 
     _DEFAULT_BUILDERS: list[BoardBuilder] = [
+        DeclarativeBuilder(),
         ADRV9040Builder(),
         ADRV9003Builder(),
         ADRV9009Builder(),
@@ -65,6 +67,18 @@ class NodeBuilder:
         """
         if isinstance(cfg, PipelineConfig):
             cfg = cfg.to_dict(converter_family=topology.inferred_converter_family())
+        if isinstance(cfg.get(DESIGN_KEY), dict):
+            # A declarative profile describes every node of the design, so
+            # none of the family heuristics below apply.
+            built = DeclarativeBuilder().build(topology, cfg[DESIGN_KEY])
+            return {
+                "clkgens": [],
+                "jesd204_rx": [],
+                "jesd204_tx": [],
+                "converters": [],
+                "design": [*built["design"], *built["overlays"]],
+                "replaced_instances": built["replaced"],
+            }
         platform = topology.inferred_platform()
         self._addr_cells = platform_info(platform).addr_cells
         clock_map = self._build_clock_map(topology)

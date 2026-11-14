@@ -13,6 +13,24 @@ All notable changes to pyadi-dt are documented here. The project follows
   `scripts/generate_hdl_release_inventory.py` to regenerate it and an
   opt-in coverage gate (`test/xsa/test_hdl_release_coverage.py`) that runs
   the pipeline on every released XSA.
+- Declarative design profiles: a profile's `design` section lists the PL
+  cores and bus devices of an HDL design, and `DeclarativeBuilder` renders
+  them with addresses and interrupts taken from the XSA.
+  `scripts/seed_declarative_profile.py` seeds these profiles from the kernel
+  reference device trees.
+- Seeded profiles for every HDL 2026.1 design that ships an XSA and has no
+  hand-written builder (87 boot directories across 52 designs: FMComms2/5,
+  ADRV9001, the ADRV936x SoMs, AD9082/AD9083, `dac_fmc_ebz`, FMComms8, the
+  SPI-engine and parallel-interface converters, CN0506 and the ADV7511 base
+  designs), plus unvalidated profiles for six Zynq/ZynqMP designs the
+  release ships no XSA for.  `doc/source/hdl_2026_r1_support.rst` lists the
+  state of every design.
+- The XSA parser reads the HDL project, carrier and build variant from the
+  system-ID ROM path (`XsaTopology.hdl_project`, `hdl_carrier`,
+  `hdl_variant`), and profile auto-selection uses that identity first.
+- The coverage gate checks that every ADI driver binding in the kernel
+  reference tree is present in the generated tree
+  (`adidt.xsa.validate.bindings`).
 - JESD204 framing (M, L, S, N, Np, F and a default K) is read from the XSA's
   transport-layer cores when the configuration leaves it out.
 - Platform detection for ZedBoard, ZC702, Cora Z7S, the ADRV9361/ADRV9364
@@ -24,6 +42,13 @@ All notable changes to pyadi-dt are documented here. The project follows
 - `kuiper_boards.json` now describes the Kuiper 2026_r1 boot partition.
 - Zynq-7000 carriers other than ZC706 now use one address cell and the
   `clkc`/`gpio0` labels instead of the ZynqMP defaults.
+- Profile auto-selection looks for a profile declared for the XSA's HDL
+  design before falling back to `<converter_family>_<platform>`.  AD9082,
+  AD9083, ADRV9002 on ZCU102, ADRV9025, the `dac_fmc_ebz` DACs and the
+  FMComms8 variants now select their seeded profile.
+- PL interrupt numbers are resolved from the XSA on Zynq-7000 (`IRQ_F2P`) as
+  well as ZynqMP, and for Xilinx cores (`ip2intc_irpt`) as well as ADI ones.
+  A core with several interrupt outputs is left unresolved.
 
 ### Fixed
 
@@ -31,7 +56,10 @@ All notable changes to pyadi-dt are documented here. The project follows
   M=4/L=8; it now follows the kernel reference device trees (RX 10 / TX 9 and
   RX 18 / TX 17) and covers every framing they use.
 - The linter no longer reports nested channel nodes as duplicate SPI chip
-  selects.
+  selects, and no longer demands a `compatible` on nodes a parent device's
+  driver owns (converter sub-nodes, Ethernet PHYs).
+- The merger placed interrupt properties copied from an included stub after
+  the node's sub-nodes, which `dtc` rejects.
 
 ## [0.1.0] - 2026-11-10
 

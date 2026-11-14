@@ -1,0 +1,547 @@
+{
+ "name": "adrv9001_zed",
+ "defaults": {},
+ "design": {
+  "project": "adrv9001",
+  "carrier": "zed",
+  "variant": "",
+  "default": true,
+  "reference": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-adrv9002.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "pulled in /audio_clock: referenced as &audio_clock"
+  ],
+  "pl": [
+   {
+    "instance": "axi_iic_main",
+    "ip_type": "axi_iic",
+    "labels": [],
+    "node": "i2c",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"xlnx,axi-iic-1.01.b\", \"xlnx,xps-iic-2.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"pclk\";",
+     "#size-cells = <0>;",
+     "#address-cells = <1>;",
+     "",
+     "adv7511: hdmi@39 {",
+     "\tcompatible = \"adi,adv7511\";",
+     "\treg = <0x39>, <0x3f>;",
+     "\treg-names = \"primary\", \"edid\";",
+     "\tadi,input-depth = <8>;",
+     "\tadi,input-colorspace = \"yuv422\";",
+     "\tadi,input-clock = \"1x\";",
+     "\tadi,input-style = <1>;",
+     "\tadi,input-justification = \"right\";",
+     "\tadi,clock-delay = <0>;",
+     "\t#sound-dai-cells = <1>;",
+     "",
+     "\tports {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\tport@0 {",
+     "\t\t\treg = <0>;",
+     "",
+     "\t\t\tadv7511_in: endpoint {",
+     "\t\t\t\tremote-endpoint = <&axi_hdmi_out>;",
+     "\t\t\t};",
+     "\t\t};",
+     "",
+     "\t\tport@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t};",
+     "\t};",
+     "};",
+     "",
+     "adau1761: audio-codec@3b {",
+     "\tcompatible = \"adi,adau1761\";",
+     "\treg = <0x3b>;",
+     "\tclocks = <&audio_clock>;",
+     "\tclock-names = \"mclk\";",
+     "\t#sound-dai-cells = <0>;",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_iic_fmc",
+    "ip_type": "axi_iic",
+    "labels": [],
+    "node": "i2c",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"xlnx,axi-iic-1.01.b\", \"xlnx,xps-iic-2.00.a\";",
+     "interrupt-parent = <&intc>;",
+     "clocks = <&clkc 15>;",
+     "clock-names = \"pclk\";",
+     "#size-cells = <0>;",
+     "#address-cells = <1>;",
+     "",
+     "eeprom1: eeprom@50 {",
+     "\tcompatible = \"at24,24c02\";",
+     "\treg = <0x50>;",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "hdmi_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&clkc 16>;"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_clkgen",
+    "ip_type": "axi_clkgen",
+    "labels": [
+     "hdmi_clock"
+    ],
+    "node": "clock-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-clkgen-2.00.a\";",
+     "#clock-cells = <0>;",
+     "clocks = <&clkc 16>, <&clkc 15>;",
+     "clock-names = \"clkin1\", \"s_axi_aclk\";"
+    ]
+   },
+   {
+    "instance": "axi_hdmi_core",
+    "ip_type": "axi_hdmi_tx",
+    "labels": [],
+    "node": "lcd-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-hdmi-tx-1.00.a\";",
+     "dmas = <&hdmi_dma 0>;",
+     "dma-names = \"video\";",
+     "clocks = <&hdmi_clock>;",
+     "",
+     "port {",
+     "\taxi_hdmi_out: endpoint {",
+     "\t\tremote-endpoint = <&adv7511_in>;",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "instance": "axi_spdif_tx_core",
+    "ip_type": "axi_spdif_tx",
+    "labels": [
+     "axi_spdif_tx_0"
+    ],
+    "node": "spdif",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-spdif-tx-1.00.a\";",
+     "dmas = <&dmac_s 0>;",
+     "dma-names = \"tx\";",
+     "clocks = <&clkc 15>, <&audio_clock>;",
+     "clock-names = \"axi\", \"ref\";",
+     "#sound-dai-cells = <0>;"
+    ]
+   },
+   {
+    "instance": "axi_i2s_adi",
+    "ip_type": "axi_i2s_adi",
+    "labels": [
+     "axi_i2s_0"
+    ],
+    "node": "i2s",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-i2s-1.00.a\";",
+     "dmas = <&dmac_s 1 &dmac_s 2>;",
+     "dma-names = \"tx\", \"rx\";",
+     "clocks = <&clkc 15>, <&audio_clock>;",
+     "clock-names = \"axi\", \"ref\";",
+     "#sound-dai-cells = <0>;"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "sysid",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_rx1_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx1_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clock-names = \"s_axi_aclk\", \"m_dest_axi_aclk\", \"fifo_wr_clk\";",
+     "clocks = <&clkc 15>, <&clkc 16>, <&misc_clk_0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_rx2_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "rx2_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clock-names = \"s_axi_aclk\", \"m_dest_axi_aclk\", \"fifo_wr_clk\";",
+     "clocks = <&clkc 15>, <&clkc 16>, <&misc_clk_0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_tx1_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx1_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clock-names = \"s_axi_aclk\", \"m_src_axi_aclk\", \"m_axis_aclk\";",
+     "clocks = <&clkc 15>, <&clkc 16>, <&misc_clk_0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001_tx2_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx2_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clock-names = \"s_axi_aclk\", \"m_src_axi_aclk\", \"m_axis_aclk\";",
+     "clocks = <&clkc 15>, <&clkc 16>, <&misc_clk_0>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_rx1"
+    ],
+    "node": "axi-adrv9002-rx-lpc",
+    "reg": [
+     [
+      0,
+      24576
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-rx-1.0\";",
+     "clocks = <&adc0_adrv9002 0>;",
+     "dmas = <&rx1_dma 0>;",
+     "dma-names = \"rx\";",
+     "spibus-connected = <&adc0_adrv9002>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tx1"
+    ],
+    "node": "axi-adrv9002-tx-lpc",
+    "offset": 40960,
+    "reg": [
+     [
+      40960,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-tx-1.0\";",
+     "clocks = <&adc0_adrv9002 1>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&tx1_dma 0>;",
+     "dma-names = \"tx\";",
+     "adi,axi-dds-default-scale = <0x800>;",
+     "adi,axi-dds-default-frequency = <2000000>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tdd1"
+    ],
+    "node": "axi-adrv9002-core-tdd1-lpc",
+    "offset": 51200,
+    "reg": [
+     [
+      51200,
+      1024
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-tdd-1.00\";",
+     "clocks = <&clkc 16>, <&adc0_adrv9002 2>;",
+     "clock-names = \"s_axi_aclk\", \"intf_clk\";",
+     "label = \"axi-core-tdd-1\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_rx2"
+    ],
+    "node": "axi-adrv9002-rx2-lpc",
+    "offset": 36864,
+    "reg": [
+     [
+      36864,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-rx2-1.0\";",
+     "clocks = <&adc0_adrv9002 3>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&rx2_dma 0>;",
+     "dma-names = \"rx\";"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tx2"
+    ],
+    "node": "axi-adrv9002-tx2-lpc",
+    "offset": 49152,
+    "reg": [
+     [
+      49152,
+      8192
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adrv9002-tx-1.0\";",
+     "clocks = <&adc0_adrv9002 4>;",
+     "clock-names = \"sampl_clk\";",
+     "dmas = <&tx2_dma 0>;",
+     "dma-names = \"tx\";",
+     "adi,axi-dds-default-scale = <0x800>;",
+     "adi,axi-dds-default-frequency = <2000000>;"
+    ]
+   },
+   {
+    "instance": "axi_adrv9001",
+    "ip_type": "axi_adrv9001",
+    "labels": [
+     "axi_adrv9002_core_tdd2"
+    ],
+    "node": "axi-adrv9002-core-tdd2-lpc",
+    "offset": 52224,
+    "reg": [
+     [
+      52224,
+      1024
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-tdd-1.00\";",
+     "clocks = <&clkc 16>, <&adc0_adrv9002 5>;",
+     "clock-names = \"s_axi_aclk\", \"intf_clk\";",
+     "label = \"axi-core-tdd-2\";"
+    ]
+   }
+  ],
+  "bus": [
+   [
+    "misc_clk_0: misc_clk_0 {",
+    "\t#clock-cells = <0>;",
+    "\tclock-frequency = <100000000>;",
+    "\tcompatible = \"fixed-clock\";",
+    "};"
+   ]
+  ],
+  "root": [
+   "audio_clock: audio_clock {",
+   "\tcompatible = \"fixed-clock\";",
+   "\t#clock-cells = <0>;",
+   "\tclock-frequency = <12288000>;",
+   "};",
+   "clocks {",
+   "\tadrv9002_clkin: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <38400000>;",
+   "\t\tclock-output-names = \"adrv9002_ext_refclk\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "adc0_adrv9002: adrv9002-phy@0 {",
+     "\tcompatible = \"adi,adrv9002\";",
+     "\treg = <0>;",
+     "\tinterrupt-parent = <&gpio0>;",
+     "\tinterrupts = <98 1>;",
+     "\tspi-max-frequency = <20000000>;",
+     "\tclocks = <&adrv9002_clkin>;",
+     "\tclock-names = \"adrv9002_ext_refclk\";",
+     "\tclock-output-names = \"rx1_sampl_clk\", \"tx1_sampl_clk\", \"tdd1_intf_clk\", \"rx2_sampl_clk\", \"tx2_sampl_clk\", \"tdd2_intf_clk\";",
+     "\t#clock-cells = <1>;",
+     "\treset-gpios = <&gpio0 100 1>;",
+     "",
+     "\tadi,channels {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\trx0: rx@0 {",
+     "\t\t\treg = <0>;",
+     "\t\t\tadi,port = <0>;",
+     "\t\t\torx-gpios = <&gpio0 86 0>;",
+     "\t\t\tenable-gpios = <&gpio0 102 0>;",
+     "\t\t};",
+     "",
+     "\t\trx1: rx@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,port = <0>;",
+     "\t\t\torx-gpios = <&gpio0 87 0>;",
+     "\t\t\tenable-gpios = <&gpio0 103 0>;",
+     "\t\t};",
+     "",
+     "\t\ttx0: tx@0 {",
+     "\t\t\treg = <0>;",
+     "\t\t\tadi,port = <1>;",
+     "\t\t\tadi,dpd;",
+     "\t\t\tenable-gpios = <&gpio0 104 0>;",
+     "\t\t};",
+     "",
+     "\t\ttx1: tx@1 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,port = <1>;",
+     "\t\t\tadi,dpd;",
+     "\t\t\tenable-gpios = <&gpio0 105 0>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tadi,gpios {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "",
+     "\t\tgpio@0 {",
+     "\t\t\treg = <1>;",
+     "\t\t\tadi,signal = <0>;",
+     "\t\t};",
+     "",
+     "\t\tgpio@1 {",
+     "\t\t\treg = <2>;",
+     "\t\t\tadi,signal = <1>;",
+     "\t\t};",
+     "\t};",
+     "",
+     "\tadi,frequency-hopping {",
+     "\t\tadi,fh-mode = <3>;",
+     "\t\tadi-fh-rx-zero-if-en;",
+     "",
+     "\t\tadi,fh-hop-signal-2 {",
+     "\t\t\tadi,fh-hop-rx-ports = <1>;",
+     "\t\t\tadi,fh-hop-tx-ports = <1>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   }
+  ]
+ }
+}

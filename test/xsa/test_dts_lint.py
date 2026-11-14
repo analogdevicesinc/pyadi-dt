@@ -325,3 +325,55 @@ class TestLinterGeneral:
         )
         assert "[error]" in str(d)
         assert "phandle-unresolved" in str(d)
+
+
+class TestCompatibleMissingStructure:
+    """With a whole tree to go on, only bus children need a compatible."""
+
+    TREE = """\
+/dts-v1/;
+/ {
+	amba: axi {
+		compatible = "simple-bus";
+		spi0: spi@ff040000 {
+			compatible = "cdns,spi-r1p6";
+			trx: transceiver@0 {
+				compatible = "adi,ad9081";
+				reg = <0>;
+				adc0: adc@0 {
+					reg = <0>;
+				};
+			};
+			bare_dev: bare@1 {
+				reg = <1>;
+			};
+		};
+		pl_stub: stub@80000000 {
+			reg = <0x80000000 0x1000>;
+		};
+	};
+};
+&gem3 {
+	phy0: ethernet-phy@c {
+		reg = <0xc>;
+	};
+};
+&spi1 {
+	other_bare: bare@0 {
+		reg = <0>;
+	};
+};
+"""
+
+    def _missing(self) -> set[str]:
+        return {
+            d.node for d in _lint(self.TREE) if d.rule == "compatible-missing"
+        }
+
+    def test_nodes_owned_by_a_device_driver_are_not_flagged(self):
+        missing = self._missing()
+        assert "adc0" not in missing
+        assert "phy0" not in missing
+
+    def test_bus_children_without_compatible_are_still_flagged(self):
+        assert {"bare_dev", "pl_stub", "other_bare"} <= self._missing()

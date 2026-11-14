@@ -1,0 +1,193 @@
+{
+ "name": "dac_fmc_ebz_zcu102_adidacdevicead9144_adidacmode04",
+ "defaults": {},
+ "design": {
+  "project": "dac_fmc_ebz",
+  "carrier": "zcu102",
+  "variant": "ADIDACDEVICEAD9144_ADIDACMODE04",
+  "default": true,
+  "reference": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9144-fmc-ebz.dts",
+  "kernel_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
+  "notes": [
+   "created /axi/i2c@ff030000/i2c-mux@75/i2c@0: the generated base tree does not have it",
+   "created /axi/i2c@ff030000/i2c-mux@75: the generated base tree does not have it"
+  ],
+  "pl": [
+   {
+    "instance": "dac_dma",
+    "ip_type": "axi_dmac",
+    "labels": [
+     "tx_dma"
+    ],
+    "node": "dma-controller",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-dmac-1.00.a\";",
+     "#dma-cells = <1>;",
+     "clocks = <&zynqmp_clk 71>;"
+    ]
+   },
+   {
+    "instance": "dac_jesd204_transport_dac_tpl_core",
+    "ip_type": "ad_ip_jesd204_tpl_dac",
+    "labels": [
+     "axi_ad9144_core"
+    ],
+    "node": "axi-ad9144-hpc",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-ad9144-1.0\";",
+     "dmas = <&tx_dma 0>;",
+     "dma-names = \"tx\";",
+     "spibus-connected = <&dac0_ad9144>;",
+     "adi,axi-pl-fifo-enable;"
+    ]
+   },
+   {
+    "instance": "dac_jesd204_link_tx_axi",
+    "ip_type": "axi_jesd204_tx",
+    "labels": [
+     "axi_ad9144_jesd"
+    ],
+    "node": "axi-jesd204-tx",
+    "reg": [
+     [
+      0,
+      16384
+     ]
+    ],
+    "interrupt_flags": 4,
+    "body": [
+     "compatible = \"adi,axi-jesd204-tx-1.0\";",
+     "clocks = <&zynqmp_clk 71>, <&axi_ad9144_adxcvr 1>, <&axi_ad9144_adxcvr 0>;",
+     "clock-names = \"s_axi_aclk\", \"device_clk\", \"lane_clk\";",
+     "adi,octets-per-frame = <1>;",
+     "adi,frames-per-multiframe = <32>;",
+     "adi,converter-resolution = <16>;",
+     "adi,bits-per-sample = <16>;",
+     "adi,converters-per-device = <2>;",
+     "#clock-cells = <0>;",
+     "clock-output-names = \"jesd_dac_lane_clk\";"
+    ]
+   },
+   {
+    "instance": "dac_jesd204_xcvr",
+    "ip_type": "axi_adxcvr",
+    "labels": [
+     "axi_ad9144_adxcvr"
+    ],
+    "node": "axi-adxcvr-tx",
+    "reg": [
+     [
+      0,
+      4096
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-adxcvr-1.0\";",
+     "clocks = <&clk_ad9516 9>;",
+     "clock-names = \"conv\";",
+     "adi,sys-clk-select = <3>;",
+     "adi,out-clk-select = <3>;",
+     "adi,use-lpm-enable;",
+     "#clock-cells = <1>;",
+     "clock-output-names = \"dac_gt_clk\", \"tx_out_clk\";"
+    ]
+   },
+   {
+    "instance": "axi_sysid_0",
+    "ip_type": "axi_sysid",
+    "labels": [
+     "axi_sysid_0"
+    ],
+    "node": "axi-sysid-0",
+    "reg": [
+     [
+      0,
+      65536
+     ]
+    ],
+    "body": [
+     "compatible = \"adi,axi-sysid-1.00.a\";"
+    ]
+   }
+  ],
+  "bus": [],
+  "root": [
+   "clocks {",
+   "\tad9516_clkin: clock@0 {",
+   "\t\tcompatible = \"fixed-clock\";",
+   "\t\tclock-frequency = <2000000000>;",
+   "\t\tclock-output-names = \"clkin\";",
+   "\t\t#clock-cells = <0>;",
+   "\t};",
+   "};"
+  ],
+  "overlays": [
+   {
+    "target": "&i2c1",
+    "body": [
+     "i2c-mux@75 {",
+     "\tcompatible = \"nxp,pca9548\";",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\treg = <0x75>;",
+     "",
+     "\ti2c@0 {",
+     "\t\t#address-cells = <1>;",
+     "\t\t#size-cells = <0>;",
+     "\t\treg = <0>;",
+     "",
+     "\t\teeprom@50 {",
+     "\t\t\tcompatible = \"at24,24c02\";",
+     "\t\t\treg = <0x50>;",
+     "\t\t};",
+     "\t};",
+     "};"
+    ]
+   },
+   {
+    "target": "&spi0",
+    "body": [
+     "status = \"okay\";",
+     "",
+     "clk_ad9516: ad9516@0 {",
+     "\tcompatible = \"adi,ad9516-1\";",
+     "\treg = <0>;",
+     "\tspi-max-frequency = <10000000>;",
+     "\tfirmware = \"ad9144_fmc_ebz_ad9516.stp\";",
+     "\tclocks = <&ad9516_clkin>, <&ad9516_clkin>;",
+     "\tclock-names = \"refclk\", \"clkin\";",
+     "\tclock-output-names = \"out0\", \"out1\", \"out2\", \"out3\", \"out4\", \"out5\", \"out6\", \"out7\";",
+     "\t#clock-cells = <1>;",
+     "};",
+     "",
+     "dac0_ad9144: ad9144@1 {",
+     "\t#address-cells = <1>;",
+     "\t#size-cells = <0>;",
+     "\tcompatible = \"adi,ad9144\";",
+     "\treg = <1>;",
+     "\tspi-max-frequency = <1000000>;",
+     "\tclocks = <&axi_ad9144_jesd>, <&clk_ad9516 1>, <&clk_ad9516 6>;",
+     "\tclock-names = \"jesd_dac_clk\", \"dac_clk\", \"dac_sysref\";",
+     "\tadi,jesd-link-mode = <4>;",
+     "\tadi,spi-4wire;",
+     "\tadi,interpolation = <2>;",
+     "\ttxen-gpios = <&gpio 99 0>;",
+     "};"
+    ]
+   }
+  ]
+ }
+}
