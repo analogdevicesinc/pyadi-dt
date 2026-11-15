@@ -61,8 +61,7 @@ _HAS_LG = bool(os.environ.get("LG_COORDINATOR") or os.environ.get("LG_ENV"))
 requires_lg = pytest.mark.skipif(
     not _HAS_LG,
     reason=(
-        "set LG_COORDINATOR or LG_ENV for merged-DTB hardware tests "
-        "(see .env.example)"
+        "set LG_COORDINATOR or LG_ENV for merged-DTB hardware tests (see .env.example)"
     ),
 )
 
@@ -244,12 +243,16 @@ def boot_and_verify_from_dtb(
     print(f"$ cat .../{tx_glob}/status\n{tx_status}")
 
     if spec.rx_capture_target_names:
-        assert_rx_capture_valid(
-            ctx,
-            spec.rx_capture_target_names,
-            n_samples=2**12,
-            context=spec.out_label,
-        )
+        try:
+            assert_rx_capture_valid(
+                ctx,
+                spec.rx_capture_target_names,
+                n_samples=2**12,
+                context=spec.out_label,
+            )
+        except AssertionError:
+            _debug_zero_capture(shell)  # TEMPORARY: 2026.1 AD9081 bring-up
+            raise
 
     return shell, ctx, dmesg_txt
 
@@ -348,4 +351,43 @@ def run_xsa_boot_and_verify(
         board=board,
         request=request,
         out_dir=out_dir,
+    )
+
+
+_ZERO_CAPTURE_DEBUG = r"""
+import mmap,os,struct,subprocess as s
+f=os.open('/dev/mem',os.O_RDWR|os.O_SYNC)
+def r(x,o):return struct.unpack('<I',x[o:o+4])[0]
+def d(n,b,l):
+ x=mmap.mmap(f,0x1000,offset=b);print(n,' '.join('%x=%x'%(o,r(x,o))for o in l));return x
+def cap(t):
+ print(t,s.run("iio_readdev -s 4096 ad_ip_jesd204_tpl_adc 2>&1|od -An -tx2|sort|uniq -c|sort -rn|head -3",shell=True,capture_output=True,text=True).stdout)
+L=[0,4,0xc,0x10,0x14,0x1c,0x80,0x84,0x88,0x100,0x104,0x200]
+o=d('offload',0x9c450000,L)
+d('tpl',0x84a10000,[0,0x40,0x44,0x5c,0x400,0x404,0x408,0x440,0x444])
+d('dma',0x9c420000,[0,0x400,0x404,0x40c,0x418,0x428,0x430])
+cap('cap1')
+o[0x88:0x8c]=struct.pack('<I',r(o,0x88)|1)
+d('bypass',0x9c450000,L)
+cap('cap2')
+"""
+
+
+def _debug_zero_capture(shell) -> None:
+    """TEMPORARY bring-up aid: dump the receive path and retry with bypass."""
+    import base64
+
+    blob = base64.b64encode(_ZERO_CAPTURE_DEBUG.encode()).decode()
+    shell_out(shell, "rm -f /tmp/zc.b64")
+    for start in range(0, len(blob), 400):
+        shell_out(shell, f"echo -n {blob[start : start + 400]} >> /tmp/zc.b64")
+    print("ZERO-CAPTURE-DEBUG")
+    print(
+        shell_out(shell, "base64 -d /tmp/zc.b64 > /tmp/zc.py; python3 /tmp/zc.py 2>&1")
+    )
+    print(
+        shell_out(
+            shell,
+            "ls /sys/kernel/debug | grep -i offload; iio_attr -c ad_ip_jesd204_tpl_adc 2>&1 | head -12",
+        )
     )
