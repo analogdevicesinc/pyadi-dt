@@ -26,3 +26,18 @@ def test_only_coherent_dma_cores_are_marked():
     )
     overlays = NodeBuilder._coherent_dma_overlays(topology)
     assert overlays == ["\t&axi_rx_dma {\n\t\tdma-coherent;\n\t};"]
+
+
+def test_data_offload_cores_are_bound_to_their_driver():
+    offload = AxiIpInstance(
+        name="mxfe_rx_data_offload_i_data_offload",
+        ip_type="data_offload",
+        base_addr=0x9C450000,
+        size=0x10000,
+    )
+    overlays = NodeBuilder._data_offload_overlays(
+        XsaTopology(ip_instances=[offload, _dma("axi_rx_dma", "true")])
+    )
+    assert len(overlays) == 1
+    assert overlays[0].startswith("\t&mxfe_rx_data_offload_i_data_offload {")
+    assert 'compatible = "adi,axi-data-offload-1.0.a";' in overlays[0]
