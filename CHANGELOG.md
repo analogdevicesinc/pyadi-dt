@@ -52,6 +52,13 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ### Fixed
 
+- Generated trees now boot the HDL 2026.1 designs on the 6.12 kernel
+  (confirmed on the ZC706 ADRV9009, ZC706 ADRV9371 and ZCU102 AD9081 rigs):
+  the ZC706 Ethernet PHY is declared, the SMMU that `sdtgen` enables is left
+  disabled so PL DMA writes are not blocked, ADRV9009 clock generators list
+  `clkin1` first, cache-coherent DMA cores carry `dma-coherent`, data offload
+  cores are bound to their driver, and the AD9081 TX crossbar references its
+  channels by label instead of fixed phandle numbers.
 - AD9081 link-mode inference returned the wrong modes for M=8/L=4 and
   M=4/L=8; it now follows the kernel reference device trees (RX 10 / TX 9 and
   RX 18 / TX 17) and covers every framing they use.

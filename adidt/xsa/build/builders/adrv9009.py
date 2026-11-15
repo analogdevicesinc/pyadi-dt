@@ -411,7 +411,11 @@ class ADRV9009Builder:
             "axi_adrv9009_tx_dma",
         )
         rx_os_dma_label = next(
-            (lbl for lbl in radio_dma_labels if "_obs_dma" in lbl or "_rx_os_dma" in lbl),
+            (
+                lbl
+                for lbl in radio_dma_labels
+                if "_obs_dma" in lbl or "_rx_os_dma" in lbl
+            ),
             "axi_adrv9009_rx_os_dma",
         )
 
@@ -1134,7 +1138,8 @@ class ADRV9009Builder:
 
         # --- Assemble extra_nodes_before (ordered before renderer output) ---
         extra_before: list[str] = [misc_clk_node]
-        # axi-clkgen needs `clocks = <s_axi_aclk, clkin1>` so the MMCM
+        # axi-clkgen needs `clocks = <clkin1, s_axi_aclk>` in that order (the
+        # 6.12 driver takes its parents by position, not name) so the MMCM
         # driver can program the right output rate.  ``ps_clk_label``
         # provides the PS AXI bus clock (`<&clkc 15>` on Zynq-7000);
         # ``rx_xcvr_clkgen_ref`` etc. give the AD9528/HMC7044 channel
@@ -1146,8 +1151,8 @@ class ADRV9009Builder:
                 f"\t&{rx_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
-                f"\t\tclocks = {s_axi_aclk_ref}, {rx_xcvr_clkgen_ref};\n"
-                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
+                f"\t\tclocks = {rx_xcvr_clkgen_ref}, {s_axi_aclk_ref};\n"
+                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 f'\t\tclock-output-names = "{rx_clkgen_label}";\n'
                 "\t};"
             )
@@ -1156,8 +1161,8 @@ class ADRV9009Builder:
                 f"\t&{tx_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
-                f"\t\tclocks = {s_axi_aclk_ref}, {tx_xcvr_clkgen_ref};\n"
-                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
+                f"\t\tclocks = {tx_xcvr_clkgen_ref}, {s_axi_aclk_ref};\n"
+                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 f'\t\tclock-output-names = "{tx_clkgen_label}";\n'
                 "\t};"
             )
@@ -1166,8 +1171,8 @@ class ADRV9009Builder:
                 f"\t&{rx_os_clkgen_label} {{\n"
                 '\t\tcompatible = "adi,axi-clkgen-2.00.a";\n'
                 "\t\t#clock-cells = <0>;\n"
-                f"\t\tclocks = {s_axi_aclk_ref}, {rx_os_xcvr_clkgen_ref};\n"
-                '\t\tclock-names = "s_axi_aclk", "clkin1";\n'
+                f"\t\tclocks = {rx_os_xcvr_clkgen_ref}, {s_axi_aclk_ref};\n"
+                '\t\tclock-names = "clkin1", "s_axi_aclk";\n'
                 f'\t\tclock-output-names = "{rx_os_clkgen_label}";\n'
                 "\t};"
             )

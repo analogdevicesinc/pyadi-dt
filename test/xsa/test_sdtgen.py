@@ -49,7 +49,8 @@ def test_run_invokes_sdtgen_with_correct_args(tmp_path):
     # New runner per test avoids module-level cache interference
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ) as mock_run:
         result = runner.run(xsa, out_dir)
 
@@ -116,7 +117,8 @@ def test_run_raises_error_on_nonzero_exit(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), fail_result]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), fail_result],
     ):
         with pytest.raises(SdtgenError) as exc_info:
             runner.run(xsa, out_dir)
@@ -147,7 +149,8 @@ def test_run_scans_for_dts_when_system_top_absent(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         result = runner.run(xsa, out_dir)
     assert result == out_dir / "other_name.dts"
@@ -161,7 +164,8 @@ def test_run_raises_error_when_no_dts_produced(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         with pytest.raises(SdtgenError, match=r"no \.dts output"):
             runner.run(xsa, out_dir)
@@ -250,7 +254,8 @@ def test_run_postprocesses_sdtgen_cpu_and_interrupt_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -279,7 +284,8 @@ def test_run_postprocesses_readonly_dtsi(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -300,7 +306,8 @@ def test_run_disables_problematic_rpu_ipi_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -329,7 +336,8 @@ def test_run_adds_missing_sdhci1_properties(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -350,7 +358,8 @@ def test_run_adds_missing_sdhci1_properties_for_ref_block(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -396,7 +405,8 @@ def test_run_sanitizes_non_ddr_memory_nodes(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
@@ -435,9 +445,41 @@ def test_run_adds_missing_gem3_iommu_property(tmp_path):
 
     runner = SdtgenRunner()
     with patch(
-        "adidt.xsa.parse.sdtgen.subprocess.run", side_effect=[_help_result(), _ok_result()]
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
     ):
         runner.run(xsa, out_dir)
 
     pcw = (out_dir / "pcw.dtsi").read_text()
     assert "iommus = <&smmu 0x877>;" in pcw
+
+
+def test_zc706_base_tree_gains_its_ethernet_phy(tmp_path):
+    top = tmp_path / "system-top.dts"
+    top.write_text('/ {\n\tboard = "zc706";\n};\n')
+    SdtgenRunner()._postprocess_generated_tree(tmp_path)
+    text = top.read_text()
+    assert "&gem0 {" in text
+    assert "phy-handle = <&ethernet_phy>;" in text
+    assert "ethernet_phy: ethernet-phy@7 {" in text
+    SdtgenRunner()._postprocess_generated_tree(tmp_path)
+    assert top.read_text().count("ethernet-phy@7") == 1
+
+
+def test_other_boards_keep_their_ethernet_description(tmp_path):
+    top = tmp_path / "system-top.dts"
+    top.write_text('/ {\n\tboard = "zcu102";\n};\n')
+    SdtgenRunner()._postprocess_generated_tree(tmp_path)
+    assert "ethernet-phy" not in top.read_text()
+
+
+def test_smmu_is_left_disabled(tmp_path):
+    pcw = tmp_path / "pcw.dtsi"
+    pcw.write_text(
+        '&smmu {\n\tstatus = "okay";\n\txlnx,name = "psu_smmu_gpv";\n};\n'
+        '&gem3 {\n\tstatus = "okay";\n};\n'
+    )
+    SdtgenRunner()._postprocess_generated_tree(tmp_path)
+    text = pcw.read_text()
+    assert '&smmu {\n\tstatus = "disabled";' in text
+    assert '&gem3 {\n\tstatus = "okay";' in text

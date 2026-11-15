@@ -26,6 +26,7 @@ DEFAULT_BUILD_KERNEL = os.environ.get("ADI_XSA_BUILD_KERNEL", "1").lower() not i
     "no",
 }
 
+
 def _strip_unresolved_overlays(dts_path: Path, stderr: str) -> bool:
     """Remove ``&label { ... };`` blocks for labels that dtc reports as missing.
 
@@ -304,7 +305,9 @@ def load_overlay(shell, name: str, dtbo_remote_path: str) -> str:
     ).strip()
     if actual != expected:
         print(shell_out(shell, "dmesg | tail -40"))
-        print(shell_out(shell, "ls -ld /proc/device-tree /sys/firmware/devicetree/base"))
+        print(
+            shell_out(shell, "ls -ld /proc/device-tree /sys/firmware/devicetree/base")
+        )
     assert _re.fullmatch(r"[0-9a-f]{32}", expected) and actual == expected, (
         f"Overlay {name} did not update the live tree: "
         f"expected validation ID {expected!r}, got {actual!r}"
@@ -653,21 +656,41 @@ def shell_out(shell, cmd: str, **run_options) -> str:
     return str(out)
 
 
+# Releases that moved a design's boot files into a per-variant directory.
+RELEASE_PROJECT_DIRS = {
+    ("2026_r1", "zynqmp-zcu102-rev10-ad9081"): "zynqmp-zcu102-rev10-ad9081/m8_l4",
+}
+
+
+def kuiper_release_override() -> str | None:
+    """Return the Kuiper release forced by ``ADIDT_KUIPER_RELEASE``, if any."""
+    return os.environ.get("ADIDT_KUIPER_RELEASE") or None
+
+
 def acquire_xsa(
     local_xsa: Path,
     release: str,
     project: str,
     tmp_path: Path,
 ) -> Path:
-    """Return *local_xsa* if it exists, otherwise download from Kuiper release."""
-    if local_xsa.exists():
-        return local_xsa
+    """Return *local_xsa* if it exists, otherwise download from Kuiper release.
+
+    ``ADIDT_KUIPER_RELEASE`` replaces *release* and bypasses *local_xsa*, so a
+    rig can be run against another release's design without editing tests.
+    """
     from test.xsa.kuiper_release import download_project_xsa
 
+    override = kuiper_release_override()
+    if override:
+        release = override
+        project = RELEASE_PROJECT_DIRS.get((override.lower(), project), project)
+    elif local_xsa.exists():
+        return local_xsa
+    cache_dir = os.environ.get("ADIDT_KUIPER_CACHE")
     return download_project_xsa(
         release=release,
         project_dir=project,
-        cache_dir=tmp_path / "kuiper_cache",
+        cache_dir=Path(cache_dir) if cache_dir else tmp_path / "kuiper_cache",
         output_dir=tmp_path / "xsa",
     )
 
@@ -723,6 +746,12 @@ def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
             kuiper.add_files_to_target(staged_kernel)
             replacements.append(staged_kernel)
     kuiper.add_files_to_target(dtb)
+    boot_bin = os.environ.get("ADIDT_BOOT_BIN")
+    if boot_bin:
+        # Stage another release's FSBL/bitstream/U-Boot over the stock one.
+        assert Path(boot_bin).name == "BOOT.BIN", "ADIDT_BOOT_BIN must be a BOOT.BIN"
+        kuiper.add_files_to_target(boot_bin)
+        replacements.append(Path(boot_bin))
     if hasattr(board, "_boot_artifacts"):
         from adi_lg_plugins.artifacts import local_artifact
 

@@ -153,10 +153,10 @@ def _tx_dacs_block(
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
 \t\t\t\t\tadi,interpolation = <{cduc_interp}>;
-\t\t\t\t\tdac@0 {{ reg = <0>; adi,crossbar-select = <0x28>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@1 {{ reg = <1>; adi,crossbar-select = <0x29>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@2 {{ reg = <2>; adi,crossbar-select = <0x2a>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@3 {{ reg = <3>; adi,crossbar-select = <0x2b>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@0 {{ reg = <0>; adi,crossbar-select = <&ad9081_tx_fddc_chan0>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@1 {{ reg = <1>; adi,crossbar-select = <&ad9081_tx_fddc_chan1>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@2 {{ reg = <2>; adi,crossbar-select = <&ad9081_tx_fddc_chan2>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@3 {{ reg = <3>; adi,crossbar-select = <&ad9081_tx_fddc_chan3>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
 \t\t\t\t}};
 \t\t\t\tadi,channelizer-paths {{
 \t\t\t\t\t#address-cells = <1>;

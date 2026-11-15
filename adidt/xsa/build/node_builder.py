@@ -231,7 +231,40 @@ class NodeBuilder:
                 )
             )
 
+        result["converters"].extend(self._coherent_dma_overlays(topology))
+        result["converters"].extend(self._data_offload_overlays(topology))
         return result
+
+    @staticmethod
+    def _data_offload_overlays(topology: XsaTopology) -> list[str]:
+        """Bind the data offload cores to their driver.
+
+        A receive offload comes out of reset in one-shot mode; the driver
+        clears that at probe.  Left unbound, the core stops forwarding
+        samples and captures read back as zeros.
+        """
+        return [
+            f"\t&{inst.name.replace('-', '_')} {{\n"
+            "\t\t/delete-property/ compatible;\n"
+            '\t\tcompatible = "adi,axi-data-offload-1.0.a";\n'
+            "\t};"
+            for inst in topology.ip_instances
+            if inst.ip_type == "data_offload"
+        ]
+
+    @staticmethod
+    def _coherent_dma_overlays(topology: XsaTopology) -> list[str]:
+        """Mark DMA cores the HDL built cache-coherent.
+
+        Such a core writes through the coherent port, so without
+        ``dma-coherent`` the kernel hands back stale (zeroed) cache contents.
+        """
+        return [
+            f"\t&{inst.name.replace('-', '_')} {{\n\t\tdma-coherent;\n\t}};"
+            for inst in topology.ip_instances
+            if inst.ip_type == "axi_dmac"
+            and str(inst.parameters.get("CACHE_COHERENT", "")).lower() in ("true", "1")
+        ]
 
     @staticmethod
     def _is_ad9172_design(topology: XsaTopology) -> bool:

@@ -189,7 +189,10 @@ def test_tftp_advertises_selected_management_address():
         render=Mock(return_value=rendered),
         tftp_address="192.0.2.50",
     )
-    assert prepared["targets"]["main"]["resources"]["TFTPServerResource"]["address"] == "192.0.2.50"
+    assert (
+        prepared["targets"]["main"]["resources"]["TFTPServerResource"]["address"]
+        == "192.0.2.50"
+    )
 
 
 def test_cli_selects_tftp_address_from_coordinator_route(tmp_path, monkeypatch):
@@ -209,7 +212,9 @@ def test_cli_selects_tftp_address_from_coordinator_route(tmp_path, monkeypatch):
         "address": "auto",
     }
     rendered["targets"]["main"]["drivers"] = {"BootFPGASoCTFTP": {}}
-    monkeypatch.setattr(module, "urlopen", Mock(return_value=io.StringIO(json.dumps(place))))
+    monkeypatch.setattr(
+        module, "urlopen", Mock(return_value=io.StringIO(json.dumps(place)))
+    )
     monkeypatch.setitem(
         sys.modules,
         "adi_lg_plugins.hw_ci.render_env",
@@ -228,10 +233,55 @@ def test_cli_selects_tftp_address_from_coordinator_route(tmp_path, monkeypatch):
     monkeypatch.setattr(
         sys,
         "argv",
-        ["prepare", "--env", str(source), "--output", str(output),
-         "--coordinator", "coordinator.example:20408"],
+        [
+            "prepare",
+            "--env",
+            str(source),
+            "--output",
+            str(output),
+            "--coordinator",
+            "coordinator.example:20408",
+        ],
     )
     assert module.main() == 0
     connection.connect.assert_called_once_with(("coordinator.example", 20408))
     resources = yaml.safe_load(output.read_text())["targets"]["main"]["resources"]
     assert resources["TFTPServerResource"]["address"] == "192.0.2.50"
+
+
+def test_tftp_release_design_replaces_jtag_bootstrap_inputs():
+    rendered = environment()
+    rendered["targets"]["main"]["drivers"] = {
+        "BootFPGASoCTFTP": {
+            "bitstream_path": "/srv/recovery/system_top.bit",
+            "ps7_init_tcl": "/srv/recovery/ps7_init.tcl",
+            "uboot_elf": "/srv/recovery/u-boot.elf",
+        }
+    }
+    place = {"name": "bench", "tags": {"boot-strategy": "BootFPGASoCTFTP"}}
+    prepared = module.deployment_config(
+        environment(),
+        place,
+        tftp_root="/tmp/private-tftp",
+        render=Mock(return_value=rendered),
+        bitstream="/tmp/release/system_top.bit",
+        ps7_init="/tmp/release/ps7_init.tcl",
+    )
+    strategy = prepared["targets"]["main"]["drivers"]["BootFPGASoCTFTP"]
+    assert strategy["bitstream_path"] == "/tmp/release/system_top.bit"
+    assert strategy["ps7_init_tcl"] == "/tmp/release/ps7_init.tcl"
+    assert strategy["uboot_elf"] == "/srv/recovery/u-boot.elf"
+
+
+def test_tftp_release_design_rejects_relative_paths():
+    rendered = environment()
+    rendered["targets"]["main"]["drivers"] = {"BootFPGASoCTFTP": {}}
+    place = {"name": "bench", "tags": {"boot-strategy": "BootFPGASoCTFTP"}}
+    with pytest.raises(ValueError, match="bitstream_path"):
+        module.deployment_config(
+            environment(),
+            place,
+            tftp_root="/tmp/private-tftp",
+            render=Mock(return_value=rendered),
+            bitstream="system_top.bit",
+        )

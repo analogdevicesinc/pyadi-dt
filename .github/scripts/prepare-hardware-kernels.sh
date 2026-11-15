@@ -14,7 +14,7 @@ case "$CARRIER" in
     *) exit 0 ;; # Fabric and standalone production-JTAG flows own their kernels.
 esac
 # Validate before constructing paths; never normalize a misspelled release.
-export ADIDT_CIM_RELEASE="${ADIDT_CIM_RELEASE-2023_R2}"
+export ADIDT_CIM_RELEASE="${ADIDT_CIM_RELEASE:-2023_R2}"
 case "$ADIDT_CIM_RELEASE" in
     2023_R2|2026-R1) ;;
     *) echo "Unsupported CIM release: $ADIDT_CIM_RELEASE" >&2; exit 1 ;;

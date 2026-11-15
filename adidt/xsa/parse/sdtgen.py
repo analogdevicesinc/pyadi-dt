@@ -20,6 +20,12 @@ class SdtgenRunner:
     _IPI_STATUS_RE = re.compile(
         r"(&ipi([3-6])\s*\{.*?\bstatus\s*=\s*\")okay(\";)", re.DOTALL
     )
+    # sdtgen turns the SMMU on; the kernel trees leave it off.  With it on,
+    # PL masters such as the ADI DMA cores have no stream ID, their writes are
+    # blocked, and captures read back as zeros.
+    _SMMU_STATUS_RE = re.compile(
+        r"(&smmu\s*\{[^}]*?\bstatus\s*=\s*\")okay(\";)", re.DOTALL
+    )
     _SDHCI1_RE = re.compile(
         r"(sdhci1\s*:\s*mmc@ff170000\s*\{)(.*?)(\n\s*\};)", re.DOTALL
     )
@@ -261,8 +267,30 @@ class SdtgenRunner:
         ):
             text = path.read_text()
             updated = self._normalize_cpu_and_interrupt_nodes(text)
+            if path.name == "system-top.dts":
+                updated = self._ensure_board_ethernet_phy(updated)
             if updated != text:
                 self._write_text_allow_readonly(path, updated)
+
+    _BOARD_RE = re.compile(r'^\s*board\s*=\s*"([^"]+)"\s*;', re.MULTILINE)
+    # sdtgen describes the MAC but not the board's PHY.  Without a PHY node the
+    # kernel scans the MDIO bus and takes the first responder, which on newer
+    # kernels can be a phantom Clause 45 device instead of the real PHY.
+    _BOARD_ETHERNET_PHY = {"zc706": ("gem0", 7)}
+
+    def _ensure_board_ethernet_phy(self, text: str) -> str:
+        """Append the board's Ethernet PHY when the generated tree names none."""
+        board = self._BOARD_RE.search(text)
+        phy = self._BOARD_ETHERNET_PHY.get(board.group(1)) if board else None
+        if phy is None or "ethernet-phy@" in text:
+            return text
+        mac, address = phy
+        return (
+            text.rstrip("\n")
+            + f"\n&{mac} {{\n\tphy-handle = <&ethernet_phy>;\n"
+            + f"\tethernet_phy: ethernet-phy@{address} {{\n"
+            + f"\t\treg = <{address}>;\n\t}};\n}};\n"
+        )
 
     _CHOSEN_RE = re.compile(r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL)
 
@@ -277,6 +305,7 @@ class SdtgenRunner:
         normalized = self._CPU_CLUSTER_MB_RE.sub(r"\1cpus\2", normalized)
         normalized = normalized.replace("<&imux>", "<&gic_a53>")
         normalized = self._IPI_STATUS_RE.sub(r"\1disabled\3", normalized)
+        normalized = self._SMMU_STATUS_RE.sub(r"\1disabled\2", normalized)
         normalized = self._SDHCI1_RE.sub(self._ensure_sdhci1_props, normalized)
         normalized = self._SDHCI1_REF_RE.sub(self._ensure_sdhci1_props, normalized)
         normalized = self._SDHCI1_ADDR_RE.sub(self._ensure_sdhci1_props, normalized)

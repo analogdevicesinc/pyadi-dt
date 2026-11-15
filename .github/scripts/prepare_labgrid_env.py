@@ -51,6 +51,8 @@ def deployment_config(
     render,
     uboot_image: str | None = None,
     tftp_address: str | None = None,
+    bitstream: str | None = None,
+    ps7_init: str | None = None,
 ) -> dict:
     """Render advertised TFTP or production ZynqMP deployment strategies.
 
@@ -101,6 +103,13 @@ def deployment_config(
         if not Path(uboot_image).is_absolute():
             raise ValueError("U-Boot image must be an absolute exporter path")
         strategy["uboot_elf"] = uboot_image
+    # Another release's design: the JTAG bootstrap loads these in place of the
+    # place's recovery files, which are left untouched.
+    for key, value in (("bitstream_path", bitstream), ("ps7_init_tcl", ps7_init)):
+        if value:
+            if not Path(value).is_absolute():
+                raise ValueError(f"{key} must be an absolute exporter path")
+            strategy[key] = value
     return prepared
 
 
@@ -162,6 +171,8 @@ def main() -> int:
             tftp_root=tftp_root,
             render=render,
             uboot_image=os.environ.get("ADIDT_ZYNQ_UBOOT_IMAGE"),
+            bitstream=os.environ.get("ADIDT_ZYNQ_BITSTREAM"),
+            ps7_init=os.environ.get("ADIDT_ZYNQ_PS7_INIT"),
             tftp_address=tftp_address,
         )
     with args.output.open("w") as output:
