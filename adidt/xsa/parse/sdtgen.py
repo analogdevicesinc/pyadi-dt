@@ -261,8 +261,30 @@ class SdtgenRunner:
         ):
             text = path.read_text()
             updated = self._normalize_cpu_and_interrupt_nodes(text)
+            if path.name == "system-top.dts":
+                updated = self._ensure_board_ethernet_phy(updated)
             if updated != text:
                 self._write_text_allow_readonly(path, updated)
+
+    _BOARD_RE = re.compile(r'^\s*board\s*=\s*"([^"]+)"\s*;', re.MULTILINE)
+    # sdtgen describes the MAC but not the board's PHY.  Without a PHY node the
+    # kernel scans the MDIO bus and takes the first responder, which on newer
+    # kernels can be a phantom Clause 45 device instead of the real PHY.
+    _BOARD_ETHERNET_PHY = {"zc706": ("gem0", 7)}
+
+    def _ensure_board_ethernet_phy(self, text: str) -> str:
+        """Append the board's Ethernet PHY when the generated tree names none."""
+        board = self._BOARD_RE.search(text)
+        phy = self._BOARD_ETHERNET_PHY.get(board.group(1)) if board else None
+        if phy is None or "ethernet-phy@" in text:
+            return text
+        mac, address = phy
+        return (
+            text.rstrip("\n")
+            + f"\n&{mac} {{\n\tphy-handle = <&ethernet_phy>;\n"
+            + f"\tethernet_phy: ethernet-phy@{address} {{\n"
+            + f"\t\treg = <{address}>;\n\t}};\n}};\n"
+        )
 
     _CHOSEN_RE = re.compile(r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL)
 
