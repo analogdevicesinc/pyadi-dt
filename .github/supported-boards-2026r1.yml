@@ -2,3 +2,5 @@
 # release run can stage without changing the rig (see hardware-test.yml).
 boards:
   - ad9081
+  - adrv9371
+  - adrv9009

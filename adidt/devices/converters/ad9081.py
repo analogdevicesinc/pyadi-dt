@@ -85,15 +85,6 @@ def ad9081_converter_select(direction: str, m: int, link_mode: int) -> str:
             f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
             f"<&ad9081_{side}_fddc_chan1 0>, <&ad9081_{side}_fddc_chan1 1>"
         )
-    if direction == "rx" and m >= 8:
-        # Four ADCs, complex: the kernel trees take FDDC 0/1 and 4/5.  The
-        # 6.12 driver returns zeroed samples for the 0-3 mapping.
-        return (
-            f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
-            f"<&ad9081_{side}_fddc_chan1 0>, <&ad9081_{side}_fddc_chan1 1>, "
-            f"<&ad9081_{side}_fddc_chan4 0>, <&ad9081_{side}_fddc_chan4 1>, "
-            f"<&ad9081_{side}_fddc_chan5 0>, <&ad9081_{side}_fddc_chan5 1>"
-        )
     if m >= 8:
         return (
             f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "

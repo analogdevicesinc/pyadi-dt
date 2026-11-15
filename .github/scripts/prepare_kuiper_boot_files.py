@@ -54,11 +54,7 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
     if missing:
         raise SystemExit(f"{project}: release archive lacks {sorted(missing)}")
     if platform == "zynqmp":
-        out = {"ADIDT_BOOT_BIN": _write(output / "BOOT.BIN", found["BOOT.BIN"])}
-        with tarfile.open(tarball, "r:gz") as outer:  # TEMPORARY
-            dtb = outer.extractfile(f"{project}/m8_l4_vcxo122p88/system.dtb").read()
-        _write(output / "release.dtb", dtb)
-        return out
+        return {"ADIDT_BOOT_BIN": _write(output / "BOOT.BIN", found["BOOT.BIN"])}
     with tarfile.open(fileobj=io.BytesIO(found["bootgen_sysfiles.tgz"])) as inner:
         files = {
             Path(m.name).name: inner.extractfile(m).read() for m in inner if m.isfile()

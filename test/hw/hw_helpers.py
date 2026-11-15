@@ -725,8 +725,6 @@ def deploy_and_boot(board, dtb: Path, kernel_image: Path | None = None):
     # Module-scoped strategies can already be at "shell" from a prior test.
     # Staging new files alone does not make transition("shell") reboot.
     board.transition("powered_off")
-    if os.environ.get("ADIDT_FORCE_DTB"):  # TEMPORARY: boot the release tree
-        shutil.copyfile(os.environ["ADIDT_FORCE_DTB"], dtb)
     marker = mark_dtb_for_boot(dtb)
     kuiper.get_boot_files_from_release()
     replacements = [dtb]
