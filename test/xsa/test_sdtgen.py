@@ -471,3 +471,15 @@ def test_other_boards_keep_their_ethernet_description(tmp_path):
     top.write_text('/ {\n\tboard = "zcu102";\n};\n')
     SdtgenRunner()._postprocess_generated_tree(tmp_path)
     assert "ethernet-phy" not in top.read_text()
+
+
+def test_smmu_is_left_disabled(tmp_path):
+    pcw = tmp_path / "pcw.dtsi"
+    pcw.write_text(
+        '&smmu {\n\tstatus = "okay";\n\txlnx,name = "psu_smmu_gpv";\n};\n'
+        '&gem3 {\n\tstatus = "okay";\n};\n'
+    )
+    SdtgenRunner()._postprocess_generated_tree(tmp_path)
+    text = pcw.read_text()
+    assert '&smmu {\n\tstatus = "disabled";' in text
+    assert '&gem3 {\n\tstatus = "okay";' in text

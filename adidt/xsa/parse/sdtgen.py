@@ -20,6 +20,12 @@ class SdtgenRunner:
     _IPI_STATUS_RE = re.compile(
         r"(&ipi([3-6])\s*\{.*?\bstatus\s*=\s*\")okay(\";)", re.DOTALL
     )
+    # sdtgen turns the SMMU on; the kernel trees leave it off.  With it on,
+    # PL masters such as the ADI DMA cores have no stream ID, their writes are
+    # blocked, and captures read back as zeros.
+    _SMMU_STATUS_RE = re.compile(
+        r"(&smmu\s*\{[^}]*?\bstatus\s*=\s*\")okay(\";)", re.DOTALL
+    )
     _SDHCI1_RE = re.compile(
         r"(sdhci1\s*:\s*mmc@ff170000\s*\{)(.*?)(\n\s*\};)", re.DOTALL
     )
@@ -299,6 +305,7 @@ class SdtgenRunner:
         normalized = self._CPU_CLUSTER_MB_RE.sub(r"\1cpus\2", normalized)
         normalized = normalized.replace("<&imux>", "<&gic_a53>")
         normalized = self._IPI_STATUS_RE.sub(r"\1disabled\3", normalized)
+        normalized = self._SMMU_STATUS_RE.sub(r"\1disabled\2", normalized)
         normalized = self._SDHCI1_RE.sub(self._ensure_sdhci1_props, normalized)
         normalized = self._SDHCI1_REF_RE.sub(self._ensure_sdhci1_props, normalized)
         normalized = self._SDHCI1_ADDR_RE.sub(self._ensure_sdhci1_props, normalized)
