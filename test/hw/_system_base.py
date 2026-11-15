@@ -28,6 +28,7 @@ import pytest
 from adidt.xsa.pipeline import XsaPipeline
 from adidt.xsa.parse.topology import XsaParser
 from test.hw.hw_helpers import (
+    shell_out,
     DEFAULT_OUT_DIR,
     assert_jesd_links_data,
     assert_no_kernel_faults,
