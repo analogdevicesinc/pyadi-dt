@@ -22,7 +22,11 @@ from typing import Any, Callable, Literal, Optional, Sequence
 
 import pytest
 
-from test.hw.hw_helpers import acquire_xsa, hardware_prereq_unavailable
+from test.hw.hw_helpers import (
+    acquire_xsa,
+    hardware_prereq_unavailable,
+    kuiper_release_override,
+)
 
 
 BootMode = Literal["tftp", "sd", "fabric_jtag"]
@@ -168,7 +172,11 @@ def acquire_or_local_xsa(
     here = Path(__file__).parent
 
     def _resolver(tmp_path: Path) -> Path:
-        for name in (local_filename, *fallback_filenames):
+        # A forced release must not be answered by a committed fixture.
+        names = (
+            () if kuiper_release_override() else (local_filename, *fallback_filenames)
+        )
+        for name in names:
             for parent in (here, here / "ref_data"):
                 candidate = parent / name
                 if candidate.exists():

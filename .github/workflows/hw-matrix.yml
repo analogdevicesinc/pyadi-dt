@@ -113,6 +113,11 @@ on:
           supported_boards_path, and run one matrix leg per match. When
           true, the static hw-nodes.json manifest is not used; the
           hw-direct and hw-coord legs are skipped.
+      cim_release:
+        type: string
+        required: false
+        default: ""
+        description: CIM kernel release for dynamic legs; empty keeps the default.
       supported_boards_path:
         type: string
         required: false
@@ -689,6 +694,7 @@ jobs:
         env:
           BOARD: ${{ matrix.node.board }}
           CARRIER: ${{ matrix.node.carrier }}
+          ADIDT_CIM_RELEASE: ${{ inputs.cim_release }}
         run: bash .github/scripts/prepare-hardware-kernels.sh
 
       - name: Acquire coordinator place

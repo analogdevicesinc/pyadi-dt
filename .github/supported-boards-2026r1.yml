@@ -1,0 +1,6 @@
+# Rigs with boot files in the Kuiper 2026_r1 boot partition that the opt-in
+# release run can stage without changing the rig (see hardware-test.yml).
+boards:
+  - ad9081
+  - adrv9371
+  - adrv9009

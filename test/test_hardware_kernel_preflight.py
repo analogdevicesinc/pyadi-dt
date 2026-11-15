@@ -52,7 +52,7 @@ def test_workflow_prepares_before_acquisition():
     )
     step = steps[names.index("Prepare kernels before acquiring hardware")]
     assert step["run"] == "bash .github/scripts/prepare-hardware-kernels.sh"
-    assert set(step["env"]) == {"BOARD", "CARRIER"}
+    assert set(step["env"]) == {"BOARD", "CARRIER", "ADIDT_CIM_RELEASE"}
 
 
 def test_explicit_image_and_separate_overlay_do_not_require_cim(tmp_path):
