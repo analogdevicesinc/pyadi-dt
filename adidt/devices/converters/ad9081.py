@@ -85,6 +85,15 @@ def ad9081_converter_select(direction: str, m: int, link_mode: int) -> str:
             f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
             f"<&ad9081_{side}_fddc_chan1 0>, <&ad9081_{side}_fddc_chan1 1>"
         )
+    if direction == "rx" and m >= 8:
+        # Four ADCs, complex: the kernel trees take FDDC 0/1 and 4/5.  The
+        # 6.12 driver returns zeroed samples for the 0-3 mapping.
+        return (
+            f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
+            f"<&ad9081_{side}_fddc_chan1 0>, <&ad9081_{side}_fddc_chan1 1>, "
+            f"<&ad9081_{side}_fddc_chan4 0>, <&ad9081_{side}_fddc_chan4 1>, "
+            f"<&ad9081_{side}_fddc_chan5 0>, <&ad9081_{side}_fddc_chan5 1>"
+        )
     if m >= 8:
         return (
             f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
@@ -153,10 +162,10 @@ def _tx_dacs_block(
 \t\t\t\t\t#address-cells = <1>;
 \t\t\t\t\t#size-cells = <0>;
 \t\t\t\t\tadi,interpolation = <{cduc_interp}>;
-\t\t\t\t\tdac@0 {{ reg = <0>; adi,crossbar-select = <0x28>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@1 {{ reg = <1>; adi,crossbar-select = <0x29>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@2 {{ reg = <2>; adi,crossbar-select = <0x2a>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
-\t\t\t\t\tdac@3 {{ reg = <3>; adi,crossbar-select = <0x2b>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@0 {{ reg = <0>; adi,crossbar-select = <&ad9081_tx_fddc_chan0>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@1 {{ reg = <1>; adi,crossbar-select = <&ad9081_tx_fddc_chan1>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@2 {{ reg = <2>; adi,crossbar-select = <&ad9081_tx_fddc_chan2>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
+\t\t\t\t\tdac@3 {{ reg = <3>; adi,crossbar-select = <&ad9081_tx_fddc_chan3>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; }};
 \t\t\t\t}};
 \t\t\t\tadi,channelizer-paths {{
 \t\t\t\t\t#address-cells = <1>;

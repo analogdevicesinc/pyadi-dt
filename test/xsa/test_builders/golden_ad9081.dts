@@ -146,10 +146,10 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 					adi,interpolation = <8>;
-					dac@0 { reg = <0>; adi,crossbar-select = <0x28>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
-					dac@1 { reg = <1>; adi,crossbar-select = <0x29>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
-					dac@2 { reg = <2>; adi,crossbar-select = <0x2a>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
-					dac@3 { reg = <3>; adi,crossbar-select = <0x2b>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
+					dac@0 { reg = <0>; adi,crossbar-select = <&ad9081_tx_fddc_chan0>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
+					dac@1 { reg = <1>; adi,crossbar-select = <&ad9081_tx_fddc_chan1>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
+					dac@2 { reg = <2>; adi,crossbar-select = <&ad9081_tx_fddc_chan2>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
+					dac@3 { reg = <3>; adi,crossbar-select = <&ad9081_tx_fddc_chan3>; adi,nco-frequency-shift-hz = /bits/ 64 <0>; };
 				};
 				adi,channelizer-paths {
 					#address-cells = <1>;
@@ -217,7 +217,7 @@
 					#address-cells = <1>;
 					link@0 {
 						reg = <0>;
-						adi,converter-select = <&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, <&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, <&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan2 1>, <&ad9081_rx_fddc_chan3 0>, <&ad9081_rx_fddc_chan3 1>;
+						adi,converter-select = <&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, <&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, <&ad9081_rx_fddc_chan4 0>, <&ad9081_rx_fddc_chan4 1>, <&ad9081_rx_fddc_chan5 0>, <&ad9081_rx_fddc_chan5 1>;
 						adi,logical-lane-mapping = /bits/ 8 <2 0 7 7 7 7 3 1>;
 						adi,link-mode = <10>;
 						adi,subclass = <1>;

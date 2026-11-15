@@ -533,8 +533,8 @@ class NodeBuilder:
             return (
                 "<&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, "
                 "<&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, "
-                "<&ad9081_rx_fddc_chan2 0>, <&ad9081_rx_fddc_chan2 1>, "
-                "<&ad9081_rx_fddc_chan3 0>, <&ad9081_rx_fddc_chan3 1>"
+                "<&ad9081_rx_fddc_chan4 0>, <&ad9081_rx_fddc_chan4 1>, "
+                "<&ad9081_rx_fddc_chan5 0>, <&ad9081_rx_fddc_chan5 1>"
             )
         # For reduced-M modes (e.g. M=4), map one converter per channel.
         return ", ".join(

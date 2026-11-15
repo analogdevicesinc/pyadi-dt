@@ -371,6 +371,8 @@ cap('cap1')
 o[0x88:0x8c]=struct.pack('<I',r(o,0x88)|1)
 d('bypass',0x9c450000,L)
 cap('cap2')
+s.run("D=$(iio_attr -d 2>/dev/null|grep -oE 'ad_ip_jesd204_tpl_adc|axi-ad9081-rx-hpc'|head -1);for c in 0 1 2 3;do iio_attr -c -i $D voltage${c}_i main_nco_frequency 400000000;done",shell=True)
+cap('cap3')
 """
 
 

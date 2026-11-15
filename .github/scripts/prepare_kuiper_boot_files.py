@@ -57,7 +57,7 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
         out = {"ADIDT_BOOT_BIN": _write(output / "BOOT.BIN", found["BOOT.BIN"])}
         with tarfile.open(tarball, "r:gz") as outer:  # TEMPORARY
             dtb = outer.extractfile(f"{project}/m8_l4_vcxo122p88/system.dtb").read()
-        out["ADIDT_FORCE_DTB"] = _write(output / "release.dtb", dtb)
+        _write(output / "release.dtb", dtb)
         return out
     with tarfile.open(fileobj=io.BytesIO(found["bootgen_sysfiles.tgz"])) as inner:
         files = {
