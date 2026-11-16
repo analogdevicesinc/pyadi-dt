@@ -2,4 +2,4 @@
 -r labgrid.txt
 
 # Lab runners use the libiio 0.x ABI shipped with Kuiper.
-pylibiio<1
+pylibiio<2
