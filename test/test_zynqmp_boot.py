@@ -13,10 +13,13 @@ def test_uboot_error_status_is_not_reported_as_success():
     match.group.return_value = b"1"
     console = Mock()
     console.expect.return_value = (0, b"Failed to load Image", match, b"")
-    board = SimpleNamespace(shell=SimpleNamespace(console=console))
+    board = SimpleNamespace(
+        shell=SimpleNamespace(console=console), production_uboot_prompt="ZynqMP>"
+    )
     with pytest.raises(AssertionError, match="Failed to load Image"):
         boot._uboot_command(board, "load mmc 0:1 0x80000 Image")
-    assert console.expect.call_count == 1
+    # The status line and the prompt after it are both consumed.
+    assert console.expect.call_count == 2
 
 
 def test_srecord_payload_round_trips_with_binutils(tmp_path):
@@ -89,7 +92,6 @@ def test_serial_upload_rejects_corrupted_ram_and_restores_pacing(tmp_path, monke
     assert (console.txdelay, console.txchunk) == (0.0, 1)
 
 
-
 def test_transfer_size_waits_for_complete_serial_field():
     import re
 
@@ -98,3 +100,47 @@ def test_transfer_size_waits_for_complete_serial_field():
         assert re.search(boot._SREC_SIZE_PATTERN, prefix[:end]) is None
     match = re.search(boot._SREC_SIZE_PATTERN, prefix + " = 128512 Bytes")
     assert int(match.group(1), 16) == 128512
+
+
+def _release_boot(tmp_path, monkeypatch, *, on_card):
+    """Drive the handoff up to the kernel load with a release kernel."""
+    import zlib
+
+    kernel = tmp_path / "Image"
+    kernel.write_bytes(b"release kernel")
+    name = f"Image-adidt-{zlib.crc32(b'release kernel'):08x}"
+    board = type("BootZynqMPJTAG", (), {})()
+    board.transition = Mock()
+    board.shell = SimpleNamespace(console=Mock())
+    monkeypatch.setattr(boot, "mark_dtb_for_boot", Mock(return_value="marker"))
+    status = Mock(return_value=("", 0 if on_card else 1))
+    monkeypatch.setattr(boot, "_uboot_status", status)
+    stage = Mock()
+    monkeypatch.setattr(boot, "_stage_kernel_on_sd", stage)
+    commands = []
+
+    def uboot(_board, command):
+        commands.append(command)
+        if command.startswith("crc32"):
+            return "crc32 for 00080000 ... 0008000d ==> 00000000"
+        return ""
+
+    monkeypatch.setattr(boot, "_uboot_command", uboot)
+    with pytest.raises(AssertionError, match="==> 00000000"):
+        boot.boot_generated_zynqmp_dtb(
+            board, tmp_path / "tree.dtb", bitstream=tmp_path / "top.bit", kernel=kernel
+        )
+    assert board.bitstream_path == str(tmp_path / "top.bit")
+    assert name in status.call_args.args[1]
+    assert commands[0].endswith(f"$kernel_addr {name}")
+    return stage, kernel, name
+
+
+def test_release_kernel_already_on_card_is_not_rewritten(tmp_path, monkeypatch):
+    stage, _, _ = _release_boot(tmp_path, monkeypatch, on_card=True)
+    stage.assert_not_called()
+
+
+def test_missing_release_kernel_is_staged_before_the_load(tmp_path, monkeypatch):
+    stage, kernel, name = _release_boot(tmp_path, monkeypatch, on_card=False)
+    assert stage.call_args.args[1:] == (kernel, name)

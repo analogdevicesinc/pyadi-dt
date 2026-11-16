@@ -4,7 +4,8 @@
 Prints shell ``export`` lines for the hardware test step.  Zynq-7000 rigs get
 the release bitstream and PS init script for the JTAG bootstrap; ZynqMP rigs
 get the release ``BOOT.BIN`` for the SD card.  The rig's own U-Boot is kept
-because the lab TFTP flow needs one built for its non-default port.
+because the lab TFTP flow needs one built for its non-default port.  JTAG-booted
+ZynqMP rigs get the release bitstream and kernel; their boot firmware stays.
 """
 
 from __future__ import annotations
@@ -27,7 +28,13 @@ RIGS = {
     ("adrv9009", "zc706"): ("zynq", "zynq-zc706-adv7511-adrv9009"),
     ("adrv9371", "zc706"): ("zynq", "zynq-zc706-adv7511-adrv937x"),
     ("ad9081", "zcu102"): ("zynqmp", "zynqmp-zcu102-rev10-ad9081/m8_l4"),
+    ("adrv9009zu11eg", "adrv2crr-fmc"): (
+        "zynqmp-jtag",
+        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb",
+    ),
 }
+
+ZYNQMP_KERNEL = "zynqmp-common/Image"
 
 
 def _write(path: Path, data: bytes) -> Path:
@@ -43,6 +50,8 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
     output.mkdir(parents=True, exist_ok=True)
     output.chmod(0o755)
     wanted = {f"{project}/BOOT.BIN", f"{project}/bootgen_sysfiles.tgz"}
+    if platform == "zynqmp-jtag":
+        wanted.add(ZYNQMP_KERNEL)
     found: dict[str, bytes] = {}
     with tarfile.open(tarball, "r:gz") as outer:
         for member in outer:
@@ -58,6 +67,13 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
     with tarfile.open(fileobj=io.BytesIO(found["bootgen_sysfiles.tgz"])) as inner:
         files = {
             Path(m.name).name: inner.extractfile(m).read() for m in inner if m.isfile()
+        }
+    if platform == "zynqmp-jtag":
+        return {
+            "ADIDT_ZYNQMP_BITSTREAM": _write(
+                output / "system_top.bit", files["system_top.bit"]
+            ),
+            "ADIDT_ZYNQMP_KERNEL": _write(output / "Image", found["Image"]),
         }
     with zipfile.ZipFile(io.BytesIO(files["system_top.xsa"])) as xsa:
         ps7_init = xsa.read("ps7_init.tcl")
