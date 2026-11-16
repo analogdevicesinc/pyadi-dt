@@ -79,6 +79,9 @@ def _stage_kernel_on_sd(board, kernel: Path, name: str) -> None:
         server.shutdown()
         server.server_close()
     board.transition("powered_off")
+    # The bootstrap swaps in an unopened serial object before activating the
+    # console; an already active console would keep it closed.
+    board.target.deactivate(console)
     board.transition("production_uboot_prompt")
 
 
