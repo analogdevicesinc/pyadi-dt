@@ -21,6 +21,7 @@ either is missing.
 
 from __future__ import annotations
 
+import os
 import shutil
 from pathlib import Path
 from typing import Any
@@ -32,6 +33,8 @@ from adidt.xsa.parse.topology import XsaParser
 from test.hw._system_base import requires_lg
 from test.hw.hw_helpers import (
     DEFAULT_OUT_DIR,
+    acquire_xsa,
+    kuiper_release_override,
     compile_dts_to_dtb,
     collect_dmesg,
     assert_no_kernel_faults,
@@ -47,9 +50,16 @@ from test.hw.xsa._overlay_spec import local_xsa_or_skip
 LG_FEATURES = ("adrv9009zu11eg", "adrv2crr-fmc")
 
 # The ZU11EG HDL XSA is committed under test/hw/xsa/ref_data/ like the
-# other reference XSAs (ad9081/adrv9009 zcu102).  No Kuiper download
-# exists for it yet, so this is local-only.
+# other reference XSAs (ad9081/adrv9009 zcu102).  A release run
+# (``ADIDT_KUIPER_RELEASE``) takes that release's design instead.
 _XSA_RESOLVER = local_xsa_or_skip("system_top_adrv9009_zu11eg.xsa")
+KUIPER_PROJECT = "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb"
+
+
+def _release_file(variable: str) -> Path | None:
+    """Boot file staged for a release run by prepare_kuiper_boot_files.py."""
+    value = os.environ.get(variable)
+    return Path(value) if value else None
 
 
 def _board_cfg() -> dict[str, Any]:
@@ -84,7 +94,10 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
     if shutil.which("dtc") is None:
         pytest.skip("dtc not on PATH (install device-tree-compiler)")
 
-    xsa_path = _XSA_RESOLVER(tmp_path)
+    if kuiper_release_override():
+        xsa_path = acquire_xsa(Path(), "", KUIPER_PROJECT, tmp_path)
+    else:
+        xsa_path = _XSA_RESOLVER(tmp_path)
     assert xsa_path.exists(), f"ZU11EG XSA not found: {xsa_path}"
 
     # --- Topology: platform inference + JESD instances from the real XSA ---
@@ -137,7 +150,12 @@ def test_adrv9009_zu11eg_hw(board, tmp_path):
     )
     print(f"Compiled ZU11EG DTB: {dtb_path} ({dtb_path.stat().st_size} bytes)")
 
-    shell = boot_generated_zynqmp_dtb(board, dtb_path)
+    shell = boot_generated_zynqmp_dtb(
+        board,
+        dtb_path,
+        bitstream=_release_file("ADIDT_ZYNQMP_BITSTREAM"),
+        kernel=_release_file("ADIDT_ZYNQMP_KERNEL"),
+    )
     dmesg = collect_dmesg(shell, out_dir, "adrv9009_zu11eg")
     assert_no_kernel_faults(dmesg)
     assert_jesd_links_data(shell, expected_rx_links=2, expected_tx_links=1)
