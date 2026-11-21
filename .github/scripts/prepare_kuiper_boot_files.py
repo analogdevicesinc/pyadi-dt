@@ -6,6 +6,7 @@ the release bitstream and PS init script for the JTAG bootstrap; ZynqMP rigs
 get the release ``BOOT.BIN`` for the SD card.  The rig's own U-Boot is kept
 because the lab TFTP flow needs one built for its non-default port.  JTAG-booted
 ZynqMP rigs get the release bitstream and kernel; their boot firmware stays.
+Zynq-7000 rigs that boot their own SD card get the same pair.
 """
 
 from __future__ import annotations
@@ -32,9 +33,11 @@ RIGS = {
         "zynqmp-jtag",
         "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb",
     ),
+    ("adrv9361z7035", "adrv1crr-fmc"): ("zynq-sd", "zynq-adrv9361-z7035-fmc"),
 }
 
 ZYNQMP_KERNEL = "zynqmp-common/Image"
+ZYNQ_KERNEL = "zynq-common/uImage"
 
 
 def _write(path: Path, data: bytes) -> Path:
@@ -52,6 +55,8 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
     wanted = {f"{project}/BOOT.BIN", f"{project}/bootgen_sysfiles.tgz"}
     if platform == "zynqmp-jtag":
         wanted.add(ZYNQMP_KERNEL)
+    if platform == "zynq-sd":
+        wanted.add(ZYNQ_KERNEL)
     found: dict[str, bytes] = {}
     with tarfile.open(tarball, "r:gz") as outer:
         for member in outer:
@@ -74,6 +79,13 @@ def stage(tarball: Path, project: str, platform: str, output: Path) -> dict[str,
                 output / "system_top.bit", files["system_top.bit"]
             ),
             "ADIDT_ZYNQMP_KERNEL": _write(output / "Image", found["Image"]),
+        }
+    if platform == "zynq-sd":
+        return {
+            "ADIDT_ZYNQ_SD_BITSTREAM": _write(
+                output / "system_top.bit", files["system_top.bit"]
+            ),
+            "ADIDT_ZYNQ_SD_KERNEL": _write(output / "uImage", found["uImage"]),
         }
     with zipfile.ZipFile(io.BytesIO(files["system_top.xsa"])) as xsa:
         ps7_init = xsa.read("ps7_init.tcl")
