@@ -16,9 +16,10 @@ The bitstream is mandatory: the DT binds ``cf-ad9361-lpc`` /
 ``cf-ad9361-dds-core-lpc`` in the PL, and an unprogrammed fabric hangs the AXI
 probe.
 
-This validates the *booted stock* device tree, not a generated one --
-``adidt`` has no AD9361 model, and ``kuiper_boards.json`` still marks
-``zynq-adrv9361-z7035-fmc`` ``unsupported``.
+The standard run validates the *booted stock* device tree, not a generated
+one.  A release run (``ADIDT_KUIPER_RELEASE``) instead generates the tree from
+that release's XSA and boots it with the release bitstream and kernel, loaded
+from a separate folder on the card (see ``_zynq_sd_boot.py``).
 
 Validated on hardware 2026-09-10: passes from the ``bq`` runner against the
 ``lablp`` rig in ~51 s.  The asserted IIO names were read off that booted
@@ -41,6 +42,8 @@ board::
 from __future__ import annotations
 
 import os
+import shutil
+from pathlib import Path
 
 import pytest
 
@@ -51,12 +54,16 @@ if not (os.environ.get("LG_COORDINATOR") or os.environ.get("LG_ENV")):
         allow_module_level=True,
     )
 
+from test.hw._zynq_sd_boot import boot_release_design_from_sd  # noqa: E402
 from test.hw.hw_helpers import (  # noqa: E402
     DEFAULT_OUT_DIR,
+    acquire_xsa,
     assert_no_kernel_faults,
     assert_no_probe_errors,
     assert_rx_capture_valid,
     collect_dmesg,
+    compile_dts_to_dtb,
+    kuiper_release_override,
     open_iio_context,
 )
 
@@ -73,19 +80,63 @@ PHY_NAME = "ad9361-phy"
 RX_DEVICE_CANDIDATES = ("cf-ad9361-lpc", "cf-ad9361-A", "axi-ad9361-lpc")
 
 
+KUIPER_PROJECT = "zynq-adrv9361-z7035-fmc"
+
+
 @pytest.mark.lg_feature(list(LG_FEATURES))
 def test_adrv9361z7035_adrv1crr_fmc_boot_hw(board):
-    """Boot the SOM over JTAG+TFTP and verify the AD9361 data path."""
+    """Boot the SOM's own SD card and verify the AD9361 data path."""
+    if kuiper_release_override():
+        pytest.skip("release run boots the generated tree instead")
     out_dir = DEFAULT_OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
 
     board.transition("shell")
     shell = board.target.get_driver("ADIShellDriver")
+    _verify_ad9361(shell, out_dir, "adrv9361z7035_adrv1crr-fmc")
+    # The DT model string is the cheapest proof the right tree booted.
+    model = shell.run_check("cat /proc/device-tree/model; echo")
+    assert any("ADRV9361-Z7035" in line for line in model), (
+        f"Unexpected device-tree model: {model}"
+    )
 
+
+@pytest.mark.lg_feature(list(LG_FEATURES))
+def test_adrv9361z7035_adrv1crr_fmc_release_hw(board, tmp_path):
+    """Generate the tree from a release XSA and boot it on that release's design."""
+    if not kuiper_release_override():
+        pytest.skip("set ADIDT_KUIPER_RELEASE to run a release's design")
+    if shutil.which("sdtgen") is None:
+        pytest.skip("sdtgen not on PATH (install Vitis/Vivado device-tree generator)")
+    from adidt.xsa.pipeline import XsaPipeline
+
+    xsa_path = acquire_xsa(Path(), "", KUIPER_PROJECT, tmp_path)
+    out_dir = DEFAULT_OUT_DIR / "adrv9361z7035"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result = XsaPipeline().run(
+        xsa_path=xsa_path, cfg={}, output_dir=out_dir, sdtgen_timeout=300
+    )
+    merged = result["merged"].read_text()
+    assert "adi,ad9361" in merged, "expected an AD9361 node in the merged DTS"
+    dtb_path = out_dir / "adrv9361z7035.dtb"
+    compile_dts_to_dtb(result["merged"], dtb_path)
+
+    shell = boot_release_design_from_sd(
+        board,
+        dtb_path,
+        bitstream=Path(os.environ["ADIDT_ZYNQ_SD_BITSTREAM"]),
+        kernel=Path(os.environ["ADIDT_ZYNQ_SD_KERNEL"]),
+    )
+    print(shell.run_check("uname -r"))
+    _verify_ad9361(shell, out_dir, "adrv9361z7035_release")
+
+
+def _verify_ad9361(shell, out_dir, label: str) -> None:
+    """Check the AD9361 probe, its IIO devices and a real RX capture."""
     dmesg_txt = collect_dmesg(
         shell,
         out_dir,
-        label="adrv9361z7035_adrv1crr-fmc",
+        label=label,
         grep_pattern="ad9361|cf-ad9361|cf_axi|axi_dmac|probe|failed|error",
     )
     assert_no_kernel_faults(dmesg_txt)
@@ -95,12 +146,6 @@ def test_adrv9361z7035_adrv1crr_fmc_boot_hw(board):
     assert "ad9361" in lowered, "AD9361 driver messages not seen in dmesg"
     assert "successfully initialized" in lowered, (
         "AD9361 did not report a successful probe; see the collected dmesg"
-    )
-
-    # The DT model string is the cheapest proof the right tree booted.
-    model = shell.run_check("cat /proc/device-tree/model; echo")
-    assert any("ADRV9361-Z7035" in line for line in model), (
-        f"Unexpected device-tree model: {model}"
     )
 
     _assert_iio_devices(shell)

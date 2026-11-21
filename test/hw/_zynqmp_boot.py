@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import os
 import socket
@@ -25,7 +26,8 @@ def _uboot_status(board, command: str) -> tuple[str, int]:
     _, before, match, _ = board.shell.console.expect(
         r"\r\n" + token + r":([0-9]+)\r\n", timeout=120
     )
-    board.shell.console.expect(board.production_uboot_prompt, timeout=10)
+    prompt = getattr(board, "production_uboot_prompt", None) or board.uboot_prompt
+    board.shell.console.expect(prompt, timeout=10)
     return before.decode(errors="replace"), int(match.group(1))
 
 
@@ -44,6 +46,19 @@ def _runner_address() -> str:
         return route.getsockname()[0]
 
 
+@contextlib.contextmanager
+def serve_directory(directory: Path):
+    """Serve *directory* over HTTP to the lab network; yield the base URL."""
+    handler = functools.partial(SimpleHTTPRequestHandler, directory=str(directory))
+    server = ThreadingHTTPServer((_runner_address(), 0), handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        yield f"http://{server.server_address[0]}:{server.server_address[1]}"
+    finally:
+        server.shutdown()
+        server.server_close()
+
+
 def _stage_kernel_on_sd(board, kernel: Path, name: str) -> None:
     """Boot the SD card's own system once and store *kernel* beside its files.
 
@@ -59,11 +74,7 @@ def _stage_kernel_on_sd(board, kernel: Path, name: str) -> None:
     shell.prompt = board.kuiper_shell_marker
     shell._check_prompt()
     shell._inject_run()
-    handler = functools.partial(SimpleHTTPRequestHandler, directory=str(kernel.parent))
-    server = ThreadingHTTPServer((_runner_address(), 0), handler)
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    try:
-        url = f"http://{server.server_address[0]}:{server.server_address[1]}"
+    with serve_directory(kernel.parent) as url:
         shell.run_check(
             "i=0; until ip -4 -o addr show scope global | grep -q 'inet '; "
             "do i=$((i+1)); test $i -lt 90 || exit 1; sleep 1; done",
@@ -75,9 +86,6 @@ def _stage_kernel_on_sd(board, kernel: Path, name: str) -> None:
             f"mv /boot/{name}.part /boot/{name} && sync",
             timeout=600,
         )
-    finally:
-        server.shutdown()
-        server.server_close()
     board.transition("powered_off")
     # The bootstrap swaps in an unopened serial object before activating the
     # console; an already active console would keep it closed.

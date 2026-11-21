@@ -70,3 +70,26 @@ def test_without_override_local_fixture_wins(tmp_path, monkeypatch):
     local.write_bytes(b"committed fixture")
     monkeypatch.delenv("ADIDT_KUIPER_RELEASE", raising=False)
     assert hw_helpers.acquire_xsa(local, "2023_r2", "project", tmp_path) == Path(local)
+
+
+def test_sd_boot_zynq_rig_gets_release_bitstream_and_kernel(tmp_path):
+    script = Path(__file__).parents[1] / ".github/scripts/prepare_kuiper_boot_files.py"
+    spec = importlib.util.spec_from_file_location("prepare_kuiper_boot_files", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    platform, project = module.RIGS[("adrv9361z7035", "adrv1crr-fmc")]
+    release = tmp_path / "release.tar.gz"
+    _tar(
+        {
+            f"{project}/BOOT.BIN": b"boot",
+            f"{project}/bootgen_sysfiles.tgz": _tar({"system_top.bit": b"bitstream"}),
+            "zynq-common/uImage": b"kernel",
+        },
+        release,
+    )
+
+    staged = module.stage(release, project, platform, tmp_path / "out")
+
+    assert staged["ADIDT_ZYNQ_SD_BITSTREAM"].read_bytes() == b"bitstream"
+    assert staged["ADIDT_ZYNQ_SD_KERNEL"].read_bytes() == b"kernel"
+    assert set(staged) == {"ADIDT_ZYNQ_SD_BITSTREAM", "ADIDT_ZYNQ_SD_KERNEL"}
