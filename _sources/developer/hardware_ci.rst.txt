@@ -1,0 +1,326 @@
+Hardware CI
+===========
+
+The ``Hardware Tests`` workflow in ``.github/workflows/hardware-test.yml``
+selects hardware through the labgrid coordinator. See
+:doc:`hardware_validation` for the completed release qualification and
+:doc:`runtime_overlay_validation` for the required overlay kernels.
+
+Discovery and test selection
+----------------------------
+
+The workflow calls a local copy of ``hw-matrix.yml`` (upstream
+``tfcollins/labgrid-plugins`` commit
+``3f6cd9321f2d54edf2110f1d91a3af582ea368d7``) with ``dynamic_mode: true``.
+The local addition prepares ordinary kernels **before** ``acquire-place``;
+the upstream pre-pytest hook runs after acquisition and cannot do this safely.
+Coordinator place
+metadata supplies the runner routing; ``.github/supported-boards.yml`` filters
+supported daughter-board tags. The current allowlist contains ``ad9081``,
+``adrv9371``, ``adrv9009``, ``adrv9009zu11eg``, and ``daq3``. An allowlist entry
+is not proof that matching hardware is available or validated.
+
+Runs are triggered manually, on pushes to ``main``, nightly at 08:00 UTC,
+and for pull requests carrying the ``hw-test`` label. The reusable workflow
+owns discovery and scheduling. The inherited direct/coordinator jobs remain
+disabled; routing uses dynamic metadata rather than a static node manifest.
+
+Each selected leg receives ``BOARD``, ``CARRIER``, ``LG_ENV``, and
+``LG_COORDINATOR``. Its test command selects:
+
+* Full-DTB tests matching ``test/hw/*${BOARD}*${CARRIER}*_hw.py``.
+* Overlay tests matching ``test/hw/xsa/test_*${BOARD}*${CARRIER}*_overlay.py``.
+
+PetaLinux tests are excluded from this workflow's selection. An empty selection
+fails. After pytest, ``check_hardware_results.py`` requires passing JUnit
+results without failures or errors; an all-skipped run cannot qualify hardware.
+
+.. _runner-registration:
+
+Runner preparation
+------------------
+
+Register the self-hosted runner and give it the label selected by the place's
+coordinator ``runner`` tag. It needs access to the coordinator and exporter,
+the board's boot artifacts, and the appropriate FPGA tools.
+
+``.github/scripts/install-adidt-venv.sh`` installs the checkout with ``dev``
+extras and checksum-verified CIM v1.2.4 into a Python 3.12 environment at ``~/.cache/adidt-ci/datax-py312-venv``. It also installs the AD9371
+clock-model requirements and exposes the supported Vivado 2025.1 ``sdtgen``
+launcher in that environment. Missing tools or imports fail setup before
+hardware acquisition. Hardware requirements select ``pylibiio<1`` to match
+the runners' libiio 0.x ABI. Setup verifies that the Python binding loads before
+acquiring a place. The labgrid plugin pin includes serial-aware JTAG resources
+and exporter-owned recovery payload paths.
+
+``.github/scripts/prepare-hardware-env.sh`` then:
+
+#. Loads optional board-specific artifact settings from
+   ``~/.config/pyadi-dt/hardware/$BOARD-$CARRIER.env``. Override the directory
+   with ``ADIDT_HARDWARE_CONFIG_DIR``.
+#. Sanitizes ``PATH`` and verifies GNU ``as``, labgrid, pytest, and ``sdtgen``.
+#. Prepares a private labgrid environment from the live place tags.
+   TFTP deployment disables SD autoboot; ZynqMP deployment registers the
+   pinned production JTAG strategy and accepts either Ethernet port.
+
+SD-mux environments use the pinned client's current storage-driver template.
+The managed TFTP server advertises the runner's interface used to reach the
+coordinator, which connects it to the lab management network. Set
+``ADIDT_TFTP_SERVER_ADDRESS`` in the per-board runner configuration to select
+a DUT-facing address explicitly.
+
+Kernel and DTB overrides are published through the strategy's location-aware
+artifact cache. Each generated DTB carries a unique validation property that
+the boot test checks in the running device tree.
+
+Keep operational labgrid environments private. Optional Prism upload is
+controlled by ``PRISM_UPLOAD_ENABLED`` and uses the explicitly passed
+``PRISM_EMAIL`` and ``PRISM_PASSWORD`` secrets. These values are not test
+artifacts.
+
+Prepared CIM kernels
+--------------------
+
+Kernel compilation, Zynq ``uImage`` packaging, source/toolchain pinning, and
+build caches are provided by the public
+`DataX manifests <https://github.com/tfcollins/datax-manifests>`_ ``adi-linux``
+target, driven by `CIM <https://github.com/analogdevicesinc/cim>`_. Hardware CI
+uses public dependencies and requires no private dependency token. Existing
+kernel overrides and independently qualified modular overlay artifacts remain
+supported.
+
+Prepare **only the platform needed by the selected tests**, before acquiring a
+place. An installed CIM executable and an explicit, reviewed manifest source
+and full Git commit are required for builds (there is no implicit ``main`` or
+package installation). Install the host build dependencies listed in the CIM
+target's ``os-dependencies.yml`` separately. For example, for ZC706:
+
+.. code-block:: bash
+
+   # Set these to the reviewed manifest repository and full commit containing
+   # the self-contained adi-linux target (both releases and platforms).
+   : "${CIM_MANIFEST_SOURCE:?set the reviewed CIM manifest repository}"
+   : "${CIM_MANIFEST_COMMIT:?set its full reviewed Git commit SHA}"
+   python .github/scripts/prepare_cim_kernel.py \
+       --platform zynq --cim /path/to/installed/cim \
+       --source "$CIM_MANIFEST_SOURCE" --version "$CIM_MANIFEST_COMMIT" \
+       --workspace "$HOME/cim-kernels/2023_R2/$CIM_MANIFEST_COMMIT-zynq" \
+       > /tmp/adidt-kernel.env
+   # Only source the output if preparation succeeded.
+   source /tmp/adidt-kernel.env
+
+The default release remains **2023_R2**. Opt in to **2026-R1** with
+``ADIDT_CIM_RELEASE=2026-R1`` in the runner environment or per-board file,
+or pass ``--release 2026-R1`` to the Python helper (CLI takes precedence).
+Only these exact two spellings are accepted. All combinations initialize the
+single self-contained ``adi-linux`` target. The helper explicitly passes
+``KERNEL_RELEASE``, ``KERNEL_PLATFORM``, ``KERNEL_OUTPUT``, and ``KERNEL_JOBS``
+to ``make sdk-build``; it does not depend on CIM's default release or platform.
+For direct CIM use, ``KERNEL_RELEASE`` defaults to ``2023_R2`` and
+``KERNEL_PLATFORM`` defaults to ``zynq``. For example, in an initialized
+CIM workspace:
+
+.. code-block:: bash
+
+   make sdk-build KERNEL_RELEASE=2026_R1 KERNEL_PLATFORM=zynqmp KERNEL_JOBS=4
+
+2026-R1 here means the ``analogdevicesinc/linux`` **tag**
+``xlnx_2026.1.0`` at commit
+``b47bbbe8ca7bc582c96251fa30d86e55de363f68``; it is not a mutable branch.
+The legacy source remains ``2023_R2`` at
+``86d61468a7856e952c7ca237f798d86d6abd2e27``.
+
+For a manual 2026-R1 build, use the command above with ``--release 2026-R1``
+and a separate workspace such as
+``$HOME/cim-kernels/2026-R1/$CIM_MANIFEST_COMMIT-zynq``.
+The public label ``2026-R1`` maps to CIM's internal helper/provenance key
+``2026_R1``. The preparation helper explicitly sets ``KERNEL_OUTPUT`` to preserve
+its output ``artifacts/2026_R1/<platform>/artifacts.json`` for 2026-R1 and
+``artifacts/<platform>/artifacts.json`` for 2023_R2. Existing manifests at
+other paths can still be selected explicitly.
+Source both emitted exports: the image manifest and ``ADIDT_CIM_RELEASE``.
+CI workspaces include the release in their names, and the release is propagated
+through ``GITHUB_ENV`` to pytest. CIM owns its release-aware build cache;
+pyadi-dt never searches a shared legacy cache or silently falls back to another
+release. Explicit manifest reuse must match the selected source ref and commit.
+Missing or mismatched provenance fails before acquisition; it does not trigger
+an automatic rebuild. Legacy CIM manifests without a release field remain valid
+when their source pins match 2023_R2.
+
+The helper uses ``cim init``, ``cim makefile``, and ``make sdk-build``. It refuses
+to overwrite a workspace; to reuse its results, export the existing manifest
+path instead of rebuilding. It validates the handoff before emitting a
+shell-quoted export. It does not install CIM, reserve boards, or modify runner
+configuration. Run the command with ``set -e`` or explicitly check its exit
+status before sourcing its output. Prepared-image and disabled modes do not
+invoke CIM and do not require source/version/workspace arguments.
+
+For persistent runners, put the resulting export in the existing per-board
+``$BOARD-$CARRIER.env`` file. The matrix runs
+``prepare-hardware-kernels.sh`` before acquisition, loads that same file, and
+validates explicit ordinary images/manifests. Without them it builds using
+``CIM_MANIFEST_SOURCE``, ``CIM_MANIFEST_COMMIT`` (a full immutable SHA), and
+``ADIDT_CIM_EXECUTABLE`` (an installed absolute executable path recommended).
+The default manifest source is ``https://github.com/tfcollins/datax-manifests.git`` at
+``6efed11c826f35f5e3a5da3c10ebd54c309f25fa``. Override settings through the
+runner environment or per-board file. CI installs checksum-verified CIM v1.2.4
+in the Python 3.12 hardware venv. For manual runs, supply an installed CIM
+executable. New workspaces are release- and run-scoped under
+``ADIDT_CIM_WORKSPACE_ROOT``, a writable ``/mnt/onetb/scratch`` mount when
+available, or ``RUNNER_TEMP``. For cache reuse provision a persistent manifest
+explicitly.
+Fabric-only legs do not build ARM kernels; disabled mode and image overrides
+bypass CIM entirely. Do not build on disk-constrained runners: stage verified
+CIM artifacts built on another host and update their absolute image paths and
+checksums, or explicitly select a boot-ready external image.
+
+Profiles declaring ``runtime_modules`` require their separately qualified
+modular kernels and matching modules. The pre-acquisition step checks the
+selected overlay profile before requiring an explicit overlay image (or a
+qualified generic image override). Existing ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQ``
+and module settings are preserved. Profiles without runtime module unloading use the selected ordinary kernel
+unless an overlay image is explicitly supplied. Their hardware tests check
+configfs support on the board.
+
+AD9081/ZCU102, AD9371/ZC706 and ADRV9009/ZC706 declare their JESD clients in
+``runtime_modules``. Their overlay tests boot a modular kernel with the
+matching modules from ``ADIDT_OVERLAY_MODULES_ARCHIVE``. The helper
+``.github/scripts/build-runtime-overlay-kernel.sh`` supports ``zynq``,
+``zynqmp`` and ``microblaze``. For ZynqMP it emits ``Image`` and
+``modules.tar.gz`` from the selected disposable ADI Linux source tree.
+The helper applies the required JESD teardown patch before compilation and
+verifies its direction when checking a previously patched source tree.
+Select those files with ``ADIDT_OVERLAY_KERNEL_IMAGE_ZYNQMP`` and
+``ADIDT_OVERLAY_MODULES_ARCHIVE`` in the per-board runner configuration.
+
+The handoff is a runner-local JSON object with these required fields:
+
+.. code-block:: json
+
+   {
+     "schema_version": 1,
+     "platform": "zynq",
+     "kernel_image": "/absolute/path/to/uImage",
+     "sha256": "<64 hexadecimal characters>",
+     "provenance": {
+       "source": {
+         "ref": "2023_R2",
+         "commit": "86d61468a7856e952c7ca237f798d86d6abd2e27"
+       }
+     }
+   }
+
+CIM additionally records source, toolchain, configuration and packaging
+provenance. pyadi-dt allows extra provenance fields and checks the schema,
+expected platform, selected release source ref/commit, non-empty regular image
+file, absolute image path and
+SHA-256. Keep the manifest and its image together on the runner; copying just
+the JSON does not relocate the absolute image path. Do not modify images while
+tests are running. No consumer-side packaging or implicit cache fallback occurs.
+
+Selection order for each platform is:
+
+#. ``ADIDT_KERNEL_IMAGE_ZYNQ`` / ``ADIDT_KERNEL_IMAGE_ZYNQMP``: explicit prebuilt
+   image, still honored when kernel replacement is otherwise disabled.
+#. ``ADI_XSA_BUILD_KERNEL=0`` (also ``false`` or ``no``): retain the existing
+   kernel and return no replacement, ignoring CIM manifests.
+#. ``ADIDT_KERNEL_ARTIFACTS_ZYNQ`` / ``ADIDT_KERNEL_ARTIFACTS_ZYNQMP``:
+   validate and use the manifest image; missing/invalid input is a hard error.
+
+Hardware collection preflights the selected module profiles before labgrid
+fixtures run, while ``--collect-only`` remains usable without artifacts.
+Overlay-only image overrides take priority for overlay modules, not ordinary
+full-DTB tests. When manually reserving a place outside pytest, perform kernel
+preparation/validation before the explicit ``labgrid-client acquire`` command.
+
+.. _exporter-systemd:
+
+Exporter service
+----------------
+
+Exporters publish the serial, power, JTAG, and other resources used by the
+coordinator. The repository's installation convention uses one
+``labgrid-exporter.service`` per host and ``/etc/labgrid/exporter.yaml``.
+See :doc:`labgrid_exporter` for installation and service operation.
+
+Generated-DTB deployment
+------------------------
+
+A successful stock-image boot does not qualify a generated tree. Tests stamp
+the generated DTB and verify its unique marker in Linux. TFTP tests require a
+strategy that consumes the staged files; recovery strategies that boot only
+the existing SD tree are unsuitable for those tests.
+
+The ZU11EG test uses production JTAG bootstrap followed by U-Boot's serial
+S-record loader. It verifies the complete RAM payload CRC, the marker in both
+U-Boot and Linux, four online CPUs, both PHYs, JESD DATA, and RX DMA.
+See :doc:`hardware_validation` for prerequisites and a local test command.
+
+Full kernel-log collection allows 120 seconds for a busy serial transport to
+deliver the complete ring buffer. This timeout does not truncate diagnostics
+or relax boot, JESD, capture, or kernel-fault checks.
+
+For runtime overlays, use the matching modular kernels, module bundles, and
+base trees described in :doc:`runtime_overlay_validation`. Installing
+``pyadi-dt`` does not update a board's kernel. Overlay tests verify live-tree
+application and removal as well as JESD and DMA on each reload.
+
+Local runs and evidence
+-----------------------
+
+Use the same checkout and prepared environment as CI. From a Bash shell at the
+repository root, set ``LG_ENV`` to an existing private configuration for the
+selected place, then run:
+
+.. code-block:: bash
+
+   export VENV_DIR="$HOME/.cache/adidt-ci/datax-py312-venv"
+   export LG_COORDINATOR=10.0.0.41:20408
+   export BOARD=adrv9009 CARRIER=zc706
+   source .github/scripts/prepare-hardware-env.sh
+   "$VENV_DIR/bin/labgrid-client" -p nemo acquire
+   trap '"$VENV_DIR/bin/labgrid-client" -p nemo release' EXIT
+   "$VENV_DIR/bin/python" -m pytest -p no:genalyzer -v -s \
+       test/hw/xsa/test_adrv9009_zc706_overlay.py \
+       --junitxml=/tmp/adrv9009-overlay.xml
+   "$VENV_DIR/bin/python" .github/scripts/check_hardware_results.py \
+       /tmp/adrv9009-overlay.xml
+
+The shared board fixture powers down the board on teardown, including failed
+boots. Retain failed reports as well as passing evidence. The workflow collects
+generated DTS/DTB/DTBO files, kernel and serial logs, and JUnit reports. Record
+the tested commit and artifact checksums alongside those results.
+
+.. _local-dts-diff:
+
+Local DT-emission parity
+------------------------
+
+Run the System-API parity checks before deploying changed device wiring:
+
+.. code-block:: bash
+
+   python -m pytest test/devices/test_system_adrv9371_zc706_dts_parity.py \
+       test/devices/test_system_ad9081_dts_parity.py
+
+Reference fixtures live under ``test/devices/fixtures``. Refresh a fixture only
+from a reviewed reference or verified generated tree; a parity comparison
+alone does not establish live hardware coverage.
+
+Troubleshooting
+---------------
+
+* **No matching leg:** inspect the reusable workflow's discovery output,
+  coordinator daughter-board/carrier tags, runner routing, and the allowlist.
+* **Empty or skipped-only test results:** check filename selection, pytest
+  feature markers, and missing prerequisites. Do not treat this as a pass.
+* **Wrong tree after boot:** inspect the prepared strategy and staged-file
+  consumption, and retain the marker mismatch. Do not substitute a stock boot.
+* **ZU11EG JTAG reaches the wrong host:** verify exporter resolution.
+  ``ADIDT_JTAG_HOST`` overrides JTAG resource hosts for the test process and
+  restores them during teardown.
+* **Overlay rejected or modules busy:** check the kernel/module match and
+  topology teardown sequence. The harness does not force module removal or
+  bypass the JESD notifier.
+* **FMCDAQ3 serial command truncation:** the BootFabric fixture paces writes at
+  a minimum of 2 ms per byte to accommodate UART Lite's receive FIFO.

@@ -1,0 +1,28 @@
+digraph clock_topology {
+    label="ad9081_zcu102 — clock topology";
+    labelloc=t; labeljust=l;
+    graph [bgcolor="#1e1e1e" fontcolor="#d4d4d4" fontname="monospace" fontsize=11];
+    node [style="filled,rounded" fontname="monospace" fontsize=9 fontcolor=white];
+    edge [fontname="monospace" fontsize=8 arrowsize=0.7];
+    rankdir=LR;
+
+    axi_mxfe_rx_jesd_rx_axi [label="axi_mxfe_rx_jesd_rx_axi" fillcolor="#1a4a20" shape="box"];
+    axi_mxfe_rx_xcvr [label="axi_mxfe_rx_xcvr" fillcolor="#4a1a5c" shape="box"];
+    axi_mxfe_tx_jesd_tx_axi [label="axi_mxfe_tx_jesd_tx_axi" fillcolor="#1a4a20" shape="box"];
+    axi_mxfe_tx_xcvr [label="axi_mxfe_tx_xcvr" fillcolor="#4a1a5c" shape="box"];
+    hmc7044 [label="hmc7044" fillcolor="#1a3d5c" shape="box"];
+    trx0_ad9081 [label="trx0_ad9081\n(ad9081)" fillcolor="#5c1a1a" shape="box"];
+    tx_mxfe_tpl_core_dac_tpl_core [label="tx_mxfe_tpl_core_dac_tpl_core" fillcolor="#2a2a2a" shape="box"];
+    zynqmp_clk [label="zynqmp_clk" fillcolor="#7a3800" shape="ellipse"];
+
+    hmc7044 -> trx0_ad9081 [label="dev_clk[2]" color="#888888" fontcolor="#888888"];
+    zynqmp_clk -> axi_mxfe_rx_jesd_rx_axi [label="s_axi_aclk[71]" color="#555555" style=dashed fontcolor="#666666"];
+    hmc7044 -> axi_mxfe_rx_jesd_rx_axi [label="device_clk[0]" color="#4a9eff" fontcolor="#4a9eff"];
+    axi_mxfe_rx_xcvr -> axi_mxfe_rx_jesd_rx_axi [label="lane_clk[0]" color="#44cc44" fontcolor="#44cc44"];
+    zynqmp_clk -> axi_mxfe_tx_jesd_tx_axi [label="s_axi_aclk[71]" color="#555555" style=dashed fontcolor="#666666"];
+    hmc7044 -> axi_mxfe_tx_jesd_tx_axi [label="device_clk[6]" color="#4a9eff" fontcolor="#4a9eff"];
+    axi_mxfe_tx_xcvr -> axi_mxfe_tx_jesd_tx_axi [label="lane_clk[0]" color="#44cc44" fontcolor="#44cc44"];
+    hmc7044 -> axi_mxfe_rx_xcvr [label="conv[2]" color="#cc9944" fontcolor="#cc9944"];
+    trx0_ad9081 -> tx_mxfe_tpl_core_dac_tpl_core [label="sampl_clk[1]" color="#cc44cc" fontcolor="#cc44cc"];
+    hmc7044 -> axi_mxfe_tx_xcvr [label="conv[12]" color="#cc9944" fontcolor="#cc9944"];
+}
