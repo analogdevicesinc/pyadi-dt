@@ -77,6 +77,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--linux", type=Path, required=True, help="Linux checkout")
     parser.add_argument("--xsa-cache", type=Path, required=True)
+    parser.add_argument(
+        "--local-xsa-dir",
+        type=Path,
+        help="XSAs built from the HDL sources (<project>_<carrier>/system_top.xsa) "
+        "for designs the release ships none for; selected as local/<name>",
+    )
     parser.add_argument("--kernel-tree", type=Path, help="reuse an exported tree")
     parser.add_argument("--only", action="append", default=[], help="glob of boot dirs")
     parser.add_argument("--skip", action="append", default=[], help="glob of boot dirs")
@@ -105,7 +111,12 @@ def main(argv: list[str] | None = None) -> int:
 
     tasks: list[tuple[dict[str, Any], str, str]] = []
     for design in inventory["designs"]:
-        for directory, reference in sorted(design["kuiper_projects"].items()):
+        sources = dict(design["kuiper_projects"])
+        if args.local_xsa_dir:
+            sources.update(
+                {f"local/{k}": v for k, v in design.get("local_xsa", {}).items()}
+            )
+        for directory, reference in sorted(sources.items()):
             if args.only and not any(fnmatch.fnmatch(directory, g) for g in args.only):
                 continue
             if any(fnmatch.fnmatch(directory, g) for g in args.skip):
@@ -114,7 +125,10 @@ def main(argv: list[str] | None = None) -> int:
 
     def seed(task: tuple[dict[str, Any], str, str]) -> Any:
         _, directory, reference = task
-        xsa = args.xsa_cache / directory / "system_top.xsa"
+        if directory.startswith("local/"):
+            xsa = args.local_xsa_dir / directory[6:] / "system_top.xsa"
+        else:
+            xsa = args.xsa_cache / directory / "system_top.xsa"
         try:
             if not xsa.exists():
                 raise SeedError(f"no XSA at {xsa}")
@@ -191,6 +205,11 @@ def main(argv: list[str] | None = None) -> int:
     for design in inventory["designs"]:
         base_dts = bases.get(design["carrier"])
         if design["kuiper_projects"] or not design["kernel_dts"] or not base_dts:
+            continue
+        if args.local_xsa_dir and any(
+            (args.local_xsa_dir / name / "system_top.xsa").exists()
+            for name in design.get("local_xsa", {})
+        ):
             continue
         # Shortest name first: the plain board file, then its variants.
         references = sorted(design["kernel_dts"], key=lambda r: (len(r), r))

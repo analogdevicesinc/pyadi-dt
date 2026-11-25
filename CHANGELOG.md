@@ -6,6 +6,13 @@ All notable changes to pyadi-dt are documented here. The project follows
 ## [Unreleased]
 
 ### Added
+- Coverage gate for designs a release ships no XSA for (PDI-only Versal boot
+  files, MicroBlaze carriers without boot files):
+  `scripts/build_hdl_release_xsas.sh` exports their XSAs from the HDL sources
+  without running synthesis, `ADI_XSA_LOCAL_DIR` points the gate and
+  `scripts/seed_declarative_profile.py --local-xsa-dir` at them, and the
+  inventory's `local_xsa` field names the kernel reference of each default
+  build.
 
 - Inventory of every Xilinx design in the HDL 2026.1 release
   (`adidt/xsa/config/hdl_2026_r1_designs.json`), joined to its kernel

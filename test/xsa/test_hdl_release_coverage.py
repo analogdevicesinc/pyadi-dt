@@ -37,6 +37,12 @@ and ``roles`` stages), ``ADI_KUIPER_CACHE_DIR`` (default
 ``~/.cache/adidt/kuiper``) and ``ADI_XSA_COVERAGE_REPORT`` (path of a JSON
 summary to write).  sdtgen output is cached per XSA under the Kuiper cache
 directory; set ``ADI_XSA_SDTGEN_NO_CACHE=1`` to regenerate it every time.
+
+Designs the release ships no XSA for (PDI-only Versal boot files, MicroBlaze
+carriers without boot files) are gated on an XSA built from the HDL sources:
+``scripts/build_hdl_release_xsas.sh`` writes them, ``ADI_XSA_LOCAL_DIR``
+points the gate at them, and the inventory's ``local_xsa`` names the kernel
+reference of each default build.  Without the directory those cases skip.
 """
 
 from __future__ import annotations
@@ -129,8 +135,14 @@ def test_inventory_is_well_formed():
         assert design["class"] in CLASSES, _design_id(design)
         assert design["status"] in STATUSES, _design_id(design)
         assert design["arch"] in {"arm", "arm64", "microblaze"}, _design_id(design)
-        for dts in design["kuiper_projects"].values():
+        for dts in _references(design).values():
             assert dts in design["kernel_dts"], _design_id(design)
+        if design["kuiper_projects"] or not design["kernel_dts"]:
+            assert not design["local_xsa"], _design_id(design)
+        else:
+            assert list(design["local_xsa"]) == [
+                f"{design['project']}_{design['carrier']}"
+            ], _design_id(design)
 
 
 @pytest.mark.parametrize(
@@ -190,6 +202,8 @@ def test_kuiper_board_manifest_tracks_the_same_release():
 # ---------------------------------------------------------------------------
 
 ONLINE = os.getenv("ADI_XSA_KUIPER_ONLINE") == "1"
+LOCAL_XSA_DIR = os.getenv("ADI_XSA_LOCAL_DIR")
+LOCAL_PREFIX = "local/"
 LINUX_REPO = os.getenv("ADI_LINUX_REPO")
 _REPORT: list[dict[str, Any]] = []
 
@@ -198,10 +212,23 @@ def _stage_can_run(stage: str) -> bool:
     return stage not in {"roles", "bindings"} or bool(LINUX_REPO)
 
 
+def _references(design: dict[str, Any]) -> dict[str, str]:
+    """Return ``{gate key: kernel reference DTS}`` for every XSA of *design*.
+
+    Released XSAs are keyed by their Kuiper boot directory.  Designs the
+    release ships no XSA for are keyed ``local/<project>_<carrier>`` and are
+    read from ``ADI_XSA_LOCAL_DIR`` (see ``scripts/build_hdl_release_xsas.sh``).
+    """
+    return {
+        **design["kuiper_projects"],
+        **{LOCAL_PREFIX + k: v for k, v in design["local_xsa"].items()},
+    }
+
+
 def _gate_cases() -> list[Any]:
     cases = []
     for design in DESIGNS:
-        if not design["kuiper_projects"]:
+        if not _references(design):
             cases.append(
                 pytest.param(
                     design,
@@ -211,7 +238,7 @@ def _gate_cases() -> list[Any]:
                 )
             )
             continue
-        for directory in design["kuiper_projects"]:
+        for directory in _references(design):
             marks = []
             if not _supported(design):
                 marks.append(
@@ -250,7 +277,14 @@ def release_xsas() -> dict[str, Path]:
     )
     tarball = download_boot_partition_release(release=release, cache_dir=cache_dir)
     directories = sorted({k for d in DESIGNS for k in d["kuiper_projects"]})
-    return extract_release_xsas(tarball, directories, cache_dir / f"{release}_xsa")
+    xsas = extract_release_xsas(tarball, directories, cache_dir / f"{release}_xsa")
+    if LOCAL_XSA_DIR:
+        for design in DESIGNS:
+            for name in design["local_xsa"]:
+                built = Path(LOCAL_XSA_DIR) / name / "system_top.xsa"
+                if built.exists():
+                    xsas[LOCAL_PREFIX + name] = built
+    return xsas
 
 
 @pytest.fixture(scope="session")
@@ -395,6 +429,7 @@ def _run_gate(
     stage("xsa")
     assert directory in xsas, f"xsa: {directory}/bootgen_sysfiles.tgz holds no XSA"
     xsa = xsas[directory]
+    reference_dts = _references(design)[directory]
 
     stage("profile")
     topology = XsaParser().parse(xsa)
@@ -402,7 +437,7 @@ def _run_gate(
     record["family"] = topology.inferred_converter_family()
     selected = XsaPipeline()._auto_profile_name(topology)
     record["auto_profile"] = selected
-    declared = _declared_profile(design["kuiper_projects"][directory], topology)
+    declared = _declared_profile(reference_dts, topology)
     if declared is None:
         expected = {design["profile"], *design["extra_profiles"]} - {None}
         explicit = None
@@ -443,7 +478,7 @@ def _run_gate(
     if kernel_tree is not None and declared is not None:
         # A declarative profile carries the reference's nodes verbatim, so
         # what the linter dislikes in the kernel tree is reported, not failed.
-        reference = kernel_tree / design["kuiper_projects"][directory]
+        reference = kernel_tree / reference_dts
         reference_text = preprocess(
             reference, kernel_include_dirs(kernel_tree, reference)
         )
@@ -455,7 +490,7 @@ def _run_gate(
     assert not errors, f"lint: {len(errors)} error(s): {'; '.join(errors[:5])}"
 
     if kernel_tree is not None:
-        reference = kernel_tree / design["kuiper_projects"][directory]
+        reference = kernel_tree / reference_dts
         missing = missing_bindings(
             DtsTree.parse(
                 reference_text
@@ -506,6 +541,11 @@ def test_release_xsa_generates_device_tree(
         "status": design["status"],
         "expected_profile": design["profile"],
     }
+    if directory.startswith(LOCAL_PREFIX) and directory not in release_xsas:
+        pytest.skip(
+            f"no locally built XSA for {directory.removeprefix(LOCAL_PREFIX)}; "
+            "set ADI_XSA_LOCAL_DIR"
+        )
     _REPORT.append(record)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

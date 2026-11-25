@@ -14,6 +14,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -29,6 +30,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -46,6 +48,9 @@
       "kernel_dts_join": "name",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad35xxr_evb_zed": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad3552r-hs.dts"
+      },
       "profile": "ad35xxr_evb_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -61,6 +66,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -79,6 +85,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad4062_ardz_coraz7s": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad4060.dts"
+      },
       "profile": "ad4062_ardz_coraz7s",
       "extra_profiles": [
         "ad4062_ardz_coraz7s_ad4062"
@@ -96,6 +105,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -111,6 +121,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -130,6 +141,7 @@
         "zynq-zed-adv7511-ad4134": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad4134.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad4134_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -145,6 +157,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -172,6 +185,7 @@
         "zynq-zed-adv7511-ad4630-24": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad4630-24.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad4630_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -187,6 +201,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -206,6 +221,7 @@
         "zynq-zed-adv7511-ad4696": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad4696.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad469x_evb_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -221,6 +237,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -236,6 +253,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -251,6 +269,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -266,6 +285,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -281,6 +301,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -300,6 +321,7 @@
         "zynq-zc706-adv7511-ad6676-fmc": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad6676-fmc.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad6676evb_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -315,6 +337,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -338,6 +361,7 @@
         "zynq-coraz7s-ad719x": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7190.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad719x_asdz_coraz7s",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -360,6 +384,7 @@
         "zynq-zed-adv7511-ad7383-4": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7383-4.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad738x_fmc_zed",
       "extra_profiles": [
         "ad738x_fmc_zed_ad7383_4"
@@ -377,6 +402,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -392,6 +418,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -407,6 +434,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -426,6 +454,7 @@
         "zynq-zed-adv7511-ad7768-1-evb": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7768-1-evb.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad77681evb_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -448,6 +477,7 @@
         "zynq-zed-adv7511-ad7768-axi-adc": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7768-axi-adc.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad7768evb_zed",
       "extra_profiles": [
         "ad7768evb_zed_ad7768_axi_adc"
@@ -465,6 +495,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -491,6 +522,9 @@
         "versal-vck190-reva-ad9081-204c-txmode22-rxmode23",
         "versal-vck190-reva-ad9081-204c-txmode23-rxmode25"
       ],
+      "local_xsa": {
+        "ad9081_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9081.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -517,6 +551,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9081_fmca_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_ad9081.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -536,6 +573,9 @@
       "kuiper_projects_without_xsa": [
         "versal-vpk180-reva-ad9081"
       ],
+      "local_xsa": {
+        "ad9081_fmca_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9081.dts"
+      },
       "profile": "ad9081_vpk180",
       "extra_profiles": [],
       "builder": "AD9081Builder",
@@ -557,6 +597,7 @@
         "zynq-zc706-adv7511-ad9081/np12": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9081-np12.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9081_zc706",
       "extra_profiles": [],
       "builder": "AD9081Builder",
@@ -589,6 +630,7 @@
         "zynqmp-zcu102-rev10-ad9081/m8_l4": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9081-m8-l4.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9081_zcu102",
       "extra_profiles": [],
       "builder": "AD9081Builder",
@@ -611,6 +653,7 @@
         "zynqmp-zcu102-rev10-stingray": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-stingray.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9081_fmca_ebz_x_band_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -633,6 +676,9 @@
         "versal-vck190-reva-ad9082",
         "versal-vck190-reva-ad9082-204c-txmode22-rxmode23"
       ],
+      "local_xsa": {
+        "ad9082_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9082.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -650,6 +696,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9082_fmca_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_ad9082.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -671,6 +720,9 @@
         "versal-vpk180-reva-ad9082",
         "versal-vpk180-reva-ad9082/m1_l8"
       ],
+      "local_xsa": {
+        "ad9082_fmca_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9082.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -690,6 +742,7 @@
         "zynq-zc706-adv7511-ad9082": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9082.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9082_fmca_ebz_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -716,6 +769,7 @@
         "zynqmp-zcu102-rev10-ad9082-m4-l8": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9082-m4-l8.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9082_fmca_ebz_zcu102",
       "extra_profiles": [
         "ad9082_zcu102"
@@ -737,6 +791,7 @@
         "zynqmp-zcu102-rev10-ad9083-fmc-ebz": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9083-fmc-ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9083_evb_zcu102",
       "extra_profiles": [
         "ad9083_zcu102"
@@ -758,6 +813,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9084_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9084.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -778,6 +836,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9084_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_ad9084.dts"
+      },
       "profile": "ad9084_vcu118",
       "extra_profiles": [],
       "builder": "AD9084Builder",
@@ -796,6 +857,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9084_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9084.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -817,6 +881,9 @@
       "kernel_dts_join": "name",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad916x_fmc_zcu102": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9161-fmc-ebz_m2_s2.dts"
+      },
       "profile": "ad916x_fmc_zcu102",
       "extra_profiles": [
         "ad916x_fmc_zcu102_ad9162_fmc_ebz_m2_s2",
@@ -839,6 +906,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9208_dual_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_dual_ad9208.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -858,6 +928,9 @@
       "kuiper_projects_without_xsa": [
         "versal-vck190-reva-ad9209"
       ],
+      "local_xsa": {
+        "ad9209_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9209.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -873,6 +946,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -890,6 +964,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9265_fmc_zc706": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9265-fmc-125ebz.dts"
+      },
       "profile": "ad9265_fmc_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -909,6 +986,7 @@
         "zynq-zed-adv7511-ad9265-fmc-125ebz": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad9265-fmc-125ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9265_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -928,6 +1006,7 @@
         "zynq-zc706-adv7511-ad9434-fmc-500ebz": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9434-fmc-500ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9434_fmc_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -947,6 +1026,7 @@
         "zynq-zed-adv7511-ad9434-fmc-500ebz": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad9434-fmc-500ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9434_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -966,6 +1046,7 @@
         "zynqmp-zcu102-rev10-ad9467-fmc-250ebz": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9467-fmc-250ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9467_fmc_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -985,6 +1066,7 @@
         "zynq-zed-adv7511-ad9467-fmc-250ebz": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad9467-fmc-250ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9467_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1000,6 +1082,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1017,6 +1100,9 @@
       "kernel_dts_join": "tag-fuzzy",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad9694_fmc_zcu102": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9694.dts"
+      },
       "profile": "ad9694_fmc_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1036,6 +1122,7 @@
         "zynqmp-zcu102-rev10-ad9695": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9695.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9695_fmc_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1055,6 +1142,7 @@
         "zynqmp-zcu102-rev10-ad9783": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9783.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "ad9783_ebz_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1070,6 +1158,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1122,6 +1211,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "ad_quadmxfe1_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1137,6 +1229,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1152,6 +1245,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1167,6 +1261,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1186,6 +1281,7 @@
         "zynq-zed-adv7511-adaq8092": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-adaq8092.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adaq8092_fmc_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1201,6 +1297,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1216,6 +1313,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1238,6 +1336,7 @@
         "zynq-zc706-adv7511-adrv9002": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-adrv9002.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9001_zc706",
       "extra_profiles": [
         "adrv9002_zc706",
@@ -1269,6 +1368,7 @@
         "zynqmp-zcu102-rev10-adrv9002/boot_bin_LVDS": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9002.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9001_zcu102",
       "extra_profiles": [
         "adrv9001_zcu102_cmoslvdsn0",
@@ -1294,6 +1394,7 @@
         "zynq-zed-adv7511-adrv9002": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-adrv9002.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9001_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1309,6 +1410,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1326,6 +1428,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "adrv9009_kcu105": "arch/microblaze/boot/dts/kcu105_adrv9009.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1354,6 +1459,7 @@
         "zynq-zc706-adv7511-adrv9009": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-adrv9009-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9009_zc706",
       "extra_profiles": [
         "adrv9008_zc706"
@@ -1384,6 +1490,7 @@
         "zynqmp-zcu102-rev10-adrv9009": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9009_zcu102",
       "extra_profiles": [
         "adrv9008_zcu102"
@@ -1415,6 +1522,7 @@
         "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb": "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9009_zu11eg",
       "extra_profiles": [],
       "builder": "ADRV9009Builder",
@@ -1447,6 +1555,7 @@
         "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8": "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-sync-fmcomms8-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9009zu11eg_adrv2crr_fmcomms8",
       "extra_profiles": [
         "adrv9009zu11eg_adrv2crr_fmcomms8_rxm4_rxl4_rxs1_txm2_txl4_txs1_rxosm2_rxosl4_rxoss1",
@@ -1473,6 +1582,7 @@
         "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave": "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm-xmicrowave.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9009_zu11eg",
       "extra_profiles": [],
       "builder": "ADRV9009Builder",
@@ -1498,6 +1608,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "adrv9026_vcu118": "arch/microblaze/boot/dts/vcu118_adrv9025.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1525,6 +1638,7 @@
         "zynqmp-zcu102-rev10-adrv9025": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9025.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9026_zcu102",
       "extra_profiles": [
         "adrv9025_zcu102"
@@ -1542,6 +1656,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1557,6 +1672,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9040_zcu102",
       "extra_profiles": [
         "adrv9040_zcu102_nls"
@@ -1578,6 +1694,7 @@
         "zynq-adrv9361-z7035-bob/cmos": "arch/arm/boot/dts/xilinx/zynq-adrv9361-z7035-bob-cmos.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9361z7035_ccbob_cmos",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1597,6 +1714,7 @@
         "zynq-adrv9361-z7035-bob/lvds": "arch/arm/boot/dts/xilinx/zynq-adrv9361-z7035-bob.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9361z7035_ccbob_lvds",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1618,6 +1736,7 @@
         "zynq-adrv9361-z7035-fmc": "arch/arm/boot/dts/xilinx/zynq-adrv9361-z7035-fmc.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9361z7035_ccfmc_lvds",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1637,6 +1756,7 @@
         "zynq-adrv9364-z7020-bob/cmos": "arch/arm/boot/dts/xilinx/zynq-adrv9364-z7020-bob-cmos.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9364z7020_ccbob_cmos",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1656,6 +1776,7 @@
         "zynq-adrv9364-z7020-bob/lvds": "arch/arm/boot/dts/xilinx/zynq-adrv9364-z7020-bob.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv9364z7020_ccbob_lvds",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1673,6 +1794,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "adrv9371x_kcu105": "arch/microblaze/boot/dts/kcu105_adrv9371x.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1695,6 +1819,7 @@
         "zynq-zc706-adv7511-adrv937x": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-adrv9371-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv937x_zc706",
       "extra_profiles": [],
       "builder": "ADRV937xBuilder",
@@ -1717,6 +1842,7 @@
         "zynqmp-zcu102-rev10-adrv937x": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9371-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adrv937x_zcu102",
       "extra_profiles": [],
       "builder": "ADRV937xBuilder",
@@ -1736,6 +1862,7 @@
         "zynq-zc702-adv7511": "arch/arm/boot/dts/xilinx/zynq-zc702-adv7511.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adv7511_zc702",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1755,6 +1882,7 @@
         "zynq-zc706-adv7511": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adv7511_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1776,6 +1904,7 @@
         "zynq-zed-otg": "arch/arm/boot/dts/xilinx/zynq-zed-otg.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "adv7511_zed",
       "extra_profiles": [
         "adv7511_zed_otg"
@@ -1797,6 +1926,7 @@
         "zynq-zed-adv7511-cn0363": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-cn0363.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0363_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1820,6 +1950,7 @@
         "zynq-zc706-adv7511-cn0506-rmii": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-cn0506-rmii.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0506_zc706",
       "extra_profiles": [
         "cn0506_zc706_intfcfgmii",
@@ -1846,6 +1977,7 @@
         "zynqmp-zcu102-rev10-cn0506-rmii": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-cn0506-rmii.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0506_zcu102",
       "extra_profiles": [
         "cn0506_zcu102_intfcfgmii",
@@ -1872,6 +2004,7 @@
         "zynq-zed-adv7511-cn0506-rmii": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-cn0506-rmii.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0506_zed",
       "extra_profiles": [
         "cn0506_zed_intfcfgmii",
@@ -1894,6 +2027,7 @@
         "zynq-coraz7s-cn0540": "arch/arm/boot/dts/xilinx/zynq-coraz7s-cn0540.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0540_coraz7s",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1909,6 +2043,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1924,6 +2059,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1943,6 +2079,7 @@
         "zynq-zed-adv7511-cn0577": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-cn0577.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0577_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1962,6 +2099,7 @@
         "zynq-coraz7s-cn0579_i2c": "arch/arm/boot/dts/xilinx/zynq-coraz7s-cn0579_i2c.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "cn0579_coraz7s",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -1977,6 +2115,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -1992,6 +2131,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2013,6 +2153,7 @@
         "zynq-zc706-adv7511-ad9172-fmc-ebz": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9172-fmc-ebz.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "dac_fmc_ebz_zc706",
       "extra_profiles": [
         "dac_fmc_ebz_zc706_ad9172_fmc_ebz"
@@ -2044,6 +2185,7 @@
         "zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9172-fmc-ebz-mode4.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "dac_fmc_ebz_zcu102",
       "extra_profiles": [
         "dac_fmc_ebz_zcu102_adidacdevicead9144_adidacmode04",
@@ -2065,6 +2207,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "daq2_kcu105": "arch/microblaze/boot/dts/kcu105_fmcdaq2.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2084,6 +2229,7 @@
         "zynq-zc706-adv7511-fmcdaq2": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-fmcdaq2.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcdaq2_zc706",
       "extra_profiles": [],
       "builder": "FMCDAQ2Builder",
@@ -2105,6 +2251,7 @@
         "zynqmp-zcu102-rev10-fmcdaq2_m4_l4": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-fmcdaq2_m4_l4.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcdaq2_zcu102",
       "extra_profiles": [],
       "builder": "FMCDAQ2Builder",
@@ -2122,6 +2269,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "daq3_kcu105": "arch/microblaze/boot/dts/kcu105_fmcdaq3.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2139,6 +2289,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "daq3_vcu118": "arch/microblaze/boot/dts/vcu118_fmcdaq3.dts"
+      },
       "profile": "fmcdaq3_vcu118",
       "extra_profiles": [],
       "builder": "FMCDAQ3Builder",
@@ -2159,6 +2312,7 @@
         "zynq-zc706-adv7511-fmcdaq3-revC": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-fmcdaq3-revC.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcdaq3_zc706",
       "extra_profiles": [],
       "builder": "FMCDAQ3Builder",
@@ -2178,6 +2332,7 @@
         "zynqmp-zcu102-rev10-fmcdaq3": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-fmcdaq3.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcdaq3_zcu102",
       "extra_profiles": [],
       "builder": "FMCDAQ3Builder",
@@ -2197,6 +2352,7 @@
         "zynq-zc706-adv7511-fmcomms11": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-fmcomms11.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms11_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2215,6 +2371,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "fmcomms2_kcu105": "arch/microblaze/boot/dts/kcu105_fmcomms4.dts"
+      },
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2236,6 +2395,7 @@
         "zynq-zc702-adv7511-ad936x-fmcomms2-3-4": "arch/arm/boot/dts/xilinx/zynq-zc702-adv7511-ad9361-fmcomms2-3.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms2_zc702",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2257,6 +2417,7 @@
         "zynq-zc706-adv7511-ad936x-fmcomms2-3-4": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9361-fmcomms2-3.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms2_zc706",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2277,6 +2438,7 @@
         "zynqmp-zcu102-rev10-ad936x-fmcomms2-3-4": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9361-fmcomms2-3.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms2_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2299,6 +2461,7 @@
         "zynq-zed-adv7511-ad936x-fmcomms2-3-4": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad9361-fmcomms2-3.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms2_zed",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2319,6 +2482,7 @@
         "zynq-zc702-adv7511-ad9361-fmcomms5": "arch/arm/boot/dts/xilinx/zynq-zc702-adv7511-ad9361-fmcomms5.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms5_zc702",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2340,6 +2504,7 @@
         "zynq-zc706-adv7511-ad9361-fmcomms5-ext-lo-adf5355": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9361-fmcomms5-ext-lo-adf5355.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms5_zc706",
       "extra_profiles": [
         "fmcomms5_zc706_ad9361_fmcomms5_ext_lo_adf5355"
@@ -2363,6 +2528,7 @@
         "zynqmp-zcu102-rev10-ad9361-fmcomms5-ext-lo-adf5355": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9361-fmcomms5-ext-lo-adf5355.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms5_zcu102",
       "extra_profiles": [
         "fmcomms5_zcu102_ad9361_fmcomms5_ext_lo_adf5355"
@@ -2388,6 +2554,7 @@
         "zynqmp-zcu102-rev10-adrv9009-fmcomms8": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv9009-fmcomms8-jesd204-fsm.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "fmcomms8_zcu102",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
@@ -2403,6 +2570,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2418,6 +2586,7 @@
       "kernel_dts_join": null,
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": null,
       "extra_profiles": [],
       "builder": null,
@@ -2463,6 +2632,7 @@
         "zynq-coraz7s-adaq4003": "arch/arm/boot/dts/xilinx/zynq-coraz7s-adaq4003.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "pulsar_adc_coraz7s",
       "extra_profiles": [
         "pulsar_adc_coraz7s_ad7689_ardz",
@@ -2518,6 +2688,7 @@
         "pulsar_adc_zed/zynq-zed-adv7511-adaq4003": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-adaq4003.dts"
       },
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {},
       "profile": "pulsar_adc_zed",
       "extra_profiles": [
         "pulsar_adc_zed_ad40xxadaq400xn0",
@@ -2550,6 +2721,9 @@
       "kernel_dts_join": "tag",
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
+      "local_xsa": {
+        "pulsar_lvds_adc_zed": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7625.dts"
+      },
       "profile": "pulsar_lvds_adc_zed",
       "extra_profiles": [
         "pulsar_lvds_adc_zed_ad7960"
