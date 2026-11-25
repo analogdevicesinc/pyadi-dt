@@ -143,6 +143,16 @@ FAMILY_BUILDERS: dict[str, str | None] = {
 # values are kernel DTS basenames (without ".dts").
 DTS_OVERRIDES: dict[str, list[str]] = {}
 
+# Designs the release ships no XSA for are checked against one built from the
+# HDL sources with default parameters (scripts/build_hdl_release_xsas.sh).
+# Keys are "project/carrier"; values name the kernel DTS (basename without
+# ".dts") that describes that default build.  Without an entry the shortest
+# reference name is used, which is the plain board file.
+LOCAL_XSA_REFERENCES: dict[str, str] = {
+    "adrv9026/vcu118": "vcu118_adrv9026",
+    "fmcomms2/kcu105": "kcu105_fmcomms2-3",
+}
+
 _PROJECT_SUFFIX_RE = re.compile(
     r"_(fmca_ebz|fmc_evb|fmc_ebz|fmcz|fmc|evb|ebz|sdz|ardz|asdz)$"
 )
@@ -536,6 +546,14 @@ def build_inventory(args: argparse.Namespace) -> dict[str, Any]:
         profile, extra_profiles, builder, status = resolve_support(
             project, carrier, profiles
         )
+        kernel_dts = [dts_files[d] for d in dts_names]
+        local_xsa = {}
+        if kernel_dts and not kuiper:
+            wanted = LOCAL_XSA_REFERENCES.get(f"{project}/{carrier}")
+            local_xsa[f"{project}_{carrier}"] = next(
+                (d for d in kernel_dts if Path(d).stem == wanted),
+                min(kernel_dts, key=lambda d: (len(d), d)),
+            )
         reasons = []
         if not dts_names:
             reasons.append("no kernel reference DTS found for this design")
@@ -551,10 +569,11 @@ def build_inventory(args: argparse.Namespace) -> dict[str, Any]:
                 "carrier": carrier,
                 "arch": CARRIER_ARCH.get(carrier, "unknown"),
                 "class": classes[project],
-                "kernel_dts": [dts_files[d] for d in dts_names],
+                "kernel_dts": kernel_dts,
                 "kernel_dts_join": join_method,
                 "kuiper_projects": kuiper,
                 "kuiper_projects_without_xsa": no_xsa,
+                "local_xsa": local_xsa,
                 "profile": profile,
                 "extra_profiles": extra_profiles,
                 "builder": builder,
