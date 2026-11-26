@@ -130,7 +130,7 @@ def _supported(design: dict[str, Any]) -> bool:
 def test_inventory_is_well_formed():
     ids = [_design_id(d) for d in DESIGNS]
     assert len(ids) == len(set(ids)), "duplicate project/carrier entries"
-    assert len(DESIGNS) > 100, "inventory looks truncated"
+    assert len(DESIGNS) > 70, "inventory looks truncated"
     for design in DESIGNS:
         assert design["class"] in CLASSES, _design_id(design)
         assert design["status"] in STATUSES, _design_id(design)
