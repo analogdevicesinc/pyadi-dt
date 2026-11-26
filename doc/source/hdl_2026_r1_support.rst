@@ -22,7 +22,7 @@ Profile only
 Not supported
    No profile; the reason column says which input is missing, if any.
 
-49 not supported, 10 profile, not validated, 65 validated of 124 designs.
+35 not supported, 24 profile, not validated, 65 validated of 124 designs.
 
 .. list-table::
    :header-rows: 1
@@ -199,20 +199,20 @@ Not supported
    * - ``ad9081_fmca_ebz``
      - vck190
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9081_fmca_ebz_vck190``
      - Kuiper boot files hold no XSA (PDI only)
    * - ``ad9081_fmca_ebz``
      - vcu118
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9081_fmca_ebz_vcu118``
      - no boot files for this design in the Kuiper boot partition
    * - ``ad9081_fmca_ebz``
      - vpk180
      - jesd
      - Profile, not validated
-     - ``ad9081_vpk180``
+     - ``ad9081_fmca_ebz_vpk180``
      - Kuiper boot files hold no XSA (PDI only)
    * - ``ad9081_fmca_ebz``
      - zc706
@@ -235,20 +235,20 @@ Not supported
    * - ``ad9082_fmca_ebz``
      - vck190
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9082_fmca_ebz_vck190``
      - Kuiper boot files hold no XSA (PDI only)
    * - ``ad9082_fmca_ebz``
      - vcu118
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9082_fmca_ebz_vcu118``
      - no boot files for this design in the Kuiper boot partition
    * - ``ad9082_fmca_ebz``
      - vpk180
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9082_fmca_ebz_vpk180``
      - Kuiper boot files hold no XSA (PDI only)
    * - ``ad9082_fmca_ebz``
      - zc706
@@ -271,8 +271,8 @@ Not supported
    * - ``ad9084_ebz``
      - vck190
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9084_ebz_vck190``
      - no boot files for this design in the Kuiper boot partition
    * - ``ad9084_ebz``
      - vcu118
@@ -283,8 +283,8 @@ Not supported
    * - ``ad9084_ebz``
      - vpk180
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9084_ebz_vpk180``
      - no boot files for this design in the Kuiper boot partition
    * - ``ad916x_fmc``
      - zcu102
@@ -295,14 +295,14 @@ Not supported
    * - ``ad9208_dual_ebz``
      - vcu118
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9208_dual_ebz_vcu118``
      - no boot files for this design in the Kuiper boot partition
    * - ``ad9209_fmca_ebz``
      - vck190
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``ad9209_fmca_ebz_vck190``
      - Kuiper boot files hold no XSA (PDI only)
    * - ``ad9213_evb``
      - vcu118
@@ -481,8 +481,8 @@ Not supported
    * - ``adrv9026``
      - vcu118
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``adrv9026_vcu118``
      - no boot files for this design in the Kuiper boot partition
    * - ``adrv9026``
      - zcu102
@@ -535,8 +535,8 @@ Not supported
    * - ``adrv9371x``
      - kcu105
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``adrv9371x_kcu105``
      - no boot files for this design in the Kuiper boot partition
    * - ``adrv9371x``
      - zc706
@@ -649,8 +649,8 @@ Not supported
    * - ``daq2``
      - kcu105
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``daq2_kcu105``
      - no boot files for this design in the Kuiper boot partition
    * - ``daq2``
      - zc706
@@ -667,8 +667,8 @@ Not supported
    * - ``daq3``
      - kcu105
      - jesd
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``daq3_kcu105``
      - no boot files for this design in the Kuiper boot partition
    * - ``daq3``
      - vcu118
@@ -697,8 +697,8 @@ Not supported
    * - ``fmcomms2``
      - kcu105
      - transceiver_lvds
-     - Not supported
-     - 
+     - Profile, not validated
+     - ``fmcomms2_kcu105``
      - no boot files for this design in the Kuiper boot partition
    * - ``fmcomms2``
      - zc702

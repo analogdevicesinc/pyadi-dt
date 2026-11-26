@@ -13,7 +13,9 @@ from ..exceptions import SdtgenError, SdtgenNotFoundError
 class SdtgenRunner:
     """Invokes sdtgen as a subprocess to generate a base SDT/DTS from an XSA file."""
 
-    _CPU_CLUSTER_RE = re.compile(r"(\bcpus_a53\s*:\s*)cpus-a53@0(\s*\{)")
+    _CPU_CLUSTER_RE = re.compile(r"(\bcpus_a(?:53|72)\s*:\s*)cpus-a(?:53|72)@0(\s*\{)")
+    # Versal trees name the APU interrupt controller after its Cortex-A72.
+    _VERSAL_GIC_RE = re.compile(r"\bgic_a72\s*:")
     _CPU_CLUSTER_MB_RE = re.compile(
         r"(\bcpus_microblaze_\d+\s*:\s*)cpus_microblaze@\d+(\s*\{)"
     )
@@ -262,13 +264,18 @@ class SdtgenRunner:
 
     def _postprocess_generated_tree(self, output_dir: Path) -> None:
         """Apply all normalization patches to every DTS/DTSI file in *output_dir*."""
-        for path in sorted(output_dir.glob("*.dts")) + sorted(
-            output_dir.glob("*.dtsi")
-        ):
+        paths = sorted(output_dir.glob("*.dts")) + sorted(output_dir.glob("*.dtsi"))
+        versal = any(self._VERSAL_GIC_RE.search(path.read_text()) for path in paths)
+        gic_label = "gic_a72" if versal else "gic_a53"
+        for path in paths:
             text = path.read_text()
-            updated = self._normalize_cpu_and_interrupt_nodes(text)
+            updated = self._normalize_cpu_and_interrupt_nodes(text, gic_label)
             if path.name == "system-top.dts":
                 updated = self._ensure_board_ethernet_phy(updated)
+                if versal:
+                    updated = self._disable_versal_foreign_nodes(
+                        updated, [other.read_text() for other in paths]
+                    )
             if updated != text:
                 self._write_text_allow_readonly(path, updated)
 
@@ -292,6 +299,55 @@ class SdtgenRunner:
             + f"\t\treg = <{address}>;\n\t}};\n}};\n"
         )
 
+    # A labelled node and its body up to (not including) the first child node
+    # or the closing brace: enough to read the node's own ``compatible``.
+    _LABELLED_NODE_RE = re.compile(
+        r"^[ \t]*([A-Za-z_]\w*)\s*:\s*[\w,.+-]+(?:@[0-9A-Fa-f]+)?\s*\{(?=([^{}]*))",
+        re.MULTILINE,
+    )
+    # Drivers Linux would bind although the hardware is not the APU's to
+    # touch.  Each of these stopped a VPK180 from booting:
+    #   - the IPI mailboxes include the PMC's and PSM's own channels, and the
+    #     TMR cores sit in the PMC and PSM; touching either raises an
+    #     exception in the secure monitor;
+    #   - the kernel reference trees describe no mailbox at all.
+    _VERSAL_FOREIGN_COMPATIBLES = (
+        "xlnx,zynqmp-ipi-mailbox",
+        "xlnx,tmr-manager-1.0",
+        "xlnx,tmr-inject-1.0",
+    )
+    # The RPU's GIC shares the APU GIC's address and breaks it when probed;
+    # the ITS has no backing here and times out.  Both are off in the kernel
+    # trees.
+    _VERSAL_FOREIGN_LABELS = ("gic_r5", "gic_its")
+    _VERSAL_FOREIGN_MARKER = "/* pyadi-dt: not usable from the APU running Linux */"
+
+    def _disable_versal_foreign_nodes(self, top: str, sources: list[str]) -> str:
+        """Append overrides that turn off nodes Linux must not drive on Versal.
+
+        sdtgen describes the whole device for every processor in it.  Linux
+        only runs on the APU, so *top* (``system-top.dts``, which includes the
+        other *sources*) gets ``status = "disabled"`` for the nodes that
+        belong to the platform firmware or to the RPU.
+        """
+        if self._VERSAL_FOREIGN_MARKER in top:
+            return top
+        labels: list[str] = []
+        for text in sources:
+            for label, body in self._LABELLED_NODE_RE.findall(text):
+                foreign = label in self._VERSAL_FOREIGN_LABELS or any(
+                    f'"{compatible}"' in body
+                    for compatible in self._VERSAL_FOREIGN_COMPATIBLES
+                )
+                if foreign and label not in labels:
+                    labels.append(label)
+        if not labels:
+            return top
+        overrides = "".join(
+            f'&{label} {{\n\tstatus = "disabled";\n}};\n' for label in sorted(labels)
+        )
+        return f"{top.rstrip()}\n\n{self._VERSAL_FOREIGN_MARKER}\n{overrides}"
+
     _CHOSEN_RE = re.compile(r"(chosen\s*\{)(.*?)(\n\s*\};)", re.DOTALL)
 
     _ZYNQ_ROOT_COMPAT_RE = re.compile(
@@ -299,11 +355,17 @@ class SdtgenRunner:
         re.MULTILINE,
     )
 
-    def _normalize_cpu_and_interrupt_nodes(self, text: str) -> str:
-        """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup."""
+    def _normalize_cpu_and_interrupt_nodes(
+        self, text: str, gic_label: str = "gic_a53"
+    ) -> str:
+        """Apply CPU cluster rename, IPI disable, SDHCI1/GEM3 fixups, and memory-node cleanup.
+
+        The interrupt multiplexer sdtgen emits is replaced by *gic_label*, the
+        APU interrupt controller of the tree (``gic_a72`` on Versal).
+        """
         normalized = self._CPU_CLUSTER_RE.sub(r"\1cpus\2", text)
         normalized = self._CPU_CLUSTER_MB_RE.sub(r"\1cpus\2", normalized)
-        normalized = normalized.replace("<&imux>", "<&gic_a53>")
+        normalized = normalized.replace("<&imux>", f"<&{gic_label}>")
         normalized = self._IPI_STATUS_RE.sub(r"\1disabled\3", normalized)
         normalized = self._SMMU_STATUS_RE.sub(r"\1disabled\2", normalized)
         normalized = self._SDHCI1_RE.sub(self._ensure_sdhci1_props, normalized)
@@ -338,7 +400,7 @@ class SdtgenRunner:
         return f"{head}{updated}{tail}"
 
     _DDR_COMPAT_RE = re.compile(
-        r"xlnx,(?:ps7-ddr-[\d.]+[a-z]?|psu-ddr-1\.0|ddr4-[\d.]+)"
+        r"xlnx,(?:ps7-ddr-[\d.]+[a-z]?|psu-ddr-1\.0|ddr4-[\d.]+|axi-noc-[\d.]+)"
     )
     _MEM_REG_4CELL_RE = re.compile(
         r"^(\s*reg\s*=\s*<)0x0\s+(0x[0-9a-fA-F]+)\s+0x0\s+(0x[0-9a-fA-F]+)(>.*)$",
@@ -348,7 +410,8 @@ class SdtgenRunner:
     def _filter_memory_node(self, match: re.Match[str]) -> str:
         """Fix DDR memory nodes and strip ``device_type`` from non-DDR nodes.
 
-        For DDR nodes (``xlnx,psu-ddr-*`` and ``xlnx,ddr4-*``):
+        For DDR nodes (``xlnx,psu-ddr-*``, ``xlnx,ddr4-*`` and the Versal
+        ``xlnx,axi-noc-*``):
         - Ensure ``device_type = "memory"`` is present (Linux requires it).
         - Preserve ZynqMP DDR address/size cells; collapse the redundant high
           cells only for the 32-bit fabric DDR case.
@@ -368,7 +431,8 @@ class SdtgenRunner:
                     count=1,
                 )
             # Collapse 4-cell reg to 2-cell (strip leading zero cells)
-            if "xlnx,psu-ddr" not in node:
+            # ZynqMP and Versal (NoC) buses have two address cells: keep them.
+            if "xlnx,psu-ddr" not in node and "xlnx,axi-noc" not in node:
                 node = self._MEM_REG_4CELL_RE.sub(r"\1\2 \3\4", node)
             return node
         return re.sub(

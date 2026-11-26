@@ -525,10 +525,10 @@
       "local_xsa": {
         "ad9081_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9081.dts"
       },
-      "profile": null,
+      "profile": "ad9081_fmca_ebz_vck190",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
     },
     {
@@ -554,10 +554,10 @@
       "local_xsa": {
         "ad9081_fmca_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_ad9081.dts"
       },
-      "profile": null,
+      "profile": "ad9081_fmca_ebz_vcu118",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -576,9 +576,11 @@
       "local_xsa": {
         "ad9081_fmca_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9081.dts"
       },
-      "profile": "ad9081_vpk180",
-      "extra_profiles": [],
-      "builder": "AD9081Builder",
+      "profile": "ad9081_fmca_ebz_vpk180",
+      "extra_profiles": [
+        "ad9081_vpk180"
+      ],
+      "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
     },
@@ -679,10 +681,10 @@
       "local_xsa": {
         "ad9082_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9082.dts"
       },
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vck190",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
     },
     {
@@ -699,10 +701,10 @@
       "local_xsa": {
         "ad9082_fmca_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_ad9082.dts"
       },
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vcu118",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -723,10 +725,10 @@
       "local_xsa": {
         "ad9082_fmca_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9082.dts"
       },
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vpk180",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
     },
     {
@@ -816,10 +818,10 @@
       "local_xsa": {
         "ad9084_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9084.dts"
       },
-      "profile": null,
+      "profile": "ad9084_ebz_vck190",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -860,10 +862,10 @@
       "local_xsa": {
         "ad9084_ebz_vpk180": "arch/arm64/boot/dts/xilinx/versal-vpk180-reva-ad9084.dts"
       },
-      "profile": null,
+      "profile": "ad9084_ebz_vpk180",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -909,10 +911,10 @@
       "local_xsa": {
         "ad9208_dual_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_dual_ad9208.dts"
       },
-      "profile": null,
+      "profile": "ad9208_dual_ebz_vcu118",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -931,10 +933,10 @@
       "local_xsa": {
         "ad9209_fmca_ebz_vck190": "arch/arm64/boot/dts/xilinx/versal-vck190-reva-ad9209.dts"
       },
-      "profile": null,
+      "profile": "ad9209_fmca_ebz_vck190",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
     },
     {
@@ -1609,12 +1611,12 @@
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
       "local_xsa": {
-        "adrv9026_vcu118": "arch/microblaze/boot/dts/vcu118_adrv9025.dts"
+        "adrv9026_vcu118": "arch/microblaze/boot/dts/vcu118_adrv9026.dts"
       },
-      "profile": null,
+      "profile": "adrv9026_vcu118",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -1797,10 +1799,10 @@
       "local_xsa": {
         "adrv9371x_kcu105": "arch/microblaze/boot/dts/kcu105_adrv9371x.dts"
       },
-      "profile": null,
+      "profile": "adrv9371x_kcu105",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -2210,10 +2212,10 @@
       "local_xsa": {
         "daq2_kcu105": "arch/microblaze/boot/dts/kcu105_fmcdaq2.dts"
       },
-      "profile": null,
+      "profile": "daq2_kcu105",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -2272,10 +2274,10 @@
       "local_xsa": {
         "daq3_kcu105": "arch/microblaze/boot/dts/kcu105_fmcdaq3.dts"
       },
-      "profile": null,
+      "profile": "daq3_kcu105",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
@@ -2372,12 +2374,12 @@
       "kuiper_projects": {},
       "kuiper_projects_without_xsa": [],
       "local_xsa": {
-        "fmcomms2_kcu105": "arch/microblaze/boot/dts/kcu105_fmcomms4.dts"
+        "fmcomms2_kcu105": "arch/microblaze/boot/dts/kcu105_fmcomms2-3.dts"
       },
-      "profile": null,
+      "profile": "fmcomms2_kcu105",
       "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
+      "builder": "DeclarativeBuilder",
+      "status": "full",
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {

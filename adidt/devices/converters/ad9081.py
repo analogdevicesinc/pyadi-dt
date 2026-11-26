@@ -75,10 +75,10 @@ def ad9081_converter_select(direction: str, m: int, link_mode: int) -> str:
         )
     if direction == "rx" and link_mode == 26 and m == 8:
         return (
-            f"<&ad9081_{side}_fddc_chan0 FDDC_I>, <&ad9081_{side}_fddc_chan0 FDDC_Q>, "
-            f"<&ad9081_{side}_fddc_chan1 FDDC_I>, <&ad9081_{side}_fddc_chan1 FDDC_Q>, "
-            f"<&ad9081_{side}_fddc_chan4 FDDC_I>, <&ad9081_{side}_fddc_chan4 FDDC_Q>, "
-            f"<&ad9081_{side}_fddc_chan5 FDDC_I>, <&ad9081_{side}_fddc_chan5 FDDC_Q>"
+            f"<&ad9081_{side}_fddc_chan0 0>, <&ad9081_{side}_fddc_chan0 1>, "
+            f"<&ad9081_{side}_fddc_chan1 0>, <&ad9081_{side}_fddc_chan1 1>, "
+            f"<&ad9081_{side}_fddc_chan4 0>, <&ad9081_{side}_fddc_chan4 1>, "
+            f"<&ad9081_{side}_fddc_chan5 0>, <&ad9081_{side}_fddc_chan5 1>"
         )
     if direction == "tx" and link_mode == 17 and m == 4:
         return (
