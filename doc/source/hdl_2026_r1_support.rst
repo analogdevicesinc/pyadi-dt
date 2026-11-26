@@ -3,8 +3,8 @@
 HDL 2026.1 design support
 =========================
 
-Every Xilinx project/carrier pair in the HDL ``hdl_2026_r1`` release
-(commit ``4840c81f2af1``), and how far the XSA pipeline
+Every Xilinx project/carrier pair in the HDL ``2026.1.0`` release
+(commit ``b62abeff22d6``), and how far the XSA pipeline
 supports it.  Reference device trees are from Linux commit
 ``b486fe824008``; XSAs are from the Kuiper
 ``2026_r1`` boot partition.
@@ -22,7 +22,7 @@ Profile only
 Not supported
    No profile; the reason column says which input is missing, if any.
 
-35 not supported, 24 profile, not validated, 65 validated of 124 designs.
+17 profile, not validated, 62 validated of 79 designs.
 
 .. list-table::
    :header-rows: 1
@@ -34,60 +34,6 @@ Not supported
      - Support
      - Profile
      - Notes
-   * - ``ad353xr``
-     - coraz7s
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad353xr``
-     - zed
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad35xxr_evb``
-     - zed
-     - parallel_if
-     - Profile, not validated
-     - ``ad35xxr_evb_zed``
-     - no boot files for this design in the Kuiper boot partition
-   * - ``ad4052_ardz``
-     - coraz7s
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad4062_ardz``
-     - coraz7s
-     - i3c
-     - Profile, not validated
-     - ``ad4062_ardz_coraz7s``
-     - no boot files for this design in the Kuiper boot partition
-   * - ``ad4080_fmc_evb``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad4110``
-     - zed
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad4134_fmc``
-     - zed
-     - spi_engine
-     - Validated
-     - ``ad4134_fmc_zed``
-     - 1 boot directory checked
-   * - ``ad4170_asdz``
-     - coraz7s
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``ad4630_fmc``
      - zed
      - spi_engine
@@ -95,64 +41,16 @@ Not supported
      - ``ad4630_fmc_zed``
      - 1 boot directory checked
    * - ``ad469x_evb``
-     - coraz7s
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad469x_evb``
      - zed
      - spi_engine
      - Validated
      - ``ad469x_evb_zed``
      - 1 boot directory checked
-   * - ``ad485x_fmcz``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad4880_fmc_evb``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad5758_sdz``
-     - zed
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad5766_sdz``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad57xx_ardz``
-     - coraz7s
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``ad6676evb``
      - zc706
      - jesd
      - Validated
      - ``ad6676evb_zc706``
-     - 1 boot directory checked
-   * - ``ad7134_fmc``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad719x_asdz``
-     - coraz7s
-     - misc
-     - Validated
-     - ``ad719x_asdz_coraz7s``
      - 1 boot directory checked
    * - ``ad738x_fmc``
      - zed
@@ -160,24 +58,6 @@ Not supported
      - Validated
      - ``ad738x_fmc_zed``
      - 2 boot directories checked
-   * - ``ad7405_fmc``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad7606x_fmc``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad7616_sdz``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``ad77681evb``
      - zed
      - spi_engine
@@ -190,12 +70,6 @@ Not supported
      - Validated
      - ``ad7768evb_zed``
      - 2 boot directories checked
-   * - ``ad777x_fmcz``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``ad9081_fmca_ebz``
      - vck190
      - jesd
@@ -286,12 +160,6 @@ Not supported
      - Profile, not validated
      - ``ad9084_ebz_vpk180``
      - no boot files for this design in the Kuiper boot partition
-   * - ``ad916x_fmc``
-     - zcu102
-     - jesd
-     - Profile, not validated
-     - ``ad916x_fmc_zcu102``
-     - no boot files for this design in the Kuiper boot partition
    * - ``ad9208_dual_ebz``
      - vcu118
      - jesd
@@ -304,18 +172,6 @@ Not supported
      - Profile, not validated
      - ``ad9209_fmca_ebz_vck190``
      - Kuiper boot files hold no XSA (PDI only)
-   * - ``ad9213_evb``
-     - vcu118
-     - jesd
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad9265_fmc``
-     - zc706
-     - parallel_if
-     - Profile, not validated
-     - ``ad9265_fmc_zc706``
-     - no boot files for this design in the Kuiper boot partition
    * - ``ad9265_fmc``
      - zed
      - parallel_if
@@ -346,18 +202,6 @@ Not supported
      - Validated
      - ``ad9467_fmc_zed``
      - 1 boot directory checked
-   * - ``ad9656_fmc``
-     - zcu102
-     - jesd
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad9694_fmc``
-     - zcu102
-     - jesd
-     - Profile, not validated
-     - ``ad9694_fmc_zcu102``
-     - no boot files for this design in the Kuiper boot partition
    * - ``ad9695_fmc``
      - zcu102
      - jesd
@@ -370,54 +214,12 @@ Not supported
      - Validated
      - ``ad9783_ebz_zcu102``
      - 1 boot directory checked
-   * - ``ad_gmsl2eth_sl``
-     - k26
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``ad_quadmxfe1_ebz``
-     - vcu118
-     - jesd
-     - Not supported
-     - 
-     - no boot files for this design in the Kuiper boot partition
-   * - ``ada4355_fmc``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``adaq23875``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``adaq7980_sdz``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``adaq8092_fmc``
      - zed
      - parallel_if
      - Validated
      - ``adaq8092_fmc_zed``
      - 1 boot directory checked
-   * - ``admx100x_evb``
-     - zed
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``admx6001_ebz``
-     - vcu118
-     - jesd
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``adrv9001``
      - zc706
      - transceiver_lvds
@@ -436,18 +238,6 @@ Not supported
      - Validated
      - ``adrv9001_zed``
      - 1 boot directory checked
-   * - ``adrv9001_dual``
-     - zcu102
-     - transceiver_lvds
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``adrv9009``
-     - kcu105
-     - jesd
-     - Not supported
-     - 
-     - no boot files for this design in the Kuiper boot partition
    * - ``adrv9009``
      - zc706
      - jesd
@@ -472,12 +262,6 @@ Not supported
      - Validated
      - ``adrv9009zu11eg_adrv2crr_fmcomms8``
      - 4 boot directories checked
-   * - ``adrv9009zu11eg``
-     - adrv2crr_fmcxmwbr1
-     - jesd
-     - Validated
-     - ``adrv9009_zu11eg``
-     - 2 boot directories checked
    * - ``adrv9026``
      - vcu118
      - jesd
@@ -490,18 +274,6 @@ Not supported
      - Validated
      - ``adrv9026_zcu102``
      - 1 boot directory checked
-   * - ``adrv903x``
-     - zcu102
-     - jesd
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``adrv904x``
-     - zcu102
-     - jesd
-     - Profile, not validated
-     - ``adrv9040_zcu102``
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``adrv9361z7035``
      - ccbob_cmos
      - som
@@ -598,18 +370,6 @@ Not supported
      - Validated
      - ``cn0540_coraz7s``
      - 1 boot directory checked
-   * - ``cn0561``
-     - coraz7s
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``cn0561``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``cn0577``
      - zed
      - parallel_if
@@ -622,18 +382,6 @@ Not supported
      - Validated
      - ``cn0579_coraz7s``
      - 1 boot directory checked
-   * - ``cn0585``
-     - zed
-     - parallel_if
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``dac_fmc_ebz``
-     - vcu118
-     - jesd
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``dac_fmc_ebz``
      - zc706
      - jesd
@@ -748,18 +496,6 @@ Not supported
      - Validated
      - ``fmcomms8_zcu102``
      - 1 boot directory checked
-   * - ``ltc2378_fmc``
-     - zed
-     - spi_engine
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
-   * - ``max96724``
-     - kv260
-     - misc
-     - Not supported
-     - 
-     - no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition
    * - ``pulsar_adc``
      - coraz7s
      - spi_engine
@@ -772,9 +508,3 @@ Not supported
      - Validated
      - ``pulsar_adc_zed``
      - 14 boot directories checked
-   * - ``pulsar_lvds_adc``
-     - zed
-     - parallel_if
-     - Profile, not validated
-     - ``pulsar_lvds_adc_zed``
-     - no boot files for this design in the Kuiper boot partition

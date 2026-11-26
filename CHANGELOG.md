@@ -52,6 +52,10 @@ All notable changes to pyadi-dt are documented here. The project follows
   the XSA's board file to tell ZedBoard and ZC702 apart.
 
 ### Changed
+- The HDL 2026.1 inventory is pinned to the `2026.1.0` release tag. The tag
+  removes 45 projects that are not part of the release, so the inventory
+  lists 79 designs, all supported. Profiles for the ten removed designs that
+  had one are kept but are no longer checked by the coverage gate.
 
 - `kuiper_boards.json` now describes the Kuiper 2026_r1 boot partition.
 - Zynq-7000 carriers other than ZC706 now use one address cell and the

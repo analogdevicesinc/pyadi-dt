@@ -19,7 +19,7 @@ release branch is needed -- only that the ref has been fetched.
 Example::
 
     python scripts/generate_hdl_release_inventory.py \\
-        --hdl ~/dev/hdl --hdl-ref origin/hdl_2026_r1 \\
+        --hdl ~/dev/hdl --hdl-ref 2026.1.0 \\
         --linux ~/dev/linux --linux-ref origin/xlnx/release/v6.12.y-2026r1 \\
         --kuiper-tarball ~/.cache/adidt/kuiper/2026_r1_latest_boot_partition.tar.gz \\
         --release 2026_r1 --kuiper-boards
