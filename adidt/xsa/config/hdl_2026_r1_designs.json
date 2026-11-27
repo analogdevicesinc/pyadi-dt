@@ -1,169 +1,10 @@
 {
   "release": "2026_r1",
-  "hdl_ref": "origin/hdl_2026_r1",
-  "hdl_commit": "4840c81f2af172b036cb3ccb3f9f2dc45ed9c1d3",
+  "hdl_ref": "2026.1.0",
+  "hdl_commit": "b62abeff22d613d08e1aeb7f94850ab6a6576a74",
   "linux_ref": "origin/xlnx/release/v6.12.y-2026r1",
   "linux_commit": "b486fe824008ce25f56036b03d891063e6f233a8",
   "designs": [
-    {
-      "project": "ad353xr",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad353xr",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad35xxr_evb",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad3552r-hs.dts"
-      ],
-      "kernel_dts_join": "name",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad35xxr_evb_zed": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad3552r-hs.dts"
-      },
-      "profile": "ad35xxr_evb_zed",
-      "extra_profiles": [],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4052_ardz",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4062_ardz",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "i3c",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad4060.dts",
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad4062.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad4062_ardz_coraz7s": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad4060.dts"
-      },
-      "profile": "ad4062_ardz_coraz7s",
-      "extra_profiles": [
-        "ad4062_ardz_coraz7s_ad4062"
-      ],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4080_fmc_evb",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4110",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4134_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad4134.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {
-        "zynq-zed-adv7511-ad4134": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad4134.dts"
-      },
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": "ad4134_fmc_zed",
-      "extra_profiles": [],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": null
-    },
-    {
-      "project": "ad4170_asdz",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
     {
       "project": "ad4630_fmc",
       "carrier": "zed",
@@ -194,22 +35,6 @@
     },
     {
       "project": "ad469x_evb",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad469x_evb",
       "carrier": "zed",
       "arch": "arm",
       "class": "spi_engine",
@@ -229,86 +54,6 @@
       "reason": null
     },
     {
-      "project": "ad485x_fmcz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad4880_fmc_evb",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad5758_sdz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad5766_sdz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad57xx_ardz",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "ad6676evb",
       "carrier": "zc706",
       "arch": "arm",
@@ -323,46 +68,6 @@
       "kuiper_projects_without_xsa": [],
       "local_xsa": {},
       "profile": "ad6676evb_zc706",
-      "extra_profiles": [],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": null
-    },
-    {
-      "project": "ad7134_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad719x_asdz",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7190.dts",
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7192.dts",
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7193.dts",
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7194.dts",
-        "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7195.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {
-        "zynq-coraz7s-ad719x": "arch/arm/boot/dts/xilinx/zynq-coraz7s-ad7190.dts"
-      },
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": "ad719x_asdz_coraz7s",
       "extra_profiles": [],
       "builder": "DeclarativeBuilder",
       "status": "full",
@@ -392,54 +97,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "ad7405_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad7606x_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad7616_sdz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "ad77681evb",
@@ -485,22 +142,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "ad777x_fmcz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "ad9081_fmca_ebz",
@@ -869,35 +510,6 @@
       "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
-      "project": "ad916x_fmc",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9161-fmc-ebz_m2_s2.dts",
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9162-fmc-ebz_m2_s2.dts",
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9163-fmc-ebz_m2_l2_f2_s1.dts",
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9163-fmc-ebz_m2_l8.dts",
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9164-fmc-ebz_m2_s2.dts"
-      ],
-      "kernel_dts_join": "name",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad916x_fmc_zcu102": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9161-fmc-ebz_m2_s2.dts"
-      },
-      "profile": "ad916x_fmc_zcu102",
-      "extra_profiles": [
-        "ad916x_fmc_zcu102_ad9162_fmc_ebz_m2_s2",
-        "ad916x_fmc_zcu102_ad9163_fmc_ebz_m2_l2_f2_s1",
-        "ad916x_fmc_zcu102_ad9163_fmc_ebz_m2_l8",
-        "ad916x_fmc_zcu102_ad9164_fmc_ebz_m2_s2"
-      ],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "ad9208_dual_ebz",
       "carrier": "vcu118",
       "arch": "microblaze",
@@ -938,42 +550,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": "Kuiper boot files hold no XSA (PDI only)"
-    },
-    {
-      "project": "ad9213_evb",
-      "carrier": "vcu118",
-      "arch": "microblaze",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad9265_fmc",
-      "carrier": "zc706",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9265-fmc-125ebz.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad9265_fmc_zc706": "arch/arm/boot/dts/xilinx/zynq-zc706-adv7511-ad9265-fmc-125ebz.dts"
-      },
-      "profile": "ad9265_fmc_zc706",
-      "extra_profiles": [],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "ad9265_fmc",
@@ -1076,42 +652,6 @@
       "reason": null
     },
     {
-      "project": "ad9656_fmc",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad9694_fmc",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [
-        "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9694.dts"
-      ],
-      "kernel_dts_join": "tag-fuzzy",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad9694_fmc_zcu102": "arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-ad9694.dts"
-      },
-      "profile": "ad9694_fmc_zcu102",
-      "extra_profiles": [],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "ad9695_fmc",
       "carrier": "zcu102",
       "arch": "arm64",
@@ -1152,125 +692,6 @@
       "reason": null
     },
     {
-      "project": "ad_gmsl2eth_sl",
-      "carrier": "k26",
-      "arch": "arm64",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ad_quadmxfe1_ebz",
-      "carrier": "vcu118",
-      "arch": "microblaze",
-      "class": "jesd",
-      "kernel_dts": [
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_onchip_pll_nshot_sysref_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_onchip_pll_nshot_sysref_secondary_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_9_rxmode_10_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_10_rxmode_11.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_10_rxmode_11_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_10_rxmode_11_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_10_rxmode_11_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_10_rxmode_11_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4_direct_6g.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_11_rxmode_4_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_23_rxmode_25_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_23_rxmode_25_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_23_rxmode_25_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_23_rxmode_25_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_29_rxmode_24_onchip_pll_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_29_rxmode_24_onchip_pll_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_29_rxmode_24_revc.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9081_204c_txmode_29_rxmode_24_revc_nz1.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_12_rxmode_13.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_12_rxmode_13_onchip_pll.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_23_rxmode_25.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_23_rxmode_25_onchip_pll.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_3_rxmode_2.dts",
-        "arch/microblaze/boot/dts/vcu118_quad_ad9082_204c_txmode_3_rxmode_2_onchip_pll.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "ad_quadmxfe1_ebz_vcu118": "arch/microblaze/boot/dts/vcu118_quad_ad9081_204b_txmode_5_rxmode_6.dts"
-      },
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "ada4355_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "adaq23875",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "adaq7980_sdz",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "adaq8092_fmc",
       "carrier": "zed",
       "arch": "arm",
@@ -1289,38 +710,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "admx100x_evb",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "admx6001_ebz",
-      "carrier": "vcu118",
-      "arch": "microblaze",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "adrv9001",
@@ -1402,42 +791,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "adrv9001_dual",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "transceiver_lvds",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "adrv9009",
-      "carrier": "kcu105",
-      "arch": "microblaze",
-      "class": "jesd",
-      "kernel_dts": [
-        "arch/microblaze/boot/dts/kcu105_adrv9009.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "adrv9009_kcu105": "arch/microblaze/boot/dts/kcu105_adrv9009.dts"
-      },
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "adrv9009",
@@ -1570,28 +923,6 @@
       "reason": null
     },
     {
-      "project": "adrv9009zu11eg",
-      "carrier": "adrv2crr_fmcxmwbr1",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [
-        "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm-fmcbridge.dts",
-        "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm-xmicrowave.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {
-        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-fmcbridge": "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm-fmcbridge.dts",
-        "zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-xmicrowave": "arch/arm64/boot/dts/xilinx/zynqmp-adrv9009-zu11eg-revb-adrv2crr-fmc-revb-jesd204-fsm-xmicrowave.dts"
-      },
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": "adrv9009_zu11eg",
-      "extra_profiles": [],
-      "builder": "ADRV9009Builder",
-      "status": "full",
-      "reason": null
-    },
-    {
       "project": "adrv9026",
       "carrier": "vcu118",
       "arch": "microblaze",
@@ -1648,40 +979,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "adrv903x",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "adrv904x",
-      "carrier": "zcu102",
-      "arch": "arm64",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": "adrv9040_zcu102",
-      "extra_profiles": [
-        "adrv9040_zcu102_nls"
-      ],
-      "builder": "ADRV9040Builder",
-      "status": "full",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "adrv9361z7035",
@@ -2037,38 +1334,6 @@
       "reason": null
     },
     {
-      "project": "cn0561",
-      "carrier": "coraz7s",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "cn0561",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "cn0577",
       "carrier": "zed",
       "arch": "arm",
@@ -2107,38 +1372,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "cn0585",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "dac_fmc_ebz",
-      "carrier": "vcu118",
-      "arch": "microblaze",
-      "class": "jesd",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
     },
     {
       "project": "dac_fmc_ebz",
@@ -2564,38 +1797,6 @@
       "reason": null
     },
     {
-      "project": "ltc2378_fmc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "spi_engine",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
-      "project": "max96724",
-      "carrier": "kv260",
-      "arch": "arm64",
-      "class": "misc",
-      "kernel_dts": [],
-      "kernel_dts_join": null,
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {},
-      "profile": null,
-      "extra_profiles": [],
-      "builder": null,
-      "status": "unsupported",
-      "reason": "no kernel reference DTS found for this design; no boot files for this design in the Kuiper boot partition"
-    },
-    {
       "project": "pulsar_adc",
       "carrier": "coraz7s",
       "arch": "arm",
@@ -2710,29 +1911,6 @@
       "builder": "DeclarativeBuilder",
       "status": "full",
       "reason": null
-    },
-    {
-      "project": "pulsar_lvds_adc",
-      "carrier": "zed",
-      "arch": "arm",
-      "class": "parallel_if",
-      "kernel_dts": [
-        "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7625.dts",
-        "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7960.dts"
-      ],
-      "kernel_dts_join": "tag",
-      "kuiper_projects": {},
-      "kuiper_projects_without_xsa": [],
-      "local_xsa": {
-        "pulsar_lvds_adc_zed": "arch/arm/boot/dts/xilinx/zynq-zed-adv7511-ad7625.dts"
-      },
-      "profile": "pulsar_lvds_adc_zed",
-      "extra_profiles": [
-        "pulsar_lvds_adc_zed_ad7960"
-      ],
-      "builder": "DeclarativeBuilder",
-      "status": "full",
-      "reason": "no boot files for this design in the Kuiper boot partition"
     }
   ]
 }
