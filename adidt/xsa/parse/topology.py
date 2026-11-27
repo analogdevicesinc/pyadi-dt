@@ -240,9 +240,7 @@ class XsaTopology:
 
 # Output ports that carry an IP's interrupt (ADI ``irq``, Xilinx ``ip2intc_irpt``).
 _IRQ_PORT_RE = re.compile(r"irq|interrupt|irpt|intr")
-_SYSID_PATH_RE = re.compile(
-    r"projects/([^/]+)/([^/]+)/(?:([^/]+)/)?mem_init_sys\.txt$"
-)
+_SYSID_PATH_RE = re.compile(r"projects/([^/]+)/([^/]+)/(?:([^/]+)/)?mem_init_sys\.txt$")
 _ADI_JESD_RX_TYPES = {"axi_jesd204_rx"}
 _ADI_JESD_TX_TYPES = {"axi_jesd204_tx"}
 _ADI_CLKGEN_TYPES = {"axi_clkgen"}
@@ -533,8 +531,10 @@ class XsaParser:
         """Trace PS PL interrupt inputs through xlconcat to Linux SPI numbers.
 
         ZynqMP PL banks start at SPI 89 and 104.  Zynq-7000 ``IRQ_F2P`` bits
-        0-7 are SPI 29-36 and bits 8-15 are SPI 52-59.  Signal-name suffixes
-        are net identifiers and are not interrupt numbers.
+        0-7 are SPI 29-36 and bits 8-15 are SPI 52-59.  Versal ``pl_ps_irqN``
+        is SPI 84 + N.  MicroBlaze designs have no GIC: the number is the
+        input bit of the ``axi_intc``.  Signal-name suffixes are net
+        identifiers and are not interrupt numbers.
         """
         sources: dict[str, tuple[ET.Element, str]] = {}
         # (signal, SPI number of each bit of the PS input)
@@ -554,6 +554,12 @@ class XsaParser:
                     sinks.append((signal, list(range(base, base + 8))))
                 elif modtype == "processing_system7" and name == "irq_f2p":
                     sinks.append((signal, [*range(29, 37), *range(52, 60)]))
+                elif modtype == "versal_cips" and (
+                    line := re.fullmatch(r"pl_ps_irq(\d+)", name)
+                ):
+                    sinks.append((signal, [84 + int(line.group(1))]))
+                elif modtype == "axi_intc" and name == "intr":
+                    sinks.append((signal, list(range(32))))
         found: dict[str, set[int]] = {}
 
         def visit(signal: str, bit: int, spis: list[int], seen: set[str]) -> None:

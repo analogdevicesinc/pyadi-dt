@@ -169,7 +169,8 @@ class DeclarativeBuilder:
             generated.append(f"reg = {pairs};")
         flags = entry.get("interrupt_flags")
         if flags is not None and inst.irq is not None:
-            generated.append(f"interrupts = <0 {inst.irq} {flags}>;")
+            spi = "" if entry.get("interrupt_cells") == 2 else "0 "
+            generated.append(f"interrupts = <{spi}{inst.irq} {flags}>;")
         # Keep ``compatible`` first, as device-tree style expects.
         split = 1 if body and body[0].startswith("compatible") else 0
         lines = [*body[:split], *generated, *body[split:]]

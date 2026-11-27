@@ -151,10 +151,14 @@ class _Seeder:
         for inst in topology.ip_instances:
             self.by_addr.setdefault(inst.base_addr, inst)
         self.bus_nodes: list[DtsNode] = []  # PL-bus nodes with no register block
+        self.shared_buses: set[int] = set()  # id() of buses the base tree has too
         # sdtgen and the kernel disagree on the ZynqMP GIC label.
         self.aliases: dict[str, str] = {}
-        if "gic" not in base.labels and "gic_a53" in base.labels:
-            self.aliases["gic"] = "gic_a53"
+        if "gic" not in base.labels:
+            for label in ("gic_a53", "gic_a72"):
+                if label in base.labels:
+                    self.aliases["gic"] = label
+                    break
 
     def _instance_at(self, addr: int | None) -> AxiIpInstance | None:
         """Return the IP whose register block contains *addr*.
@@ -178,12 +182,13 @@ class _Seeder:
         return self.is_design(node.origin) or id(node) in self.needed
 
     def _in_base(self, node: DtsNode) -> bool:
-        if any(label in self.base.labels for label in node.labels):
+        if any(self.aliases.get(l, l) in self.base.labels for l in node.labels):
             return True
         return self.base.node_at(node.path()) is not None
 
     def _target(self, node: DtsNode) -> str:
         for label in node.labels:
+            label = self.aliases.get(label, label)
             if label in self.base.labels:
                 return f"&{label}"
         return f"&{{{node.path()}}}"
@@ -201,6 +206,14 @@ class _Seeder:
             if "simple-bus" not in child.compatible():
                 continue
             if any(label in self.base.labels for label in child.labels):
+                # MicroBlaze systems are all PL: carrier and design share the
+                # one bus the base tree already has.
+                if self.bound and any(
+                    self._design(c) and c.unit_address in self.by_addr
+                    for c in child.children
+                ):
+                    buses.append(child)
+                    self.shared_buses.add(id(child))
                 continue
             if not self.bound:
                 # No XSA to compare with: the design's own bus is the one
@@ -220,6 +233,8 @@ class _Seeder:
             size_cells = (parse_cells(_value(bus, "#size-cells")) or [1])[0]
             stride = addr_cells + size_cells
             for node in bus.children:
+                if id(bus) in self.shared_buses and not self._design(node):
+                    continue  # a carrier core: the base tree describes it
                 cells = parse_cells(_value(node, "reg")) or []
                 pairs = [
                     (
@@ -283,13 +298,16 @@ class _Seeder:
             entry["reg"] = [[start - inst.base_addr, size] for start, size in pairs]
         irq = parse_cells(_value(node, "interrupts"))
         if irq is not None:
-            if len(irq) == 3 and irq[0] == 0 and inst.irq is not None:
+            gic = len(irq) == 3 and irq[0] == 0
+            if (gic or len(irq) == 2) and inst.irq is not None:
                 # The XSA is the authority on how this bitstream is wired.
                 body.properties.pop("interrupts", None)
-                entry["interrupt_flags"] = irq[2]
-                if inst.irq != irq[1]:
+                entry["interrupt_flags"] = irq[-1]
+                if not gic:
+                    entry["interrupt_cells"] = 2  # <line flags> of an axi_intc
+                if inst.irq != irq[-2]:
                     self.notes.append(
-                        f"{node.name}: reference interrupt {irq[1]} differs from "
+                        f"{node.name}: reference interrupt {irq[-2]} differs from "
                         f"the XSA's {inst.irq} for {inst.name}; the XSA value is used"
                     )
             else:
@@ -322,7 +340,9 @@ class _Seeder:
             sub, sub_design = self._prune(child, child_exists)
             if not sub_design:
                 continue
-            if child_exists and any(l in self.base.labels for l in child.labels):
+            if child_exists and any(
+                self.aliases.get(l, l) in self.base.labels for l in child.labels
+            ):
                 self.overlays.append((self._target(child), sub))
             else:
                 if not child_exists:
@@ -340,6 +360,15 @@ class _Seeder:
         self.overlays = []
         root_nodes: list[DtsNode] = []
         for child in self.ref.root.children:
+            if id(child) in self.shared_buses:
+                # Design edits to the carrier's own cores (``&axi_intc``...).
+                for core in child.children:
+                    if self._design(core):
+                        continue
+                    sub, has_design = self._prune(core, True)
+                    if has_design:
+                        self.overlays.append((self._target(core), sub))
+                continue
             if child in buses:
                 continue
             if child.base_name in _SYSTEM_ROOT_NODES:

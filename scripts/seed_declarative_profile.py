@@ -114,7 +114,11 @@ def main(argv: list[str] | None = None) -> int:
         sources = dict(design["kuiper_projects"])
         if args.local_xsa_dir:
             sources.update(
-                {f"local/{k}": v for k, v in design.get("local_xsa", {}).items()}
+                {
+                    f"local/{name}": reference
+                    for name, reference in design.get("local_xsa", {}).items()
+                    if (args.local_xsa_dir / name / "system_top.xsa").exists()
+                }
             )
         for directory, reference in sorted(sources.items()):
             if args.only and not any(fnmatch.fnmatch(directory, g) for g in args.only):

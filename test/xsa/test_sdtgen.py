@@ -483,3 +483,78 @@ def test_smmu_is_left_disabled(tmp_path):
     text = pcw.read_text()
     assert '&smmu {\n\tstatus = "disabled";' in text
     assert '&gem3 {\n\tstatus = "okay";' in text
+
+
+def test_run_normalizes_versal_tree(tmp_path):
+    xsa = tmp_path / "design.xsa"
+    xsa.write_bytes(b"fake")
+    out_dir = tmp_path / "out"
+    out_dir.mkdir()
+    (out_dir / "versal.dtsi").write_text(
+        "/ {\n"
+        "  cpus_a72: cpus-a72@0 {\n  };\n"
+        "  amba_apu: apu-bus {\n"
+        "    gic_a72: interrupt-controller@f9000000 {\n"
+        "      gic_its: msi-controller@f9020000 {\n      };\n"
+        "    };\n"
+        "  };\n"
+        "  amba_rpu: rpu-bus {\n"
+        "    gic_r5: interrupt-controller@f9000000 {\n    };\n"
+        "  };\n"
+        "  amba: axi {\n"
+        "    ipi_pmc: mailbox@ff320000 {\n"
+        '      compatible = "xlnx,zynqmp-ipi-mailbox";\n'
+        "      child@0 {\n      };\n"
+        "    };\n"
+        "    serial0: serial@ff000000 {\n"
+        '      compatible = "arm,pl011";\n'
+        "    };\n"
+        "  };\n"
+        "};\n"
+    )
+    (out_dir / "pcw.dtsi").write_text(
+        "&amba {\n"
+        "  psm_tmr_manager_0: psm_tmr_manager_0@ffcc0000 {\n"
+        "    xlnx,tmr = <1>;\n"
+        '    compatible = "xlnx,tmr-manager-1.0";\n'
+        "  };\n"
+        "};\n"
+    )
+    (out_dir / "pl.dtsi").write_text(
+        "&amba {\n  core@a4000000 {\n    interrupt-parent = <&imux>;\n  };\n};\n"
+    )
+    (out_dir / "system-top.dts").write_text(
+        "/dts-v1/;\n"
+        "/ {\n"
+        "  axi_noc_0_ddr_memory: memory@00000000 {\n"
+        '    compatible = "xlnx,axi-noc-1.1";\n'
+        "    reg = <0x0 0x00000000 0x0 0x80000000>, "
+        "<0x00000008 0x00000000 0x0 0x80000000>;\n"
+        '    memory_type = "memory";\n'
+        "  };\n"
+        "};\n"
+    )
+
+    runner = SdtgenRunner()
+    with patch(
+        "adidt.xsa.parse.sdtgen.subprocess.run",
+        side_effect=[_help_result(), _ok_result()],
+    ):
+        runner.run(xsa, out_dir)
+
+    # The APU interrupt controller is the A72's on Versal, not gic_a53.
+    assert "interrupt-parent = <&gic_a72>;" in (out_dir / "pl.dtsi").read_text()
+    assert "cpus_a72: cpus {" in (out_dir / "versal.dtsi").read_text()
+    top = (out_dir / "system-top.dts").read_text()
+    # Without device_type the kernel finds no RAM and panics at boot.
+    assert 'device_type = "memory";' in top
+    assert (
+        "reg = <0x0 0x00000000 0x0 0x80000000>, <0x00000008 0x00000000 0x0 0x80000000>;"
+        in top
+    )
+    # Nodes of the firmware processors and the RPU are switched off; the
+    # APU's own peripherals are left alone.
+    for label in ("gic_its", "gic_r5", "ipi_pmc", "psm_tmr_manager_0"):
+        assert f'&{label} {{\n\tstatus = "disabled";\n}};' in top
+    assert "&serial0" not in top
+    assert "&gic_a72" not in top

@@ -39,4 +39,6 @@ def dedup_zynqmp_root_nodes(pp_dts: Path) -> None:
     for start, end in reversed(removals):
         text = text[:start] + text[end:]
     text = text.replace("cpus_microblaze_0: cpus {", "cpus_microblaze_0: cpus-pmu {")
+    # Versal has a second platform MicroBlaze (the PSM) beside the PMC.
+    text = text.replace("cpus_microblaze_1: cpus {", "cpus_microblaze_1: cpus-psm {")
     pp_dts.write_text(text)

@@ -217,7 +217,7 @@
 					#address-cells = <1>;
 					link@0 {
 						reg = <0>;
-						adi,converter-select = <&ad9081_rx_fddc_chan0 FDDC_I>, <&ad9081_rx_fddc_chan0 FDDC_Q>, <&ad9081_rx_fddc_chan1 FDDC_I>, <&ad9081_rx_fddc_chan1 FDDC_Q>, <&ad9081_rx_fddc_chan4 FDDC_I>, <&ad9081_rx_fddc_chan4 FDDC_Q>, <&ad9081_rx_fddc_chan5 FDDC_I>, <&ad9081_rx_fddc_chan5 FDDC_Q>;
+						adi,converter-select = <&ad9081_rx_fddc_chan0 0>, <&ad9081_rx_fddc_chan0 1>, <&ad9081_rx_fddc_chan1 0>, <&ad9081_rx_fddc_chan1 1>, <&ad9081_rx_fddc_chan4 0>, <&ad9081_rx_fddc_chan4 1>, <&ad9081_rx_fddc_chan5 0>, <&ad9081_rx_fddc_chan5 1>;
 						adi,logical-lane-mapping = /bits/ 8 <2 0 7 6 5 4 3 1>;
 						adi,link-mode = <26>;
 						adi,subclass = <1>;

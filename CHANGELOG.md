@@ -6,6 +6,13 @@ All notable changes to pyadi-dt are documented here. The project follows
 ## [Unreleased]
 
 ### Added
+- Profiles for 14 more HDL 2026.1 designs, seeded from XSAs built from the
+  HDL sources: AD9081, AD9082 and AD9084 on VCK190 and VPK180, AD9209 on
+  VCK190, AD9081, AD9082, dual AD9208 and ADRV9026 on VCU118, and ADRV9371,
+  DAQ2, DAQ3 and FMCOMMS2 on KCU105.
+- XSA interrupt resolution for Versal (`pl_ps_irq`) and MicroBlaze
+  (`axi_intc` inputs); the profile seeder handles MicroBlaze systems, whose
+  design and carrier cores share one bus.
 - Coverage gate for designs a release ships no XSA for (PDI-only Versal boot
   files, MicroBlaze carriers without boot files):
   `scripts/build_hdl_release_xsas.sh` exports their XSAs from the HDL sources
@@ -59,6 +66,15 @@ All notable changes to pyadi-dt are documented here. The project follows
 
 ### Fixed
 
+- Versal device trees now boot. The base tree named the wrong interrupt
+  controller, left the system memory node unmarked, and enabled nodes that
+  belong to the platform firmware and the RPU (IPI mailboxes, TMR cores, the
+  RPU GIC and the ITS). Found by booting the generated AD9081 tree on a
+  VPK180.
+- A device node whose child shares a unit address with a base-tree node (such
+  as `channel@1` and `cpus-r5@1`) no longer deletes that base node.
+- AD9081 link mode 26 emitted `FDDC_I`/`FDDC_Q` macros without the header
+  that defines them.
 - Generated trees now boot the HDL 2026.1 designs on the 6.12 kernel
   (confirmed on the ZC706 ADRV9009, ZC706 ADRV9371 and ZCU102 AD9081 rigs):
   the ZC706 Ethernet PHY is declared, the SMMU that `sdtgen` enables is left

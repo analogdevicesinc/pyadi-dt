@@ -306,7 +306,10 @@ class DtsMerger:
                     )
                     merged = label_conflict_re.sub("", merged)
 
-            m = _NODE_ADDR_RE.search(node)
+            # Only the node's own unit address identifies a base stub; a
+            # child such as ``channel@1`` must not delete ``cpus-r5@1``.
+            header = node[: node.find("{") + 1]
+            m = _NODE_ADDR_RE.search(header)
             if m:
                 addr = m.group(1).lower()
                 # Address 0x0 is common for unrelated CPU/memory stubs in base

@@ -35,7 +35,11 @@ fi
 tcl=$out/xsa_only.tcl
 cat > "$tcl" <<'TCL'
 set ::env(ADI_SKIP_SYNTHESIS) 1
-source system_project.tcl
+if {[catch {source system_project.tcl} err]} {
+  # Some projects post-process the implemented design after adi_project_run.
+  # The block design is complete by then, so only that failure is tolerated.
+  if {![string match "*No open design*" $err]} { error $err $::errorInfo }
+}
 set name [get_property NAME [current_project]]
 file mkdir $name.sdk
 write_hw_platform -fixed -force -file $name.sdk/system_top.xsa
@@ -61,7 +65,9 @@ for design in "${designs[@]}"; do
     failed=1
     continue
   fi
-  vivado -mode batch -source "$tcl" -log "$out/$tag/vivado.log" \
+  # The transceiver-wizard helper project names its build directory by make
+  # nesting depth; the HDL scripts expect the name it gets under "make".
+  MAKELEVEL=1 vivado -mode batch -source "$tcl" -log "$out/$tag/vivado.log" \
     -journal "$out/$tag/vivado.jou" > /dev/null 2>&1
   xsa=$(ls ./*.sdk/system_top.xsa 2> /dev/null | head -1)
   if [ -n "$xsa" ]; then
