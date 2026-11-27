@@ -1,0 +1,117 @@
+# ADRV9040 on ZCU102
+
+The `ADRV9040` Python model and XSA builder support the ADI `adrv904x/zcu102`
+standard RX/TX design and its ORX/NLS variant. Both `adrv9040` and upstream
+`adrv904x` instance names are recognized, including hierarchical JESD and
+transport IP names.
+
+Board wiring and Linux properties follow ADI Linux `main` at
+[`22534a028813fc8e9f283b0b52dce09b05df6387`](https://github.com/analogdevicesinc/linux/tree/22534a028813fc8e9f283b0b52dce09b05df6387):
+
+- `arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv904x.dts`
+- `arch/arm64/boot/dts/xilinx/zynqmp-zcu102-rev10-adrv904x-nls.dts`
+
+## Generate from an XSA
+
+Install `pyadi-dt[xsa]` and configure SDTGen as described in the
+[XSA pipeline guide](xsa.rst). Use a handoff exported from the matching ADI HDL
+`projects/adrv904x/zcu102` design. The standard layout has `ORX_ENABLE=0`;
+the NLS layout has `ORX_ENABLE=1` and includes RX observation JESD, transport,
+DMA, transceiver and clock-generator blocks. Use ACE settings, firmware and
+JESD framing that match the HDL build. Renaming an XSA or choosing an NLS
+profile does not add observation hardware.
+
+```sh
+python examples/xsa/adrv9040_zcu102.py \
+    --xsa /path/to/system_top.xsa --output-dir output/adrv9040
+```
+
+The pipeline automatically selects `adrv9040_zcu102_nls` when any observation
+block is present, otherwise `adrv9040_zcu102`. It rejects incomplete chains,
+missing register windows or interrupt routes, and explicit profiles that do
+not match the topology. You can select a profile explicitly:
+
+```sh
+python examples/xsa/adrv9040_zcu102.py \
+    --xsa /path/to/nls/system_top.xsa \
+    --profile adrv9040_zcu102_nls --output-dir output/adrv9040-nls
+```
+
+Outputs include the SDTGen base, ADI overlay, merged DTS and topology reports.
+`dtc` is needed to compile DTS to DTB. Register addresses and sizes come from
+the XSA; ZynqMP interrupt routing is traced through the HWH concat blocks.
+The shared renderer replaces matching base nodes during the merge.
+
+## External files and overrides
+
+Supply these files separately in the target's firmware search path (normally
+`/lib/firmware`). This package references filenames and does not generate or
+distribute firmware, ACE profiles or gain tables.
+
+| Property | Default filename |
+| --- | --- |
+| `adi,device-config-name` | `DeviceProfileTest.bin` or `DeviceProfileTest_NLS.bin` |
+| `adi,arm-firmware-name` | `ADRV9040_FW.bin` |
+| `adi,arm-dfe-firmware-name` | `ADRV9040_DFE_CALS_FW.bin` |
+| `adi,stream-firmware-name` | `stream_image.bin` |
+| `adi,rx-gaintable-names` | `ADRV9040_RxGainTable.csv` |
+
+The default receive gain-table mask is `0xff` for eight channels. Optional
+TX attenuation-table names and masks can also be supplied. To override board
+settings, pass `--config board-overrides.json`:
+
+```json
+{
+  "adrv9040_board": {
+    "device_config_name": "my-ace-profile.bin",
+    "reset_gpio": 134,
+    "rx_gaintable_names": ["my-gain-table.csv"],
+    "rx_gaintable_channel_masks": [255]
+  },
+  "jesd": {
+    "rx": {"F": 4, "K": 32},
+    "tx": {"F": 4, "K": 32},
+    "rx_os": {"F": 4, "K": 32}
+  }
+}
+```
+
+`ADRV9040BoardConfig` provides the typed `adrv9040_board` interface, including
+SPI chip-selects, reset/interrupt/SYSREF GPIOs, firmware names, table masks,
+VCXO frequency and optional AD9528 channel settings. Changing channel dividers
+or framing requires matching HDL and ACE settings.
+
+## Device model and wiring
+
+```python
+from adidt.devices.transceivers import ADRV9040
+
+phy = ADRV9040(device_config_name="my-ace-profile.bin")
+print(phy.render_dt(cs=0, context={"dev_clk_ref": "clk0_ad9528 1"}))
+```
+
+`examples/adrv9040.py` renders a standalone PHY with explicit JESD dependencies.
+For a complete device tree, use the XSA example above.
+
+| Path | JESD link ID | PHY sample-clock index |
+| --- | --- | --- |
+| TX | 0 | 1 |
+| RX | 2 | 0 |
+| ORX | 3 | 2 |
+
+Default ZCU102 wiring uses SPI0 CS0 for the PHY and CS1 for AD9528, PHY
+reset/interrupt GPIO 134, and active-low AD9528 reset GPIO 147. These GPIO
+assignments follow the pinned Linux reference; it marks the interrupt GPIO
+as requiring board confirmation. AD9528 outputs 1, 3 and 13 supply the device,
+FPGA core and transceiver reference clocks. The NLS profile also preserves
+the reference's `jesd204-ignore-errors` flag; override `ignore_jesd_errors` if
+your application requires strict JESD error handling.
+
+## Validation scope
+
+Software tests cover both representative HWH/XSA layouts, property parity
+against the pinned Linux references, profile mismatch rejection, configuration
+overrides, duplicate-node handling and DTS compilation. End-to-end tests use
+a controlled SDTGen base; they do not run Vivado or SDTGen. Boot, JESD link
+training and RF operation on physical hardware remain unqualified. No Kuiper
+release compatibility is claimed.
