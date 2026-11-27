@@ -52,6 +52,10 @@ All notable changes to pyadi-dt are documented here. The project follows
   the XSA's board file to tell ZedBoard and ZC702 apart.
 
 ### Changed
+- `adidtc kuiper-boards` lists the Versal boot directories as supported.
+  A design checked against an XSA built from the HDL sources now marks the
+  Kuiper directory of its reference device tree `full`; the other JESD-mode
+  variants of that design are `profile_only`.
 - The HDL 2026.1 inventory is pinned to the `2026.1.0` release tag. The tag
   removes 45 projects that are not part of the release, so the inventory
   lists 79 designs, all supported. Profiles for the ten removed designs that

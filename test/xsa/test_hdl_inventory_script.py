@@ -89,6 +89,45 @@ def test_board_manifest_promotes_only_gate_verified_boards(inventory_script):
     assert unverified["zynqmp-zcu102-rev10-ad9083-fmc-ebz"]["status"] != "full"
 
 
+def test_locally_built_design_vouches_for_its_reference_directory(inventory_script):
+    design = _design(
+        project="ad9081_fmca_ebz",
+        carrier="vck190",
+        kuiper_projects={},
+        kuiper_projects_without_xsa=[
+            "versal-vck190-reva-ad9081",
+            "versal-vck190-reva-ad9081-204c-txmode22-rxmode23",
+        ],
+        local_xsa={
+            "ad9081_fmca_ebz_vck190": "arch/arm64/versal-vck190-reva-ad9081.dts"
+        },
+        profile="ad9081_fmca_ebz_vck190",
+    )
+    inventory = {"release": "2026_r1", "designs": [design]}
+    report = [
+        {
+            "kuiper_project": "local/ad9081_fmca_ebz_vck190",
+            "failed_stage": None,
+            "auto_profile": "ad9081_fmca_ebz_vck190",
+        },
+        {"kuiper_project": "local/other", "failed_stage": None, "auto_profile": "p"},
+    ]
+    verified = inventory_script.gate_verified_boards(report, inventory)
+    assert verified == {"versal-vck190-reva-ad9081": "ad9081_fmca_ebz_vck190"}
+
+    stale = {"status": "unsupported", "profile": None, "builder": None}
+    boards = inventory_script.build_kuiper_boards(
+        inventory,
+        design["kuiper_projects_without_xsa"],
+        {"boards": {d: dict(stale) for d in design["kuiper_projects_without_xsa"]}},
+        verified,
+    )["boards"]
+    assert boards["versal-vck190-reva-ad9081"]["status"] == "full"
+    variant = boards["versal-vck190-reva-ad9081-204c-txmode22-rxmode23"]
+    assert variant["status"] == "profile_only"
+    assert variant["profile"] == "ad9081_fmca_ebz_vck190"
+
+
 def test_support_doc_distinguishes_validated_from_unvalidated(inventory_script):
     inventory = {
         "release": "2026_r1",

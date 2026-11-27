@@ -125,16 +125,16 @@ adidtc -c remote_sysfs -i 192.168.2.1 prop -cp adi,ad9361 clock-output-names
 
 | Converter Family | Platforms |
 |---|---|
-| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VPK180 |
-| AD9084 | VCU118, VPK180 |
+| AD9081 / AD9082 / AD9083 (MxFE) | ZCU102, ZC706, VCU118, VCK190, VPK180 |
+| AD9084 | VCU118, VCK190, VPK180 |
 | ADRV9003 (Navassa) | ZCU102, ZC706 (profile and generated-node support; use a TES profile) |
 | ADRV9009 / ADRV9025 / ADRV9008 | ZCU102, ZC706, Arria10, ZU11EG |
-| AD9371 / ADRV937x | ZC706, ZCU102 |
+| AD9371 / ADRV937x | ZC706, ZCU102, KCU105 |
 | ADRV9009-ZU11EG (SOM) | ADRV2CRR-FMC carrier |
-| AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102 |
-| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers — *listed in the Kuiper board manifest only; no device model, profile, or builder yet (`kuiper_boards.json` marks these `unsupported`)* |
-| FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, Arria10 |
-| FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706 |
+| AD936x / FMComms2-5 (SDR) | Zedboard, ZC702, ZC706, ZCU102, KCU105 |
+| ADRV9361-Z7035 / ADRV9364-Z7020 (SOM) | BOB, FMC carriers |
+| FMCDAQ2 (AD9680 + AD9144) | ZCU102, ZC706, KCU105, Arria10 |
+| FMCDAQ3 (AD9680 + AD9152) | ZCU102, ZC706, KCU105, VCU118 |
 | Precision ADCs / Sensors | Zedboard, Raspberry Pi |
 
 For the XSA pipeline, every Xilinx design in the HDL 2026.1 release is listed
