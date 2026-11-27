@@ -86,73 +86,73 @@
       "converter": "ad9081",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9081_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "full"
     },
     "versal-vck190-reva-ad9081-204c-txmode22-rxmode23": {
       "converter": "ad9081",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9081_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "profile_only"
     },
     "versal-vck190-reva-ad9081-204c-txmode23-rxmode25": {
       "converter": "ad9081",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9081_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "profile_only"
     },
     "versal-vck190-reva-ad9082": {
       "converter": "ad9082",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "full"
     },
     "versal-vck190-reva-ad9082-204c-txmode22-rxmode23": {
       "converter": "ad9082",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "profile_only"
     },
     "versal-vck190-reva-ad9209": {
       "converter": "ad9209",
       "platform": "vck190",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9209_fmca_ebz_vck190",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "full"
     },
     "versal-vpk180-reva-ad9081": {
       "converter": "ad9081",
       "platform": "vpk180",
       "arch": "arm64",
-      "profile": "ad9081_vpk180",
+      "profile": "ad9081_fmca_ebz_vpk180",
       "board_class": "ad9081_fmc",
-      "builder": "AD9081Builder",
-      "status": "profile_only"
+      "builder": "DeclarativeBuilder",
+      "status": "full"
     },
     "versal-vpk180-reva-ad9082": {
       "converter": "ad9082",
       "platform": "vpk180",
       "arch": "arm64",
-      "profile": null,
+      "profile": "ad9082_fmca_ebz_vpk180",
       "board_class": null,
-      "builder": null,
-      "status": "unsupported"
+      "builder": "DeclarativeBuilder",
+      "status": "full"
     },
     "zynq-adrv9361-z7035-bob": {
       "converter": "adrv9361",

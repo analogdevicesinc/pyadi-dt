@@ -614,20 +614,43 @@ def _kuiper_platform_arch(name: str) -> tuple[str, str]:
     return "unknown", "unknown"
 
 
-def gate_verified_boards(report: list[dict[str, Any]]) -> dict[str, str]:
+def gate_verified_boards(
+    report: list[dict[str, Any]], inventory: dict[str, Any] | None = None
+) -> dict[str, str]:
     """Return ``{board directory: profile}`` for boards the coverage gate passed.
 
     *report* is the JSON the gate writes (``ADI_XSA_COVERAGE_REPORT``).  A
     board counts only when every one of its boot directories passed.
+
+    A design checked against an XSA built from the HDL sources
+    (``local/<name>``) vouches for the one boot directory named after the
+    kernel reference tree that build was compared with; *inventory* supplies
+    that link.
     """
     by_top: dict[str, list[dict[str, Any]]] = {}
     for record in report:
         by_top.setdefault(record["kuiper_project"].split("/")[0], []).append(record)
-    return {
+    verified = {
         top: records[0].get("profile") or records[0]["auto_profile"]
         for top, records in by_top.items()
-        if all(r.get("failed_stage") is None and r.get("auto_profile") for r in records)
+        if top != "local"
+        and all(
+            r.get("failed_stage") is None and r.get("auto_profile") for r in records
+        )
     }
+    local_reference = {
+        name: (Path(dts).stem, entry)
+        for entry in (inventory or {}).get("designs", [])
+        for name, dts in entry.get("local_xsa", {}).items()
+    }
+    for record in by_top.get("local", []):
+        if record.get("failed_stage") is not None or not record.get("auto_profile"):
+            continue
+        name = record["kuiper_project"].split("/", 1)[1]
+        stem, entry = local_reference.get(name, (None, None))
+        if entry and stem in entry["kuiper_projects_without_xsa"]:
+            verified[stem] = record.get("profile") or record["auto_profile"]
+    return verified
 
 
 def build_kuiper_boards(
@@ -689,6 +712,18 @@ def build_kuiper_boards(
             "builder": builder,
             "status": status,
         }
+    # A boot directory without an XSA that belongs to a design with a
+    # profile has that profile available, even when nothing has checked this
+    # particular variant.
+    for entry in inventory["designs"]:
+        if not entry["profile"] or not entry.get("local_xsa"):
+            continue
+        for kuiper_project in entry["kuiper_projects_without_xsa"]:
+            board = boards.get(kuiper_project.split("/")[0])
+            if board is not None and board["status"] == "unsupported":
+                board["profile"] = entry["profile"]
+                board["builder"] = entry["builder"]
+                board["status"] = "profile_only"
     for top, profile in verified.items():
         board = boards.get(top)
         if board is None or board["status"] == "full":
@@ -822,7 +857,9 @@ def main() -> None:
         boards_path = CONFIG_DIR / "kuiper_boards.json"
         previous = json.loads(boards_path.read_text()) if boards_path.exists() else {}
         verified = (
-            gate_verified_boards(json.loads(args.coverage_report.read_text()))
+            gate_verified_boards(
+                json.loads(args.coverage_report.read_text()), inventory
+            )
             if args.coverage_report
             else {}
         )
