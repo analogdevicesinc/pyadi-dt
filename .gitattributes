@@ -1,0 +1,4 @@
+# Reference fixtures copied verbatim from upstream (ADI Linux) for tests.
+# Keep linguist from reporting them as C source, which otherwise makes CodeQL
+# default setup run a c-cpp analysis that fails with "No source files found".
+test/xsa/fixtures/** linguist-vendored
